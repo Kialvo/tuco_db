@@ -21,7 +21,7 @@ Route::middleware('auth')->group(function() {
     })->name('dashboard');
 
     // Define the DataTables endpoint first:
-    Route::get('contacts/data', [ContactsController::class, 'getData'])->name('contacts.data');
+    Route::match(['get','post'],'contacts/data', [ContactsController::class, 'getData'])->name('contacts.data');
 
     // Then define the resource routes for websites:
     Route::resource('contacts', ContactsController::class)->names([
@@ -33,8 +33,8 @@ Route::middleware('auth')->group(function() {
         'destroy' => 'contacts.destroy',
     ]);
     // Define the DataTables endpoint first:
-    Route::get('websites/data', [WebsiteController::class, 'getData'])->name('websites.data');
-
+    Route::match(['get','post'], 'websites/data', [WebsiteController::class, 'getData'])
+        ->name('websites.data');
     // Then define the resource routes for websites:
     Route::resource('websites', WebsiteController::class)->names([
         'index'   => 'websites.index',

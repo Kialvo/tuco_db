@@ -142,6 +142,10 @@
                 serverSide: true,
                 ajax: {
                     url: "{{ route('websites.data') }}",
+                    type: "POST",  // <-- Make this a POST request
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
                     data: function(d) {
                         d.domain_name = $('#filterDomainName').val();
                         d.publisher_price_min = $('#filterPublisher_priceMin').val();

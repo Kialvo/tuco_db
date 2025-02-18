@@ -68,6 +68,10 @@
                 ajax: {
                     url: "{{ route('contacts.data') }}",
                 },
+                type: "POST",  // <-- Make this a POST request
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 columns: [
                     { data: 'id', name: 'id' },
                     { data: 'name', name: 'contact_name' },
