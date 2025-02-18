@@ -1,0 +1,384 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Website;
+use App\Models\Country;
+use App\Models\Language;
+use App\Models\Contact;
+use App\Models\Category;
+use Illuminate\Http\Request;
+use Yajra\DataTables\DataTables;
+
+class WebsiteController extends Controller
+{
+    /**
+     * Display the index page with filters and DataTable.
+     */
+    public function index()
+    {
+        // Load foreign data for the filter form.
+        $countries  = Country::all();
+        $languages  = Language::all();
+        $contacts   = Contact::all();
+        $categories = Category::all();
+
+        return view('websites.index', compact('countries','languages','contacts','categories'));
+    }
+
+    /**
+     * Return JSON data for DataTables.
+     */
+    public function getData(Request $request)
+    {
+        $query = Website::with(['country','language','contact','categories']);
+
+        // Apply filters – text search and numeric ranges.
+        if (!empty($request->domain_name)) {
+            $query->where('domain_name', 'like', '%'.$request->domain_name.'%');
+        }
+
+        if (!empty($request->publisher_price_min) && !empty($request->publisher_price_max)) {
+            $query->whereBetween('publisher_price', [$request->publisher_price_min, $request->publisher_price_max]);
+        } elseif (!empty($request->publisher_price_min)) {
+            $query->where('publisher_price', '>=', $request->publisher_price_min);
+        } elseif (!empty($request->publisher_price_max)) {
+            $query->where('publisher_price', '<=', $request->publisher_price_max);
+        }
+
+// Kialvo Evaluation
+        if (!empty($request->kialvo_min) && !empty($request->kialvo_max)) {
+            $query->whereBetween('kialvo_evaluation', [$request->kialvo_min, $request->kialvo_max]);
+        } elseif (!empty($request->kialvo_min)) {
+            $query->where('kialvo_evaluation', '>=', $request->kialvo_min);
+        } elseif (!empty($request->kialvo_max)) {
+            $query->where('kialvo_evaluation', '<=', $request->kialvo_max);
+        }
+
+// Profit
+        if (!empty($request->profit_min) && !empty($request->profit_max)) {
+            $query->whereBetween('profit', [$request->profit_min, $request->profit_max]);
+        } elseif (!empty($request->profit_min)) {
+            $query->where('profit', '>=', $request->profit_min);
+        } elseif (!empty($request->profit_max)) {
+            $query->where('profit', '<=', $request->profit_max);
+        }
+
+        //Other numeric
+        // DA (Domain Authority)
+        if (!empty($request->DA_min) && !empty($request->DA_max)) {
+            $query->whereBetween('DA', [$request->DA_min, $request->DA_max]);
+        } elseif (!empty($request->DA_min)) {
+            $query->where('DA', '>=', $request->DA_min);
+        } elseif (!empty($request->DA_max)) {
+            $query->where('DA', '<=', $request->DA_max);
+        }
+
+// PA (Page Authority)
+        if (!empty($request->PA_min) && !empty($request->PA_max)) {
+            $query->whereBetween('PA', [$request->PA_min, $request->PA_max]);
+        } elseif (!empty($request->PA_min)) {
+            $query->where('PA', '>=', $request->PA_min);
+        } elseif (!empty($request->PA_max)) {
+            $query->where('PA', '<=', $request->PA_max);
+        }
+
+// TF (Trust Flow)
+        if (!empty($request->TF_min) && !empty($request->TF_max)) {
+            $query->whereBetween('TF', [$request->TF_min, $request->TF_max]);
+        } elseif (!empty($request->TF_min)) {
+            $query->where('TF', '>=', $request->TF_min);
+        } elseif (!empty($request->TF_max)) {
+            $query->where('TF', '<=', $request->TF_max);
+        }
+
+// CF (Citation Flow)
+        if (!empty($request->CF_min) && !empty($request->CF_max)) {
+            $query->whereBetween('CF', [$request->CF_min, $request->CF_max]);
+        } elseif (!empty($request->CF_min)) {
+            $query->where('CF', '>=', $request->CF_min);
+        } elseif (!empty($request->CF_max)) {
+            $query->where('CF', '<=', $request->CF_max);
+        }
+
+// DR (Domain Rating)
+        if (!empty($request->DR_min) && !empty($request->DR_max)) {
+            $query->whereBetween('DR', [$request->DR_min, $request->DR_max]);
+        } elseif (!empty($request->DR_min)) {
+            $query->where('DR', '>=', $request->DR_min);
+        } elseif (!empty($request->DR_max)) {
+            $query->where('DR', '<=', $request->DR_max);
+        }
+
+// UR (URL Rating)
+        if (!empty($request->UR_min) && !empty($request->UR_max)) {
+            $query->whereBetween('UR', [$request->UR_min, $request->UR_max]);
+        } elseif (!empty($request->UR_min)) {
+            $query->where('UR', '>=', $request->UR_min);
+        } elseif (!empty($request->UR_max)) {
+            $query->where('UR', '<=', $request->UR_max);
+        }
+
+// ZA (Zoom Authority)
+        if (!empty($request->ZA_min) && !empty($request->ZA_max)) {
+            $query->whereBetween('ZA', [$request->ZA_min, $request->ZA_max]);
+        } elseif (!empty($request->ZA_min)) {
+            $query->where('ZA', '>=', $request->ZA_min);
+        } elseif (!empty($request->ZA_max)) {
+            $query->where('ZA', '<=', $request->ZA_max);
+        }
+
+// SR (SEO Rank)
+        if (!empty($request->SR_min) && !empty($request->SR_max)) {
+            $query->whereBetween('SR', [$request->SR_min, $request->SR_max]);
+        } elseif (!empty($request->SR_min)) {
+            $query->where('SR', '>=', $request->SR_min);
+        } elseif (!empty($request->SR_max)) {
+            $query->where('SR', '<=', $request->SR_max);
+        }
+
+// Semrush Traffic
+        if (!empty($request->semrush_traffic_min) && !empty($request->semrush_traffic_max)) {
+            $query->whereBetween('semrush_traffic', [$request->semrush_traffic_min, $request->semrush_traffic_max]);
+        } elseif (!empty($request->semrush_traffic_min)) {
+            $query->where('semrush_traffic', '>=', $request->semrush_traffic_min);
+        } elseif (!empty($request->semrush_traffic_max)) {
+            $query->where('semrush_traffic', '<=', $request->semrush_traffic_max);
+        }
+
+// Ahrefs Keyword
+        if (!empty($request->ahrefs_keyword_min) && !empty($request->ahrefs_keyword_max)) {
+            $query->whereBetween('ahrefs_keyword', [$request->ahrefs_keyword_min, $request->ahrefs_keyword_max]);
+        } elseif (!empty($request->ahrefs_keyword_min)) {
+            $query->where('ahrefs_keyword', '>=', $request->ahrefs_keyword_min);
+        } elseif (!empty($request->ahrefs_keyword_max)) {
+            $query->where('ahrefs_keyword', '<=', $request->ahrefs_keyword_max);
+        }
+
+// Ahrefs Traffic
+        if (!empty($request->ahrefs_traffic_min) && !empty($request->ahrefs_traffic_max)) {
+            $query->whereBetween('ahrefs_traffic', [$request->ahrefs_traffic_min, $request->ahrefs_traffic_max]);
+        } elseif (!empty($request->ahrefs_traffic_min)) {
+            $query->where('ahrefs_traffic', '>=', $request->ahrefs_traffic_min);
+        } elseif (!empty($request->ahrefs_traffic_max)) {
+            $query->where('ahrefs_traffic', '<=', $request->ahrefs_traffic_max);
+        }
+
+// AH KW/TRAF (Ahrefs Keyword to Traffic Ratio)
+        if (!empty($request->keyword_vs_traffic_min) && !empty($request->keyword_vs_traffic_max)) {
+            $query->whereBetween('keyword_vs_traffic', [$request->keyword_vs_traffic_min, $request->keyword_vs_traffic_max]);
+        } elseif (!empty($request->keyword_vs_traffic_min)) {
+            $query->where('keyword_vs_traffic', '>=', $request->keyword_vs_traffic_min);
+        } elseif (!empty($request->keyword_vs_traffic_max)) {
+            $query->where('keyword_vs_traffic', '<=', $request->keyword_vs_traffic_max);
+        }
+
+
+
+        // Booleans – if the checkbox is checked (true), filter accordingly.
+        if ($request->boolean('more_than_one_link')) {
+            $query->where('more_than_one_link', true);
+        }
+        if ($request->boolean('copywriting')) {
+            $query->where('copywriting', true);
+        }
+        if ($request->boolean('no_sponsored_tag')) {
+            $query->where('no_sponsored_tag', true);
+        }
+        if ($request->boolean('social_media_sharing')) {
+            $query->where('social_media_sharing', true);
+        }
+        if ($request->boolean('post_in_homepage')) {
+            $query->where('post_in_homepage', true);
+        }
+        if ($request->boolean('betting')) {
+            $query->where('betting', true);
+        }
+        if ($request->boolean('trading')) {
+            $query->where('trading', true);
+        }
+        // SEO Metrics (examples: DA and PA; add more as needed)
+
+        // Foreign key filters
+        if (!empty($request->country_id)) {
+            $query->where('country_id', $request->country_id);
+        }
+        if (!empty($request->language_id)) {
+            $query->where('language_id', $request->language_id);
+        }
+        if (!empty($request->contact_id)) {
+            $query->where('contact_id', $request->contact_id);
+        }
+        // Categories (multi-select)
+        if (!empty($request->category_ids) && is_array($request->category_ids)) {
+            $query->whereHas('categories', function($q) use ($request) {
+                $q->whereIn('categories.id', $request->category_ids);
+            });
+        }
+
+
+        // Use Yajra to transform the query
+        return DataTables::of($query)
+
+            ->addColumn('country_name', function($row){
+                return $row->country ? $row->country->country_name : '';
+            })
+            ->addColumn('language_name', function($row){
+                return $row->language ? $row->language->name : '';
+            })
+            ->addColumn('contact_name', function($row){
+                return $row->contact ? $row->contact->name : '';
+            })
+            ->addColumn('categories_list', function($row){
+                return $row->categories->pluck('name')->join(', ');
+            })
+            ->addColumn('action', function($row){ // Check if the record has an ID:
+                $id = $row->id ?? null;
+                if (!$id) {
+                    return '';
+                }
+
+                $editUrl = route('websites.edit', $row->id);
+                $deleteUrl = route('websites.destroy', $row->id);
+                $showUrl = route('websites.show', $row->id);
+                return '
+                    <a href="'.$showUrl.'" class="text-green-600 underline mr-2">View</a>
+                    <a href="'.$editUrl.'" class="text-blue-600 underline mr-2">Edit</a>
+                    <form action="'.$deleteUrl.'" method="POST" style="display:inline;">
+                        '.csrf_field().method_field("DELETE").'
+                        <button onclick="return confirm(\'Are you sure?\')" class="text-red-600 underline">
+                            Delete
+                        </button>
+                    </form>
+                ';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    /**
+     * Show the create form.
+     */
+    public function create()
+    {
+        $countries  = Country::all();
+        $languages  = Language::all();
+        $contacts   = Contact::all();
+        $categories = Category::all();
+
+        return view('websites.create', compact('countries', 'languages', 'contacts', 'categories'));
+    }
+
+    /**
+     * Store a new website.
+     */
+    public function store(Request $request)
+    {
+        $validated = $this->validateForm($request);
+        $website   = Website::create($validated);
+
+        // Sync categories (if any)
+        if ($request->has('category_ids')) {
+            $website->categories()->sync($request->category_ids);
+        }
+
+        return redirect()->route('websites.index')->with('status', 'Website created successfully!');
+    }
+
+    /**
+     * Display a single website.
+     */
+    public function show(Website $website)
+    {
+        $website->load(['country', 'language', 'contact', 'categories']);
+        return view('websites.show', compact('website'));
+    }
+
+    /**
+     * Show the edit form.
+     */
+    public function edit(Website $website)
+    {
+        $countries  = Country::all();
+        $languages  = Language::all();
+        $contacts   = Contact::all();
+        $categories = Category::all();
+
+        return view('websites.edit', compact('website', 'countries', 'languages', 'contacts', 'categories'));
+    }
+
+    /**
+     * Update an existing website.
+     */
+    public function update(Request $request, Website $website)
+    {
+        $validated = $this->validateForm($request);
+        $website->update($validated);
+
+        if ($request->has('category_ids')) {
+            $website->categories()->sync($request->category_ids);
+        } else {
+            $website->categories()->sync([]);
+        }
+
+        return redirect()->route('websites.index')->with('status', 'Website updated successfully!');
+    }
+
+    /**
+     * Delete a website.
+     */
+    public function destroy(Website $website)
+    {
+        $website->delete();
+        return redirect()->route('websites.index')->with('status', 'Website deleted!');
+    }
+
+    /**
+     * Validate form data for create/update.
+     */
+    protected function validateForm(Request $request)
+    {
+        return $request->validate([
+            'domain_name'            => 'required|string|max:255',
+            'status'                 => 'nullable|string|max:255',
+            'country_id'             => 'nullable|integer',
+            'contact_id'             => 'nullable|integer',
+            'currency_code'          => 'nullable|string|max:255',
+            'language_id'            => 'nullable|integer',
+            'publisher_price'        => 'nullable|numeric',
+            'date_publisher_price'   => 'nullable|date',
+            'link_insertion_price'   => 'nullable|numeric',
+            'no_follow_price'        => 'nullable|numeric',
+            'special_topic_price'    => 'nullable|numeric',
+            'profit'                 => 'nullable|numeric',
+            'linkbuilder'            => 'nullable|string|max:255',
+            'automatic_evaluation'   => 'nullable|numeric',
+            'kialvo_evaluation'      => 'nullable|numeric',
+            'date_kialvo_evaluation' => 'nullable|date',
+            'type_of_website'        => 'nullable|string|max:255',
+            'DA'                     => 'nullable|integer',
+            'PA'                     => 'nullable|integer',
+            'TF'                     => 'nullable|integer',
+            'CF'                     => 'nullable|integer',
+            'DR'                     => 'nullable|integer',
+            'UR'                     => 'nullable|integer',
+            'ZA'                     => 'nullable|integer',
+            'as_metric'              => 'nullable|integer',
+            'seozoom'                => 'nullable|string|max:255',
+            'TF_vs_CF'               => 'nullable|numeric',
+            'semrush_traffic'        => 'nullable|integer',
+            'ahrefs_keyword'         => 'nullable|integer',
+            'ahrefs_traffic'         => 'nullable|integer',
+            'keyword_vs_traffic'     => 'nullable|numeric',
+            'seo_metrics_date'       => 'nullable|date',
+            'betting'                => 'nullable|boolean',
+            'trading'                => 'nullable|boolean',
+            'more_than_one_link'     => 'nullable|boolean',
+            'copywriting'            => 'nullable|boolean',
+            'no_sponsored_tag'       => 'nullable|boolean',
+            'social_media_sharing'   => 'nullable|boolean',
+            'post_in_homepage'       => 'nullable|boolean',
+            'extra_notes'            => 'nullable|string',
+        ]);
+    }
+}
