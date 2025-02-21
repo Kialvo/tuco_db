@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use Illuminate\Http\Request;
+use function PHPUnit\Framework\isNull;
 
 class ContactsController extends Controller
 {
@@ -58,7 +59,7 @@ class ContactsController extends Controller
             ->addColumn('action', function ($contact) {
                 // If this row is soft-deleted, we only show a “Restore” button
 
-                if ($contact->deleted_at) {
+                if (!isNull($contact->deleted_at)) {
 
                     $restoreUrl = route('contacts.restore', $contact->id);
                     return '
