@@ -59,7 +59,7 @@ class ContactsController extends Controller
             // Add the Action column (Edit/Delete buttons).
             ->addColumn('action', function ($contact) {
                 // If this row is soft-deleted, we only show a “Restore” button
-                if (isNull($contact->deleted_at)) {
+                if (!isNull($contact->deleted_at)) {
                     $restoreUrl = route('contacts.restore', $contact->id);
                     return '
                     <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
@@ -69,7 +69,7 @@ class ContactsController extends Controller
                         </button>
                     </form>
                 ';
-                }
+                }else{
 
                 return '
                 <a href="' . route('contacts.edit', $contact->id) . '" class="btn btn-sm btn-warning">Edit</a>
@@ -77,7 +77,7 @@ class ContactsController extends Controller
                     ' . csrf_field() . method_field('DELETE') . '
                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Are you sure you want to delete this contact?\');">Delete</button>
                 </form>
-            ';
+            ';}
             })
             // Let DataTables know that these columns contain HTML.
             ->rawColumns(['contact_facebook', 'contact_instagram', 'action'])
