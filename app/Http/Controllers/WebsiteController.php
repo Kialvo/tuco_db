@@ -523,7 +523,7 @@ class WebsiteController extends Controller
 
         // 5) Convert HTML to PDF (using barryvdh/laravel-dompdf)
         $pdf = \PDF::loadHTML($html)
-        ->setPaper('a3', 'landscape');
+        ->setPaper('a1', 'landscape');
         // 6) Return as download
         return $pdf->download('websites_export_'.date('Y-m-d_His').'.pdf');
     }
