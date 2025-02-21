@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use Illuminate\Http\Request;
-use function PHPUnit\Framework\isNull;
 
 class ContactsController extends Controller
 {
@@ -24,10 +23,11 @@ class ContactsController extends Controller
     public function getData(Request $request)
     {
         // Retrieve the contacts from the database.
-        $contacts = Contact::with(['id', 'name', 'email', 'phone', 'facebook', 'instagram']);
+        $contacts = Contact::select(['id', 'name', 'email', 'phone', 'facebook', 'instagram']);
 
         if ($request->boolean('show_deleted')) {
             $contacts->onlyTrashed();
+
         }
 
         return datatables()->of($contacts)
@@ -58,28 +58,23 @@ class ContactsController extends Controller
             // Add the Action column (Edit/Delete buttons).
             ->addColumn('action', function ($contact) {
                 // If this row is soft-deleted, we only show a “Restore” button
-
-                if (!isNull($contact->deleted_at)) {
-
+                if ($contact->trashed()) {
                     $restoreUrl = route('contacts.restore', $contact->id);
                     return '
                     <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
                         '.csrf_field().'
-                        <button onclick="return confirm(\'Restore this contact?\')" class="text-green-600 underline">
+                        <button onclick="return confirm(\'Are you sure you want to restore this contact?\')" class="text-green-600 underline">
                             Restore
                         </button>
                     </form>
                 ';
                 }
 
-                // Not trashed => normal Edit/Delete
                 return '
-                <a href="'.route('contacts.edit', $contact->id).'" class="btn btn-sm btn-warning">Edit</a>
-                <form action="'.route('contacts.destroy', $contact->id).'" method="POST" style="display:inline-block;">
-                    '.csrf_field().method_field('DELETE').'
-                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Delete?\');">
-                        Delete
-                    </button>
+                <a href="' . route('contacts.edit', $contact->id) . '" class="btn btn-sm btn-warning">Edit</a>
+                <form action="' . route('contacts.destroy', $contact->id) . '" method="POST" style="display:inline-block;">
+                    ' . csrf_field() . method_field('DELETE') . '
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Are you sure you want to delete this contact?\');">Delete</button>
                 </form>
             ';
             })
