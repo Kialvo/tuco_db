@@ -27,7 +27,6 @@ class ContactsController extends Controller
 
         if ($request->boolean('show_deleted')) {
             $contacts->onlyTrashed();
-            dd($contacts->trashed());
         }
 
         return datatables()->of($contacts)
@@ -58,8 +57,8 @@ class ContactsController extends Controller
             // Add the Action column (Edit/Delete buttons).
             ->addColumn('action', function ($contact) {
                 // If this row is soft-deleted, we only show a “Restore” button
-                printf($contact->trashed());
-                if ($contact->trashed()) {
+
+                if (!$contact->deleted_at) {
 
                     $restoreUrl = route('contacts.restore', $contact->id);
                     return '
