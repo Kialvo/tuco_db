@@ -11,6 +11,23 @@
             </a>
         </div>
 
+        <!-- FILTERS -->
+        <div class="grid grid-cols-6 gap-4 mb-4">
+            <!-- Show Deleted CheckBox -->
+            <div>
+                <label class="block mb-1">Show Deleted</label>
+                <input type="checkbox" id="filterShowDeleted" />
+            </div>
+
+            <!-- Optional: a button to apply filters -->
+            <div>
+                <button id="btnSearch"
+                        class="bg-gray-700 text-white px-3 py-2 rounded-md shadow-sm hover:bg-gray-800">
+                    Search
+                </button>
+            </div>
+        </div>
+
         <!-- Status Message -->
         @if(session('status'))
             <div class="bg-green-100 text-green-700 p-4 rounded mb-4">
@@ -18,39 +35,18 @@
             </div>
         @endif
 
-        <!-- DataTable Wrapper with extra padding -->
+        <!-- DataTable -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg w-full p-6">
             <table id="contactsTable" class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                 <tr>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ID
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Phone
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Facebook
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Instagram
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Action
-                    </th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Facebook</th>
+                    <th>Instagram</th>
+                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200"></tbody>
@@ -67,10 +63,14 @@
                 serverSide: true,
                 ajax: {
                     url: "{{ route('contacts.data') }}",
-                },
-                type: "POST",  // <-- Make this a POST request
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    type: "POST",
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: function(d) {
+                        // Pass the "show_deleted" checkbox value
+                        d.show_deleted = $('#filterShowDeleted').is(':checked');
+                    }
                 },
                 columns: [
                     { data: 'id', name: 'id' },
@@ -79,36 +79,16 @@
                     { data: 'phone', name: 'phone' },
                     { data: 'facebook', name: 'facebook' },
                     { data: 'instagram', name: 'instagram' },
-                    {
-                        data: 'action',
-                        name: 'action',
-                        orderable: false,
-                        searchable: false,
-                        render: function(data, type, row) {
-                            return `
-                            <div class="flex space-x-2">
-                                <a href="/contacts/${row.id}/edit"
-                                   class="bg-yellow-500 text-white px-2 py-1 rounded-md shadow-sm hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
-                                    <i class="fas fa-pen"></i> Edit
-                                </a>
-                                <form action="/contacts/${row.id}" method="POST"
-                                      onsubmit="return confirm('Are you sure you want to delete this contact?');"
-                                      class="inline">
-                                    @csrf
-                            @method('DELETE')
-                            <button type="submit"
-                                    class="bg-red-600 text-white px-2 py-1 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </form>
-                    </div>
-`;
-                        }
-                    }
+                    { data: 'action', name: 'action', orderable: false, searchable: false }
                 ],
                 order: [[0, 'desc']],
                 responsive: true,
                 autoWidth: false,
+            });
+
+            // If you have a "Search" button, reload the table
+            $('#btnSearch').click(function(){
+                table.ajax.reload();
             });
         });
     </script>

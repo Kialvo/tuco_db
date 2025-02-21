@@ -20,10 +20,15 @@ class ContactsController extends Controller
     /**
      * Return data for DataTables (optional).
      */
-    public function getData()
+    public function getData(Request $request)
     {
         // Retrieve the contacts from the database.
         $contacts = Contact::select(['id', 'name', 'email', 'phone', 'facebook', 'instagram']);
+
+        if ($request->boolean('show_deleted')) {
+            $contacts->onlyTrashed();
+
+        }
 
         return datatables()->of($contacts)
             // Add a new column for Contact Name.
