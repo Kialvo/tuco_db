@@ -57,6 +57,7 @@ class ContactsController extends Controller
             // Add the Action column (Edit/Delete buttons).
             ->addColumn('action', function ($contact) {
                 // If this row is soft-deleted, we only show a “Restore” button
+                var_dump($contact->trashed());
                 if ($contact->trashed()) {
 
                     $restoreUrl = route('contacts.restore', $contact->id);

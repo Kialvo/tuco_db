@@ -22,7 +22,7 @@
             <!-- Optional: a button to apply filters -->
             <div>
                 <button id="btnSearch"
-                        class="bg-gray-700  text-blue px-3 py-2 rounded-md shadow-sm hover:bg-gray-800">
+                        class="bg-blue-700  text-blue px-3 py-2 rounded-md shadow-sm hover:bg-blue-800">
                     Search
                 </button>
             </div>
