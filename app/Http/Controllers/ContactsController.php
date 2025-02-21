@@ -24,7 +24,7 @@ class ContactsController extends Controller
     public function getData(Request $request)
     {
         // Retrieve the contacts from the database.
-        $contacts = Contact::select(['id', 'name', 'email', 'phone', 'facebook', 'instagram']);
+        $contacts = Contact::select(['id', 'name', 'email', 'phone', 'facebook', 'instagram','deleted_at']);
 
         if ($request->boolean('show_deleted')) {
             $contacts->onlyTrashed();
@@ -59,8 +59,8 @@ class ContactsController extends Controller
             // Add the Action column (Edit/Delete buttons).
             ->addColumn('action', function ($contact) {
                 // If this row is soft-deleted, we only show a “Restore” button
-                dd($contact);
-                if (!isNull($contact->deleted_at)) {
+
+                if ($contact->deleted_at != NULL) {
                     $restoreUrl = route('contacts.restore', $contact->id);
                     return '
                     <form action="'.$restoreUrl.'" method="POST" style="display:inline;">

@@ -15,8 +15,8 @@ class Contact extends Model
         'email',
         'phone',
         'facebook',
-        'instagram'
-
+        'instagram',
+'deleted_at'
     ];
 
     // If you want the reverse relationship:
