@@ -26,6 +26,10 @@ Route::middleware('auth')->group(function() {
     Route::post('/websites/{website}/restore', [WebsiteController::class, 'restore'])
         ->name('websites.restore');
 
+
+    Route::post('/contacts/{contact}/restore', [ContactsController::class, 'restore'])
+        ->name('contacts.restore');
+
     // Then define the resource routes for websites:
     Route::resource('contacts', ContactsController::class)->names([
         'index'   => 'contacts.index',

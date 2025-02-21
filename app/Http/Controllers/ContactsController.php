@@ -52,6 +52,19 @@ class ContactsController extends Controller
             })
             // Add the Action column (Edit/Delete buttons).
             ->addColumn('action', function ($contact) {
+                // If this row is soft-deleted, we only show a “Restore” button
+                if ($contact->trashed()) {
+                    $restoreUrl = route('contacts.restore', $contact->id);
+                    return '
+                    <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
+                        '.csrf_field().'
+                        <button onclick="return confirm(\'Are you sure you want to restore this contact?\')" class="text-green-600 underline">
+                            Restore
+                        </button>
+                    </form>
+                ';
+                }
+
                 return '
                 <a href="' . route('contacts.edit', $contact->id) . '" class="btn btn-sm btn-warning">Edit</a>
                 <form action="' . route('contacts.destroy', $contact->id) . '" method="POST" style="display:inline-block;">
@@ -118,6 +131,17 @@ class ContactsController extends Controller
         return redirect()->route('contacts.index')->with('success', 'Contact updated successfully.');
     }
 
+    public function restore($id)
+    {
+        // Retrieve the trashed record
+        $contact = Contact::onlyTrashed()->findOrFail($id);
+
+        // Restore it
+        $contact->restore();
+
+        return redirect()->route('contacts.index')->with('status', 'Contact restored successfully!');
+    }
+
     /**
      * Remove the specified contact from storage.
      */
@@ -125,6 +149,6 @@ class ContactsController extends Controller
     {
         $contact->delete();
 
-        return redirect()->route('contacts.index')->with('success', 'Contact deleted successfully.');
+        return redirect()->route('contacts.index')->with('success', 'Contact soft-deleted successfully.');
     }
 }
