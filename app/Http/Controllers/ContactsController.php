@@ -23,7 +23,7 @@ class ContactsController extends Controller
     public function getData(Request $request)
     {
         // Retrieve the contacts from the database.
-        $contacts = Contact::select(['id', 'name', 'email', 'phone', 'facebook', 'instagram']);
+        $contacts = Contact::withTrashed()->select(['id', 'name', 'email', 'phone', 'facebook', 'instagram']);
 
         if ($request->boolean('show_deleted')) {
             $contacts->onlyTrashed();
