@@ -58,7 +58,7 @@ class ContactsController extends Controller
             ->addColumn('action', function ($contact) {
                 // If this row is soft-deleted, we only show a “Restore” button
 
-                dd($contact);
+                dd($contact->trashed());
                 if ($contact->trashed()) {
 
                     $restoreUrl = route('contacts.restore', $contact->id);
