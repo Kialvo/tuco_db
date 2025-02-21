@@ -38,6 +38,11 @@ class WebsiteController extends Controller
             $query->where('domain_name', 'like', '%'.$request->domain_name.'%');
         }
 
+        if (!empty($request->status)) {
+
+            $query->where('status', '=', $request->status);
+        }
+
         if (!empty($request->publisher_price_min) && !empty($request->publisher_price_max)) {
             $query->whereBetween('publisher_price', [$request->publisher_price_min, $request->publisher_price_max]);
         } elseif (!empty($request->publisher_price_min)) {
@@ -197,6 +202,11 @@ class WebsiteController extends Controller
         if ($request->boolean('trading')) {
             $query->where('trading', true);
         }
+        // If "show_deleted" is checked, restrict to onlyTrashed:
+        if ($request->boolean('show_deleted')) {
+            $query->onlyTrashed();
+
+        }
         // SEO Metrics (examples: DA and PA; add more as needed)
 
         // Foreign key filters
@@ -238,6 +248,20 @@ class WebsiteController extends Controller
                     return '';
                 }
 
+                // If this row is soft-deleted, we only show a “Restore” button
+                if ($row->trashed()) {
+                    $restoreUrl = route('websites.restore', $row->id);
+                    return '
+                    <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
+                        '.csrf_field().'
+                        <button onclick="return confirm(\'Are you sure you want to restore this website?\')" class="text-green-600 underline">
+                            Restore
+                        </button>
+                    </form>
+                ';
+                }
+
+
                 $editUrl = route('websites.edit', $row->id);
                 $deleteUrl = route('websites.destroy', $row->id);
                 $showUrl = route('websites.show', $row->id);
@@ -254,6 +278,254 @@ class WebsiteController extends Controller
             })
             ->rawColumns(['action'])
             ->make(true);
+    }
+
+
+    // ===============================
+//  CSV EXPORT (All Fields)
+// ===============================
+    public function exportCsv(Request $request)
+    {
+        // 1) Build query with eager loads
+        $query = Website::with(['country','language','contact','categories']);
+
+        // 2) Apply the same filters (assuming you have applyFilters(...) method)
+        $this->applyFilters($request, $query);
+
+        // 3) Get the collection
+        $websites = $query->get();
+
+        // 4) Prepare CSV data
+        //    The header row (all columns you want to export):
+        $csvData = [];
+        $csvData[] = [
+            'ID',
+            'Domain',
+            'Publisher Price',
+            'Kialvo',
+            'Profit',
+            'DA',
+            'Country',
+            'Language',
+            'Contact',
+            'Categories',
+            'Status',
+            'Currency',
+            'Date Publisher Price',
+            'Link Insertion Price',
+            'No Follow Price',
+            'Special Topic Price',
+            'Linkbuilder',
+            'Automatic Evaluation',
+            'Date Kialvo Evaluation',
+            'Type of Website',
+            'PA',
+            'TF',
+            'CF',
+            'DR',
+            'UR',
+            'ZA',
+            'AS', // as_metric
+            'SEO Zoom',
+            'TF vs CF',
+            'Semrush Traffic',
+            'Ahrefs Keyword',
+            'Ahrefs Traffic',
+            'Keyword vs Traffic',
+            'SEO Metrics Date',
+            'Betting',
+            'Trading',
+            'More than 1 link',
+            'Copywriting',
+            'No Sponsored Tag',
+            'Social Media Sharing',
+            'Post in Homepage',
+            'Date Added',
+            'Extra Notes',
+        ];
+
+        // 5) Loop to fill each row
+        foreach ($websites as $web) {
+            $csvData[] = [
+                $web->id,
+                $web->domain_name,
+                $web->publisher_price,
+                $web->kialvo_evaluation,
+                $web->profit,
+                $web->DA,
+                optional($web->country)->country_name,  // Safely handle null
+                optional($web->language)->name,
+                optional($web->contact)->name,
+                // Categories as comma-separated list
+                $web->categories->pluck('name')->join(', '),
+
+                $web->status,
+                $web->currency_code,
+                $web->date_publisher_price,
+                $web->link_insertion_price,
+                $web->no_follow_price,
+                $web->special_topic_price,
+                $web->linkbuilder,
+                $web->automatic_evaluation,
+                $web->date_kialvo_evaluation,
+                $web->type_of_website,
+                $web->PA,
+                $web->TF,
+                $web->CF,
+                $web->DR,
+                $web->UR,
+                $web->ZA,
+                $web->as_metric,
+                $web->seozoom,
+                $web->TF_vs_CF,
+                $web->semrush_traffic,
+                $web->ahrefs_keyword,
+                $web->ahrefs_traffic,
+                $web->keyword_vs_traffic,
+                $web->seo_metrics_date,
+                // Convert booleans to yes/no or just keep 0/1
+                $web->betting ? 'Yes' : 'No',
+                $web->trading ? 'Yes' : 'No',
+                $web->more_than_one_link ? 'Yes' : 'No',
+                $web->copywriting ? 'Yes' : 'No',
+                $web->no_sponsored_tag ? 'Yes' : 'No',
+                $web->social_media_sharing ? 'Yes' : 'No',
+                $web->post_in_homepage ? 'Yes' : 'No',
+                // 'created_at' as "Date Added"
+                $web->created_at,
+                $web->extra_notes,
+            ];
+        }
+
+        // 6) Convert array -> CSV string
+        $filename = 'websites_export_'.date('Y-m-d_His').'.csv';
+        $handle   = fopen('php://temp', 'r+');
+        foreach ($csvData as $row) {
+            fputcsv($handle, $row);
+        }
+        rewind($handle);
+        $csvOutput = stream_get_contents($handle);
+        fclose($handle);
+
+        // 7) Return as CSV download
+        return response($csvOutput, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ]);
+    }
+
+
+    protected function applyFilters(Request $request, $query)
+    {
+        // domain_name
+        if (!empty($request->domain_name)) {
+            $query->where('domain_name', 'like', '%'.$request->domain_name.'%');
+        }
+        // status
+        if (!empty($request->status)) {
+            $query->where('status', '=', $request->status);
+        }
+        // publisher_price
+        if (!empty($request->publisher_price_min) && !empty($request->publisher_price_max)) {
+            $query->whereBetween('publisher_price', [
+                $request->publisher_price_min,
+                $request->publisher_price_max
+            ]);
+        } elseif (!empty($request->publisher_price_min)) {
+            $query->where('publisher_price', '>=', $request->publisher_price_min);
+        } elseif (!empty($request->publisher_price_max)) {
+            $query->where('publisher_price', '<=', $request->publisher_price_max);
+        }
+
+        // Kialvo
+        if (!empty($request->kialvo_min) && !empty($request->kialvo_max)) {
+            $query->whereBetween('kialvo_evaluation', [$request->kialvo_min, $request->kialvo_max]);
+        } elseif (!empty($request->kialvo_min)) {
+            $query->where('kialvo_evaluation', '>=', $request->kialvo_min);
+        } elseif (!empty($request->kialvo_max)) {
+            $query->where('kialvo_evaluation', '<=', $request->kialvo_max);
+        }
+
+        // Profit
+        if (!empty($request->profit_min) && !empty($request->profit_max)) {
+            $query->whereBetween('profit', [$request->profit_min, $request->profit_max]);
+        } elseif (!empty($request->profit_min)) {
+            $query->where('profit', '>=', $request->profit_min);
+        } elseif (!empty($request->profit_max)) {
+            $query->where('profit', '<=', $request->profit_max);
+        }
+
+        // ... All other numeric filters (DA, PA, TF, CF, DR, UR, ZA, SR, semrush_traffic, etc.)
+        // For brevity, repeat the same pattern you have in getData().
+
+        // Booleans
+        if ($request->boolean('more_than_one_link')) {
+            $query->where('more_than_one_link', true);
+        }
+        if ($request->boolean('copywriting')) {
+            $query->where('copywriting', true);
+        }
+        if ($request->boolean('no_sponsored_tag')) {
+            $query->where('no_sponsored_tag', true);
+        }
+        if ($request->boolean('social_media_sharing')) {
+            $query->where('social_media_sharing', true);
+        }
+        if ($request->boolean('post_in_homepage')) {
+            $query->where('post_in_homepage', true);
+        }
+        if ($request->boolean('betting')) {
+            $query->where('betting', true);
+        }
+        if ($request->boolean('trading')) {
+            $query->where('trading', true);
+        }
+
+        // Soft-deletes: show deleted only?
+        if ($request->boolean('show_deleted')) {
+            $query->onlyTrashed();
+        }
+
+        // Foreign keys
+        if (!empty($request->country_id)) {
+            $query->where('country_id', $request->country_id);
+        }
+        if (!empty($request->language_id)) {
+            $query->where('language_id', $request->language_id);
+        }
+        if (!empty($request->contact_id)) {
+            $query->where('contact_id', $request->contact_id);
+        }
+
+        // Categories (multi-select)
+        if (!empty($request->category_ids) && is_array($request->category_ids)) {
+            $query->whereHas('categories', function($q) use ($request) {
+                $q->whereIn('categories.id', $request->category_ids);
+            });
+        }
+
+        return $query;
+    }
+    public function exportPdf(Request $request)
+    {
+        // 1) Build query with eager loads
+        $query = Website::with(['country','language','contact','categories']);
+
+        // 2) Apply the same filters
+        $this->applyFilters($request, $query);
+
+        // 3) Get the results
+        $websites = $query->get();
+
+        // 4) Render a Blade view to HTML
+        //    We'll create "resources/views/websites/pdf_export.blade.php" next
+        $html = view('websites.pdf_export', compact('websites'))->render();
+
+        // 5) Convert HTML to PDF (using barryvdh/laravel-dompdf)
+        $pdf = \PDF::loadHTML($html);
+
+        // 6) Return as download
+        return $pdf->download('websites_export_'.date('Y-m-d_His').'.pdf');
     }
 
     /**
@@ -327,11 +599,26 @@ class WebsiteController extends Controller
     /**
      * Delete a website.
      */
+    /**
+     * Soft Delete (instead of permanent delete).
+     */
     public function destroy(Website $website)
     {
-        $website->delete();
-        return redirect()->route('websites.index')->with('status', 'Website deleted!');
+        $website->delete(); // sets deleted_at
+        return redirect()->route('websites.index')->with('status', 'Website soft-deleted!');
     }
+
+    public function restore($id)
+    {
+        // Retrieve the trashed record
+        $website = Website::onlyTrashed()->findOrFail($id);
+
+        // Restore it
+        $website->restore();
+
+        return redirect()->route('websites.index')->with('status', 'Website restored successfully!');
+    }
+
 
     /**
      * Validate form data for create/update.

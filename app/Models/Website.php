@@ -3,10 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Website extends Model
 {
-    use HasFactory;
+    use HasFactory,SoftDeletes;
 
     // If you want to allow mass assignment on certain fields:
     protected $fillable = [

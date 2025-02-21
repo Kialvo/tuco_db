@@ -9,6 +9,13 @@
         <a href="{{ route('websites.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded">
             Create Website
         </a>
+
+        <a href="#" id="btnExportCsv" class="bg-gray-600 text-white px-4 py-2 rounded">
+            Export CSV
+        </a>
+        <a href="#" id="btnExportPdf" class="bg-red-600 text-white px-4 py-2 rounded">
+            Export PDF
+        </a>
     </div>
 
     <!-- FILTER FORM -->
@@ -40,7 +47,16 @@
             </div>
             <div>
                 <label class="block mb-1">Status</label>
-                <input type="text" id="filterStatus" class="w-full border-gray-300 rounded">
+                <select id="filterStatus" class="w-full border-gray-300 rounded">
+                    <option value="">-- Any --</option>
+                    <option value="active">
+                        Active
+                    </option>
+                    <option value="past">
+                        Past
+                    </option>
+
+                </select>
             </div>
             <div>
                 <label class="block mb-1">Country</label>
@@ -66,13 +82,19 @@
         </div>
 
         <!-- THIRD ROW FILTERS (Checkboxes) -->
-        <div class="grid grid-cols-5 gap-4">
+        <div class="grid grid-cols-6 gap-4">
             @foreach(['more_than_one_link', 'copywriting', 'no_sponsored_tag', 'social_media_sharing', 'post_in_homepage'] as $checkbox)
                 <div>
                     <label class="block mb-1">{{ ucwords(str_replace('_', ' ', $checkbox)) }}</label>
                     <input type="checkbox" id="filter{{ ucfirst($checkbox) }}">
                 </div>
             @endforeach
+
+                <!-- NEW: Show Deleted CheckBox -->
+                <div>
+                    <label class="block mb-1">Show Deleted</label>
+                    <input type="checkbox" id="filterShowDeleted">
+                </div>
         </div>
 
         <div class="mt-4">
@@ -154,6 +176,7 @@
                         d.kialvo_max = $('#filterKialvo_evaluationMax').val();
                         d.profit_min = $('#filterProfitMin').val();
                         d.profit_max = $('#filterProfitMax').val();
+                        d.status = $('#filterStatus').val();
 
                         d.DA_min = $('#filterDAMin').val();
                         d.DA_max = $('#filterDAMax').val();
@@ -191,11 +214,20 @@
 
                         d.keyword_vs_traffic_min = $('#filterKeyword_vs_trafficMin').val();
                         d.keyword_vs_traffic_max = $('#filterKeyword_vs_trafficMax').val();
-
                         d.currency_code = $('#filterCurrency').val();
                         d.country_id = $('#filterCountry').val();
                         d.language_id = $('#filterLanguage').val();
                         d.contact_id = $('#filterContact').val();
+
+                        // Checkbox filters
+                        d.more_than_one_link = $('#filterMore_than_one_link').is(':checked');
+                        d.copywriting = $('#filterCopywriting').is(':checked');
+                        d.no_sponsored_tag = $('#filterNo_sponsored_tag').is(':checked');
+                        d.social_media_sharing = $('#filterSocial_media_sharing').is(':checked');
+                        d.post_in_homepage = $('#filterPost_in_homepage').is(':checked');
+
+                        // "Show Deleted" filter
+                        d.show_deleted = $('#filterShowDeleted').is(':checked');
                     }
                 },
                 columns: [
@@ -249,6 +281,36 @@
 
             $('#btnSearch').click(function(){
                 table.ajax.reload();
+            });
+            // 3) Export to CSV
+            $('#btnExportCsv').click(function(e){
+                e.preventDefault();
+                // Build query params from the same filters
+                let params = $.param({
+                    domain_name: $('#filterDomainName').val(),
+                    status: $('#filterStatus').val(),
+                    // ... all other fields ...
+                    more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
+                    copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
+                    // ...
+                    show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
+                });
+                // Redirect to the exportCsv route with the query params
+                window.location = "{{ route('websites.export.csv') }}?" + params;
+            });
+
+            // 4) Export to PDF
+            $('#btnExportPdf').click(function(e){
+                e.preventDefault();
+                let params = $.param({
+                    domain_name: $('#filterDomainName').val(),
+                    status: $('#filterStatus').val(),
+                    // ...
+                    more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
+                    // ...
+                    show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
+                });
+                window.location = "{{ route('websites.export.pdf') }}?" + params;
             });
         });
     </script>

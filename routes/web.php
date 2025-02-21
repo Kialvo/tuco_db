@@ -23,6 +23,9 @@ Route::middleware('auth')->group(function() {
     // Define the DataTables endpoint first:
     Route::match(['get','post'],'contacts/data', [ContactsController::class, 'getData'])->name('contacts.data');
 
+    Route::post('/websites/{website}/restore', [WebsiteController::class, 'restore'])
+        ->name('websites.restore');
+
     // Then define the resource routes for websites:
     Route::resource('contacts', ContactsController::class)->names([
         'index'   => 'contacts.index',
@@ -32,6 +35,14 @@ Route::middleware('auth')->group(function() {
         'update'  => 'contacts.update',
         'destroy' => 'contacts.destroy',
     ]);
+
+    // Existing routes...
+// Add two new GET routes for CSV and PDF export
+    Route::get('/websites/export/csv', [WebsiteController::class, 'exportCsv'])
+        ->name('websites.export.csv');
+    Route::get('/websites/export/pdf', [WebsiteController::class, 'exportPdf'])
+        ->name('websites.export.pdf');
+
     // Define the DataTables endpoint first:
     Route::match(['get','post'], 'websites/data', [WebsiteController::class, 'getData'])
         ->name('websites.data');

@@ -12,14 +12,14 @@ return new class extends Migration
     public function up()
     {
         Schema::table('websites', function (Blueprint $table) {
-            $table->string('currency_code', 10)->nullable()->after('currency_id');
+            $table->softDeletes(); // adds 'deleted_at' column
         });
     }
 
     public function down()
     {
         Schema::table('websites', function (Blueprint $table) {
-            $table->dropColumn('currency_code');
+            $table->dropSoftDeletes(); // removes 'deleted_at'
         });
     }
 };
