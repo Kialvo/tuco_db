@@ -27,6 +27,7 @@ class ContactsController extends Controller
 
         if ($request->boolean('show_deleted')) {
             $contacts->onlyTrashed();
+            dd($contacts);
         }
 
         return datatables()->of($contacts)
