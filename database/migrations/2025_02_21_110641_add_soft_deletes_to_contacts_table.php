@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            // We'll store role as a string: "admin" or "editor".
-            $table->string('role')->default('editor');
+        Schema::table('contacts', function (Blueprint $table) {
+            $table->softDeletes(); // adds 'deleted_at' column
         });
     }
 
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
+        Schema::table('contacts', function (Blueprint $table) {
+            $table->dropSoftDeletes(); // removes 'deleted_at'
         });
     }
 };
