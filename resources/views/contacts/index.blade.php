@@ -22,8 +22,8 @@
             <!-- Optional: a button to apply filters -->
             <div>
                 <button id="btnSearch"
-                        class="bg-blue-700  text-blue px-3 py-2 rounded-md shadow-sm hover:bg-blue-800">
-                    Search
+                        class="bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Search
                 </button>
             </div>
         </div>
