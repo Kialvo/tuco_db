@@ -519,7 +519,7 @@ class WebsiteController extends Controller
 
         // 4) Render a Blade view to HTML
         //    We'll create "resources/views/websites/pdf_export.blade.php" next
-        $html = view('websites.pdf_export', compact('websites'))->render();
+        $html = view('websites.pdf', compact('websites'))->render();
 
         // 5) Convert HTML to PDF (using barryvdh/laravel-dompdf)
         $pdf = \PDF::loadHTML($html);
