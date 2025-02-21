@@ -63,18 +63,21 @@ class ContactsController extends Controller
                     return '
                     <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
                         '.csrf_field().'
-                        <button onclick="return confirm(\'Are you sure you want to restore this contact?\')" class="text-green-600 underline">
+                        <button onclick="return confirm(\'Restore this contact?\')" class="text-green-600 underline">
                             Restore
                         </button>
                     </form>
                 ';
                 }
 
+                // Not trashed => normal Edit/Delete
                 return '
-                <a href="' . route('contacts.edit', $contact->id) . '" class="btn btn-sm btn-warning">Edit</a>
-                <form action="' . route('contacts.destroy', $contact->id) . '" method="POST" style="display:inline-block;">
-                    ' . csrf_field() . method_field('DELETE') . '
-                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Are you sure you want to delete this contact?\');">Delete</button>
+                <a href="'.route('contacts.edit', $contact->id).'" class="btn btn-sm btn-warning">Edit</a>
+                <form action="'.route('contacts.destroy', $contact->id).'" method="POST" style="display:inline-block;">
+                    '.csrf_field().method_field('DELETE').'
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Delete?\');">
+                        Delete
+                    </button>
                 </form>
             ';
             })
