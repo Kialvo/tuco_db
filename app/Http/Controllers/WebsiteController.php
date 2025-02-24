@@ -624,7 +624,7 @@ class WebsiteController extends Controller
             $this->applyFilters($request, $query);
 
             // Test with limited results first
-            $websites = $query->take(10)->get();
+            $websites = $query->take(100)->get();
 
             // Test view rendering first
             $html = view('websites.pdf', compact('websites'))->render();
