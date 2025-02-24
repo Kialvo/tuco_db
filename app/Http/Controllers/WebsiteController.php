@@ -620,29 +620,24 @@ class WebsiteController extends Controller
                 throw new \Exception('PDF template not found');
             }
 
-            // Boost PHP limits
-            ini_set('memory_limit', config('app.memory_limit', '2048M'));
-            ini_set('max_execution_time', config('app.max_execution_time', 300));
-            ini_set('pcre.backtrack_limit', '1000000');
-
             $query = Website::with(['country','language','contact','categories']);
             $this->applyFilters($request, $query);
 
             // Test with limited results first
-            $websites = $query->cursor();
+            $websites = $query->get();
 
-            // PDF Configuration
-            $pdf = \PDF::loadView('websites.optimized_pdf', compact('websites'))
-                ->setPaper('a3', 'landscape')
-                ->setOption('enable_php', true)
-                ->setOption('isHtml5ParserEnabled', true)
-                ->setOption('isRemoteEnabled', true);
+            // Test view rendering first
+            $html = view('websites.pdf', compact('websites'))->render();
+            \Log::info('HTML generated successfully');
 
-            return $pdf->download('full_export_'.now()->format('YmdHis').'.pdf');
+            // Try smaller paper size
+            $pdf = \PDF::loadHTML($html)
+                ->setPaper('a1', 'landscape');
 
+            return $pdf->download('test.pdf');
         } catch (\Exception $e) {
-            \Log::error('PDF Export Error: '.$e->getMessage());
-            return redirect()->back()->withErrors(['msg' => 'Export failed. Try fewer results or export CSV']);
+            \Log::error('PDF Generation Error: '.$e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
