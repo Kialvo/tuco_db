@@ -629,20 +629,20 @@ class WebsiteController extends Controller
             $this->applyFilters($request, $query);
 
             // Test with limited results first
-            $websites = $query->take(500)->get();
+            $websites = $query->cursor();
 
-            // Test view rendering first
-            $html = view('websites.pdf', compact('websites'))->render();
-            \Log::info('HTML generated successfully');
+            // PDF Configuration
+            $pdf = \PDF::loadView('websites.optimized_pdf', compact('websites'))
+                ->setPaper('a3', 'landscape')
+                ->setOption('enable_php', true)
+                ->setOption('isHtml5ParserEnabled', true)
+                ->setOption('isRemoteEnabled', true);
 
-            // Try smaller paper size
-            $pdf = \PDF::loadHTML($html)
-                ->setPaper('a1', 'landscape');
+            return $pdf->download('full_export_'.now()->format('YmdHis').'.pdf');
 
-            return $pdf->download('test.pdf');
         } catch (\Exception $e) {
-            \Log::error('PDF Generation Error: '.$e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
+            \Log::error('PDF Export Error: '.$e->getMessage());
+            return redirect()->back()->withErrors(['msg' => 'Export failed. Try fewer results or export CSV']);
         }
     }
 
