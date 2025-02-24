@@ -614,25 +614,28 @@ class WebsiteController extends Controller
     }
     public function exportPdf(Request $request)
     {
-        // 1) Build query with eager loads
-        $query = Website::with(['country','language','contact','categories']);
+        try {
+            // Increase memory limit
+            ini_set('memory_limit', '256M');
 
-        // 2) Apply the same filters
-        $this->applyFilters($request, $query);
+            $query = Website::with(['country','language','contact','categories']);
+            $this->applyFilters($request, $query);
 
-        // 3) Get the results
-        $websites = $query->get();
-        // 4) Render a Blade view to HTML
-        //    We'll create "resources/views/websites/pdf_export.blade.php" next
-        $html = view('websites.pdf', compact('websites'))->render();
+            // Limit results for testing
+            // $websites = $query->take(10)->get();
+            $websites = $query->get();
 
-        // 5) Convert HTML to PDF (using barryvdh/laravel-dompdf)
-        $pdf = \PDF::loadHTML($html)
-        ->setPaper('a1', 'landscape');
-        // 6) Return as download
-        return $pdf->download('websites_export_'.date('Y-m-d_His').'.pdf');
+            $pdf = \PDF::loadHTML(view('websites.pdf', compact('websites'))->setPaper('a1', 'landscape'));
+
+            return $pdf->download('websites_export_'.date('Y-m-d_His').'.pdf');
+        } catch (\Exception $e) {
+            // Log the error
+            \Log::error('PDF Export Error: '.$e->getMessage());
+
+            // Return a user-friendly error message
+            return redirect()->back()->with('error', 'Failed to generate PDF. Please try with fewer results or contact support.');
+        }
     }
-
     /**
      * Show the create form.
      */
