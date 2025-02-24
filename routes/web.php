@@ -42,9 +42,9 @@ Route::middleware('auth')->group(function() {
 
     // Existing routes...
 // Add two new GET routes for CSV and PDF export
-    Route::get('/websites/export/csv', [WebsiteController::class, 'exportCsv'])
+    Route::match(['get','post'],'/websites/export/csv', [WebsiteController::class, 'exportCsv'])
         ->name('websites.export.csv');
-    Route::get('/websites/export/pdf', [WebsiteController::class, 'exportPdf'])
+    Route::match(['get','post'],'/websites/export/pdf', [WebsiteController::class, 'exportPdf'])
         ->name('websites.export.pdf');
 
     // Define the DataTables endpoint first:

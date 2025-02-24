@@ -427,6 +427,7 @@ class WebsiteController extends Controller
         }
 
         if (!empty($request->publisher_price_min) && !empty($request->publisher_price_max)) {
+            dd($request->publisher_price_min);
             $query->whereBetween('publisher_price', [$request->publisher_price_min, $request->publisher_price_max]);
         } elseif (!empty($request->publisher_price_min)) {
             $query->where('publisher_price', '>=', $request->publisher_price_min);
