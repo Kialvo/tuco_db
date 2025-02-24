@@ -192,7 +192,7 @@
                         d.SR_max = $('#filterSRMax').val();
 
                         d.TF_min = $('#filterTFMin').val();
-                        d.TF_max = $('#filterTFMin').val();
+                        d.TF_max = $('#filterTFMax').val();
 
                         d.semrush_traffic_min = $('#filterSemrush_trafficMin').val();
                         d.semrush_traffic_max = $('#filterSemrush_trafficMax').val();
