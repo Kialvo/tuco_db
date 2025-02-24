@@ -614,7 +614,6 @@ class WebsiteController extends Controller
     }
     public function exportPdf(Request $request)
     {
-        dd($request);
         // 1) Build query with eager loads
         $query = Website::with(['country','language','contact','categories']);
 
