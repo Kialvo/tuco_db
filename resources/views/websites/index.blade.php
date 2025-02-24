@@ -19,7 +19,7 @@
     </div>
 
     <!-- FILTER FORM -->
-    <div class="bg-white p-4 rounded shadow mb-4">
+    <div class="bg-white p-4 rounded shadow mb-4" id="filterForm">
         <!-- FIRST ROW FILTERS -->
         <div class="grid grid-cols-7 gap-4 mb-4">
             <div>
@@ -99,7 +99,10 @@
 
         <div class="mt-4">
             <button id="btnSearch" class="px-4 py-2 bg-blue-600 text-white rounded">Search</button>
+            <button id="btnClear" class="px-4 py-2 bg-gray-600 text-white rounded ml-2">Clear Filters</button>
         </div>
+        </div>
+
     </div>
 
     <!-- DataTable -->
@@ -280,6 +283,22 @@
             });
 
             $('#btnSearch').click(function(){
+                table.ajax.reload();
+            });
+
+            // Add this to your existing script section
+            $('#btnClear').click(function() {
+                // Clear all text/number inputs
+                $('#filterForm input[type="text"]').val('');
+                $('#filterForm input[type="number"]').val('');
+
+                // Reset all select dropdowns
+                $('#filterForm select').val('');
+
+                // Uncheck all checkboxes
+                $('#filterForm input[type="checkbox"]').prop('checked', false);
+
+                // Reload the table with cleared filters
                 table.ajax.reload();
             });
             // 3) Export to CSV
