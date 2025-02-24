@@ -292,7 +292,6 @@ class WebsiteController extends Controller
         // 2) Apply the same filters (assuming you have applyFilters(...) method)
         $this->applyFilters($request, $query);
 
-        dd($this);
         // 3) Get the collection
         $websites = $query->get();
 
@@ -610,11 +609,11 @@ class WebsiteController extends Controller
             });
         }
 
+        dd($query);
         return $query;
     }
     public function exportPdf(Request $request)
     {
-
         // 1) Build query with eager loads
         $query = Website::with(['country','language','contact','categories']);
 
