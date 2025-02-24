@@ -417,6 +417,7 @@ class WebsiteController extends Controller
 
     protected function applyFilters(Request $request, $query)
     {
+        dd($request);
         if (!empty($request->domain_name)) {
             $query->where('domain_name', 'like', '%'.$request->domain_name.'%');
         }
