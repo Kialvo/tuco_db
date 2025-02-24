@@ -417,7 +417,6 @@ class WebsiteController extends Controller
 
     protected function applyFilters(Request $request, $query)
     {
-        dd($request);
         if (!empty($request->domain_name)) {
             $query->where('domain_name', 'like', '%'.$request->domain_name.'%');
         }
@@ -463,6 +462,7 @@ class WebsiteController extends Controller
             $query->where('DA', '<=', $request->DA_max);
         }
 
+        dd($request->DA_min);
 // PA (Page Authority)
         if (!empty($request->PA_min) && !empty($request->PA_max)) {
             $query->whereBetween('PA', [$request->PA_min, $request->PA_max]);
