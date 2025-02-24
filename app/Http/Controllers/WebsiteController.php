@@ -614,23 +614,12 @@ class WebsiteController extends Controller
     }
     public function exportPdf(Request $request)
     {
-        // 1) Build query with eager loads
-        $query = Website::with(['country','language','contact','categories']);
-
-        // 2) Apply the same filters
-        $this->applyFilters($request, $query);
-
-        // 3) Get the results
-        $websites = $query->get();
-        // 4) Render a Blade view to HTML
-        //    We'll create "resources/views/websites/pdf_export.blade.php" next
-        $html = view('websites.pdf', compact('websites'))->render();
-
-        // 5) Convert HTML to PDF (using barryvdh/laravel-dompdf)
-        $pdf = \PDF::loadHTML($html)
-        ->setPaper('a1', 'landscape');
-        // 6) Return as download
-        return $pdf->download('websites_export_'.date('Y-m-d_His').'.pdf');
+        try {
+            $pdf = \PDF::loadHTML('<h1>Test PDF</h1>');
+            return $pdf->download('test.pdf');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+        }
     }
 
     /**
