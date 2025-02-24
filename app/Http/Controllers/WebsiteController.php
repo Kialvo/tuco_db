@@ -620,11 +620,16 @@ class WebsiteController extends Controller
                 throw new \Exception('PDF template not found');
             }
 
+            // Boost PHP limits
+            ini_set('memory_limit', config('app.memory_limit', '2048M'));
+            ini_set('max_execution_time', config('app.max_execution_time', 300));
+            ini_set('pcre.backtrack_limit', '1000000');
+
             $query = Website::with(['country','language','contact','categories']);
             $this->applyFilters($request, $query);
 
             // Test with limited results first
-            $websites = $query->get();
+            $websites = $query->take(500)->get();
 
             // Test view rendering first
             $html = view('websites.pdf', compact('websites'))->render();
