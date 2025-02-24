@@ -623,6 +623,7 @@ class WebsiteController extends Controller
         // 3) Get the results
         $websites = $query->get();
 
+        dd($websites);
         // 4) Render a Blade view to HTML
         //    We'll create "resources/views/websites/pdf_export.blade.php" next
         $html = view('websites.pdf', compact('websites'))->render();
