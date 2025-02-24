@@ -288,11 +288,61 @@
                 // Build query params from the same filters
                 let params = $.param({
                     domain_name: $('#filterDomainName').val(),
+                    publisher_price_min: $('#filterPublisher_priceMin').val(),
+                    publisher_price_max: $('#filterPublisher_priceMax').val(),
+                    kialvo_min: $('#filterKialvo_evaluationMin').val(),
+                    kialvo_max: $('#filterKialvo_evaluationMax').val(),
+                    profit_min: $('#filterProfitMin').val(),
+                    profit_max: $('#filterProfitMax').val(),
                     status: $('#filterStatus').val(),
-                    // ... all other fields ...
+
+                    DA_min: $('#filterDAMin').val(),
+                    DA_max: $('#filterDAMax').val(),
+
+                    ZA_min: $('#filterZAMin').val(),
+                    ZA_max: $('#filterZAMax').val(),
+
+                    PA_min: $('#filterPAMin').val(),
+                    PA_max: $('#filterPAMax').val(),
+
+                    SR_min: $('#filterSRMin').val(),
+                    SR_max: $('#filterSRMax').val(),
+
+                    TF_min: $('#filterTFMin').val(),
+                    TF_max: $('#filterTFMax').val(),
+
+                    semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
+                    semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
+
+                    CF_min: $('#filterCFMin').val(),
+                    CF_max: $('#filterCFMax').val(),
+
+                    ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
+                    ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
+
+                    DR_min: $('#filterDRMin').val(),
+                    DR_max: $('#filterDRMax').val(),
+
+                    ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
+                    ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
+
+                    UR_min: $('#filterURMin').val(),
+                    UR_max: $('#filterURMax').val(),
+
+                    keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
+                    keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
+
+                    currency_code: $('#filterCurrency').val(),
+                    country_id: $('#filterCountry').val(),
+                    language_id: $('#filterLanguage').val(),
+                    contact_id: $('#filterContact').val(),
+
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
                     copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
-                    // ...
+                    no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
+                    social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
+                    post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
+
                     show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
                 });
                 // Redirect to the exportCsv route with the query params
@@ -304,10 +354,61 @@
                 e.preventDefault();
                 let params = $.param({
                     domain_name: $('#filterDomainName').val(),
+                    publisher_price_min: $('#filterPublisher_priceMin').val(),
+                    publisher_price_max: $('#filterPublisher_priceMax').val(),
+                    kialvo_min: $('#filterKialvo_evaluationMin').val(),
+                    kialvo_max: $('#filterKialvo_evaluationMax').val(),
+                    profit_min: $('#filterProfitMin').val(),
+                    profit_max: $('#filterProfitMax').val(),
                     status: $('#filterStatus').val(),
-                    // ...
+
+                    DA_min: $('#filterDAMin').val(),
+                    DA_max: $('#filterDAMax').val(),
+
+                    ZA_min: $('#filterZAMin').val(),
+                    ZA_max: $('#filterZAMax').val(),
+
+                    PA_min: $('#filterPAMin').val(),
+                    PA_max: $('#filterPAMax').val(),
+
+                    SR_min: $('#filterSRMin').val(),
+                    SR_max: $('#filterSRMax').val(),
+
+                    TF_min: $('#filterTFMin').val(),
+                    TF_max: $('#filterTFMax').val(),
+
+                    semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
+                    semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
+
+                    CF_min: $('#filterCFMin').val(),
+                    CF_max: $('#filterCFMax').val(),
+
+                    ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
+                    ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
+
+                    DR_min: $('#filterDRMin').val(),
+                    DR_max: $('#filterDRMax').val(),
+
+                    ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
+                    ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
+
+                    UR_min: $('#filterURMin').val(),
+                    UR_max: $('#filterURMax').val(),
+
+                    keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
+                    keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
+
+                    currency_code: $('#filterCurrency').val(),
+                    country_id: $('#filterCountry').val(),
+                    language_id: $('#filterLanguage').val(),
+                    contact_id: $('#filterContact').val(),
+
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
-                    // ...
+                    copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
+                    no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
+                    social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
+                    post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
+
                     show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
                 });
                 window.location = "{{ route('websites.export.pdf') }}?" + params;

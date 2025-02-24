@@ -427,7 +427,6 @@ class WebsiteController extends Controller
         }
 
         if (!empty($request->publisher_price_min) && !empty($request->publisher_price_max)) {
-            dd($request->publisher_price_min);
             $query->whereBetween('publisher_price', [$request->publisher_price_min, $request->publisher_price_max]);
         } elseif (!empty($request->publisher_price_min)) {
             $query->where('publisher_price', '>=', $request->publisher_price_min);
@@ -463,7 +462,6 @@ class WebsiteController extends Controller
             $query->where('DA', '<=', $request->DA_max);
         }
 
-        dd($request->DA_min);
 // PA (Page Authority)
         if (!empty($request->PA_min) && !empty($request->PA_max)) {
             $query->whereBetween('PA', [$request->PA_min, $request->PA_max]);
