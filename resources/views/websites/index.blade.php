@@ -99,7 +99,7 @@
 
         <div class="mt-4">
             <button id="btnSearch" class="px-4 py-2 bg-blue-600 text-white rounded">Search</button>
-            <button id="btnClear" class="px-4 py-2  bg-green-600 text-white rounded">Clear Filters</button>
+            <button id="btnClear" class="px-4 py-2  bg-green-950 text-white rounded">Clear Filters</button>
         </div>
 
     </div>
