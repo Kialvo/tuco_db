@@ -417,27 +417,24 @@ class WebsiteController extends Controller
 
     protected function applyFilters(Request $request, $query)
     {
-        // domain_name
         if (!empty($request->domain_name)) {
             $query->where('domain_name', 'like', '%'.$request->domain_name.'%');
         }
-        // status
+
         if (!empty($request->status)) {
+
             $query->where('status', '=', $request->status);
         }
-        // publisher_price
+
         if (!empty($request->publisher_price_min) && !empty($request->publisher_price_max)) {
-            $query->whereBetween('publisher_price', [
-                $request->publisher_price_min,
-                $request->publisher_price_max
-            ]);
+            $query->whereBetween('publisher_price', [$request->publisher_price_min, $request->publisher_price_max]);
         } elseif (!empty($request->publisher_price_min)) {
             $query->where('publisher_price', '>=', $request->publisher_price_min);
         } elseif (!empty($request->publisher_price_max)) {
             $query->where('publisher_price', '<=', $request->publisher_price_max);
         }
 
-        // Kialvo
+// Kialvo Evaluation
         if (!empty($request->kialvo_min) && !empty($request->kialvo_max)) {
             $query->whereBetween('kialvo_evaluation', [$request->kialvo_min, $request->kialvo_max]);
         } elseif (!empty($request->kialvo_min)) {
@@ -446,7 +443,7 @@ class WebsiteController extends Controller
             $query->where('kialvo_evaluation', '<=', $request->kialvo_max);
         }
 
-        // Profit
+// Profit
         if (!empty($request->profit_min) && !empty($request->profit_max)) {
             $query->whereBetween('profit', [$request->profit_min, $request->profit_max]);
         } elseif (!empty($request->profit_min)) {
@@ -455,10 +452,118 @@ class WebsiteController extends Controller
             $query->where('profit', '<=', $request->profit_max);
         }
 
-        // ... All other numeric filters (DA, PA, TF, CF, DR, UR, ZA, SR, semrush_traffic, etc.)
-        // For brevity, repeat the same pattern you have in getData().
+        //Other numeric
+        // DA (Domain Authority)
+        if (!empty($request->DA_min) && !empty($request->DA_max)) {
+            $query->whereBetween('DA', [$request->DA_min, $request->DA_max]);
+        } elseif (!empty($request->DA_min)) {
+            $query->where('DA', '>=', $request->DA_min);
+        } elseif (!empty($request->DA_max)) {
+            $query->where('DA', '<=', $request->DA_max);
+        }
 
-        // Booleans
+// PA (Page Authority)
+        if (!empty($request->PA_min) && !empty($request->PA_max)) {
+            $query->whereBetween('PA', [$request->PA_min, $request->PA_max]);
+        } elseif (!empty($request->PA_min)) {
+            $query->where('PA', '>=', $request->PA_min);
+        } elseif (!empty($request->PA_max)) {
+            $query->where('PA', '<=', $request->PA_max);
+        }
+
+// TF (Trust Flow)
+        if (!empty($request->TF_min) && !empty($request->TF_max)) {
+            $query->whereBetween('TF', [$request->TF_min, $request->TF_max]);
+        } elseif (!empty($request->TF_min)) {
+            $query->where('TF', '>=', $request->TF_min);
+        } elseif (!empty($request->TF_max)) {
+            $query->where('TF', '<=', $request->TF_max);
+        }
+
+// CF (Citation Flow)
+        if (!empty($request->CF_min) && !empty($request->CF_max)) {
+            $query->whereBetween('CF', [$request->CF_min, $request->CF_max]);
+        } elseif (!empty($request->CF_min)) {
+            $query->where('CF', '>=', $request->CF_min);
+        } elseif (!empty($request->CF_max)) {
+            $query->where('CF', '<=', $request->CF_max);
+        }
+
+// DR (Domain Rating)
+        if (!empty($request->DR_min) && !empty($request->DR_max)) {
+            $query->whereBetween('DR', [$request->DR_min, $request->DR_max]);
+        } elseif (!empty($request->DR_min)) {
+            $query->where('DR', '>=', $request->DR_min);
+        } elseif (!empty($request->DR_max)) {
+            $query->where('DR', '<=', $request->DR_max);
+        }
+
+// UR (URL Rating)
+        if (!empty($request->UR_min) && !empty($request->UR_max)) {
+            $query->whereBetween('UR', [$request->UR_min, $request->UR_max]);
+        } elseif (!empty($request->UR_min)) {
+            $query->where('UR', '>=', $request->UR_min);
+        } elseif (!empty($request->UR_max)) {
+            $query->where('UR', '<=', $request->UR_max);
+        }
+
+// ZA (Zoom Authority)
+        if (!empty($request->ZA_min) && !empty($request->ZA_max)) {
+            $query->whereBetween('ZA', [$request->ZA_min, $request->ZA_max]);
+        } elseif (!empty($request->ZA_min)) {
+            $query->where('ZA', '>=', $request->ZA_min);
+        } elseif (!empty($request->ZA_max)) {
+            $query->where('ZA', '<=', $request->ZA_max);
+        }
+
+// SR (SEO Rank)
+        if (!empty($request->SR_min) && !empty($request->SR_max)) {
+            $query->whereBetween('SR', [$request->SR_min, $request->SR_max]);
+        } elseif (!empty($request->SR_min)) {
+            $query->where('SR', '>=', $request->SR_min);
+        } elseif (!empty($request->SR_max)) {
+            $query->where('SR', '<=', $request->SR_max);
+        }
+
+// Semrush Traffic
+        if (!empty($request->semrush_traffic_min) && !empty($request->semrush_traffic_max)) {
+            $query->whereBetween('semrush_traffic', [$request->semrush_traffic_min, $request->semrush_traffic_max]);
+        } elseif (!empty($request->semrush_traffic_min)) {
+            $query->where('semrush_traffic', '>=', $request->semrush_traffic_min);
+        } elseif (!empty($request->semrush_traffic_max)) {
+            $query->where('semrush_traffic', '<=', $request->semrush_traffic_max);
+        }
+
+// Ahrefs Keyword
+        if (!empty($request->ahrefs_keyword_min) && !empty($request->ahrefs_keyword_max)) {
+            $query->whereBetween('ahrefs_keyword', [$request->ahrefs_keyword_min, $request->ahrefs_keyword_max]);
+        } elseif (!empty($request->ahrefs_keyword_min)) {
+            $query->where('ahrefs_keyword', '>=', $request->ahrefs_keyword_min);
+        } elseif (!empty($request->ahrefs_keyword_max)) {
+            $query->where('ahrefs_keyword', '<=', $request->ahrefs_keyword_max);
+        }
+
+// Ahrefs Traffic
+        if (!empty($request->ahrefs_traffic_min) && !empty($request->ahrefs_traffic_max)) {
+            $query->whereBetween('ahrefs_traffic', [$request->ahrefs_traffic_min, $request->ahrefs_traffic_max]);
+        } elseif (!empty($request->ahrefs_traffic_min)) {
+            $query->where('ahrefs_traffic', '>=', $request->ahrefs_traffic_min);
+        } elseif (!empty($request->ahrefs_traffic_max)) {
+            $query->where('ahrefs_traffic', '<=', $request->ahrefs_traffic_max);
+        }
+
+// AH KW/TRAF (Ahrefs Keyword to Traffic Ratio)
+        if (!empty($request->keyword_vs_traffic_min) && !empty($request->keyword_vs_traffic_max)) {
+            $query->whereBetween('keyword_vs_traffic', [$request->keyword_vs_traffic_min, $request->keyword_vs_traffic_max]);
+        } elseif (!empty($request->keyword_vs_traffic_min)) {
+            $query->where('keyword_vs_traffic', '>=', $request->keyword_vs_traffic_min);
+        } elseif (!empty($request->keyword_vs_traffic_max)) {
+            $query->where('keyword_vs_traffic', '<=', $request->keyword_vs_traffic_max);
+        }
+
+
+
+        // Booleans – if the checkbox is checked (true), filter accordingly.
         if ($request->boolean('more_than_one_link')) {
             $query->where('more_than_one_link', true);
         }
@@ -480,13 +585,14 @@ class WebsiteController extends Controller
         if ($request->boolean('trading')) {
             $query->where('trading', true);
         }
-
-        // Soft-deletes: show deleted only?
+        // If "show_deleted" is checked, restrict to onlyTrashed:
         if ($request->boolean('show_deleted')) {
             $query->onlyTrashed();
-        }
 
-        // Foreign keys
+        }
+        // SEO Metrics (examples: DA and PA; add more as needed)
+
+        // Foreign key filters
         if (!empty($request->country_id)) {
             $query->where('country_id', $request->country_id);
         }
@@ -496,7 +602,6 @@ class WebsiteController extends Controller
         if (!empty($request->contact_id)) {
             $query->where('contact_id', $request->contact_id);
         }
-
         // Categories (multi-select)
         if (!empty($request->category_ids) && is_array($request->category_ids)) {
             $query->whereHas('categories', function($q) use ($request) {
