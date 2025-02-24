@@ -615,10 +615,29 @@ class WebsiteController extends Controller
     public function exportPdf(Request $request)
     {
         try {
-            $pdf = \PDF::loadHTML('<h1>Test PDF</h1>');
+            // First verify the view exists
+            if (!view()->exists('websites.pdf')) {
+                throw new \Exception('PDF template not found');
+            }
+
+            $query = Website::with(['country','language','contact','categories']);
+            $this->applyFilters($request, $query);
+
+            // Test with limited results first
+            $websites = $query->take(10)->get();
+
+            // Test view rendering first
+            $html = view('websites.pdf', compact('websites'))->render();
+            \Log::info('HTML generated successfully');
+
+            // Try smaller paper size
+            $pdf = \PDF::loadHTML($html)
+                ->setPaper('a1', 'landscape');
+
             return $pdf->download('test.pdf');
         } catch (\Exception $e) {
-            dd($e->getMessage());
+            \Log::error('PDF Generation Error: '.$e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
