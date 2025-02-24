@@ -292,10 +292,10 @@ class WebsiteController extends Controller
         // 2) Apply the same filters (assuming you have applyFilters(...) method)
         $this->applyFilters($request, $query);
 
+        dd($this);
         // 3) Get the collection
         $websites = $query->get();
 
-        dd($websites);
         // 4) Prepare CSV data
         //    The header row (all columns you want to export):
         $csvData = [];
