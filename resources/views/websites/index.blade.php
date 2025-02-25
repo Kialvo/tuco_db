@@ -171,12 +171,14 @@
 
 @push('scripts')
     <script>
-        $('#filterCategories').select2({
-            placeholder: 'Select Categories',
-            allowClear: true
-        });
 
         $(document).ready(function() {
+
+            $('#filterCategories').select2({
+                placeholder: 'Select Categories',
+                allowClear: true
+            });
+
             let table = $('#websitesTable').DataTable({
                 processing: true,
                 serverSide: true,
