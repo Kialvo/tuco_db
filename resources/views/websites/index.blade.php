@@ -94,7 +94,7 @@
         </div>
         <!-- THIRD ROW FILTERS (Checkboxes) -->
         <div class="grid grid-cols-6 gap-4">
-            @foreach(['more_than_one_link', 'copywriting', 'no_sponsored_tag', 'social_media_sharing', 'post_in_homepage'] as $checkbox)
+            @foreach(['betting','trading','more_than_one_link', 'copywriting', 'no_sponsored_tag', 'social_media_sharing', 'post_in_homepage'] as $checkbox)
                 <div>
                     <label class="block mb-1">{{ ucwords(str_replace('_', ' ', $checkbox)) }}</label>
                     <input type="checkbox" id="filter{{ ucfirst($checkbox) }}">
@@ -241,6 +241,8 @@
                         d.contact_id = $('#filterContact').val();
 
                         // Checkbox filters
+                        d.betting = $('#filterBetting').is(':checked');
+                        d.trading = $('#filterTrading').is(':checked');
                         d.more_than_one_link = $('#filterMore_than_one_link').is(':checked');
                         d.copywriting = $('#filterCopywriting').is(':checked');
                         d.no_sponsored_tag = $('#filterNo_sponsored_tag').is(':checked');
@@ -374,6 +376,8 @@
                     language_id: $('#filterLanguage').val(),
                     contact_id: $('#filterContact').val(),
 
+                    betting: $('#filterBetting').is(':checked') ? 1 : 0,
+                    trading: $('#filterTrading').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
                     copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
@@ -440,6 +444,8 @@
                     language_id: $('#filterLanguage').val(),
                     contact_id: $('#filterContact').val(),
 
+                    betting: $('#filterBetting').is(':checked') ? 1 : 0,
+                    trading: $('#filterTrading').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
                     copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
