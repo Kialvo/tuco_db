@@ -80,7 +80,18 @@
                 </div>
             @endforeach
         </div>
-
+        <!-- CATEGORIES FILTER ROW -->
+        <div class="grid grid-cols-1 gap-4 mb-4">
+            <div>
+                <label class="block mb-1">Categories</label>
+                <select id="filterCategories" class="w-full border-gray-300 rounded" multiple>
+                    <option value="">-- Select Categories --</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
         <!-- THIRD ROW FILTERS (Checkboxes) -->
         <div class="grid grid-cols-6 gap-4">
             @foreach(['more_than_one_link', 'copywriting', 'no_sponsored_tag', 'social_media_sharing', 'post_in_homepage'] as $checkbox)
@@ -160,6 +171,11 @@
 
 @push('scripts')
     <script>
+        $('#filterCategories').select2({
+            placeholder: 'Select Categories',
+            allowClear: true
+        });
+
         $(document).ready(function() {
             let table = $('#websitesTable').DataTable({
                 processing: true,
@@ -170,6 +186,7 @@
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
+
                     data: function(d) {
                         d.domain_name = $('#filterDomainName').val();
                         d.publisher_price_min = $('#filterPublisher_priceMin').val();
@@ -179,7 +196,7 @@
                         d.profit_min = $('#filterProfitMin').val();
                         d.profit_max = $('#filterProfitMax').val();
                         d.status = $('#filterStatus').val();
-
+                        d.category_ids = $('#filterCategories').val();
                         d.DA_min = $('#filterDAMin').val();
                         d.DA_max = $('#filterDAMax').val();
 
@@ -296,7 +313,7 @@
 
                 // Uncheck all checkboxes
                 $('#filterForm input[type="checkbox"]').prop('checked', false);
-
+                $('#filterCategories').val(null).trigger('change');
                 // Reload the table with cleared filters
                 table.ajax.reload();
             });
@@ -313,7 +330,7 @@
                     profit_min: $('#filterProfitMin').val(),
                     profit_max: $('#filterProfitMax').val(),
                     status: $('#filterStatus').val(),
-
+                    category_ids: $('#filterCategories').val(),
                     DA_min: $('#filterDAMin').val(),
                     DA_max: $('#filterDAMax').val(),
 
@@ -379,7 +396,7 @@
                     profit_min: $('#filterProfitMin').val(),
                     profit_max: $('#filterProfitMax').val(),
                     status: $('#filterStatus').val(),
-
+                    category_ids: $('#filterCategories').val(),
                     DA_min: $('#filterDAMin').val(),
                     DA_max: $('#filterDAMax').val(),
 
