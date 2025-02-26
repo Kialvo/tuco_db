@@ -38,6 +38,10 @@ class WebsiteController extends Controller
             $query->where('domain_name', 'like', '%'.$request->domain_name.'%');
         }
 
+        if (!empty($request->type_of_website)) {
+        $query->where('type_of_website', '=', $request->type_of_website);
+         }
+
         if (!empty($request->status)) {
 
             $query->where('status', '=', $request->status);
@@ -420,6 +424,10 @@ class WebsiteController extends Controller
 
         if (!empty($request->domain_name)) {
             $query->where('domain_name', 'like', '%'.$request->domain_name.'%');
+        }
+
+        if (!empty($request->type_of_website)) {
+            $query->where('type_of_website', '=', $request->type_of_website);
         }
 
         if (!empty($request->status)) {

@@ -59,6 +59,24 @@
                 </select>
             </div>
             <div>
+                <label class="block mb-1">Type</label>
+                <select id="filterWebsiteType" class="w-full border-gray-300 rounded">
+                    <option value="">-- Any --</option>
+                    <option value="FORUM">
+                        Forum
+                    </option>
+                    <option value="GENERALIST">
+                        Generalist
+                    </option>
+                    <option value="VERTICAL">
+                        Vertical
+                    </option>
+                    <option value="LOCAL">
+                        Local
+                    </option>
+                </select>
+            </div>
+            <div>
                 <label class="block mb-1">Country</label>
                 <select id="filterCountry" class="w-full border-gray-300 rounded">
                     <option value="">-- Any --</option>
@@ -191,6 +209,7 @@
 
                     data: function(d) {
                         d.domain_name = $('#filterDomainName').val();
+                        d.type_of_website = $('#filterWebsiteType').val();
                         d.publisher_price_min = $('#filterPublisher_priceMin').val();
                         d.publisher_price_max = $('#filterPublisher_priceMax').val();
                         d.kialvo_min = $('#filterKialvo_evaluationMin').val();
@@ -327,6 +346,7 @@
                 // Build query params from the same filters
                 let params = $.param({
                     domain_name: $('#filterDomainName').val(),
+                    type_of_website: $('#filterWebsiteType').val(),
                     publisher_price_min: $('#filterPublisher_priceMin').val(),
                     publisher_price_max: $('#filterPublisher_priceMax').val(),
                     kialvo_min: $('#filterKialvo_evaluationMin').val(),
@@ -395,6 +415,7 @@
                 e.preventDefault();
                 let params = $.param({
                     domain_name: $('#filterDomainName').val(),
+                    type_of_website: $('#filterWebsiteType').val(),
                     publisher_price_min: $('#filterPublisher_priceMin').val(),
                     publisher_price_max: $('#filterPublisher_priceMax').val(),
                     kialvo_min: $('#filterKialvo_evaluationMin').val(),
