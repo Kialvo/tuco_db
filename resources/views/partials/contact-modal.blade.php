@@ -1,16 +1,16 @@
 <!-- Contact Details Modal (initially hidden) -->
 <div
-    class="fixed inset-0 z-50 hidden"
+    class="fixed inset-0 z-50 flex items-center justify-center hidden"
     id="contactModal"
     aria-labelledby="modal-title"
     role="dialog"
     aria-modal="true"
 >
-    <!-- A centered container -->
+    <!-- Modal panel (narrow, vertical) -->
     <div
-        class="max-w-lg mx-auto mt-20 bg-white p-6 rounded shadow-lg relative"
+        class="bg-white rounded shadow-lg relative w-auto max-w-sm p-6"
     >
-        <!-- Close button (top-right "X") -->
+        <!-- Close button (X) in top-right corner -->
         <button
             type="button"
             class="absolute top-3 right-3 text-2xl text-gray-600 hover:text-gray-800"
@@ -19,7 +19,7 @@
             &times;
         </button>
 
-        <!-- Modal heading -->
+        <!-- Heading -->
         <h2
             class="text-xl font-semibold mb-4 text-gray-800"
             id="modalContactTitle"
@@ -27,7 +27,7 @@
             Contact Details
         </h2>
 
-        <!-- Vertical stack for contact fields -->
+        <!-- Fields in a vertical stack -->
         <div class="flex flex-col space-y-2">
             <p>
                 <strong>Name:</strong>
@@ -51,7 +51,7 @@
             </p>
         </div>
 
-        <!-- Bottom Close button (optional) -->
+        <!-- Optional bottom Close button -->
         <div class="mt-6 text-right">
             <button
                 type="button"
