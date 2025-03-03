@@ -529,7 +529,8 @@
             });
 
 // Close modal button
-            $('#closeContactModal').on('click', function () {
+            // Hide the modal when either close button is clicked
+            $('#closeContactModal, #closeContactModalBottom').on('click', function() {
                 $('#contactModal').addClass('hidden');
             });
 
