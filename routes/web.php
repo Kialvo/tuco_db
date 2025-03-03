@@ -30,6 +30,10 @@ Route::middleware('auth')->group(function() {
     Route::post('/contacts/{contact}/restore', [ContactsController::class, 'restore'])
         ->name('contacts.restore');
 
+
+    Route::get('/contacts/{id}', [ContactsController::class, 'showAjax'])->name('contacts.showAjax');
+
+
     // Then define the resource routes for websites:
     Route::resource('contacts', ContactsController::class)->names([
         'index'   => 'contacts.index',

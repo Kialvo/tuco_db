@@ -185,6 +185,9 @@
         </thead>
         <tbody></tbody>
     </table>
+
+    {{-- Include the modal partial --}}
+    @include('partials.contact-modal')
 @endsection
 
 @push('scripts')
@@ -281,7 +284,23 @@
                     { data: 'DA', name: 'DA' },
                     { data: 'country_name', name: 'country.country_name' },
                     { data: 'language_name', name: 'language.name' },
-                    { data: 'contact_name', name: 'contact.name' },
+                    {
+                        data: 'contact_name',
+                        name: 'contact.name',
+                        render: function (data, type, row) {
+                            // If no contact_id, just return blank (or "No Contact")
+                            if (!row.contact_id) {
+                                return "No Contact";
+                            }
+                            // Otherwise, make it clickable
+                            return `
+                <a href="#"
+                   class="contact-link text-blue-600 underline"
+                   data-contact-id="${row.contact_id}">
+                   ${data}
+                </a>`;
+                        }
+                    },
                     { data: 'categories_list', name: 'categories_list' },
                     { data: 'status', name: 'status' },
                     { data: 'currency_code', name: 'currency_code' },
@@ -477,6 +496,43 @@
                 });
                 window.location = "{{ route('websites.export.pdf') }}?" + params;
             });
+
+
+            $(document).on('click', '.contact-link', function(e) {
+                e.preventDefault();
+
+                let contactId = $(this).data('contact-id');
+
+                $.ajax({
+                    url: "{{ route('contacts.showAjax', '') }}/" + contactId,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            let contact = response.data;
+                            // Fill modal fields
+                            $('#modalContactName').text(contact.name ?? '');
+                            $('#modalContactEmail').text(contact.email ?? '');
+                            $('#modalContactPhone').text(contact.phone ?? '');
+                            $('#modalContactFacebook').text(contact.facebook ?? '');
+                            $('#modalContactInstagram').text(contact.instagram ?? '');
+
+                            // Show the modal
+                            $('#contactModal').removeClass('hidden');
+                        } else {
+                            alert('Could not load contact info.');
+                        }
+                    },
+                    error: function() {
+                        alert('Error fetching contact info.');
+                    }
+                });
+            });
+
+// Close modal button
+            $('#closeContactModal').on('click', function () {
+                $('#contactModal').addClass('hidden');
+            });
+
         });
     </script>
 @endpush

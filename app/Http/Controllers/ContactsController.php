@@ -149,6 +149,17 @@ class ContactsController extends Controller
         return redirect()->route('contacts.index')->with('status', 'Contact restored successfully!');
     }
 
+    public function showAjax($id)
+    {
+        $contact = Contact::findOrFail($id);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $contact
+        ]);
+    }
+
+
     /**
      * Remove the specified contact from storage.
      */
