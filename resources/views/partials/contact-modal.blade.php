@@ -1,68 +1,73 @@
-<!-- Contact Details Modal (hidden by default) -->
+<!-- Contact Details Modal (initially hidden) -->
 <div
-    class="fixed z-10 inset-0 overflow-y-auto hidden"
+    class="fixed inset-0 z-50 flex items-center justify-center hidden"
     id="contactModal"
     aria-labelledby="modal-title"
     role="dialog"
     aria-modal="true"
 >
+    <!-- The semi-transparent, blurred background -->
     <div
-        class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+        class="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm"
+        id="contactModalOverlay"
+        aria-hidden="true"
+    ></div>
+
+    <!-- The white panel (the actual modal content) -->
+    <div
+        class="relative bg-white w-full max-w-md mx-4 sm:mx-0 rounded shadow-lg p-6"
     >
-        <!-- Overlay background -->
-        <div
-            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-            aria-hidden="true"
-            id="contactModalOverlay"
-        ></div>
-
-        <!-- Modal panel -->
-        <div
-            class="inline-block align-bottom bg-white rounded-lg text-left
-                   overflow-hidden shadow-xl transform transition-all
-                   sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+        <!-- Close button (X) in the top-right corner -->
+        <button
+            type="button"
+            class="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+            id="closeContactModal"
         >
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div>
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modalContactTitle">
-                        Contact Details
-                    </h3>
+            &times;
+        </button>
 
-                    <p>
-                        <strong>Name:</strong>
-                        <span id="modalContactName"></span>
-                    </p>
-                    <p>
-                        <strong>Email:</strong>
-                        <span id="modalContactEmail"></span>
-                    </p>
-                    <p>
-                        <strong>Phone:</strong>
-                        <span id="modalContactPhone"></span>
-                    </p>
-                    <p>
-                        <strong>Facebook:</strong>
-                        <span id="modalContactFacebook"></span>
-                    </p>
-                    <p>
-                        <strong>Instagram:</strong>
-                        <span id="modalContactInstagram"></span>
-                    </p>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button
-                    type="button"
-                    class="w-full inline-flex justify-center rounded-md border
-                           border-gray-300 shadow-sm px-4 py-2 bg-white text-base
-                           font-medium text-gray-700 hover:bg-gray-50 focus:outline-none
-                           focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-                           sm:ml-3 sm:w-auto sm:text-sm"
-                    id="closeContactModal"
-                >
-                    Close
-                </button>
-            </div>
+        <!-- Modal heading -->
+        <h2
+            class="text-xl font-semibold mb-4 text-gray-800"
+            id="modalContactTitle"
+        >
+            Contact Details
+        </h2>
+
+        <!-- Contact Fields -->
+        <div class="space-y-2">
+            <p>
+                <strong>Name:</strong>
+                <span id="modalContactName" class="ml-1 text-gray-700"></span>
+            </p>
+            <p>
+                <strong>Email:</strong>
+                <span id="modalContactEmail" class="ml-1 text-gray-700"></span>
+            </p>
+            <p>
+                <strong>Phone:</strong>
+                <span id="modalContactPhone" class="ml-1 text-gray-700"></span>
+            </p>
+            <p>
+                <strong>Facebook:</strong>
+                <span id="modalContactFacebook" class="ml-1 text-gray-700"></span>
+            </p>
+            <p>
+                <strong>Instagram:</strong>
+                <span id="modalContactInstagram" class="ml-1 text-gray-700"></span>
+            </p>
+        </div>
+
+        <!-- Footer / Close button -->
+        <div class="mt-6 text-right">
+            <button
+                type="button"
+                class="inline-block px-4 py-2 bg-blue-600 text-white font-medium
+                       rounded hover:bg-blue-700 focus:outline-none"
+                id="closeContactModalBottom"
+            >
+                Close
+            </button>
         </div>
     </div>
 </div>
