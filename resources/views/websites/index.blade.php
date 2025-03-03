@@ -142,7 +142,6 @@
             <th>Publisher Price</th>
             <th>Kialvo</th>
             <th>Profit</th>
-            <th>DA</th>
             <th>Country</th>
             <th>Language</th>
             <th>Contact</th>
@@ -157,6 +156,7 @@
             <th>Automatic Evaluation</th>
             <th>Date Kialvo Evaluation</th>
             <th>Type of Website</th>
+            <th>DA</th>
             <th>PA</th>
             <th>TF</th>
             <th>CF</th>
@@ -281,7 +281,7 @@
                     { data: 'publisher_price', name: 'publisher_price' },
                     { data: 'kialvo_evaluation', name: 'kialvo_evaluation' },
                     { data: 'profit', name: 'profit' },
-                    { data: 'DA', name: 'DA' },
+
                     { data: 'country_name', name: 'country.country_name' },
                     { data: 'language_name', name: 'language.name' },
                     {
@@ -312,6 +312,7 @@
                     { data: 'automatic_evaluation', name: 'automatic_evaluation' },
                     { data: 'date_kialvo_evaluation', name: 'date_kialvo_evaluation' },
                     { data: 'type_of_website', name: 'type_of_website' },
+                    { data: 'DA', name: 'DA' },
                     { data: 'PA', name: 'PA' },
                     { data: 'TF', name: 'TF' },
                     { data: 'CF', name: 'CF' },
