@@ -35,6 +35,7 @@ class Website extends Model
         'DR',
         'UR',
         'ZA',
+        'SR',
         'as_metric',
         'seozoom',
         'TF_vs_CF',
