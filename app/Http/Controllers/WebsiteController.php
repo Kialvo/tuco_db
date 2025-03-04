@@ -693,7 +693,7 @@ class WebsiteController extends Controller
         $tf = $validated['TF'] ?? 0;
         $dr = $validated['DR'] ?? 0;
         // If your "SR" is stored in "as_metric", do:
-        $sr = $validated['as_metric'] ?? 0;
+        $sr = $validated['semrush_traffic'] ?? 0;
 
         //dd($da,$tf,$dr);
         $autoEvaluation = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
@@ -754,7 +754,7 @@ class WebsiteController extends Controller
         $da = $validated['DA'] ?? 0;
         $tf = $validated['TF'] ?? 0;
         $dr = $validated['DR'] ?? 0;
-        $sr = $validated['as_metric'] ?? 0;
+        $sr = $validated['semrush_traffic'] ?? 0;
 
         $autoEvaluation = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
 
