@@ -139,11 +139,11 @@ class WebsiteController extends Controller
 
 // SR (SEO Rank)
         if (!empty($request->SR_min) && !empty($request->SR_max)) {
-            $query->whereBetween('SR', [$request->SR_min, $request->SR_max]);
+            $query->whereBetween('as_metric', [$request->SR_min, $request->SR_max]);
         } elseif (!empty($request->SR_min)) {
-            $query->where('SR', '>=', $request->SR_min);
+            $query->where('as_metric', '>=', $request->SR_min);
         } elseif (!empty($request->SR_max)) {
-            $query->where('SR', '<=', $request->SR_max);
+            $query->where('as_metric', '<=', $request->SR_max);
         }
 
 // Semrush Traffic

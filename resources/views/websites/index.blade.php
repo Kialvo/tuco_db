@@ -89,7 +89,7 @@
 
         <!-- SECOND ROW FILTERS -->
         <div class="grid grid-cols-6 gap-4 mb-4">
-            @foreach(['DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'SR', 'semrush_traffic', 'ahrefs_keyword', 'ahrefs_traffic', 'keyword_vs_traffic'] as $field)
+            @foreach(['DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'AS', 'semrush_traffic', 'ahrefs_keyword', 'ahrefs_traffic', 'keyword_vs_traffic'] as $field)
                 <div>
                     <label class="block mb-1">{{ strtoupper(str_replace('_', ' ', $field)) }} Min</label>
                     <input type="number" id="filter{{ ucfirst($field) }}Min" class="w-full border-gray-300 rounded text-sm">
