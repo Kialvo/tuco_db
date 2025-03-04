@@ -182,13 +182,7 @@
 
         <!-- Evaluations -->
         <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block">Automatic Evaluation</label>
-                <input type="number" step="0.01" name="automatic_evaluation" value="{{ old('automatic_evaluation') }}" class="w-full border-gray-300 rounded">
-                @error('automatic_evaluation')
-                <p class="text-red-500 text-sm">{{ $message }}</p>
-                @enderror
-            </div>
+
             <div>
                 <label class="block">Kialvo Evaluation</label>
                 <input type="number" step="0.01" name="kialvo_evaluation" value="{{ old('kialvo_evaluation') }}" class="w-full border-gray-300 rounded">
