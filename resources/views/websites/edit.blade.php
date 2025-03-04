@@ -197,9 +197,9 @@
                 @enderror
             </div>
             <div>
-                <label class="block">TC</label>
-                <input type="number" name="TC" value="{{ old('TC', $website->TC) }}" class="w-full border-gray-300 rounded">
-                @error('TC')
+                <label class="block">TF</label>
+                <input type="number" name="TF" value="{{ old('TC', $website->TF) }}" class="w-full border-gray-300 rounded">
+                @error('TF')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
             </div>
