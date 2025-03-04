@@ -50,7 +50,7 @@
             <strong>PA:</strong> {{ $website->PA }}
         </div>
         <div class="mb-2">
-            <strong>TC:</strong> {{ $website->TC }}
+            <strong>TF:</strong> {{ $website->TF }}
         </div>
         <div class="mb-2">
             <strong>CF:</strong> {{ $website->CF }}
