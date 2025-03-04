@@ -764,7 +764,6 @@ class WebsiteController extends Controller
 
         $validated['automatic_evaluation'] = $autoEvaluation;
 
-        dd($validated);
         // 3) Update the record
         $website->update($validated);
 

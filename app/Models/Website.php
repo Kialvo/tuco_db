@@ -30,7 +30,7 @@ class Website extends Model
         'type_of_website',
         'DA',
         'PA',
-        'TC',
+        'TF',
         'CF',
         'DR',
         'UR',
