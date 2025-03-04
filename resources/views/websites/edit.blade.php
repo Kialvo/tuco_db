@@ -198,7 +198,7 @@
             </div>
             <div>
                 <label class="block">TF</label>
-                <input type="number" name="TF" value="{{ old('TC', $website->TF) }}" class="w-full border-gray-300 rounded">
+                <input type="number" name="TF" value="{{ old('TF', $website->TF) }}" class="w-full border-gray-300 rounded">
                 @error('TF')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
