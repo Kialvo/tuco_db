@@ -695,6 +695,7 @@ class WebsiteController extends Controller
         // If your "SR" is stored in "as_metric", do:
         $sr = $validated['as_metric'] ?? 0;
 
+        dd($da,$tf,$dr);
         $autoEvaluation = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
 
         if ($sr >= 9700) {
