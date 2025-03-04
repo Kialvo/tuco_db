@@ -89,7 +89,7 @@
 
         <!-- SECOND ROW FILTERS -->
         <div class="grid grid-cols-6 gap-4 mb-4">
-            @foreach(['DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'AS', 'semrush_traffic', 'ahrefs_keyword', 'ahrefs_traffic', 'keyword_vs_traffic'] as $field)
+            @foreach(['DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'AS','TF_VS_CF', 'semrush_traffic', 'ahrefs_keyword', 'ahrefs_traffic', 'keyword_vs_traffic'] as $field)
                 <div>
                     <label class="block mb-1">{{ strtoupper(str_replace('_', ' ', $field)) }} Min</label>
                     <input type="number" id="filter{{ ucfirst($field) }}Min" class="w-full border-gray-300 rounded text-sm">
@@ -243,6 +243,9 @@
                         d.CF_min = $('#filterCFMin').val();
                         d.CF_max = $('#filterCFMax').val();
 
+                        d.TF_VS_CF_min = $('#filterTF_VS_CFMin').val();
+                        d.TF_VS_CF_max = $('#filterTF_VS_CFMax').val();
+
                         d.ahrefs_keyword_min = $('#filterAhrefs_keywordMin').val();
                         d.ahrefs_keyword_max = $('#filterAhrefs_keywordMax').val();
 
@@ -390,6 +393,9 @@
                     TF_min: $('#filterTFMin').val(),
                     TF_max: $('#filterTFMax').val(),
 
+                    TF_VS_CF_min: $('#filterTF_VS_CFMin').val(),
+                    TF_VS_CF_max: $('#filterTF_VS_CFMax').val(),
+
                     semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
                     semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
 
@@ -458,7 +464,8 @@
 
                     TF_min: $('#filterTFMin').val(),
                     TF_max: $('#filterTFMax').val(),
-
+                    TF_VS_CF_min: $('#filterTF_VS_CFMin').val(),
+                    TF_VS_CF_max: $('#filterTF_VS_CFMax').val(),
                     semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
                     semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
 

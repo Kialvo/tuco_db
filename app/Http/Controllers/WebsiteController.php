@@ -110,6 +110,15 @@ class WebsiteController extends Controller
             $query->where('CF', '<=', $request->CF_max);
         }
 
+        // TF_VS_CF
+        if (!empty($request->TF_VS_CF_min) && !empty($request->TF_VS_CF_max)) {
+            $query->whereBetween('TF_vs_CF', [$request->TF_VS_CF_min, $request->TF_VS_CF_max]);
+        } elseif (!empty($request->CF_min)) {
+            $query->where('TF_vs_CF', '>=', $request->TF_VS_CF_min);
+        } elseif (!empty($request->CF_max)) {
+            $query->where('TF_vs_CF', '<=', $request->TF_VS_CF_max);
+        }
+
 // DR (Domain Rating)
         if (!empty($request->DR_min) && !empty($request->DR_max)) {
             $query->whereBetween('DR', [$request->DR_min, $request->DR_max]);
@@ -138,6 +147,14 @@ class WebsiteController extends Controller
         }
 
 // SR (SEO Rank)
+        if (!empty($request->SR_min) && !empty($request->SR_max)) {
+            $query->whereBetween('as_metric', [$request->SR_min, $request->SR_max]);
+        } elseif (!empty($request->SR_min)) {
+            $query->where('as_metric', '>=', $request->SR_min);
+        } elseif (!empty($request->SR_max)) {
+            $query->where('as_metric', '<=', $request->SR_max);
+        }
+
         if (!empty($request->SR_min) && !empty($request->SR_max)) {
             $query->whereBetween('as_metric', [$request->SR_min, $request->SR_max]);
         } elseif (!empty($request->SR_min)) {
@@ -667,16 +684,38 @@ class WebsiteController extends Controller
      */
     public function store(Request $request)
     {
+        // 1) Validate all fields EXCEPT we do not rely on user input for 'automatic_evaluation'
         $validated = $this->validateForm($request);
-        $website   = Website::create($validated);
 
-        // Sync categories (if any)
+        // 2) Compute the automatic evaluation from your formula
+        //    Formula: {DA}*2.4 + {TF}*1.45 + {DR}*0.5 + IF({SR}>=9700, {SR}/15000, 0)*1.35
+        $da = $validated['DA'] ?? 0;
+        $tf = $validated['TF'] ?? 0;
+        $dr = $validated['DR'] ?? 0;
+        // If your "SR" is stored in "as_metric", do:
+        $sr = $validated['as_metric'] ?? 0;
+
+        $autoEvaluation = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
+
+        if ($sr >= 9700) {
+            $autoEvaluation += ($sr / 15000) * 1.35;
+        }
+
+        // 3) Override / set 'automatic_evaluation' in the $validated array
+        $validated['automatic_evaluation'] = $autoEvaluation;
+
+        // 4) Create the new Website using the final data
+        $website = Website::create($validated);
+
+        // If you have categories
         if ($request->has('category_ids')) {
             $website->categories()->sync($request->category_ids);
         }
 
-        return redirect()->route('websites.index')->with('status', 'Website created successfully!');
+        return redirect()->route('websites.index')
+            ->with('status', 'Website created successfully!');
     }
+
 
     /**
      * Display a single website.
@@ -705,16 +744,35 @@ class WebsiteController extends Controller
      */
     public function update(Request $request, Website $website)
     {
+        // 1) Validate the incoming data
         $validated = $this->validateForm($request);
+
+        // 2) Compute automatic evaluation
+        $da = $validated['DA'] ?? 0;
+        $tf = $validated['TF'] ?? 0;
+        $dr = $validated['DR'] ?? 0;
+        $sr = $validated['as_metric'] ?? 0;
+
+        $autoEvaluation = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
+
+        if ($sr >= 9700) {
+            $autoEvaluation += ($sr / 15000) * 1.35;
+        }
+
+        $validated['automatic_evaluation'] = $autoEvaluation;
+
+        // 3) Update the record
         $website->update($validated);
 
+        // Sync categories
         if ($request->has('category_ids')) {
             $website->categories()->sync($request->category_ids);
         } else {
             $website->categories()->sync([]);
         }
 
-        return redirect()->route('websites.index')->with('status', 'Website updated successfully!');
+        return redirect()->route('websites.index')
+            ->with('status', 'Website updated successfully!');
     }
 
     /**
@@ -760,7 +818,7 @@ class WebsiteController extends Controller
             'special_topic_price'    => 'nullable|numeric',
             'profit'                 => 'nullable|numeric',
             'linkbuilder'            => 'nullable|string|max:255',
-            'automatic_evaluation'   => 'nullable|numeric',
+            //'automatic_evaluation'   => 'nullable|numeric',
             'kialvo_evaluation'      => 'nullable|numeric',
             'date_kialvo_evaluation' => 'nullable|date',
             'type_of_website'        => 'nullable|string|max:255',
