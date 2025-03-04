@@ -758,6 +758,7 @@ class WebsiteController extends Controller
 
         $autoEvaluation = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
 
+        dd($autoEvaluation);
         if ($sr >= 9700) {
             $autoEvaluation += ($sr / 15000) * 1.35;
         }
