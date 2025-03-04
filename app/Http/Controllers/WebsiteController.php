@@ -698,7 +698,7 @@ class WebsiteController extends Controller
         //dd($da,$tf,$dr);
         $autoEvaluation = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
 
-        dd($autoEvaluation);
+
         if ($sr >= 9700) {
             $autoEvaluation += ($sr / 15000) * 1.35;
         }
@@ -706,6 +706,7 @@ class WebsiteController extends Controller
         // 3) Override / set 'automatic_evaluation' in the $validated array
         $validated['automatic_evaluation'] = $autoEvaluation;
 
+        dd($validated);
         // 4) Create the new Website using the final data
         $website = Website::create($validated);
 
