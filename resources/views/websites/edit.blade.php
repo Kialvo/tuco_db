@@ -158,7 +158,7 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block">Automatic Evaluation</label>
-                <input type="number" step="0.01" name="automatic_evaluation" value="{{ old('automatic_evaluation', $website->automatic_evaluation) }}" class="w-full border-gray-300 rounded">
+                <input type="number"  name="automatic_evaluation" value="{{ old('automatic_evaluation', $website->automatic_evaluation) }}" class="w-full border-gray-300 rounded">
                 @error('automatic_evaluation')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
