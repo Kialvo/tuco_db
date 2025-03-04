@@ -706,7 +706,7 @@ class WebsiteController extends Controller
         // 3) Override / set 'automatic_evaluation' in the $validated array
         $validated['automatic_evaluation'] = $autoEvaluation;
 
-        dd($validated);
+
         // 4) Create the new Website using the final data
         $website = Website::create($validated);
 
