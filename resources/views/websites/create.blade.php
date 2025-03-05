@@ -171,13 +171,6 @@
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
             </div>
-            <div>
-                <label class="block">Profit</label>
-                <input type="number" step="0.01" name="profit" value="{{ old('profit') }}" class="w-full border-gray-300 rounded">
-                @error('profit')
-                <p class="text-red-500 text-sm">{{ $message }}</p>
-                @enderror
-            </div>
         </div>
 
         <!-- Evaluations -->

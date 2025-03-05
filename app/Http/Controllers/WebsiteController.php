@@ -706,6 +706,11 @@ class WebsiteController extends Controller
         // 3) Override / set 'automatic_evaluation' in the $validated array
         $validated['automatic_evaluation'] = $autoEvaluation;
 
+        // 3) Compute 'profit' => kialvo_evaluation - publisher_price
+        $kialvoVal       = $validated['kialvo_evaluation'] ?? 0;
+        $publisherPrice  = $validated['publisher_price'] ?? 0;
+        $profit          = $kialvoVal - $publisherPrice;
+        $validated['profit'] = $profit;
 
         // 4) Create the new Website using the final data
         $website = Website::create($validated);
@@ -764,6 +769,11 @@ class WebsiteController extends Controller
 
         $validated['automatic_evaluation'] = $autoEvaluation;
 
+        // 3) Compute 'profit' => kialvo_evaluation - publisher_price
+        $kialvoVal       = $validated['kialvo_evaluation'] ?? 0;
+        $publisherPrice  = $validated['publisher_price'] ?? 0;
+        $profit          = $kialvoVal - $publisherPrice;
+        $validated['profit'] = $profit;
         // 3) Update the record
         $website->update($validated);
 
@@ -819,7 +829,7 @@ class WebsiteController extends Controller
             'link_insertion_price'   => 'nullable|numeric',
             'no_follow_price'        => 'nullable|numeric',
             'special_topic_price'    => 'nullable|numeric',
-            'profit'                 => 'nullable|numeric',
+           // 'profit'                 => 'nullable|numeric',
             'linkbuilder'            => 'nullable|string|max:255',
             //'automatic_evaluation'   => 'nullable|numeric',
             'kialvo_evaluation'      => 'nullable|numeric',
