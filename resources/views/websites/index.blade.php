@@ -49,31 +49,18 @@
                 <label class="block mb-1">Status</label>
                 <select id="filterStatus" class="w-full border-gray-300 rounded">
                     <option value="">-- Any --</option>
-                    <option value="active">
-                        Active
-                    </option>
-                    <option value="past">
-                        Past
-                    </option>
-
+                    <option value="active">Active</option>
+                    <option value="past">Past</option>
                 </select>
             </div>
             <div>
                 <label class="block mb-1">Type</label>
                 <select id="filterWebsiteType" class="w-full border-gray-300 rounded">
                     <option value="">-- Any --</option>
-                    <option value="FORUM">
-                        Forum
-                    </option>
-                    <option value="GENERALIST">
-                        Generalist
-                    </option>
-                    <option value="VERTICAL">
-                        Vertical
-                    </option>
-                    <option value="LOCAL">
-                        Local
-                    </option>
+                    <option value="FORUM">Forum</option>
+                    <option value="GENERALIST">Generalist</option>
+                    <option value="VERTICAL">Vertical</option>
+                    <option value="LOCAL">Local</option>
                 </select>
             </div>
             <div>
@@ -98,18 +85,19 @@
                 </div>
             @endforeach
         </div>
+
         <!-- CATEGORIES FILTER ROW -->
         <div class="grid grid-cols-1 gap-4 mb-4">
             <div>
                 <label class="block mb-1">Categories</label>
                 <select id="filterCategories" class="w-full border-gray-300 rounded" multiple>
-                    <option value="">-- Select Categories --</option>
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
+
         <!-- THIRD ROW FILTERS (Checkboxes) -->
         <div class="grid grid-cols-6 gap-4">
             @foreach(['betting','trading','more_than_one_link', 'copywriting', 'no_sponsored_tag', 'social_media_sharing', 'post_in_homepage'] as $checkbox)
@@ -119,18 +107,17 @@
                 </div>
             @endforeach
 
-                <!-- NEW: Show Deleted CheckBox -->
-                <div>
-                    <label class="block mb-1">Show Deleted</label>
-                    <input type="checkbox" id="filterShowDeleted">
-                </div>
+            <!-- Show Deleted CheckBox -->
+            <div>
+                <label class="block mb-1">Show Deleted</label>
+                <input type="checkbox" id="filterShowDeleted">
+            </div>
         </div>
 
         <div class="mt-4">
             <button id="btnSearch" class="px-4 py-2 bg-blue-600 text-white rounded">Search</button>
             <button id="btnClear" class="px-4 py-2  bg-blue-600 text-white rounded">Clear Filters</button>
         </div>
-
     </div>
 
     <!-- DataTable -->
@@ -144,7 +131,7 @@
             <th>Profit</th>
             <th>Country</th>
             <th>Language</th>
-            <th>Contact</th>
+            <th>Contact</th> <!-- We do NOT have a contact filter, but we display contact data here. -->
             <th>Categories</th>
             <th>Status</th>
             <th>Currency</th>
@@ -186,15 +173,14 @@
         <tbody></tbody>
     </table>
 
-    {{-- Include the modal partial --}}
     @include('partials.contact-modal')
 @endsection
 
 @push('scripts')
     <script>
-
         $(document).ready(function() {
 
+            // Initialize select2 for categories
             $('#filterCategories').select2({
                 placeholder: 'Select Categories',
                 allowClear: true
@@ -205,11 +191,10 @@
                 serverSide: true,
                 ajax: {
                     url: "{{ route('websites.data') }}",
-                    type: "POST",  // <-- Make this a POST request
+                    type: "POST",
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
-
                     data: function(d) {
                         d.domain_name = $('#filterDomainName').val();
                         d.type_of_website = $('#filterWebsiteType').val();
@@ -221,49 +206,49 @@
                         d.profit_max = $('#filterProfitMax').val();
                         d.status = $('#filterStatus').val();
                         d.category_ids = $('#filterCategories').val();
+
+                        // DA, PA, TF, CF, DR, UR, ZA
                         d.DA_min = $('#filterDAMin').val();
                         d.DA_max = $('#filterDAMax').val();
-
+                        d.PA_min = $('#filterPAMin').val();
+                        d.PA_max = $('#filterPAMax').val();
+                        d.TF_min = $('#filterTFMin').val();
+                        d.TF_max = $('#filterTFMax').val();
+                        d.CF_min = $('#filterCFMin').val();
+                        d.CF_max = $('#filterCFMax').val();
+                        d.DR_min = $('#filterDRMin').val();
+                        d.DR_max = $('#filterDRMax').val();
+                        d.UR_min = $('#filterURMin').val();
+                        d.UR_max = $('#filterURMax').val();
                         d.ZA_min = $('#filterZAMin').val();
                         d.ZA_max = $('#filterZAMax').val();
 
-                        d.PA_min = $('#filterPAMin').val();
-                        d.PA_max = $('#filterPAMax').val();
-
-
+                        // AS_metric (we're calling it SR in the controller, but using #filterASMin)
                         d.SR_min = $('#filterASMin').val();
                         d.SR_max = $('#filterASMax').val();
 
-                        d.TF_min = $('#filterTFMin').val();
-                        d.TF_max = $('#filterTFMax').val();
+                        // TF_VS_CF
+                        d.TF_VS_CF_min = $('#filterTF_vS_cfMin').val();
+                        d.TF_VS_CF_max = $('#filterTF_vS_cfMax').val();
 
+                        // semrush_traffic
                         d.semrush_traffic_min = $('#filterSemrush_trafficMin').val();
                         d.semrush_traffic_max = $('#filterSemrush_trafficMax').val();
 
-                        d.CF_min = $('#filterCFMin').val();
-                        d.CF_max = $('#filterCFMax').val();
-
-                        d.TF_VS_CF_min = $('#filterTF_VS_CFMin').val();
-                        d.TF_VS_CF_max = $('#filterTF_VS_CFMax').val();
-
+                        // ahrefs_keyword
                         d.ahrefs_keyword_min = $('#filterAhrefs_keywordMin').val();
                         d.ahrefs_keyword_max = $('#filterAhrefs_keywordMax').val();
 
-                        d.DR_min = $('#filterDRMin').val();
-                        d.DR_max = $('#filterDRMax').val();
-
+                        // ahrefs_traffic
                         d.ahrefs_traffic_min = $('#filterAhrefs_trafficMin').val();
                         d.ahrefs_traffic_max = $('#filterAhrefs_trafficMax').val();
 
-                        d.UR_min = $('#filterURMin').val();
-                        d.UR_max = $('#filterURMax').val();
-
+                        // keyword_vs_traffic
                         d.keyword_vs_traffic_min = $('#filterKeyword_vs_trafficMin').val();
                         d.keyword_vs_traffic_max = $('#filterKeyword_vs_trafficMax').val();
-                        //d.currency_code = $('#filterCurrency').val();
+
                         d.country_id = $('#filterCountry').val();
                         d.language_id = $('#filterLanguage').val();
-                        //d.contact_id = $('#filterContact').val();
 
                         // Checkbox filters
                         d.betting = $('#filterBetting').is(':checked');
@@ -284,24 +269,23 @@
                     { data: 'publisher_price', name: 'publisher_price' },
                     { data: 'kialvo_evaluation', name: 'kialvo_evaluation' },
                     { data: 'profit', name: 'profit' },
-
                     { data: 'country_name', name: 'country.country_name' },
                     { data: 'language_name', name: 'language.name' },
                     {
                         data: 'contact_name',
                         name: 'contact.name',
                         render: function (data, type, row) {
-                            // If no contact_id, just return blank (or "No Contact")
+                            // If no contact_id, just return blank
                             if (!row.contact_id) {
                                 return "No Contact";
                             }
-                            // Otherwise, make it clickable
+                            // Otherwise, clickable
                             return `
-                <a href="#"
-                   class="contact-link text-blue-600 underline"
-                   data-contact-id="${row.contact_id}">
-                   ${data}
-                </a>`;
+                                <a href="#"
+                                   class="contact-link text-blue-600 underline"
+                                   data-contact-id="${row.contact_id}">
+                                   ${data}
+                                </a>`;
                         }
                     },
                     { data: 'categories_list', name: 'categories_list' },
@@ -344,26 +328,22 @@
                 order: [[0, 'desc']],
             });
 
+            // Search button triggers reload
             $('#btnSearch').click(function(){
                 table.ajax.reload();
             });
 
-            // Add this to your existing script section
+            // Clear all filters and reload
             $('#btnClear').click(function() {
-                // Clear all text/number inputs
                 $('#filterForm input[type="text"]').val('');
                 $('#filterForm input[type="number"]').val('');
-
-                // Reset all select dropdowns
                 $('#filterForm select').val('');
-
-                // Uncheck all checkboxes
                 $('#filterForm input[type="checkbox"]').prop('checked', false);
                 $('#filterCategories').val(null).trigger('change');
-                // Reload the table with cleared filters
                 table.ajax.reload();
             });
-            // 3) Export to CSV
+
+            // Export CSV
             $('#btnExportCsv').click(function(e){
                 e.preventDefault();
                 // Build query params from the same filters
@@ -380,48 +360,32 @@
                     category_ids: $('#filterCategories').val(),
                     DA_min: $('#filterDAMin').val(),
                     DA_max: $('#filterDAMax').val(),
-
                     ZA_min: $('#filterZAMin').val(),
                     ZA_max: $('#filterZAMax').val(),
-
                     PA_min: $('#filterPAMin').val(),
                     PA_max: $('#filterPAMax').val(),
-
                     SR_min: $('#filterASMin').val(),
                     SR_max: $('#filterASMax').val(),
-
                     TF_min: $('#filterTFMin').val(),
                     TF_max: $('#filterTFMax').val(),
-
-                    TF_VS_CF_min: $('#filterTF_VS_CFMin').val(),
-                    TF_VS_CF_max: $('#filterTF_VS_CFMax').val(),
-
+                    TF_VS_CF_min: $('#filterTF_vS_cfMin').val(),
+                    TF_VS_CF_max: $('#filterTF_vS_cfMax').val(),
                     semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
                     semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
-
                     CF_min: $('#filterCFMin').val(),
                     CF_max: $('#filterCFMax').val(),
-
                     ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
                     ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
-
                     DR_min: $('#filterDRMin').val(),
                     DR_max: $('#filterDRMax').val(),
-
                     ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
                     ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
-
                     UR_min: $('#filterURMin').val(),
                     UR_max: $('#filterURMax').val(),
-
                     keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
                     keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
-
-                  //  currency_code: $('#filterCurrency').val(),
                     country_id: $('#filterCountry').val(),
                     language_id: $('#filterLanguage').val(),
-                   // contact_id: $('#filterContact').val(),
-
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
@@ -429,17 +393,17 @@
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
                     social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
                     post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
-
                     show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
                 });
-                // Redirect to the exportCsv route with the query params
+
                 window.location = "{{ route('websites.export.csv') }}?" + params;
             });
 
-            // 4) Export to PDF
+            // Export PDF
             $('#btnExportPdf').click(function(e){
                 e.preventDefault();
                 let params = $.param({
+                    // same as CSV
                     domain_name: $('#filterDomainName').val(),
                     type_of_website: $('#filterWebsiteType').val(),
                     publisher_price_min: $('#filterPublisher_priceMin').val(),
@@ -452,46 +416,32 @@
                     category_ids: $('#filterCategories').val(),
                     DA_min: $('#filterDAMin').val(),
                     DA_max: $('#filterDAMax').val(),
-
                     ZA_min: $('#filterZAMin').val(),
                     ZA_max: $('#filterZAMax').val(),
-
                     PA_min: $('#filterPAMin').val(),
                     PA_max: $('#filterPAMax').val(),
-
                     SR_min: $('#filterASMin').val(),
                     SR_max: $('#filterASMax').val(),
-
                     TF_min: $('#filterTFMin').val(),
                     TF_max: $('#filterTFMax').val(),
-                    TF_VS_CF_min: $('#filterTF_VS_CFMin').val(),
-                    TF_VS_CF_max: $('#filterTF_VS_CFMax').val(),
+                    TF_VS_CF_min: $('#filterTF_vS_cfMin').val(),
+                    TF_VS_CF_max: $('#filterTF_vS_cfMax').val(),
                     semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
                     semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
-
                     CF_min: $('#filterCFMin').val(),
                     CF_max: $('#filterCFMax').val(),
-
                     ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
                     ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
-
                     DR_min: $('#filterDRMin').val(),
                     DR_max: $('#filterDRMax').val(),
-
                     ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
                     ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
-
                     UR_min: $('#filterURMin').val(),
                     UR_max: $('#filterURMax').val(),
-
                     keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
                     keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
-
-                   // currency_code: $('#filterCurrency').val(),
                     country_id: $('#filterCountry').val(),
                     language_id: $('#filterLanguage').val(),
-                   // contact_id: $('#filterContact').val(),
-
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
@@ -499,18 +449,15 @@
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
                     social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
                     post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
-
                     show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
                 });
                 window.location = "{{ route('websites.export.pdf') }}?" + params;
             });
 
-
+            // Contact modal stuff
             $(document).on('click', '.contact-link', function(e) {
                 e.preventDefault();
-
                 let contactId = $(this).data('contact-id');
-
                 $.ajax({
                     url: "{{ route('contacts.showAjax', '') }}/" + contactId,
                     type: 'GET',
@@ -523,7 +470,6 @@
                             $('#modalContactPhone').text(contact.phone ?? '');
                             $('#modalContactFacebook').text(contact.facebook ?? '');
                             $('#modalContactInstagram').text(contact.instagram ?? '');
-
                             // Show the modal
                             $('#contactModal').removeClass('hidden');
                         } else {
@@ -536,12 +482,9 @@
                 });
             });
 
-// Close modal button
-            // Hide the modal when either close button is clicked
             $('#closeContactModal, #closeContactModalBottom').on('click', function() {
                 $('#contactModal').addClass('hidden');
             });
-
         });
     </script>
 @endpush
