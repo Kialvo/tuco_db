@@ -113,11 +113,12 @@ class WebsiteController extends Controller
         // TF_VS_CF
         if (!empty($request->TF_VS_CF_min) && !empty($request->TF_VS_CF_max)) {
             $query->whereBetween('TF_vs_CF', [$request->TF_VS_CF_min, $request->TF_VS_CF_max]);
-        } elseif (!empty($request->CF_min)) {
+        } elseif (!empty($request->TF_VS_CF_min)) {
             $query->where('TF_vs_CF', '>=', $request->TF_VS_CF_min);
-        } elseif (!empty($request->CF_max)) {
+        } elseif (!empty($request->TF_VS_CF_max)) {
             $query->where('TF_vs_CF', '<=', $request->TF_VS_CF_max);
         }
+
 
 // DR (Domain Rating)
         if (!empty($request->DR_min) && !empty($request->DR_max)) {
@@ -147,13 +148,6 @@ class WebsiteController extends Controller
         }
 
 // SR (SEO Rank)
-        if (!empty($request->SR_min) && !empty($request->SR_max)) {
-            $query->whereBetween('as_metric', [$request->SR_min, $request->SR_max]);
-        } elseif (!empty($request->SR_min)) {
-            $query->where('as_metric', '>=', $request->SR_min);
-        } elseif (!empty($request->SR_max)) {
-            $query->where('as_metric', '<=', $request->SR_max);
-        }
 
         if (!empty($request->SR_min) && !empty($request->SR_max)) {
             $query->whereBetween('as_metric', [$request->SR_min, $request->SR_max]);
