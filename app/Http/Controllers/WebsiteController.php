@@ -149,6 +149,8 @@ class WebsiteController extends Controller
 
 // SR (SEO Rank)
 
+
+        // SR (SEO Rank) should be using as_metric
         if (!empty($request->SR_min) && !empty($request->SR_max)) {
             $query->whereBetween('as_metric', [$request->SR_min, $request->SR_max]);
         } elseif (!empty($request->SR_min)) {
@@ -156,6 +158,7 @@ class WebsiteController extends Controller
         } elseif (!empty($request->SR_max)) {
             $query->where('as_metric', '<=', $request->SR_max);
         }
+
 
 // Semrush Traffic
         if (!empty($request->semrush_traffic_min) && !empty($request->semrush_traffic_max)) {
@@ -509,6 +512,15 @@ class WebsiteController extends Controller
             $query->where('CF', '<=', $request->CF_max);
         }
 
+        // TF_VS_CF
+        if (!empty($request->TF_VS_CF_min) && !empty($request->TF_VS_CF_max)) {
+            $query->whereBetween('TF_vs_CF', [$request->TF_VS_CF_min, $request->TF_VS_CF_max]);
+        } elseif (!empty($request->TF_VS_CF_min)) {
+            $query->where('TF_vs_CF', '>=', $request->TF_VS_CF_min);
+        } elseif (!empty($request->TF_VS_CF_max)) {
+            $query->where('TF_vs_CF', '<=', $request->TF_VS_CF_max);
+        }
+
 // DR (Domain Rating)
         if (!empty($request->DR_min) && !empty($request->DR_max)) {
             $query->whereBetween('DR', [$request->DR_min, $request->DR_max]);
@@ -537,13 +549,15 @@ class WebsiteController extends Controller
         }
 
 // SR (SEO Rank)
+        // SR (SEO Rank) should be using as_metric
         if (!empty($request->SR_min) && !empty($request->SR_max)) {
-            $query->whereBetween('SR', [$request->SR_min, $request->SR_max]);
+            $query->whereBetween('as_metric', [$request->SR_min, $request->SR_max]);
         } elseif (!empty($request->SR_min)) {
-            $query->where('SR', '>=', $request->SR_min);
+            $query->where('as_metric', '>=', $request->SR_min);
         } elseif (!empty($request->SR_max)) {
-            $query->where('SR', '<=', $request->SR_max);
+            $query->where('as_metric', '<=', $request->SR_max);
         }
+
 
 // Semrush Traffic
         if (!empty($request->semrush_traffic_min) && !empty($request->semrush_traffic_max)) {
