@@ -231,8 +231,8 @@
                         d.PA_max = $('#filterPAMax').val();
 
 
-                        d.SR_min = $('#filterSRMin').val();
-                        d.SR_max = $('#filterSRMax').val();
+                        d.SR_min = $('#filterASMin').val();
+                        d.SR_max = $('#filterASMax').val();
 
                         d.TF_min = $('#filterTFMin').val();
                         d.TF_max = $('#filterTFMax').val();
@@ -387,8 +387,8 @@
                     PA_min: $('#filterPAMin').val(),
                     PA_max: $('#filterPAMax').val(),
 
-                    SR_min: $('#filterSRMin').val(),
-                    SR_max: $('#filterSRMax').val(),
+                    SR_min: $('#filterASMin').val(),
+                    SR_max: $('#filterASMax').val(),
 
                     TF_min: $('#filterTFMin').val(),
                     TF_max: $('#filterTFMax').val(),
@@ -459,8 +459,8 @@
                     PA_min: $('#filterPAMin').val(),
                     PA_max: $('#filterPAMax').val(),
 
-                    SR_min: $('#filterSRMin').val(),
-                    SR_max: $('#filterSRMax').val(),
+                    SR_min: $('#filterASMin').val(),
+                    SR_max: $('#filterASMax').val(),
 
                     TF_min: $('#filterTFMin').val(),
                     TF_max: $('#filterTFMax').val(),
