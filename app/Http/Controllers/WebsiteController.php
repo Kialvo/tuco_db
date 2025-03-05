@@ -712,6 +712,18 @@ class WebsiteController extends Controller
         $profit          = $kialvoVal - $publisherPrice;
         $validated['profit'] = $profit;
 
+        // 3) Compute 'TF_vs_CF' =>
+        $TF   = $validated['TF'] ?? 0;
+        $CF  = $validated['CF'] ?? 0;
+
+        if($CF == 0 || $CF == null){
+            $TF_vs_CF = 0;
+        }else{
+            $TF_vs_CF         = ($TF/$CF);
+        }
+
+        $validated['TF_vs_CF'] = $TF_vs_CF;
+
         // 4) Create the new Website using the final data
         $website = Website::create($validated);
 

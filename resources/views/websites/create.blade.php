@@ -265,13 +265,6 @@
                 @enderror
             </div>
             <div>
-                <label class="block">TF vs CF</label>
-                <input type="number" step="0.01" name="TF_vs_CF" value="{{ old('TF_vs_CF') }}" class="w-full border-gray-300 rounded">
-                @error('TF_vs_CF')
-                <p class="text-red-500 text-sm">{{ $message }}</p>
-                @enderror
-            </div>
-            <div>
                 <label class="block">Semrush Traffic</label>
                 <input type="number" name="semrush_traffic" value="{{ old('semrush_traffic') }}" class="w-full border-gray-300 rounded">
                 @error('semrush_traffic')
