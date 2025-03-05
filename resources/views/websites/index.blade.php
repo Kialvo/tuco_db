@@ -260,10 +260,10 @@
 
                         d.keyword_vs_traffic_min = $('#filterKeyword_vs_trafficMin').val();
                         d.keyword_vs_traffic_max = $('#filterKeyword_vs_trafficMax').val();
-                        d.currency_code = $('#filterCurrency').val();
+                        //d.currency_code = $('#filterCurrency').val();
                         d.country_id = $('#filterCountry').val();
                         d.language_id = $('#filterLanguage').val();
-                        d.contact_id = $('#filterContact').val();
+                        //d.contact_id = $('#filterContact').val();
 
                         // Checkbox filters
                         d.betting = $('#filterBetting').is(':checked');
@@ -417,10 +417,10 @@
                     keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
                     keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
 
-                    currency_code: $('#filterCurrency').val(),
+                  //  currency_code: $('#filterCurrency').val(),
                     country_id: $('#filterCountry').val(),
                     language_id: $('#filterLanguage').val(),
-                    contact_id: $('#filterContact').val(),
+                   // contact_id: $('#filterContact').val(),
 
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
@@ -487,10 +487,10 @@
                     keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
                     keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
 
-                    currency_code: $('#filterCurrency').val(),
+                   // currency_code: $('#filterCurrency').val(),
                     country_id: $('#filterCountry').val(),
                     language_id: $('#filterLanguage').val(),
-                    contact_id: $('#filterContact').val(),
+                   // contact_id: $('#filterContact').val(),
 
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,

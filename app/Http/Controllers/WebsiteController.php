@@ -633,9 +633,7 @@ class WebsiteController extends Controller
         if (!empty($request->language_id)) {
             $query->where('language_id', $request->language_id);
         }
-        if (!empty($request->contact_id)) {
-            $query->where('contact_id', $request->contact_id);
-        }
+
         // Categories (multi-select)
         if (!empty($request->category_ids) && is_array($request->category_ids)) {
             $query->whereHas('categories', function($q) use ($request) {
