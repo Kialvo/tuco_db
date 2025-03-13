@@ -1,191 +1,451 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <div class="mb-4">
-        <h1 class="text-2xl font-bold">Websites (Full CRUD)</h1>
-        @if(session('status'))
-            <div class="text-green-600 mb-2">{{ session('status') }}</div>
-        @endif
-        <a href="{{ route('websites.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded">
-            Create Website
-        </a>
+    <h1 class="text-lg font-bold text-gray-700 py-6">Websites</h1>
+    <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
+        <!-- Header: Title + Buttons -->
 
-        <a href="#" id="btnExportCsv" class="bg-green-600 text-white px-4 py-2 rounded">
-            Export CSV
-        </a>
-        <a href="#" id="btnExportPdf" class="bg-red-600 text-white px-4 py-2 rounded">
-            Export PDF
-        </a>
-    </div>
+        <div class="flex flex-col gap-3 mb-4">
 
-    <!-- FILTER FORM -->
-    <div class="bg-white p-4 rounded shadow mb-4" id="filterForm">
-        <!-- FIRST ROW FILTERS -->
-        <div class="grid grid-cols-7 gap-4 mb-4">
-            <div>
-                <label class="block mb-1">Domain Name</label>
-                <input type="text" id="filterDomainName" class="w-full border-gray-300 rounded">
-            </div>
 
-            @foreach(['Publisher Price' => 'publisher_price', 'Kialvo' => 'kialvo_evaluation', 'Profit' => 'profit'] as $label => $field)
-                <div>
-                    <label class="block mb-1">{{ $label }} Min</label>
-                    <input type="number" id="filter{{ ucfirst($field) }}Min" class="w-full border-gray-300 rounded text-sm">
-                    <label class="block mb-1 mt-1">{{ $label }} Max</label>
-                    <input type="number" id="filter{{ ucfirst($field) }}Max" class="w-full border-gray-300 rounded text-sm">
-                </div>
-            @endforeach
+            <div class="space-x-2">
+                <!-- "Show/Hide Filters" button -->
+                <button  id="toggleFiltersBtn"
+                         class="bg-gray-300 text-gray-700 px-4 py-2 rounded shadow text-xs hover:bg-gray-400
+                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                    Hide Filters
+                </button>
 
-            <div>
-                <label class="block mb-1">Language</label>
-                <select id="filterLanguage" class="w-full border-gray-300 rounded">
-                    <option value="">-- Any --</option>
-                    @foreach($languages as $lang)
-                        <option value="{{ $lang->id }}">{{ $lang->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="block mb-1">Status</label>
-                <select id="filterStatus" class="w-full border-gray-300 rounded">
-                    <option value="">-- Any --</option>
-                    <option value="active">Active</option>
-                    <option value="past">Past</option>
-                </select>
-            </div>
-            <div>
-                <label class="block mb-1">Type</label>
-                <select id="filterWebsiteType" class="w-full border-gray-300 rounded">
-                    <option value="">-- Any --</option>
-                    <option value="FORUM">Forum</option>
-                    <option value="GENERALIST">Generalist</option>
-                    <option value="VERTICAL">Vertical</option>
-                    <option value="LOCAL">Local</option>
-                </select>
-            </div>
-            <div>
-                <label class="block mb-1">Country</label>
-                <select id="filterCountry" class="w-full border-gray-300 rounded">
-                    <option value="">-- Any --</option>
-                    @foreach($countries as $c)
-                        <option value="{{ $c->id }}">{{ $c->country_name }}</option>
-                    @endforeach
-                </select>
+                <a href="{{ route('websites.create') }}"
+                   class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
+                    Create Website
+                </a>
+                <a href="#" id="btnExportCsv"
+                   class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
+                    Export CSV
+                </a>
+                <a href="#" id="btnExportPdf"
+                   class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
+                    Export PDF
+                </a>
             </div>
         </div>
 
-        <!-- SECOND ROW FILTERS -->
-        <div class="grid grid-cols-6 gap-4 mb-4">
-            @foreach(['DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'AS','TF_VS_CF', 'semrush_traffic', 'ahrefs_keyword', 'ahrefs_traffic', 'keyword_vs_traffic'] as $field)
-                <div>
-                    <label class="block mb-1">{{ strtoupper(str_replace('_', ' ', $field)) }} Min</label>
-                    <input type="number" id="filter{{ ucfirst($field) }}Min" class="w-full border-gray-300 rounded text-sm">
-                    <label class="block mb-1 mt-1">{{ strtoupper(str_replace('_', ' ', $field)) }} Max</label>
-                    <input type="number" id="filter{{ ucfirst($field) }}Max" class="w-full border-gray-300 rounded text-sm">
-                </div>
-            @endforeach
-        </div>
+        <!-- FILTERS WRAPPER -->
 
-        <!-- CATEGORIES FILTER ROW -->
-        <div class="grid grid-cols-1 gap-4 mb-4">
-            <div>
-                <label class="block mb-1">Categories</label>
-                <select id="filterCategories" class="w-full border-gray-300 rounded" multiple>
+        <div id="filterForm"
+             class="bg-white border border-gray-200 rounded shadow p-2 mb-8
+            inline-block max-w-[2000px]">
+            <!-- ROW 1 -->
+            <div class="flex flex-wrap gap-2 mb-2">
+                <!-- Domain -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Domain</label>
+                    <input id="filterDomainName" type="text"
+                           class="border border-gray-300 rounded px-2 py-2 w-30
+                              focus:ring-cyan-500 focus:border-cyan-500">
+                </div>
+
+                <!-- Type -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Type</label>
+                    <select id="filterWebsiteType"
+                            class="border border-gray-300 rounded px-2 py-2 w-28
+                               focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">-- Any --</option>
+                        <option value="FORUM">Forum</option>
+                        <option value="GENERALIST">Generalist</option>
+                        <option value="VERTICAL">Vertical</option>
+                        <option value="LOCAL">Local</option>
+                    </select>
+                </div>
+
+                <!-- Language -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Language</label>
+                    <select id="filterLanguage"
+                            class="border border-gray-300 rounded px-2 py-2 w-28
+                               focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">-- Any --</option>
+                        @foreach($languages as $lang)
+                            <option value="{{ $lang->id }}">{{ $lang->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Status</label>
+                    <select id="filterStatus"
+                            class="border border-gray-300 rounded px-2 py-2 w-28
+                               focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">-- Any --</option>
+                        <option value="active">Active</option>
+                        <option value="past">Past</option>
+                    </select>
+                </div>
+
+                <!-- Country -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Country</label>
+                    <select id="filterCountry"
+                            class="border border-gray-300 rounded px-2 py-2 w-30
+                               focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">-- Any --</option>
+                        @foreach($countries as $c)
+                            <option value="{{ $c->id }}">{{ $c->country_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <!-- ROW 2: Publisher, Kialvo, Profit -->
+            <div class="flex flex-wrap gap-2 mb-2">
+                <!-- Publisher Price Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Publisher Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterPublisher_priceMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterPublisher_priceMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+
+                <!-- Kialvo Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Kialvo Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterKialvo_evaluationMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterKialvo_evaluationMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+
+                <!-- Profit Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Profit Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterProfitMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterProfitMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 3: DA/PA, TF/CF, DR/UR, etc. -->
+            <div class="flex flex-wrap gap-2 mb-2">
+                <!-- DA Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">DA Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterDAMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterDAMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- PA Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">PA Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterPAMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterPAMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- TF Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">TF Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterTFMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterTFMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- CF Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">CF Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterCFMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterCFMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- DR Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">DR Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterDRMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterDRMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- UR Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">UR Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterURMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterURMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- ZA Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">ZA Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterZAMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterZAMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- AS Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">AS Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterASMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterASMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- TF vs CF Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">TF vs CF</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterTF_vS_cfMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterTF_vS_cfMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- Semrush Traffic Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Semrush Traffic</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterSemrush_trafficMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterSemrush_trafficMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- Ahrefs KW Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Ahrefs KW</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterAhrefs_keywordMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterAhrefs_keywordMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- Ahrefs Traffic Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Ahrefs Traffic</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterAhrefs_trafficMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterAhrefs_trafficMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+                <!-- KW vs Traffic Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">KW vs Traffic</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterKeyword_vs_trafficMin"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                        <input type="number" id="filterKeyword_vs_trafficMax"
+                               class="border border-gray-300 rounded w-12 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500">
+                    </div>
+                </div>
+            </div><!-- END ROW 3 -->
+
+            <!-- ROW 4: Categories -->
+            <div class="mb-2 flex items-center">
+                <label class="text-gray-700 font-medium mr-2">Categories</label>
+                <select id="filterCategories" multiple size="3"
+                        class="border border-gray-300 rounded px-2 py-2 text-xs w-48
+               max-h-16 overflow-y-auto focus:ring-cyan-500 focus:border-cyan-500">
+
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                     @endforeach
                 </select>
             </div>
-        </div>
 
-        <!-- THIRD ROW FILTERS (Checkboxes) -->
-        <div class="grid grid-cols-6 gap-4">
-            @foreach(['betting','trading','more_than_one_link', 'copywriting', 'no_sponsored_tag', 'social_media_sharing', 'post_in_homepage'] as $checkbox)
-                <div>
-                    <label class="block mb-1">{{ ucwords(str_replace('_', ' ', $checkbox)) }}</label>
-                    <input type="checkbox" id="filter{{ ucfirst($checkbox) }}">
-                </div>
-            @endforeach
-
-            <!-- Show Deleted CheckBox -->
-            <div>
-                <label class="block mb-1">Show Deleted</label>
-                <input type="checkbox" id="filterShowDeleted">
+            <!-- ROW 5: Toggles in one row -->
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+                @foreach(['betting','trading','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'] as $chk)
+                    <div class="flex items-center space-x-1">
+                        <span class="text-gray-700">{{ str_replace('_',' ', $chk) }}</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="filter{{ ucfirst($chk) }}" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-cyan-600
+                                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                                after:bg-white after:border-gray-300 after:border
+                                after:rounded-full after:h-4 after:w-4 after:transition-all
+                                peer-checked:after:translate-x-full peer-focus:outline-none
+                                peer-focus:ring-1 peer-focus:ring-cyan-500 peer-checked:after:border-white">
+                            </div>
+                        </label>
+                    </div>
+                @endforeach
             </div>
+
+            <!-- ROW 6: Buttons -->
+            <div class="flex space-x-2">
+                <button id="btnSearch"
+                        class="bg-cyan-600 text-white px-4 py-2 rounded shadow text-xs hover:bg-cyan-700
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
+                    Search
+                </button>
+                <button id="btnClear"
+                        class="bg-gray-400 text-white px-4 py-2 rounded shadow text-xs hover:bg-gray-500
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                    Clear
+                </button>
+            </div>
+        </div><!-- END FILTER FORM -->
+
+        <!-- Show Deleted Toggle -->
+        <div class="flex items-center space-x-2 mb-4">
+            <!-- Enlarge text to "text-lg", keep "font-medium", etc. -->
+            <label for="filterShowDeleted" class="text-lg font-medium text-gray-700">Show Deleted</label>
+
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="filterShowDeleted" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 rounded-full
+                    peer dark:bg-gray-700 peer-checked:bg-cyan-600
+                    peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500
+                    after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                    after:bg-white after:border-gray-300 after:border
+                    after:rounded-full after:h-5 after:w-5
+                    after:transition-all peer-checked:after:translate-x-full
+                    peer-checked:after:border-white">
+                </div>
+            </label>
         </div>
 
-        <div class="mt-4">
-            <button id="btnSearch" class="px-4 py-2 bg-blue-600 text-white rounded">Search</button>
-            <button id="btnClear" class="px-4 py-2  bg-blue-600 text-white rounded">Clear Filters</button>
-        </div>
+        <!-- TABLE WRAPPER for horizontal scrolling if needed -->
+        <div class="bg-white border border-gray-200 rounded shadow p-2
+            overflow-x-auto
+            max-w-[1400px]">
+
+            <table id="websitesTable" class="text-xs text-gray-700 w-full min-w-[1200px]">
+                <thead>
+                <tr class="border-b border-gray-200 bg-gray-50 text-[10px] uppercase text-gray-500 tracking-wider">
+                    <th>ID</th>
+                    <th>Domain</th>
+                    <th>Publisher Price</th>
+                    <th>Kialvo</th>
+                    <th>Profit</th>
+                    <th>Country</th>
+                    <th>Language</th>
+                    <th>Contact</th>
+                    <th>Categories</th>
+                    <th>Status</th>
+                    <th>Currency</th>
+                    <th>Date Publisher Price</th>
+                    <th>Link Insertion Price</th>
+                    <th>No Follow Price</th>
+                    <th>Special Topic Price</th>
+                    <th>Linkbuilder</th>
+                    <th>Automatic Evaluation</th>
+                    <th>Date Kialvo Evaluation</th>
+                    <th>Type of Website</th>
+                    <th>DA</th>
+                    <th>PA</th>
+                    <th>TF</th>
+                    <th>CF</th>
+                    <th>DR</th>
+                    <th>UR</th>
+                    <th>ZA</th>
+                    <th>AS</th>
+                    <th>SEO Zoom</th>
+                    <th>TF vs CF</th>
+                    <th>Semrush Traffic</th>
+                    <th>Ahrefs Keyword</th>
+                    <th>Ahrefs Traffic</th>
+                    <th>Keyword vs Traffic</th>
+                    <th>SEO Metrics Date</th>
+                    <th>Betting</th>
+                    <th>Trading</th>
+                    <th>More than 1 link</th>
+                    <th>Copywriting</th>
+                    <th>No Sponsored Tag</th>
+                    <th>Social Media Sharing</th>
+                    <th>Post in Homepage</th>
+                    <th>Date Added</th>
+                    <th>Extra Notes</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div><!-- END TABLE WRAPPER -->
     </div>
 
-    <!-- DataTable -->
-    <table id="websitesTable" class="min-w-full bg-white">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Domain</th>
-            <th>Publisher Price</th>
-            <th>Kialvo</th>
-            <th>Profit</th>
-            <th>Country</th>
-            <th>Language</th>
-            <th>Contact</th> <!-- We do NOT have a contact filter, but we display contact data here. -->
-            <th>Categories</th>
-            <th>Status</th>
-            <th>Currency</th>
-            <th>Date Publisher Price</th>
-            <th>Link Insertion Price</th>
-            <th>No Follow Price</th>
-            <th>Special Topic Price</th>
-            <th>Linkbuilder</th>
-            <th>Automatic Evaluation</th>
-            <th>Date Kialvo Evaluation</th>
-            <th>Type of Website</th>
-            <th>DA</th>
-            <th>PA</th>
-            <th>TF</th>
-            <th>CF</th>
-            <th>DR</th>
-            <th>UR</th>
-            <th>ZA</th>
-            <th>AS</th>
-            <th>SEO Zoom</th>
-            <th>TF vs CF</th>
-            <th>Semrush Traffic</th>
-            <th>Ahrefs Keyword</th>
-            <th>Ahrefs Traffic</th>
-            <th>Keyword vs Traffic</th>
-            <th>SEO Metrics Date</th>
-            <th>Betting</th>
-            <th>Trading</th>
-            <th>More than 1 link</th>
-            <th>Copywriting</th>
-            <th>No Sponsored Tag</th>
-            <th>Social Media Sharing</th>
-            <th>Post in Homepage</th>
-            <th>Date Added</th>
-            <th>Extra Notes</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    @include('partials.contact-modal')
+    @include('websites.partials.contact-modal')
 @endsection
 
 @push('scripts')
     <script>
         $(document).ready(function() {
-
-            // Initialize select2 for categories
+            // Initialize select2 with smaller text
             $('#filterCategories').select2({
                 placeholder: 'Select Categories',
-                allowClear: true
+                allowClear: true,
+                width: '10em',           // narrower
+                dropdownAutoWidth: false,
+                containerCssClass: 'text-xs',
+                dropdownCssClass: 'text-xs limit-height'
             });
 
+            // Initialize the DataTable
             let table = $('#websitesTable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -196,18 +456,20 @@
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     data: function(d) {
+                        // Gather filter values
                         d.domain_name = $('#filterDomainName').val();
                         d.type_of_website = $('#filterWebsiteType').val();
+                        d.language_id = $('#filterLanguage').val();
+                        d.status = $('#filterStatus').val();
+                        d.country_id = $('#filterCountry').val();
                         d.publisher_price_min = $('#filterPublisher_priceMin').val();
                         d.publisher_price_max = $('#filterPublisher_priceMax').val();
                         d.kialvo_min = $('#filterKialvo_evaluationMin').val();
                         d.kialvo_max = $('#filterKialvo_evaluationMax').val();
                         d.profit_min = $('#filterProfitMin').val();
                         d.profit_max = $('#filterProfitMax').val();
-                        d.status = $('#filterStatus').val();
                         d.category_ids = $('#filterCategories').val();
 
-                        // DA, PA, TF, CF, DR, UR, ZA
                         d.DA_min = $('#filterDAMin').val();
                         d.DA_max = $('#filterDAMax').val();
                         d.PA_min = $('#filterPAMin').val();
@@ -222,35 +484,19 @@
                         d.UR_max = $('#filterURMax').val();
                         d.ZA_min = $('#filterZAMin').val();
                         d.ZA_max = $('#filterZAMax').val();
-
-                        // AS_metric (we're calling it SR in the controller, but using #filterASMin)
                         d.SR_min = $('#filterASMin').val();
                         d.SR_max = $('#filterASMax').val();
-
-                        // TF_VS_CF
                         d.TF_VS_CF_min = $('#filterTF_vS_cfMin').val();
                         d.TF_VS_CF_max = $('#filterTF_vS_cfMax').val();
-
-                        // semrush_traffic
                         d.semrush_traffic_min = $('#filterSemrush_trafficMin').val();
                         d.semrush_traffic_max = $('#filterSemrush_trafficMax').val();
-
-                        // ahrefs_keyword
                         d.ahrefs_keyword_min = $('#filterAhrefs_keywordMin').val();
                         d.ahrefs_keyword_max = $('#filterAhrefs_keywordMax').val();
-
-                        // ahrefs_traffic
                         d.ahrefs_traffic_min = $('#filterAhrefs_trafficMin').val();
                         d.ahrefs_traffic_max = $('#filterAhrefs_trafficMax').val();
-
-                        // keyword_vs_traffic
                         d.keyword_vs_traffic_min = $('#filterKeyword_vs_trafficMin').val();
                         d.keyword_vs_traffic_max = $('#filterKeyword_vs_trafficMax').val();
 
-                        d.country_id = $('#filterCountry').val();
-                        d.language_id = $('#filterLanguage').val();
-
-                        // Checkbox filters
                         d.betting = $('#filterBetting').is(':checked');
                         d.trading = $('#filterTrading').is(':checked');
                         d.more_than_one_link = $('#filterMore_than_one_link').is(':checked');
@@ -258,9 +504,8 @@
                         d.no_sponsored_tag = $('#filterNo_sponsored_tag').is(':checked');
                         d.social_media_sharing = $('#filterSocial_media_sharing').is(':checked');
                         d.post_in_homepage = $('#filterPost_in_homepage').is(':checked');
-
-                        // "Show Deleted" filter
                         d.show_deleted = $('#filterShowDeleted').is(':checked');
+
                     }
                 },
                 columns: [
@@ -274,18 +519,14 @@
                     {
                         data: 'contact_name',
                         name: 'contact.name',
-                        render: function (data, type, row) {
-                            // If no contact_id, just return blank
-                            if (!row.contact_id) {
-                                return "No Contact";
-                            }
-                            // Otherwise, clickable
+                        render: function(data, type, row) {
+                            if (!row.contact_id) return "No Contact";
                             return `
-                                <a href="#"
-                                   class="contact-link text-blue-600 underline"
-                                   data-contact-id="${row.contact_id}">
-                                   ${data}
-                                </a>`;
+                        <a href="#"
+                           class="contact-link text-blue-600 underline"
+                           data-contact-id="${row.contact_id}">
+                            ${data}
+                        </a>`;
                         }
                     },
                     { data: 'categories_list', name: 'categories_list' },
@@ -306,7 +547,7 @@
                     { data: 'DR', name: 'DR' },
                     { data: 'UR', name: 'UR' },
                     { data: 'ZA', name: 'ZA' },
-                    { data: 'as_metric', name: 'as_metric', title: 'AS' },
+                    { data: 'as_metric', name: 'as_metric' },
                     { data: 'seozoom', name: 'seozoom' },
                     { data: 'TF_vs_CF', name: 'TF_vs_CF' },
                     { data: 'semrush_traffic', name: 'semrush_traffic' },
@@ -323,69 +564,80 @@
                     { data: 'post_in_homepage', name: 'post_in_homepage' },
                     { data: 'created_at', name: 'date_added' },
                     { data: 'extra_notes', name: 'extra_notes' },
-                    { data: 'action', name: 'action', orderable: false, searchable: false },
+                    { data: 'action', name: 'action', orderable: false, searchable: false }
                 ],
                 order: [[0, 'desc']],
+                responsive: false,
+                autoWidth: false
             });
 
-            // Search button triggers reload
-            $('#btnSearch').click(function(){
+            // Toggle-based filter
+            $('#filterShowDeleted').on('change', function() {
                 table.ajax.reload();
             });
 
-            // Clear all filters and reload
-            $('#btnClear').click(function() {
-                $('#filterForm input[type="text"]').val('');
-                $('#filterForm input[type="number"]').val('');
+            // Search
+            $('#btnSearch').on('click', function(e) {
+                e.preventDefault();
+                table.ajax.reload();
+            });
+
+            // Clear
+            $('#btnClear').on('click', function(e) {
+                e.preventDefault();
+                $('#filterForm input[type="text"], #filterForm input[type="number"]').val('');
                 $('#filterForm select').val('');
                 $('#filterForm input[type="checkbox"]').prop('checked', false);
                 $('#filterCategories').val(null).trigger('change');
                 table.ajax.reload();
             });
 
-            // Export CSV
-            $('#btnExportCsv').click(function(e){
+            // =====================
+            // CSV Export
+            // =====================
+            $('#btnExportCsv').click(function(e) {
                 e.preventDefault();
-                // Build query params from the same filters
                 let params = $.param({
                     domain_name: $('#filterDomainName').val(),
                     type_of_website: $('#filterWebsiteType').val(),
+                    language_id: $('#filterLanguage').val(),
+                    status: $('#filterStatus').val(),
+                    country_id: $('#filterCountry').val(),
                     publisher_price_min: $('#filterPublisher_priceMin').val(),
                     publisher_price_max: $('#filterPublisher_priceMax').val(),
                     kialvo_min: $('#filterKialvo_evaluationMin').val(),
                     kialvo_max: $('#filterKialvo_evaluationMax').val(),
                     profit_min: $('#filterProfitMin').val(),
                     profit_max: $('#filterProfitMax').val(),
-                    status: $('#filterStatus').val(),
                     category_ids: $('#filterCategories').val(),
+
                     DA_min: $('#filterDAMin').val(),
                     DA_max: $('#filterDAMax').val(),
-                    ZA_min: $('#filterZAMin').val(),
-                    ZA_max: $('#filterZAMax').val(),
                     PA_min: $('#filterPAMin').val(),
                     PA_max: $('#filterPAMax').val(),
-                    SR_min: $('#filterASMin').val(),
-                    SR_max: $('#filterASMax').val(),
                     TF_min: $('#filterTFMin').val(),
                     TF_max: $('#filterTFMax').val(),
+                    CF_min: $('#filterCFMin').val(),
+                    CF_max: $('#filterCFMax').val(),
+                    DR_min: $('#filterDRMin').val(),
+                    DR_max: $('#filterDRMax').val(),
+                    UR_min: $('#filterURMin').val(),
+                    UR_max: $('#filterURMax').val(),
+                    ZA_min: $('#filterZAMin').val(),
+                    ZA_max: $('#filterZAMax').val(),
+                    SR_min: $('#filterASMin').val(),
+                    SR_max: $('#filterASMax').val(),
                     TF_VS_CF_min: $('#filterTF_vS_cfMin').val(),
                     TF_VS_CF_max: $('#filterTF_vS_cfMax').val(),
                     semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
                     semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
-                    CF_min: $('#filterCFMin').val(),
-                    CF_max: $('#filterCFMax').val(),
                     ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
                     ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
-                    DR_min: $('#filterDRMin').val(),
-                    DR_max: $('#filterDRMax').val(),
                     ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
                     ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
-                    UR_min: $('#filterURMin').val(),
-                    UR_max: $('#filterURMax').val(),
                     keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
                     keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
-                    country_id: $('#filterCountry').val(),
-                    language_id: $('#filterLanguage').val(),
+
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
@@ -396,52 +648,56 @@
                     show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
                 });
 
+                // Change this route to match your CSV export route
                 window.location = "{{ route('websites.export.csv') }}?" + params;
             });
 
-            // Export PDF
-            $('#btnExportPdf').click(function(e){
+            // =====================
+            // PDF Export
+            // =====================
+            $('#btnExportPdf').click(function(e) {
                 e.preventDefault();
                 let params = $.param({
-                    // same as CSV
                     domain_name: $('#filterDomainName').val(),
                     type_of_website: $('#filterWebsiteType').val(),
+                    language_id: $('#filterLanguage').val(),
+                    status: $('#filterStatus').val(),
+                    country_id: $('#filterCountry').val(),
                     publisher_price_min: $('#filterPublisher_priceMin').val(),
                     publisher_price_max: $('#filterPublisher_priceMax').val(),
                     kialvo_min: $('#filterKialvo_evaluationMin').val(),
                     kialvo_max: $('#filterKialvo_evaluationMax').val(),
                     profit_min: $('#filterProfitMin').val(),
                     profit_max: $('#filterProfitMax').val(),
-                    status: $('#filterStatus').val(),
                     category_ids: $('#filterCategories').val(),
+
                     DA_min: $('#filterDAMin').val(),
                     DA_max: $('#filterDAMax').val(),
-                    ZA_min: $('#filterZAMin').val(),
-                    ZA_max: $('#filterZAMax').val(),
                     PA_min: $('#filterPAMin').val(),
                     PA_max: $('#filterPAMax').val(),
-                    SR_min: $('#filterASMin').val(),
-                    SR_max: $('#filterASMax').val(),
                     TF_min: $('#filterTFMin').val(),
                     TF_max: $('#filterTFMax').val(),
+                    CF_min: $('#filterCFMin').val(),
+                    CF_max: $('#filterCFMax').val(),
+                    DR_min: $('#filterDRMin').val(),
+                    DR_max: $('#filterDRMax').val(),
+                    UR_min: $('#filterURMin').val(),
+                    UR_max: $('#filterURMax').val(),
+                    ZA_min: $('#filterZAMin').val(),
+                    ZA_max: $('#filterZAMax').val(),
+                    SR_min: $('#filterASMin').val(),
+                    SR_max: $('#filterASMax').val(),
                     TF_VS_CF_min: $('#filterTF_vS_cfMin').val(),
                     TF_VS_CF_max: $('#filterTF_vS_cfMax').val(),
                     semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
                     semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
-                    CF_min: $('#filterCFMin').val(),
-                    CF_max: $('#filterCFMax').val(),
                     ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
                     ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
-                    DR_min: $('#filterDRMin').val(),
-                    DR_max: $('#filterDRMax').val(),
                     ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
                     ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
-                    UR_min: $('#filterURMin').val(),
-                    UR_max: $('#filterURMax').val(),
                     keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
                     keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
-                    country_id: $('#filterCountry').val(),
-                    language_id: $('#filterLanguage').val(),
+
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
@@ -451,10 +707,14 @@
                     post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
                     show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
                 });
+
+                // Change this route to match your PDF export route
                 window.location = "{{ route('websites.export.pdf') }}?" + params;
             });
 
-            // Contact modal stuff
+            // =====================
+            // Contact Modal
+            // =====================
             $(document).on('click', '.contact-link', function(e) {
                 e.preventDefault();
                 let contactId = $(this).data('contact-id');
@@ -463,14 +723,12 @@
                     type: 'GET',
                     success: function(response) {
                         if (response.status === 'success') {
-                            let contact = response.data;
-                            // Fill modal fields
-                            $('#modalContactName').text(contact.name ?? '');
-                            $('#modalContactEmail').text(contact.email ?? '');
-                            $('#modalContactPhone').text(contact.phone ?? '');
-                            $('#modalContactFacebook').text(contact.facebook ?? '');
-                            $('#modalContactInstagram').text(contact.instagram ?? '');
-                            // Show the modal
+                            let c = response.data;
+                            $('#modalContactName').text(c.name ?? '');
+                            $('#modalContactEmail').text(c.email ?? '');
+                            $('#modalContactPhone').text(c.phone ?? '');
+                            $('#modalContactFacebook').text(c.facebook ?? '');
+                            $('#modalContactInstagram').text(c.instagram ?? '');
                             $('#contactModal').removeClass('hidden');
                         } else {
                             alert('Could not load contact info.');
@@ -482,9 +740,40 @@
                 });
             });
 
-            $('#closeContactModal, #closeContactModalBottom').on('click', function() {
+            $('#closeContactModal, #closeContactModalBottom').click(function() {
                 $('#contactModal').addClass('hidden');
             });
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let toggleBtn = document.getElementById('toggleFiltersBtn');
+            let filtersDiv = document.getElementById('filterForm');
+            let filtersVisible = true; // assume filters start out visible
+
+            toggleBtn.addEventListener('click', function() {
+                // Toggle the "hidden" class on the filters container
+                filtersDiv.classList.toggle('hidden');
+                filtersVisible = !filtersVisible;
+
+                // Update the button text based on whether filters are now visible or not
+                if (filtersVisible) {
+                    toggleBtn.textContent = 'Hide Filters';
+                } else {
+                    toggleBtn.textContent = 'Show Filters';
+                }
+            });
+
+            @if (session('status'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: '{{ session('status') }}',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+            @endif
+        });
+
     </script>
 @endpush

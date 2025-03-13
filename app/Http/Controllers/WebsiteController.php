@@ -260,42 +260,58 @@ class WebsiteController extends Controller
             ->addColumn('categories_list', function($row){
                 return $row->categories->pluck('name')->join(', ');
             })
-            ->addColumn('action', function($row){ // Check if the record has an ID:
-                $id = $row->id ?? null;
-                if (!$id) {
-                    return '';
-                }
-
-                // If this row is soft-deleted, we only show a “Restore” button
+            ->addColumn('action', function($row) {
+                // Check if this website is soft-deleted (trashed)
                 if ($row->trashed()) {
                     $restoreUrl = route('websites.restore', $row->id);
                     return '
-                    <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
-                        '.csrf_field().'
-                        <button onclick="return confirm(\'Are you sure you want to restore this website?\')" class="text-green-600 underline">
-                            Restore
-                        </button>
-                    </form>
-                ';
+            <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
+                '.csrf_field().'
+                <button
+                    onclick="return confirm(\'Are you sure you want to restore this website?\')"
+                    class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
+                           hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-undo-alt mr-1"></i> Restore
+                </button>
+            </form>
+        ';
                 }
 
-
-                $editUrl = route('websites.edit', $row->id);
+                // Otherwise (not trashed), show View, Edit, Delete
+                $viewUrl   = route('websites.show', $row->id);
+                $editUrl   = route('websites.edit', $row->id);
                 $deleteUrl = route('websites.destroy', $row->id);
-                $showUrl = route('websites.show', $row->id);
+
                 return '
-                    <a href="'.$showUrl.'" class="text-green-600 underline mr-2">View</a>
-                    <a href="'.$editUrl.'" class="text-blue-600 underline mr-2">Edit</a>
-                    <form action="'.$deleteUrl.'" method="POST" style="display:inline;">
-                        '.csrf_field().method_field("DELETE").'
-                        <button onclick="return confirm(\'Are you sure?\')" class="text-red-600 underline">
-                            Delete
-                        </button>
-                    </form>
-                ';
+        <!-- VIEW -->
+        <a href="'.$viewUrl.'"
+           class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
+                  hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 mr-1">
+            <i class="fas fa-eye mr-1"></i> View
+        </a>
+
+        <!-- EDIT -->
+        <a href="'.$editUrl.'"
+           class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
+                  hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 mr-1">
+            <i class="fas fa-pen mr-1"></i> Edit
+        </a>
+
+        <!-- DELETE -->
+        <form action="'.$deleteUrl.'" method="POST" style="display:inline-block;">
+            '.csrf_field().method_field("DELETE").'
+            <button
+                onclick="return confirm(\'Are you sure you want to delete this website?\')"
+                class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
+                       hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                <i class="fas fa-trash mr-1"></i> Delete
+            </button>
+        </form>
+    ';
             })
-            ->rawColumns(['action'])
-            ->make(true);
+            ->rawColumns(['action'])->make(true);
+
+
     }
 
 

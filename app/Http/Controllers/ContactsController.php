@@ -24,11 +24,10 @@ class ContactsController extends Controller
     public function getData(Request $request)
     {
         // Retrieve the contacts from the database.
-        $contacts = Contact::select(['id', 'name', 'email', 'phone', 'facebook', 'instagram','deleted_at']);
+        $contacts = Contact::select(['id', 'name', 'email', 'phone', 'facebook', 'instagram', 'deleted_at']);
 
         if ($request->boolean('show_deleted')) {
             $contacts->onlyTrashed();
-
         }
 
         return datatables()->of($contacts)
@@ -56,35 +55,48 @@ class ContactsController extends Controller
                     ? '<a href="' . $contact->instagram . '" target="_blank">' . $contact->instagram . '</a>'
                     : '';
             })
-            // Add the Action column (Edit/Delete buttons).
+            // Add the Action column (Edit/Delete/Restore buttons).
             ->addColumn('action', function ($contact) {
-                // If this row is soft-deleted, we only show a “Restore” button
-
-                if ($contact->deleted_at != NULL) {
+                // If soft-deleted, show "Restore" button
+                if ($contact->deleted_at !== null) {
                     $restoreUrl = route('contacts.restore', $contact->id);
                     return '
-                    <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
-                        '.csrf_field().'
-                        <button onclick="return confirm(\'Are you sure you want to restore this contact?\')" class="text-green-600 underline">
-                            Restore
-                        </button>
-                    </form>
-                ';
-                }else{
-
+            <form action="' . $restoreUrl . '" method="POST" style="display:inline;">
+                ' . csrf_field() . '
+                <button onclick="return confirm(\'Are you sure you want to restore this contact?\')"
+                        class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-undo-alt mr-1"></i> Restore
+                </button>
+            </form>
+        ';
+                }
+                // Otherwise, show "Edit" + "Delete" buttons
+                $deleteUrl = route('contacts.destroy', $contact->id);
                 return '
-                <a href="' . route('contacts.edit', $contact->id) . '" class="btn btn-sm btn-warning">Edit</a>
-                <form action="' . route('contacts.destroy', $contact->id) . '" method="POST" style="display:inline-block;">
-                    ' . csrf_field() . method_field('DELETE') . '
-                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm(\'Are you sure you want to delete this contact?\');">Delete</button>
-                </form>
-            ';}
+        <!-- EDIT button triggers a modal via JavaScript -->
+        <button type="button"
+                class="editBtn inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
+                       hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 mr-1"
+                data-contact-id="' . $contact->id . '">
+            <i class="fas fa-pen mr-1"></i> Edit
+        </button>
+
+        <!-- DELETE -->
+        <form action="' . $deleteUrl . '" method="POST" style="display:inline-block;">
+            ' . csrf_field() . method_field('DELETE') . '
+            <button type="submit" onclick="return confirm(\'Are you sure?\');"
+                    class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
+                           hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                <i class="fas fa-trash mr-1"></i> Delete
+            </button>
+        </form>
+    ';
             })
+
             // Let DataTables know that these columns contain HTML.
             ->rawColumns(['contact_facebook', 'contact_instagram', 'action'])
             ->make(true);
     }
-
 
     /**
      * Show the form for creating a new contact.
@@ -138,6 +150,19 @@ class ContactsController extends Controller
         return redirect()->route('contacts.index')->with('success', 'Contact updated successfully.');
     }
 
+
+    public function editAjax($id)
+    {
+        $contact = Contact::findOrFail($id);
+        return response()->json([
+            'status' => 'success',
+            'data'   => $contact
+        ]);
+    }
+
+    /**
+     * Restore a soft-deleted contact.
+     */
     public function restore($id)
     {
         // Retrieve the trashed record
@@ -149,6 +174,9 @@ class ContactsController extends Controller
         return redirect()->route('contacts.index')->with('status', 'Contact restored successfully!');
     }
 
+    /**
+     * Show an individual contact as AJAX response.
+     */
     public function showAjax($id)
     {
         $contact = Contact::findOrFail($id);
@@ -159,9 +187,8 @@ class ContactsController extends Controller
         ]);
     }
 
-
     /**
-     * Remove the specified contact from storage.
+     * Soft-delete the specified contact.
      */
     public function destroy(Contact $contact)
     {

@@ -41,25 +41,50 @@ class UserController extends Controller
         return view('admin.users.edit', compact('user'));
     }
 
-    public function update(Request $request, User $user)
+    public function editAjax($id)
     {
-        $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|min:8|confirmed',
-            'role'     => 'required|in:admin,editor',
-        ]);
+        $user = User::find($id);
 
-        if (!empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
         }
 
-        $user->update($validated);
-
-        return redirect()->route('admin.users.index')->with('status', 'User updated successfully.');
+        return response()->json([
+            'status' => 'success',
+            'data' => $user
+        ]);
     }
+
+    public function update(Request $request, $id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+        }
+
+        // Validate input
+        $validated = $request->validate([
+            'name' => 'required|max:255',
+            'email' => 'required|email|max:255',
+            'role' => 'required|in:admin,editor',
+            'password' => 'nullable|min:6',
+        ]);
+
+        // Update user
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->role = $validated['role'];
+
+        // Only update password if provided
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        $user->save();
+
+        return response()->json(['status' => 'success', 'message' => 'User updated successfully']);
+    }
+
 
     public function destroy(User $user)
     {

@@ -31,19 +31,21 @@ Route::middleware('auth')->group(function() {
         ->name('contacts.restore');
 
 
-    Route::get('/contacts/{id}', [ContactsController::class, 'showAjax'])->name('contacts.showAjax');
-
 
     // Then define the resource routes for websites:
     Route::resource('contacts', ContactsController::class)->names([
         'index'   => 'contacts.index',
         'create'  => 'contacts.create',
         'store'   => 'contacts.store',
-        'edit'    => 'contacts.edit',
         'update'  => 'contacts.update',
         'destroy' => 'contacts.destroy',
     ]);
 
+    Route::get('/contacts/{id}/edit-ajax', [ContactsController::class, 'editAjax'])
+        ->name('contacts.editAjax');
+
+    Route::get('/contacts/ajax/{id}', [ContactsController::class, 'showAjax'])
+        ->name('contacts.showAjax');
     // Existing routes...
 // Add two new GET routes for CSV and PDF export
     Route::get('/websites/export/csv', [WebsiteController::class, 'exportCsv'])
@@ -77,6 +79,9 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
         'update'  => 'admin.users.update',
         'destroy' => 'admin.users.destroy',
     ]);
+
+    Route::get('/admin/users/{id}/edit-ajax', [UserController::class, 'editAjax'])->name('admin.users.editAjax');
+
 });
 
 
