@@ -13,9 +13,16 @@ class DailyConversion extends Command
 
     public function handle()
     {
-        // 1) Fetch the latest USD->EUR from an external API
-        $url = 'https://api.exchangerate.host/latest?base=USD&symbols=EUR';
-        $response = Http::get($url)->json(); // Using Laravel's Http client
+        // 1) Get the access key from .env
+        $accessKey = env('EXCHANGERATE_ACCESS_KEY'); // or any variable name you prefer
+
+        // 2) Build the URL with the access key
+        //    Example: https://api.exchangerate.host/latest?base=USD&symbols=EUR&access_key=YOUR_KEY
+        $url = 'https://api.exchangerate.host/latest?base=USD&symbols=EUR'
+            . '&access_key=' . $accessKey;
+
+        // 3) Fetch the latest USD->EUR from the external API
+        $response = Http::get($url)->json();
 
         if (!isset($response['rates']['EUR'])) {
             $this->error('Error: Unexpected API response');
@@ -25,14 +32,14 @@ class DailyConversion extends Command
         $todayRate = $response['rates']['EUR'];
         $this->info("Today's Rate: $todayRate");
 
-        // 2) Store in app_settings
+        // 4) Store in app_settings
         DB::table('app_settings')
             ->updateOrInsert(
                 ['setting_name' => 'usd_eur_rate'],
                 ['setting_value' => $todayRate]
             );
 
-        // 3) Re-scale all USD rows
+        // 5) Re-scale all USD rows
         DB::update("
             UPDATE websites w
             JOIN websites_conversion_log c ON w.id = c.website_id
@@ -45,7 +52,13 @@ class DailyConversion extends Command
                 w.automatic_evaluation = w.automatic_evaluation * (? / c.last_used_rate),
                 c.last_used_rate       = ?
             WHERE w.currency = 'USD'
-        ", [$todayRate, $todayRate, $todayRate, $todayRate, $todayRate]);
+        ", [
+            $todayRate,
+            $todayRate,
+            $todayRate,
+            $todayRate,
+            $todayRate
+        ]);
 
         $this->info('Daily conversion complete!');
         return 0; // Success code
