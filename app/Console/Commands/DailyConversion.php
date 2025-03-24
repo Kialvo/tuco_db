@@ -18,7 +18,7 @@ class DailyConversion extends Command
 
         // 2) Build the URL with the access key
         //    Example: https://api.exchangerate.host/latest?base=USD&symbols=EUR&access_key=YOUR_KEY
-0        $url = 'https://api.exchangerate.host/live?access_key=e3ab4dd820dca469cc1414df17aa53d2';
+        $url = 'https://api.exchangerate.host/live?access_key=e3ab4dd820dca469cc1414df17aa53d2';
 
         // 3) Fetch the latest USD->EUR from the external API
         $response = Http::get($url)->json();
