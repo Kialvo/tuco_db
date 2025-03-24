@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use AmrShawky\Currency\Facade\Currency;
 use App\Models\Website;
 use App\Models\Country;
 use App\Models\Language;
@@ -707,7 +708,16 @@ class WebsiteController extends Controller
     public function store(Request $request)
     {
         // 1) Validate all fields EXCEPT we do not rely on user input for 'automatic_evaluation'
+        // 1) Validate your form inputs
         $validated = $this->validateForm($request);
+
+        // 2) Convert the 4 price fields to EUR if currency_code == 'USD'
+        $this->convertUsdFieldsToEur($validated, [
+            'publisher_price',
+            'link_insertion_price',
+            'no_follow_price',
+            'special_topic_price',
+        ]);
 
         // 2) Compute the automatic evaluation from your formula
         //    Formula: {DA}*2.4 + {TF}*1.45 + {DR}*0.5 + IF({SR}>=9700, {SR}/15000, 0)*1.35
@@ -786,8 +796,16 @@ class WebsiteController extends Controller
      */
     public function update(Request $request, Website $website)
     {
-        // 1) Validate the incoming data
+        // 1) Validate your form inputs
         $validated = $this->validateForm($request);
+
+        // 2) Convert the 4 price fields to EUR if currency_code == 'USD'
+        $this->convertUsdFieldsToEur($validated, [
+            'publisher_price',
+            'link_insertion_price',
+            'no_follow_price',
+            'special_topic_price',
+        ]);
 
         // 2) Compute automatic evaluation
         $da = $validated['DA'] ?? 0;
@@ -858,6 +876,27 @@ class WebsiteController extends Controller
     }
 
 
+    private function convertUsdFieldsToEur(array &$validated, array $fields)
+    {
+        // Only convert if the user explicitly said "USD" in the form
+        if (
+            isset($validated['currency_code'])
+            && strtoupper($validated['currency_code']) === 'USD'
+        ) {
+            foreach ($fields as $fieldName) {
+                if (!empty($validated[$fieldName])) {
+                    // Use the amrshawky/laravel-currency package to convert
+                    $validated[$fieldName] = Currency::convert()
+                        ->from('USD')
+                        ->to('EUR')
+                        ->amount($validated[$fieldName])
+                        ->get();
+                }
+            }
+            // DO NOT change $validated['currency_code'];
+            // We keep it as 'USD' per your request.
+        }
+    }
     /**
      * Validate form data for create/update.
      */

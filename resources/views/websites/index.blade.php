@@ -375,53 +375,53 @@
             overflow-x-auto
             max-w-[1400px]">
 
-            <table id="websitesTable" class="text-xs text-gray-700 w-full min-w-[1200px]">
+            <table id="websitesTable" class="text-xs text-gray-700 w-full min-w-[1500px]">
                 <thead>
-                <tr class="border-b border-gray-200 bg-gray-50 text-[10px] uppercase text-gray-500 tracking-wider">
-                    <th>ID</th>
-                    <th>Domain</th>
-                    <th>Publisher Price</th>
-                    <th>Kialvo</th>
-                    <th>Profit</th>
-                    <th>Country</th>
-                    <th>Language</th>
-                    <th>Contact</th>
-                    <th>Categories</th>
-                    <th>Status</th>
-                    <th>Currency</th>
-                    <th>Date Publisher Price</th>
-                    <th>Link Insertion Price</th>
-                    <th>No Follow Price</th>
-                    <th>Special Topic Price</th>
-                    <th>Linkbuilder</th>
-                    <th>Automatic Evaluation</th>
-                    <th>Date Kialvo Evaluation</th>
-                    <th>Type of Website</th>
-                    <th>DA</th>
-                    <th>PA</th>
-                    <th>TF</th>
-                    <th>CF</th>
-                    <th>DR</th>
-                    <th>UR</th>
-                    <th>ZA</th>
-                    <th>AS</th>
-                    <th>SEO Zoom</th>
-                    <th>TF vs CF</th>
-                    <th>Semrush Traffic</th>
-                    <th>Ahrefs Keyword</th>
-                    <th>Ahrefs Traffic</th>
-                    <th>Keyword vs Traffic</th>
-                    <th>SEO Metrics Date</th>
-                    <th>Betting</th>
-                    <th>Trading</th>
-                    <th>More than 1 link</th>
-                    <th>Copywriting</th>
-                    <th>No Sponsored Tag</th>
-                    <th>Social Media Sharing</th>
-                    <th>Post in Homepage</th>
-                    <th>Date Added</th>
-                    <th>Extra Notes</th>
-                    <th>Action</th>
+                <tr class="border-b border-gray-200 bg-gray-50 text-[12px] uppercase text-gray-500 tracking-wider">
+                    <th class="whitespace-nowrap px-4 py-2">ID</th>
+                    <th class="whitespace-nowrap px-4 py-2">Domain</th>
+                    <th class="whitespace-nowrap px-4 py-2">€ Publisher Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Kialvo</th>
+                    <strong><th class="whitespace-nowrap px-4 py-2">€ Profit</th></strong>
+                    <th class="whitespace-nowrap px-4 py-2">Country</th>
+                    <th class="whitespace-nowrap px-4 py-2">Language</th>
+                    <th class="whitespace-nowrap px-4 py-2">Contact</th>
+                    <th class="whitespace-nowrap px-4 py-2">Categories</th>
+                    <th class="whitespace-nowrap px-4 py-2">Status</th>
+                    <th class="whitespace-nowrap px-4 py-2">Currency</th>
+                    <th class="whitespace-nowrap px-4 py-2">Date Publisher Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">€ Link Insertion Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">€ No Follow Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">€ Special Topic Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Linkbuilder</th>
+                    <th class="whitespace-nowrap px-4 py-2">€ Automatic Evaluation</th>
+                    <th class="whitespace-nowrap px-4 py-2">Date Kialvo Evaluation</th>
+                    <th class="whitespace-nowrap px-4 py-2">Type of Website</th>
+                    <th class="whitespace-nowrap px-4 py-2">DA</th>
+                    <th class="whitespace-nowrap px-4 py-2">PA</th>
+                    <th class="whitespace-nowrap px-4 py-2">TF</th>
+                    <th class="whitespace-nowrap px-4 py-2">CF</th>
+                    <th class="whitespace-nowrap px-4 py-2">DR</th>
+                    <th class="whitespace-nowrap px-4 py-2">UR</th>
+                    <th class="whitespace-nowrap px-4 py-2">ZA</th>
+                    <th class="whitespace-nowrap px-4 py-2">AS</th>
+                    <th class="whitespace-nowrap px-4 py-2">SEO Zoom</th>
+                    <th class="whitespace-nowrap px-4 py-2">TF vs CF</th>
+                    <th class="whitespace-nowrap px-4 py-2">Semrush Traffic</th>
+                    <th class="whitespace-nowrap px-4 py-2">Ahrefs Keyword</th>
+                    <th class="whitespace-nowrap px-4 py-2">Ahrefs Traffic</th>
+                    <th class="whitespace-nowrap px-4 py-2">Keyword vs Traffic</th>
+                    <th class="whitespace-nowrap px-4 py-2">SEO Metrics Date</th>
+                    <th class="whitespace-nowrap px-4 py-2">Betting</th>
+                    <th class="whitespace-nowrap px-4 py-2">Trading</th>
+                    <th class="whitespace-nowrap px-4 py-2">More than 1 link</th>
+                    <th class="whitespace-nowrap px-4 py-2">Copywriting</th>
+                    <th class="whitespace-nowrap px-4 py-2">No Sponsored Tag</th>
+                    <th class="whitespace-nowrap px-4 py-2">Social Media Sharing</th>
+                    <th class="whitespace-nowrap px-4 py-2">Post in Homepage</th>
+                    <th class="whitespace-nowrap px-4 py-2">Date Added</th>
+                    <th class="whitespace-nowrap px-4 py-2">Extra Notes</th>
+                    <th class="whitespace-nowrap px-4 py-2">Action</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
@@ -511,9 +511,23 @@
                 columns: [
                     { data: 'id', name: 'id' },
                     { data: 'domain_name', name: 'domain_name' },
-                    { data: 'publisher_price', name: 'publisher_price' },
+                    {
+                        data: 'publisher_price',
+                        name: 'publisher_price',
+                        render: function (data, type, row) {
+                            // Wrap the numeric value in <strong>
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
+
                     { data: 'kialvo_evaluation', name: 'kialvo_evaluation' },
-                    { data: 'profit', name: 'profit' },
+                    {
+                        data: 'profit',
+                        name: 'profit',
+                        render: function (data, type, row) {
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
                     { data: 'country_name', name: 'country.country_name' },
                     { data: 'language_name', name: 'language.name' },
                     {
@@ -533,11 +547,35 @@
                     { data: 'status', name: 'status' },
                     { data: 'currency_code', name: 'currency_code' },
                     { data: 'date_publisher_price', name: 'date_publisher_price' },
-                    { data: 'link_insertion_price', name: 'link_insertion_price' },
-                    { data: 'no_follow_price', name: 'no_follow_price' },
-                    { data: 'special_topic_price', name: 'special_topic_price' },
+                    {
+                        data: 'link_insertion_price',
+                        name: 'link_insertion_price',
+                        render: function (data, type, row) {
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
+                    {
+                        data: 'no_follow_price',
+                        name: 'no_follow_price',
+                        render: function (data, type, row) {
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
+                    {
+                        data: 'special_topic_price',
+                        name: 'special_topic_price',
+                        render: function (data, type, row) {
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
                     { data: 'linkbuilder', name: 'linkbuilder' },
-                    { data: 'automatic_evaluation', name: 'automatic_evaluation' },
+                    {
+                        data: 'automatic_evaluation',
+                        name: 'automatic_evaluation',
+                        render: function (data, type, row) {
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
                     { data: 'date_kialvo_evaluation', name: 'date_kialvo_evaluation' },
                     { data: 'type_of_website', name: 'type_of_website' },
                     { data: 'DA', name: 'DA' },

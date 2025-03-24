@@ -18,18 +18,18 @@ class DailyConversion extends Command
 
         // 2) Build the URL with the access key
         //    Example: https://api.exchangerate.host/latest?base=USD&symbols=EUR&access_key=YOUR_KEY
-        $url = 'https://api.exchangerate.host/latest?base=USD&symbols=EUR'
-            . '&access_key=' . $accessKey;
+0        $url = 'https://api.exchangerate.host/live?access_key=e3ab4dd820dca469cc1414df17aa53d2';
 
         // 3) Fetch the latest USD->EUR from the external API
         $response = Http::get($url)->json();
 
-        if (!isset($response['rates']['EUR'])) {
+
+        if (!isset($response['quotes']['USDEUR'])) {
             $this->error('Error: Unexpected API response');
             return 1; // Error code
         }
 
-        $todayRate = $response['rates']['EUR'];
+        $todayRate = $response['quotes']['USDEUR'];
         $this->info("Today's Rate: $todayRate");
 
         // 4) Store in app_settings
@@ -51,8 +51,10 @@ class DailyConversion extends Command
                 w.profit               = w.profit               * (? / c.last_used_rate),
                 w.automatic_evaluation = w.automatic_evaluation * (? / c.last_used_rate),
                 c.last_used_rate       = ?
-            WHERE w.currency = 'USD'
+            WHERE w.currency_code = 'USD'
         ", [
+            $todayRate,
+            $todayRate,
             $todayRate,
             $todayRate,
             $todayRate,
