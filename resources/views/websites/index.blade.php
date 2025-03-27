@@ -514,22 +514,40 @@
                     {
                         data: 'publisher_price',
                         name: 'publisher_price',
+                        className: 'text-center',
                         render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
                             // Wrap the numeric value in <strong>
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
 
-                    { data: 'kialvo_evaluation', name: 'kialvo_evaluation' },
                     {
-                        data: 'profit',
-                        name: 'profit',
+                        data: 'kialvo_evaluation',
+                        name: 'kialvo_evaluation',
+                        className: 'text-center',
                         render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
-                    { data: 'country_name', name: 'country.country_name' },
-                    { data: 'language_name', name: 'language.name' },
+                    {
+                        data: 'profit',
+                        name: 'profit',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
+                    { data: 'country_name', name: 'country.country_name', className: 'text-center', },
+                    { data: 'language_name', name: 'language.name',  className: 'text-center', },
                     {
                         data: 'contact_name',
                         name: 'contact.name',
@@ -543,65 +561,108 @@
                         </a>`;
                         }
                     },
-                    { data: 'categories_list', name: 'categories_list' },
-                    { data: 'status', name: 'status' },
-                    { data: 'currency_code', name: 'currency_code' },
-                    { data: 'date_publisher_price', name: 'date_publisher_price' },
+                    { data: 'categories_list', name: 'categories_list', className: 'text-center', },
+                    { data: 'status', name: 'status', className: 'text-center', },
+                    { data: 'currency_code', name: 'currency_code', className: 'text-center', },
+                    { data: 'date_publisher_price', name: 'date_publisher_price',
+                        className: 'text-center',
+                        render: function(data, type, row) {
+                            if (!data) {
+                                return '';
+                            }
+                            // Simple substring if it's "YYYY-MM-DD HH:MM:SS":
+                            return data.substring(0, 10);  // "YYYY-MM-DD"
+                        }
+                    },
                     {
                         data: 'link_insertion_price',
                         name: 'link_insertion_price',
+                        className: 'text-center',
                         render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
                     {
                         data: 'no_follow_price',
                         name: 'no_follow_price',
+                        className: 'text-center',
                         render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
                     {
                         data: 'special_topic_price',
                         name: 'special_topic_price',
+                        className: 'text-center',
                         render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
-                    { data: 'linkbuilder', name: 'linkbuilder' },
+                    { data: 'linkbuilder', name: 'linkbuilder', className: 'text-center', },
                     {
                         data: 'automatic_evaluation',
                         name: 'automatic_evaluation',
+                        className: 'text-center',
                         render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
-                    { data: 'date_kialvo_evaluation', name: 'date_kialvo_evaluation' },
-                    { data: 'type_of_website', name: 'type_of_website' },
-                    { data: 'DA', name: 'DA' },
-                    { data: 'PA', name: 'PA' },
-                    { data: 'TF', name: 'TF' },
-                    { data: 'CF', name: 'CF' },
-                    { data: 'DR', name: 'DR' },
-                    { data: 'UR', name: 'UR' },
-                    { data: 'ZA', name: 'ZA' },
-                    { data: 'as_metric', name: 'as_metric' },
-                    { data: 'seozoom', name: 'seozoom' },
-                    { data: 'TF_vs_CF', name: 'TF_vs_CF' },
-                    { data: 'semrush_traffic', name: 'semrush_traffic' },
-                    { data: 'ahrefs_keyword', name: 'ahrefs_keyword' },
-                    { data: 'ahrefs_traffic', name: 'ahrefs_traffic' },
-                    { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic' },
-                    { data: 'seo_metrics_date', name: 'seo_metrics_date' },
-                    { data: 'betting', name: 'betting' },
-                    { data: 'trading', name: 'trading' },
-                    { data: 'more_than_one_link', name: 'more_than_one_link' },
-                    { data: 'copywriting', name: 'copywriting' },
-                    { data: 'no_sponsored_tag', name: 'no_sponsored_tag' },
-                    { data: 'social_media_sharing', name: 'social_media_sharing' },
-                    { data: 'post_in_homepage', name: 'post_in_homepage' },
-                    { data: 'created_at', name: 'date_added' },
-                    { data: 'extra_notes', name: 'extra_notes' },
+                    { data: 'date_kialvo_evaluation', name: 'date_kialvo_evaluation', className: 'text-center', },
+                    { data: 'type_of_website', name: 'type_of_website', className: 'text-center', },
+                    { data: 'DA', name: 'DA', className: 'text-center', },
+                    { data: 'PA', name: 'PA', className: 'text-center', },
+                    { data: 'TF', name: 'TF', className: 'text-center', },
+                    { data: 'CF', name: 'CF', className: 'text-center', },
+                    { data: 'DR', name: 'DR', className: 'text-center', },
+                    { data: 'UR', name: 'UR', className: 'text-center', },
+                    { data: 'ZA', name: 'ZA', className: 'text-center', },
+                    { data: 'as_metric', name: 'as_metric', className: 'text-center', },
+                    { data: 'seozoom', name: 'seozoom', className: 'text-center', },
+                    { data: 'TF_vs_CF', name: 'TF_vs_CF', className: 'text-center', },
+                    { data: 'semrush_traffic', name: 'semrush_traffic', className: 'text-center', },
+                    { data: 'ahrefs_keyword', name: 'ahrefs_keyword', className: 'text-center', },
+                    { data: 'ahrefs_traffic', name: 'ahrefs_traffic', className: 'text-center', },
+                    { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic', className: 'text-center', },
+                    { data: 'seo_metrics_date', name: 'seo_metrics_date',
+                        className: 'text-center',
+                        render: function(data, type, row) {
+                            if (!data) {
+                                return '';
+                            }
+                            // Simple substring if it's "YYYY-MM-DD HH:MM:SS":
+                            return data.substring(0, 10);  // "YYYY-MM-DD"
+                        }
+                    },
+                    { data: 'betting', name: 'betting', className: 'text-center', },
+                    { data: 'trading', name: 'trading', className: 'text-center', },
+                    { data: 'more_than_one_link', name: 'more_than_one_link', className: 'text-center', },
+                    { data: 'copywriting', name: 'copywriting', className: 'text-center', },
+                    { data: 'no_sponsored_tag', name: 'no_sponsored_tag', className: 'text-center', },
+                    { data: 'social_media_sharing', name: 'social_media_sharing', className: 'text-center', },
+                    { data: 'post_in_homepage', name: 'post_in_homepage', className: 'text-center', },
+                    { data: 'created_at', name: 'date_added',
+                        className: 'text-center',
+                        render: function(data, type, row) {
+                            if (!data) {
+                                return '';
+                            }
+                            // Simple substring if it's "YYYY-MM-DD HH:MM:SS":
+                            return data.substring(0, 10);  // "YYYY-MM-DD"
+                        }
+                    },
+                    { data: 'extra_notes', name: 'extra_notes', className: 'text-center', },
                     { data: 'action', name: 'action', orderable: false, searchable: false }
                 ],
                 order: [[0, 'desc']],
