@@ -49,6 +49,12 @@
                 <strong>Instagram:</strong>
                 <span id="modalContactInstagram" class="ml-1 text-gray-700"></span>
             </p>
+
+            <div class="mt-4">
+                <strong>Websites for this contact:</strong>
+                <!-- We'll populate this dynamically via JavaScript -->
+                <div id="modalContactWebsites" class="text-sm mt-2"></div>
+            </div>
         </div>
 
         <!-- Optional bottom Close button -->

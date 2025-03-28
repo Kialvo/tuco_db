@@ -869,6 +869,7 @@
             $(document).on('click', '.contact-link', function(e) {
                 e.preventDefault();
                 let contactId = $(this).data('contact-id');
+
                 $.ajax({
                     url: "{{ route('contacts.showAjax', '') }}/" + contactId,
                     type: 'GET',
@@ -880,6 +881,30 @@
                             $('#modalContactPhone').text(c.phone ?? '');
                             $('#modalContactFacebook').text(c.facebook ?? '');
                             $('#modalContactInstagram').text(c.instagram ?? '');
+
+                            // Build websites list
+                            let websitesHtml = '';
+                            if (c.websites && c.websites.length > 0) {
+                                websitesHtml = '<ul>';
+                                c.websites.forEach(function (w) {
+                                    // If you want to view the website's show blade:
+                                    let url = "/websites/" + w.id;
+
+                                    websitesHtml += `
+                                <li>
+                                    <a href="${url}" class="underline text-blue-600">
+                                        ${w.domain_name}
+                                    </a>
+                                </li>
+                            `;
+                                });
+                                websitesHtml += '</ul>';
+                            } else {
+                                websitesHtml = '<p>No websites found for this contact.</p>';
+                            }
+
+                            $('#modalContactWebsites').html(websitesHtml);
+                            // Show the modal
                             $('#contactModal').removeClass('hidden');
                         } else {
                             alert('Could not load contact info.');
@@ -891,10 +916,13 @@
                 });
             });
 
-            $('#closeContactModal, #closeContactModalBottom').click(function() {
+            // Close buttons
+            $('#closeContactModal, #closeContactModalBottom').on('click', function() {
                 $('#contactModal').addClass('hidden');
             });
-        });
+
+        }); // <-- END of $(document).ready()
+
 
         document.addEventListener('DOMContentLoaded', function() {
             let toggleBtn = document.getElementById('toggleFiltersBtn');

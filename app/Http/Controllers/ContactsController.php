@@ -179,11 +179,30 @@ class ContactsController extends Controller
      */
     public function showAjax($id)
     {
-        $contact = Contact::findOrFail($id);
+        // Eager-load "websites" (assuming your Contact model has a hasMany(Website::class, 'contact_id'))
+        $contact = Contact::with('websites')->findOrFail($id);
 
+        // Prepare array for JSON response
+        $data = [
+            'id'        => $contact->id,
+            'name'      => $contact->name,
+            'email'     => $contact->email,
+            'phone'     => $contact->phone,
+            'facebook'  => $contact->facebook,
+            'instagram' => $contact->instagram,
+            // Return an array of websites (id + domain_name)
+            'websites'  => $contact->websites->map(function($w) {
+                return [
+                    'id'          => $w->id,
+                    'domain_name' => $w->domain_name,
+                ];
+            }),
+        ];
+
+        // Return JSON
         return response()->json([
             'status' => 'success',
-            'data' => $contact
+            'data'   => $data
         ]);
     }
 
