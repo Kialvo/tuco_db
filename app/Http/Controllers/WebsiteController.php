@@ -56,6 +56,7 @@ class WebsiteController extends Controller
             $query->where('publisher_price', '<=', $request->publisher_price_max);
         }
 
+
 // Kialvo Evaluation
         if (!empty($request->kialvo_min) && !empty($request->kialvo_max)) {
             $query->whereBetween('kialvo_evaluation', [$request->kialvo_min, $request->kialvo_max]);
@@ -943,6 +944,10 @@ class WebsiteController extends Controller
             'social_media_sharing'   => 'nullable|boolean',
             'post_in_homepage'       => 'nullable|boolean',
             'extra_notes'            => 'nullable|string',
+            'original_publisher_price'        => 'nullable|numeric',
+            'original_no_follow_price'        => 'nullable|numeric',
+            'original_link_insertion_price'        => 'nullable|numeric',
+            'original_special_topic_price'        => 'nullable|numeric',
         ]);
     }
 }

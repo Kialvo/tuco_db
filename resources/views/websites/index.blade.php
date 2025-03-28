@@ -381,6 +381,7 @@
                     <th class="whitespace-nowrap px-4 py-2">ID</th>
                     <th class="whitespace-nowrap px-4 py-2">Domain</th>
                     <th class="whitespace-nowrap px-4 py-2">€ Publisher Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Original Publisher Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Kialvo</th>
                     <strong><th class="whitespace-nowrap px-4 py-2">€ Profit</th></strong>
                     <th class="whitespace-nowrap px-4 py-2">Country</th>
@@ -391,8 +392,11 @@
                     <th class="whitespace-nowrap px-4 py-2">Currency</th>
                     <th class="whitespace-nowrap px-4 py-2">Date Publisher Price</th>
                     <th class="whitespace-nowrap px-4 py-2">€ Link Insertion Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Original Link Insertion Price</th>
                     <th class="whitespace-nowrap px-4 py-2">€ No Follow Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Original No Follow Price</th>
                     <th class="whitespace-nowrap px-4 py-2">€ Special Topic Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Original Special Topic Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Linkbuilder</th>
                     <th class="whitespace-nowrap px-4 py-2">€ Automatic Evaluation</th>
                     <th class="whitespace-nowrap px-4 py-2">Date Kialvo Evaluation</th>
@@ -523,7 +527,18 @@
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
-
+                    {
+                        data: 'original_publisher_price',
+                        name: 'original_publisher_price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            // Wrap the numeric value in <strong>
+                            return '<strong> USD ' + data + '</strong>';
+                        }
+                    },
                     {
                         data: 'kialvo_evaluation',
                         name: 'kialvo_evaluation',
@@ -586,6 +601,17 @@
                         }
                     },
                     {
+                        data: 'original_link_insertion_price',
+                        name: 'original_link_insertion_price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> USD ' + data + '</strong>';
+                        }
+                    },
+                    {
                         data: 'no_follow_price',
                         name: 'no_follow_price',
                         className: 'text-center',
@@ -597,6 +623,17 @@
                         }
                     },
                     {
+                        data: 'original_no_follow_price',
+                        name: 'original_no_follow_price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> USD ' + data + '</strong>';
+                        }
+                    },
+                    {
                         data: 'special_topic_price',
                         name: 'special_topic_price',
                         className: 'text-center',
@@ -605,6 +642,17 @@
                                 return '';
                             }
                             return '<strong> € ' + data + '</strong>';
+                        }
+                    },
+                    {
+                        data: 'original_special_topic_price',
+                        name: 'original_special_topic_price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> USD ' + data + '</strong>';
                         }
                     },
                     { data: 'linkbuilder', name: 'linkbuilder', className: 'text-center', },

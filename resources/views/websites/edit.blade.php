@@ -115,6 +115,13 @@
                 @enderror
             </div>
             <div>
+                <label class="block">Original Publisher Price</label>
+                <input type="number" step="0.01" name="original_publisher_price" value="{{ old('original_publisher_price', $website->original_publisher_price) }}" class="w-full border-gray-300 rounded">
+                @error('original_publisher_price')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
                 <label class="block">Date Publisher Price</label>
                 <input type="date" name="date_publisher_price" value="{{ old('date_publisher_price', $website->date_publisher_price) }}" class="w-full border-gray-300 rounded">
                 @error('date_publisher_price')
@@ -125,6 +132,13 @@
                 <label class="block">Link Insertion Price</label>
                 <input type="number" step="0.01" name="link_insertion_price" value="{{ old('link_insertion_price', $website->link_insertion_price) }}" class="w-full border-gray-300 rounded">
                 @error('link_insertion_price')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="block">Original Link Insertion Price</label>
+                <input type="number" step="0.01" name="original_link_insertion_price" value="{{ old('original_link_insertion_price', $website->original_link_insertion_price) }}" class="w-full border-gray-300 rounded">
+                @error('original_link_insertion_price')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
             </div>
@@ -139,9 +153,23 @@
                 @enderror
             </div>
             <div>
+                <label class="block">Original No Follow Price</label>
+                <input type="number" step="0.01" name="original_no_follow_price" value="{{ old('original_no_follow_price', $website->original_no_follow_price) }}" class="w-full border-gray-300 rounded">
+                @error('original_no_follow_price')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
                 <label class="block">Special Topic Price</label>
                 <input type="number" step="0.01" name="special_topic_price" value="{{ old('special_topic_price', $website->special_topic_price) }}" class="w-full border-gray-300 rounded">
                 @error('special_topic_price')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="block">Original Special Topic Price</label>
+                <input type="number" step="0.01" name="original_special_topic_price" value="{{ old('original_special_topic_price', $website->original_special_topic_price) }}" class="w-full border-gray-300 rounded">
+                @error('original_special_topic_price')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
             </div>

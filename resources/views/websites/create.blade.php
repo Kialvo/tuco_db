@@ -159,6 +159,19 @@
                 @enderror
             </div>
             <div>
+                <label class="block text-gray-700 font-medium mb-1">Original Publisher Price</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    name="original_publisher_price"
+                    value="{{ old('original_publisher_price') }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                >
+                @error('original_publisher_price')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
                 <label class="block text-gray-700 font-medium mb-1">Date Publisher Price</label>
                 <input
                     type="date"
@@ -183,6 +196,19 @@
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Original Link Insertion Price</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    name="original_link_insertion_price"
+                    value="{{ old('original_link_insertion_price') }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                >
+                @error('original_link_insertion_price')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
 
         <div class="grid grid-cols-3 gap-4">
@@ -200,6 +226,19 @@
                 @enderror
             </div>
             <div>
+                <label class="block text-gray-700 font-medium mb-1">Original No Follow Price</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    name="original_no_follow_price"
+                    value="{{ old('original_no_follow_price') }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                >
+                @error('original_no_follow_price')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
                 <label class="block text-gray-700 font-medium mb-1">Special Topic Price</label>
                 <input
                     type="number"
@@ -209,6 +248,19 @@
                     class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
                 >
                 @error('special_topic_price')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Original Special Topic Price</label>
+                <input
+                    type="number"
+                    step="0.01"
+                    name="original_special_topic_price"
+                    value="{{ old('original_special_topic_price') }}"
+                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                >
+                @error('original_special_topic_price')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>

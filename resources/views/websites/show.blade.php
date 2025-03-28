@@ -14,16 +14,28 @@
             <strong>Publisher Price:</strong> {{ $website->publisher_price }}
         </div>
         <div class="mb-2">
+            <strong>Original Publisher Price:</strong> {{ $website->original_publisher_price }}
+        </div>
+        <div class="mb-2">
             <strong>Date Publisher Price:</strong> {{ $website->date_publisher_price }}
         </div>
         <div class="mb-2">
             <strong>Link Insertion Price:</strong> {{ $website->link_insertion_price }}
         </div>
         <div class="mb-2">
+            <strong>Original Link Insertion Price:</strong> {{ $website->original_link_insertion_price }}
+        </div>
+        <div class="mb-2">
             <strong>No Follow Price:</strong> {{ $website->no_follow_price }}
         </div>
         <div class="mb-2">
+            <strong>Original No Follow Price:</strong> {{ $website->original_no_follow_price }}
+        </div>
+        <div class="mb-2">
             <strong>Special Topic Price:</strong> {{ $website->special_topic_price }}
+        </div>
+        <div class="mb-2">
+            <strong>Original Special Topic Price:</strong> {{ $website->original_special_topic_price }}
         </div>
         <div class="mb-2">
             <strong>Profit:</strong> {{ $website->profit }}

@@ -51,6 +51,10 @@ class Website extends Model
         'social_media_sharing',
         'post_in_homepage',
         'extra_notes',
+        'original_publisher_price',
+        'original_no_follow_price',
+        'original_link_insertion_price',
+        'original_special_topic_price'
     ];
 
     // RELATIONSHIPS:
