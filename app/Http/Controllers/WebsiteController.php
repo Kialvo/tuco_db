@@ -230,8 +230,14 @@ class WebsiteController extends Controller
         // SEO Metrics (examples: DA and PA; add more as needed)
 
         // Foreign key filters
-        if (!empty($request->country_id)) {
-            $query->where('country_id', $request->country_id);
+        // 1) If we have an array of countries to include:
+        if (!empty($request->country_ids_include) && is_array($request->country_ids_include)) {
+            $query->whereIn('country_id', $request->country_ids_include);
+        }
+
+        // 2) If we have an array of countries to exclude:
+        if (!empty($request->country_ids_exclude) && is_array($request->country_ids_exclude)) {
+            $query->whereNotIn('country_id', $request->country_ids_exclude);
         }
         if (!empty($request->language_id)) {
             $query->where('language_id', $request->language_id);
@@ -645,8 +651,14 @@ class WebsiteController extends Controller
         // SEO Metrics (examples: DA and PA; add more as needed)
 
         // Foreign key filters
-        if (!empty($request->country_id)) {
-            $query->where('country_id', $request->country_id);
+        // 1) If we have an array of countries to include:
+        if (!empty($request->country_ids_include) && is_array($request->country_ids_include)) {
+            $query->whereIn('country_id', $request->country_ids_include);
+        }
+
+        // 2) If we have an array of countries to exclude:
+        if (!empty($request->country_ids_exclude) && is_array($request->country_ids_exclude)) {
+            $query->whereNotIn('country_id', $request->country_ids_exclude);
         }
         if (!empty($request->language_id)) {
             $query->where('language_id', $request->language_id);

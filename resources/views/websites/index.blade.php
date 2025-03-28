@@ -89,17 +89,30 @@
                 </div>
 
                 <!-- Country -->
+                <!-- Include Countries -->
                 <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Country</label>
-                    <select id="filterCountry"
-                            class="border border-gray-300 rounded px-2 py-2 w-30
-                               focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
+                    <label for="filterCountriesInclude" class="text-gray-700 font-medium">Include Countries</label>
+                    <select id="filterCountriesInclude" multiple
+                            class="border border-gray-300 rounded px-2 py-2 w-48
+                   focus:ring-cyan-500 focus:border-cyan-500">
                         @foreach($countries as $c)
                             <option value="{{ $c->id }}">{{ $c->country_name }}</option>
                         @endforeach
                     </select>
                 </div>
+
+                <!-- Exclude Countries -->
+                <div class="flex flex-col">
+                    <label for="filterCountriesExclude" class="text-gray-700 font-medium">Exclude Countries</label>
+                    <select id="filterCountriesExclude" multiple
+                            class="border border-gray-300 rounded px-2 py-2 w-48
+                   focus:ring-cyan-500 focus:border-cyan-500">
+                        @foreach($countries as $c)
+                            <option value="{{ $c->id }}">{{ $c->country_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
             </div>
 
             <!-- ROW 2: Publisher, Kialvo, Profit -->
@@ -380,27 +393,21 @@
                 <tr class="border-b border-gray-200 bg-gray-50 text-[12px] uppercase text-gray-500 tracking-wider">
                     <th class="whitespace-nowrap px-4 py-2">ID</th>
                     <th class="whitespace-nowrap px-4 py-2">Domain</th>
-                    <th class="whitespace-nowrap px-4 py-2">€ Publisher Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">Original Publisher Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">Kialvo</th>
-                    <strong><th class="whitespace-nowrap px-4 py-2">€ Profit</th></strong>
+                    <th class="whitespace-nowrap px-4 py-2">Status</th>
                     <th class="whitespace-nowrap px-4 py-2">Country</th>
                     <th class="whitespace-nowrap px-4 py-2">Language</th>
                     <th class="whitespace-nowrap px-4 py-2">Contact</th>
-                    <th class="whitespace-nowrap px-4 py-2">Categories</th>
-                    <th class="whitespace-nowrap px-4 py-2">Status</th>
                     <th class="whitespace-nowrap px-4 py-2">Currency</th>
+                    <th class="whitespace-nowrap px-4 py-2">Publisher Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">No Follow Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Special Topic Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Link Insertion Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Kialvo</th>
+                    <strong><th class="whitespace-nowrap px-4 py-2">Profit</th></strong>
                     <th class="whitespace-nowrap px-4 py-2">Date Publisher Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">€ Link Insertion Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">Original Link Insertion Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">€ No Follow Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">Original No Follow Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">€ Special Topic Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">Original Special Topic Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Linkbuilder</th>
-                    <th class="whitespace-nowrap px-4 py-2">€ Automatic Evaluation</th>
-                    <th class="whitespace-nowrap px-4 py-2">Date Kialvo Evaluation</th>
                     <th class="whitespace-nowrap px-4 py-2">Type of Website</th>
+                    <th class="whitespace-nowrap px-4 py-2">Categories</th>
                     <th class="whitespace-nowrap px-4 py-2">DA</th>
                     <th class="whitespace-nowrap px-4 py-2">PA</th>
                     <th class="whitespace-nowrap px-4 py-2">TF</th>
@@ -449,6 +456,17 @@
                 dropdownCssClass: 'text-xs limit-height'
             });
 
+            $('#filterCountriesInclude').select2({
+                placeholder: 'Select Countries to Include',
+                allowClear: true,
+                width: '10em', // Or '100%' if you prefer
+            });
+
+            $('#filterCountriesExclude').select2({
+                placeholder: 'Select Countries to Exclude',
+                allowClear: true,
+                width: '10em',
+            });
             // Initialize the DataTable
             let table = $('#websitesTable').DataTable({
                 processing: true,
@@ -465,7 +483,10 @@
                         d.type_of_website = $('#filterWebsiteType').val();
                         d.language_id = $('#filterLanguage').val();
                         d.status = $('#filterStatus').val();
-                        d.country_id = $('#filterCountry').val();
+
+                        d.country_ids_include = $('#filterCountriesInclude').val(); // Array
+                        d.country_ids_exclude = $('#filterCountriesExclude').val(); // Array
+
                         d.publisher_price_min = $('#filterPublisher_priceMin').val();
                         d.publisher_price_max = $('#filterPublisher_priceMax').val();
                         d.kialvo_min = $('#filterKialvo_evaluationMin').val();
@@ -515,6 +536,23 @@
                 columns: [
                     { data: 'id', name: 'id' },
                     { data: 'domain_name', name: 'domain_name' },
+                    { data: 'status', name: 'status', className: 'text-center', },
+                    { data: 'country_name', name: 'country.country_name', className: 'text-center', },
+                    { data: 'language_name', name: 'language.name',  className: 'text-center', },
+                    {
+                        data: 'contact_name',
+                        name: 'contact.name',
+                        render: function(data, type, row) {
+                            if (!row.contact_id) return "No Contact";
+                            return `
+                        <a href="#"
+                           class="contact-link text-blue-600 underline"
+                           data-contact-id="${row.contact_id}">
+                            ${data}
+                        </a>`;
+                        }
+                    },
+                    { data: 'currency_code', name: 'currency_code', className: 'text-center', },
                     {
                         data: 'publisher_price',
                         name: 'publisher_price',
@@ -528,15 +566,36 @@
                         }
                     },
                     {
-                        data: 'original_publisher_price',
-                        name: 'original_publisher_price',
+                        data: 'no_follow_price',
+                        name: 'no_follow_price',
                         className: 'text-center',
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            // Wrap the numeric value in <strong>
-                            return '<strong> USD ' + data + '</strong>';
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
+                    {
+                        data: 'special_topic_price',
+                        name: 'special_topic_price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
+                    {
+                        data: 'link_insertion_price',
+                        name: 'link_insertion_price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> € ' + data + '</strong>';
                         }
                     },
                     {
@@ -561,24 +620,6 @@
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
-                    { data: 'country_name', name: 'country.country_name', className: 'text-center', },
-                    { data: 'language_name', name: 'language.name',  className: 'text-center', },
-                    {
-                        data: 'contact_name',
-                        name: 'contact.name',
-                        render: function(data, type, row) {
-                            if (!row.contact_id) return "No Contact";
-                            return `
-                        <a href="#"
-                           class="contact-link text-blue-600 underline"
-                           data-contact-id="${row.contact_id}">
-                            ${data}
-                        </a>`;
-                        }
-                    },
-                    { data: 'categories_list', name: 'categories_list', className: 'text-center', },
-                    { data: 'status', name: 'status', className: 'text-center', },
-                    { data: 'currency_code', name: 'currency_code', className: 'text-center', },
                     { data: 'date_publisher_price', name: 'date_publisher_price',
                         className: 'text-center',
                         render: function(data, type, row) {
@@ -589,86 +630,10 @@
                             return data.substring(0, 10);  // "YYYY-MM-DD"
                         }
                     },
-                    {
-                        data: 'link_insertion_price',
-                        name: 'link_insertion_price',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> € ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'original_link_insertion_price',
-                        name: 'original_link_insertion_price',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> USD ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'no_follow_price',
-                        name: 'no_follow_price',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> € ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'original_no_follow_price',
-                        name: 'original_no_follow_price',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> USD ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'special_topic_price',
-                        name: 'special_topic_price',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> € ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'original_special_topic_price',
-                        name: 'original_special_topic_price',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> USD ' + data + '</strong>';
-                        }
-                    },
+
                     { data: 'linkbuilder', name: 'linkbuilder', className: 'text-center', },
-                    {
-                        data: 'automatic_evaluation',
-                        name: 'automatic_evaluation',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> € ' + data + '</strong>';
-                        }
-                    },
-                    { data: 'date_kialvo_evaluation', name: 'date_kialvo_evaluation', className: 'text-center', },
                     { data: 'type_of_website', name: 'type_of_website', className: 'text-center', },
+                    { data: 'categories_list', name: 'categories_list', className: 'text-center', },
                     { data: 'DA', name: 'DA', className: 'text-center', },
                     { data: 'PA', name: 'PA', className: 'text-center', },
                     { data: 'TF', name: 'TF', className: 'text-center', },
@@ -787,6 +752,10 @@
                 $('#filterForm input[type="text"], #filterForm input[type="number"]').val('');
                 $('#filterForm select').val('');
                 $('#filterForm input[type="checkbox"]').prop('checked', false);
+                // Specifically clear the multi-selects:
+                $('#filterCountriesInclude').val(null).trigger('change');
+                $('#filterCountriesExclude').val(null).trigger('change');
+
                 $('#filterCategories').val(null).trigger('change');
                 table.ajax.reload();
             });
