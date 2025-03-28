@@ -46,7 +46,7 @@
                     <label class="text-gray-700 font-medium">Domain</label>
                     <input id="filterDomainName" type="text"
                            class="border border-gray-300 rounded px-2 py-2 w-30
-                              focus:ring-cyan-500 focus:border-cyan-500">
+                              focus:ring-cyan-500 focus:border-cyan-500" placeholder="Type Domain">
                 </div>
 
                 <!-- Type -->
@@ -109,11 +109,11 @@
                     <label class="text-gray-700 font-medium">Publisher Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterPublisher_priceMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterPublisher_priceMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
 
@@ -122,11 +122,11 @@
                     <label class="text-gray-700 font-medium">Kialvo Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterKialvo_evaluationMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterKialvo_evaluationMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
 
@@ -135,11 +135,11 @@
                     <label class="text-gray-700 font-medium">Profit Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterProfitMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterProfitMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
             </div>
@@ -151,11 +151,11 @@
                     <label class="text-gray-700 font-medium">DA Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterDAMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterDAMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- PA Min/Max -->
@@ -163,11 +163,11 @@
                     <label class="text-gray-700 font-medium">PA Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterPAMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterPAMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- TF Min/Max -->
@@ -175,11 +175,11 @@
                     <label class="text-gray-700 font-medium">TF Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterTFMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterTFMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- CF Min/Max -->
@@ -187,11 +187,11 @@
                     <label class="text-gray-700 font-medium">CF Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterCFMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterCFMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- DR Min/Max -->
@@ -199,11 +199,11 @@
                     <label class="text-gray-700 font-medium">DR Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterDRMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterDRMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- UR Min/Max -->
@@ -211,11 +211,11 @@
                     <label class="text-gray-700 font-medium">UR Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterURMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterURMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- ZA Min/Max -->
@@ -223,11 +223,11 @@
                     <label class="text-gray-700 font-medium">ZA Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterZAMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterZAMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- AS Min/Max -->
@@ -235,11 +235,11 @@
                     <label class="text-gray-700 font-medium">AS Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterASMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterASMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- TF vs CF Min/Max -->
@@ -247,11 +247,11 @@
                     <label class="text-gray-700 font-medium">TF vs CF</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterTF_vS_cfMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterTF_vS_cfMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- Semrush Traffic Min/Max -->
@@ -259,11 +259,11 @@
                     <label class="text-gray-700 font-medium">Semrush Traffic</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterSemrush_trafficMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterSemrush_trafficMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- Ahrefs KW Min/Max -->
@@ -271,11 +271,11 @@
                     <label class="text-gray-700 font-medium">Ahrefs KW</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterAhrefs_keywordMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterAhrefs_keywordMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- Ahrefs Traffic Min/Max -->
@@ -283,11 +283,11 @@
                     <label class="text-gray-700 font-medium">Ahrefs Traffic</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterAhrefs_trafficMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterAhrefs_trafficMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
                 <!-- KW vs Traffic Min/Max -->
@@ -295,11 +295,11 @@
                     <label class="text-gray-700 font-medium">KW vs Traffic</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterKeyword_vs_trafficMin"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                         <input type="number" id="filterKeyword_vs_trafficMax"
-                               class="border border-gray-300 rounded w-14 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500">
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
             </div><!-- END ROW 3 -->
