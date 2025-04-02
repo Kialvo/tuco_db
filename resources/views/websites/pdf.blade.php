@@ -51,6 +51,7 @@
         <th>SEO Metrics Date</th>
         <th>Betting</th>
         <th>Trading</th>
+        <th>Permanent Link</th>
         <th>More than 1 link</th>
         <th>Copywriting</th>
         <th>No Sponsored Tag</th>
@@ -99,6 +100,7 @@
             <td>{{ $web->seo_metrics_date }}</td>
             <td>{{ $web->betting ? 'Yes' : 'No' }}</td>
             <td>{{ $web->trading ? 'Yes' : 'No' }}</td>
+            <td>{{ $web->permanent_link ? 'Yes' : 'No' }}</td>
             <td>{{ $web->more_than_one_link ? 'Yes' : 'No' }}</td>
             <td>{{ $web->copywriting ? 'Yes' : 'No' }}</td>
             <td>{{ $web->no_sponsored_tag ? 'Yes' : 'No' }}</td>

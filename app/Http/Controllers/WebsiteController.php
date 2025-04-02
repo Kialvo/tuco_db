@@ -222,6 +222,9 @@ class WebsiteController extends Controller
         if ($request->boolean('trading')) {
             $query->where('trading', true);
         }
+        if ($request->boolean('permanent_link')) {
+            $query->where('permanent_link', true);
+        }
         // If "show_deleted" is checked, restrict to onlyTrashed:
         if ($request->boolean('show_deleted')) {
             $query->onlyTrashed();
@@ -377,6 +380,7 @@ class WebsiteController extends Controller
             'SEO Metrics Date',
             'Betting',
             'Trading',
+            'Permanent Link',
             'More than 1 link',
             'Copywriting',
             'No Sponsored Tag',
@@ -428,6 +432,7 @@ class WebsiteController extends Controller
                 // Convert booleans to yes/no or just keep 0/1
                 $web->betting ? 'Yes' : 'No',
                 $web->trading ? 'Yes' : 'No',
+                $web->permanent_link ? 'Yes' : 'No',
                 $web->more_than_one_link ? 'Yes' : 'No',
                 $web->copywriting ? 'Yes' : 'No',
                 $web->no_sponsored_tag ? 'Yes' : 'No',
@@ -624,6 +629,9 @@ class WebsiteController extends Controller
         // Booleans – if the checkbox is checked (true), filter accordingly.
         if ($request->boolean('more_than_one_link')) {
             $query->where('more_than_one_link', true);
+        }
+        if ($request->boolean('permanent_link')) {
+            $query->where('permanent_link', true);
         }
         if ($request->boolean('copywriting')) {
             $query->where('copywriting', true);
@@ -950,6 +958,7 @@ class WebsiteController extends Controller
             'seo_metrics_date'       => 'nullable|date',
             'betting'                => 'nullable|boolean',
             'trading'                => 'nullable|boolean',
+            'permanent_link'                => 'nullable|boolean',
             'more_than_one_link'     => 'nullable|boolean',
             'copywriting'            => 'nullable|boolean',
             'no_sponsored_tag'       => 'nullable|boolean',

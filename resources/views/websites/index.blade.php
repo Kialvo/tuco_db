@@ -332,7 +332,7 @@
 
             <!-- ROW 5: Toggles in one row -->
             <div class="flex flex-wrap items-center gap-3 mb-2">
-                @foreach(['betting','trading','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'] as $chk)
+                @foreach(['betting','trading','permanent_link','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'] as $chk)
                     <div class="flex items-center space-x-1">
                         <span class="text-gray-700">{{ str_replace('_',' ', $chk) }}</span>
                         <label class="relative inline-flex items-center cursor-pointer">
@@ -425,6 +425,7 @@
                     <th class="whitespace-nowrap px-4 py-2">SEO Metrics Date</th>
                     <th class="whitespace-nowrap px-4 py-2">Betting</th>
                     <th class="whitespace-nowrap px-4 py-2">Trading</th>
+                    <th class="whitespace-nowrap px-4 py-2">Permanent Link</th>
                     <th class="whitespace-nowrap px-4 py-2">More than 1 link</th>
                     <th class="whitespace-nowrap px-4 py-2">Copywriting</th>
                     <th class="whitespace-nowrap px-4 py-2">Sponsored Tag</th>
@@ -524,6 +525,7 @@
 
                         d.betting = $('#filterBetting').is(':checked');
                         d.trading = $('#filterTrading').is(':checked');
+                        d.permanent_link = $('#filterPermanent_link').is(':checked');
                         d.more_than_one_link = $('#filterMore_than_one_link').is(':checked');
                         d.copywriting = $('#filterCopywriting').is(':checked');
                         d.no_sponsored_tag = $('#filterNo_sponsored_tag').is(':checked');
@@ -676,6 +678,15 @@
                                 return 'NO';
                         }
                     },
+                    { data: 'permanent_link', name: 'permanent_link', className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === 1 )  {
+                                return 'YES';
+                            }else if(data === 0)
+
+                                return 'NO';
+                        }
+                    },
                     { data: 'more_than_one_link', name: 'more_than_one_link', className: 'text-center',
                         render: function (data, type, row) {
                             if (data === 1 )  {
@@ -808,6 +819,7 @@
 
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
+                    permanent_link: $('#filterPermanent_link').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
                     copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
@@ -868,6 +880,7 @@
 
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
+                    permanent_link: $('#filterPermanent_link').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
                     copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,

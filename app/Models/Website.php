@@ -54,7 +54,8 @@ class Website extends Model
         'original_publisher_price',
         'original_no_follow_price',
         'original_link_insertion_price',
-        'original_special_topic_price'
+        'original_special_topic_price',
+        'permanent_link'
     ];
 
     // RELATIONSHIPS:

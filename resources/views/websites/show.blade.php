@@ -107,6 +107,9 @@
             <strong>Trading:</strong> {{ $website->trading ? 'Yes' : 'No' }}
         </div>
         <div class="mb-2">
+            <strong>Permanent Link:</strong> {{ $website->permanent_link ? 'Yes' : 'No' }}
+        </div>
+        <div class="mb-2">
             <strong>More than 1 Link:</strong> {{ $website->more_than_one_link ? 'Yes' : 'No' }}
         </div>
         <div class="mb-2">

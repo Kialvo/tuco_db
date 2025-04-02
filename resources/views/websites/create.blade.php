@@ -451,19 +451,6 @@
                 @enderror
             </div>
             <div>
-                <label class="block text-gray-700 font-medium mb-1">Keyword vs Traffic</label>
-                <input
-                    type="number"
-                    step="0.01"
-                    name="keyword_vs_traffic"
-                    value="{{ old('keyword_vs_traffic') }}"
-                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
-                >
-                @error('keyword_vs_traffic')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-            <div>
                 <label class="block text-gray-700 font-medium mb-1">SEO Metrics Date</label>
                 <input
                     type="date"
@@ -498,6 +485,17 @@
                     Trading
                 </label>
                 @error('trading')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="flex items-center">
+                    <input type="checkbox" name="permanent_link" value="1"
+                           {{ old('permanent_link') ? 'checked' : '' }}
+                           class="mr-2 focus:ring-cyan-500">
+                    Permanent Link
+                </label>
+                @error('permanent_link')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>

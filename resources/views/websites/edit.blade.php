@@ -348,6 +348,15 @@
             </div>
             <div>
                 <label class="flex items-center">
+                    <input type="checkbox" name="permanent_link" value="1" {{ old('permanent_link', $website->permanent_link) ? 'checked' : '' }} class="mr-2">
+                    Permanent Link
+                </label>
+                @error('permanent_link')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="flex items-center">
                     <input type="checkbox" name="more_than_one_link" value="1" {{ old('more_than_one_link', $website->more_than_one_link) ? 'checked' : '' }} class="mr-2">
                     More than one link
                 </label>
