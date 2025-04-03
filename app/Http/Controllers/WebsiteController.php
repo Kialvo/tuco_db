@@ -785,8 +785,8 @@ class WebsiteController extends Controller
             $website->categories()->sync($request->category_ids);
         }
 
-        return redirect()->route('websites.index')
-            ->with('status', 'Website created successfully!');
+        return redirect()->route('websites.edit', $website)
+            ->with('status', 'Website created successfully and ready to edit!');
     }
 
 
@@ -804,6 +804,8 @@ class WebsiteController extends Controller
      */
     public function edit(Website $website)
     {
+        $website->load(['country', 'language', 'contact', 'categories']);
+
         $countries  = Country::all();
         $languages  = Language::all();
         $contacts   = Contact::all();
