@@ -728,17 +728,10 @@ class WebsiteController extends Controller
      */
     public function store(Request $request)
     {
+
         // 1) Validate all fields EXCEPT we do not rely on user input for 'automatic_evaluation'
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
-
-        // 2) Convert the 4 price fields to EUR if currency_code == 'USD'
-        $this->convertUsdFieldsToEur($validated, [
-            'publisher_price',
-            'link_insertion_price',
-            'no_follow_price',
-            'special_topic_price',
-        ]);
 
         // 2) Compute the automatic evaluation from your formula
         //    Formula: {DA}*2.4 + {TF}*1.45 + {DR}*0.5 + IF({SR}>=9700, {SR}/15000, 0)*1.35
@@ -821,14 +814,6 @@ class WebsiteController extends Controller
     {
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
-
-        // 2) Convert the 4 price fields to EUR if currency_code == 'USD'
-        $this->convertUsdFieldsToEur($validated, [
-            'publisher_price',
-            'link_insertion_price',
-            'no_follow_price',
-            'special_topic_price',
-        ]);
 
         // 2) Compute automatic evaluation
         $da = $validated['DA'] ?? 0;
