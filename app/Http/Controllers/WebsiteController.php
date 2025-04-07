@@ -294,30 +294,33 @@ class WebsiteController extends Controller
                 $deleteUrl = route('websites.destroy', $row->id);
 
                 return '
-        <!-- VIEW -->
-        <a href="'.$viewUrl.'"
-           class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
-                  hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 mr-1">
-            <i class="fas fa-eye mr-1"></i> View
-        </a>
+        <div class="inline-flex space-x-1">
+            <!-- VIEW -->
+            <a href="'.$viewUrl.'"
+               class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
+                      hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <i class="fas fa-eye mr-1"></i> View
+            </a>
 
-        <!-- EDIT -->
-        <a href="'.$editUrl.'"
-           class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
-                  hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 mr-1">
-            <i class="fas fa-pen mr-1"></i> Edit
-        </a>
+            <!-- EDIT -->
+            <a href="'.$editUrl.'"
+               class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
+                      hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
+                <i class="fas fa-pen mr-1"></i> Edit
+            </a>
 
-        <!-- DELETE -->
-        <form action="'.$deleteUrl.'" method="POST" style="display:inline-block;">
-            '.csrf_field().method_field("DELETE").'
-            <button
-                onclick="return confirm(\'Are you sure you want to delete this website?\')"
-                class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
-                       hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                <i class="fas fa-trash mr-1"></i> Delete
-            </button>
-        </form>
+            <!-- DELETE -->
+            <form action="'.$deleteUrl.'" method="POST" style="display:inline-block;">
+                '.csrf_field().method_field("DELETE").'
+                <button
+                    onclick="return confirm(\'Are you sure you want to delete this website?\')"
+                    class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
+                           hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    <i class="fas fa-trash mr-1"></i> Delete
+                </button>
+            </form>
+        </div>
+
     ';
             })
             ->rawColumns(['action'])->make(true);

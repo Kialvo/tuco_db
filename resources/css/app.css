@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.dataTables_wrapper .dataTables_length select {
+    /* Ensure it’s at least wide enough to fit the text “Show 10 entries” without overlap */
+    @apply w-14; /* or w-32, depending on how wide you need it */
+
+    /* Remove the default arrow in multiple browsers */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    /* Add some right padding so text doesn't collide with the arrow area */
+    @apply pr-8;
+
+    /* Basic border + rounding */
+    @apply border border-gray-300 rounded-md text-sm py-1 pl-2;
+
+    /* If you still want your own arrow, do: */
+    /*
+    background-image: url("/images/arrow.svg");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1rem;
+    */
+}
+.dataTables_wrapper .dataTables_paginate {
+    /* Force it to the right */
+    float: right;
+    /* or, with Tailwind classes:
+       @apply float-right;
+    */
+}
