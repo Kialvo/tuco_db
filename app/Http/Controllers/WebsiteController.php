@@ -729,6 +729,7 @@ class WebsiteController extends Controller
     public function store(Request $request)
     {
 
+
         // 1) Validate all fields EXCEPT we do not rely on user input for 'automatic_evaluation'
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);

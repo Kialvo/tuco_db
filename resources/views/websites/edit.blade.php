@@ -29,11 +29,19 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block">Type of Website</label>
-                <input type="text" name="type_of_website" value="{{ old('type_of_website', $website->type_of_website) }}" class="w-full border-gray-300 rounded">
+                <select name="type_of_website" class="w-full border-gray-300 rounded">
+                    <option value="">-- Select Type --</option>
+                    @foreach(['VERTICAL', 'GENERALIST', 'LOCAL'] as $type)
+                        <option value="{{ $type }}" {{ old('type_of_website', $website->type_of_website) == $type ? 'selected' : '' }}>
+                            {{ $type }}
+                        </option>
+                    @endforeach
+                </select>
                 @error('type_of_website')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
             </div>
+
             <div>
                 <label class="block">Linkbuilder</label>
                 <input type="text" name="linkbuilder" value="{{ old('linkbuilder', $website->linkbuilder) }}" class="w-full border-gray-300 rounded">
@@ -123,7 +131,10 @@
             </div>
             <div>
                 <label class="block">Date Publisher Price</label>
-                <input type="date" name="date_publisher_price" value="{{ old('date_publisher_price', $website->date_publisher_price) }}" class="w-full border-gray-300 rounded">
+                <input type="date"
+                       name="date_publisher_price"
+                       value="{{ old('date_publisher_price', $website->date_publisher_price ? \Carbon\Carbon::parse($website->date_publisher_price)->format('Y-d-m') : '') }}"
+                       class="w-full border-gray-300 rounded">
                 @error('date_publisher_price')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
@@ -202,7 +213,10 @@
 
         <div>
             <label class="block">Date Kialvo Evaluation</label>
-            <input type="date" name="date_kialvo_evaluation" value="{{ old('date_kialvo_evaluation', $website->date_kialvo_evaluation) }}" class="w-full border-gray-300 rounded">
+            <input type="date"
+                   name="date_kialvo_evaluation"
+                   value="{{ old('date_kialvo_evaluation', $website->date_kialvo_evaluation ? \Carbon\Carbon::parse($website->date_kialvo_evaluation)->format('Y-d-m') : '') }}"
+                   class="w-full border-gray-300 rounded">
             @error('date_kialvo_evaluation')
             <p class="text-red-500 text-sm">{{ $message }}</p>
             @enderror
@@ -412,7 +426,10 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block">Date Added</label>
-                <input type="date" name="date_added" value="{{ old('date_added', $website->date_added) }}" class="w-full border-gray-300 rounded">
+                <input type="date"
+                       name="date_added"
+                       value="{{ old('date_added', $website->created_at ? \Carbon\Carbon::parse($website->created_at)->format('Y-d-m') : '') }}"
+                       class="w-full border-gray-300 rounded">
                 @error('date_added')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
