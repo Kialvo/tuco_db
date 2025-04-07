@@ -333,7 +333,10 @@
             </div>
             <div>
                 <label class="block">SEO Metrics Date</label>
-                <input type="date" name="seo_metrics_date" value="{{ old('seo_metrics_date', $website->seo_metrics_date) }}" class="w-full border-gray-300 rounded">
+                <input type="date"
+                       name="seo_metrics_date"
+                       value="{{ old('seo_metrics_date', $website->seo_metrics_date ? \Carbon\Carbon::parse($website->seo_metrics_date)->format('Y-m-d') : '') }}"
+                       class="w-full border-gray-300 rounded">
                 @error('seo_metrics_date')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
