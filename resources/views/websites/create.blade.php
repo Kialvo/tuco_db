@@ -581,11 +581,13 @@
         <div>
             <label class="block text-gray-700 font-medium mb-1">Categories</label>
             <select
+                id="categorySelect"
                 name="category_ids[]"
                 multiple
                 class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
             >
-                @foreach($categories as $cat)
+
+            @foreach($categories as $cat)
                     <option
                         value="{{ $cat->id }}"
                         {{ (collect(old('category_ids'))->contains($cat->id)) ? 'selected' : '' }}
@@ -609,3 +611,17 @@
         </div>
     </div>
 @endsection
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            $('#categorySelect').select2({
+                placeholder: 'Select categories',
+                closeOnSelect: false,
+                width: '25%',
+                dropdownAutoWidth: true
+            });
+        });
+    </script>
+@endpush
+
+

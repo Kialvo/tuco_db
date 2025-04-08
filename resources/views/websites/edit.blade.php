@@ -449,8 +449,9 @@
         <!-- Categories (Multi-select) -->
         <div>
             <label class="block">Categories</label>
-            <select name="category_ids[]" multiple class="w-full border-gray-300 rounded">
-                @foreach($categories as $cat)
+            <select id="editCategorySelect" name="category_ids[]" multiple class="w-full border-gray-300 rounded">
+
+            @foreach($categories as $cat)
                     <option value="{{ $cat->id }}" {{ (collect(old('category_ids', $website->categories->pluck('id')->toArray()))->contains($cat->id)) ? 'selected' : '' }}>
                         {{ $cat->name }}
                     </option>
@@ -464,3 +465,15 @@
 
     </form>
 @endsection
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            $('#editCategorySelect').select2({
+                placeholder: 'Select categories',
+                closeOnSelect: false,
+                width: '25%',
+                dropdownAutoWidth: true
+            });
+        });
+    </script>
+@endpush
