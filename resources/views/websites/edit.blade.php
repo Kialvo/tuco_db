@@ -324,13 +324,7 @@
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
             </div>
-            <div>
-                <label class="block">Keyword vs Traffic</label>
-                <input type="number" step="0.01" name="keyword_vs_traffic" value="{{ old('keyword_vs_traffic', $website->keyword_vs_traffic) }}" class="w-full border-gray-300 rounded">
-                @error('keyword_vs_traffic')
-                <p class="text-red-500 text-sm">{{ $message }}</p>
-                @enderror
-            </div>
+
             <div>
                 <label class="block">SEO Metrics Date</label>
                 <input type="date"
