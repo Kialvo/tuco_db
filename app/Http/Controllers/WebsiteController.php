@@ -773,6 +773,14 @@ class WebsiteController extends Controller
         }
 
         $validated['TF_vs_CF'] = $TF_vs_CF;
+        $ahrefsKeyword = $validated['ahrefs_keyword'] ?? 0;
+        $ahrefsTraffic = $validated['ahrefs_traffic'] ?? 0;
+
+        if ($ahrefsTraffic > 0) {
+            $validated['keyword_vs_traffic'] = round($ahrefsKeyword / $ahrefsTraffic, 2);
+        } else {
+            $validated['keyword_vs_traffic'] = 0;
+        }
 
         // 4) Create the new Website using the final data
         $website = Website::create($validated);
@@ -850,6 +858,15 @@ class WebsiteController extends Controller
         }
 
         $validated['TF_vs_CF'] = $TF_vs_CF;
+
+        $ahrefsKeyword = $validated['ahrefs_keyword'] ?? 0;
+        $ahrefsTraffic = $validated['ahrefs_traffic'] ?? 0;
+
+        if ($ahrefsTraffic > 0) {
+            $validated['keyword_vs_traffic'] = round($ahrefsKeyword / $ahrefsTraffic, 2);
+        } else {
+            $validated['keyword_vs_traffic'] = 0;
+        }
 
         $website->update($validated);
 
