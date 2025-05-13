@@ -4,30 +4,29 @@
     <meta charset="UTF-8">
     <title>Dashboard Layout</title>
 
-    {{-- Vite loading for Tailwind/JS (original references) --}}
+    {{-- Vite  (Tailwind + app.js) --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{-- DataTables & other dependencies (same as in your original code) --}}
+    {{-- DataTables / Icons / Select2 --}}
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.flash.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    {{-- Select2 (unchanged from your code) --}}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+    {{-- Alpine.js for dropdown toggles --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @stack('scripts')
 </head>
 <body class="antialiased bg-gray-100">
@@ -35,53 +34,90 @@
     {{-- ========== SIDEBAR ========== --}}
     <aside class="w-64 flex-shrink-0 bg-slate-900 text-white flex flex-col">
 
-    {{-- Logo/Brand area --}}
+        {{-- Logo --}}
         <div class="h-16 flex items-center justify-center border-b border-slate-700">
-            <img
-                src="{{ asset('images/logo.png') }}"
-                alt="MotherLink Logo"
-                class="h-14 w-auto"
-            />
-
+            <img src="{{ asset('images/logo.png') }}" alt="MotherLink Logo" class="h-14 w-auto">
         </div>
 
+        {{-- Navigation --}}
+        <nav class="flex-1 px-4 mt-4 space-y-2 text-sm">
 
-        {{-- Main Navigation --}}
-        <nav class="flex-1 px-4 space-y-2 mt-4">
+            {{-- Dashboard --}}
             <a href="{{ route('dashboard') }}"
-               class="block px-3 py-2 rounded hover:bg-slate-800 transition
-                      {{ request()->routeIs('dashboard') ? 'bg-slate-800' : '' }}">
-                <i class="fas fa-tachometer-alt w-5 inline-block me-2"></i>
-                Dashboard
+               class="block px-3 py-2 rounded transition
+                      hover:bg-slate-800 {{ request()->routeIs('dashboard') ? 'bg-slate-800' : '' }}">
+                <i class="fas fa-tachometer-alt w-5 inline-block me-2"></i> Dashboard
             </a>
 
-            <a href="{{ route('contacts.index') }}"
-               class="block px-3 py-2 rounded hover:bg-slate-800 transition">
-                <i class="fas fa-address-book w-5 inline-block me-2"></i>
-                Contacts
-            </a>
+            {{-- ============ Websites ============ --}}
+            <div x-data="{ open: {{ request()->routeIs('websites.*') || request()->routeIs('contacts.*') ? 'true' : 'false' }} }">
+                <div class="flex items-center justify-between px-3 py-2 rounded transition
+                            hover:bg-slate-800 {{ request()->routeIs('websites.*') ? 'bg-slate-800' : '' }}">
+                    {{-- Main link --}}
+                    <a href="{{ route('websites.index') }}" class="flex-1 inline-flex items-center">
+                        <i class="fas fa-globe w-5 inline-block me-2"></i> Websites
+                    </a>
+                    {{-- Toggle --}}
+                    <button @click="open = !open" class="focus:outline-none">
+                        <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
+                    </button>
+                </div>
 
-            <a href="{{ route('websites.index') }}"
-               class="block px-3 py-2 rounded hover:bg-slate-800 transition">
-                <i class="fas fa-globe w-5 inline-block me-2"></i>
-                Websites
-            </a>
+                {{-- Sub‑menu --}}
+                <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
+                    <a href="{{ route('contacts.index') }}"
+                       class="block px-3 py-2 rounded transition hover:bg-slate-800
+                              {{ request()->routeIs('contacts.*') ? 'bg-slate-800' : '' }}">
+                        <i class="fas fa-address-book w-4 inline-block me-2"></i> Contacts
+                    </a>
+                </div>
+            </div>
 
+            {{-- ============ Storages ============ --}}
+            <div x-data="{ open: {{ request()->routeIs('storages.*') || request()->routeIs('clients.*') || request()->routeIs('copy.*') ? 'true' : 'false' }} }">
+                <div class="flex items-center justify-between px-3 py-2 rounded transition
+                            hover:bg-slate-800 {{ request()->routeIs('storages.*') ? 'bg-slate-800' : '' }}">
+                    {{-- Main link --}}
+                    <a href="{{ route('storages.index') }}" class="flex-1 inline-flex items-center">
+                        <i class="fas fa-warehouse w-5 inline-block me-2"></i> Storages
+                    </a>
+                    {{-- Toggle --}}
+                    <button @click="open = !open" class="focus:outline-none">
+                        <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
+                    </button>
+                </div>
+
+                {{-- Sub‑menu --}}
+                <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
+                    <a href="{{ route('clients.index') }}"
+                       class="block px-3 py-2 rounded transition hover:bg-slate-800
+                              {{ request()->routeIs('clients.*') ? 'bg-slate-800' : '' }}">
+                        <i class="fas fa-user-friends w-4 inline-block me-2"></i> Clients
+                    </a>
+                    <a href="{{ route('copy.index') }}"
+                       class="block px-3 py-2 rounded transition hover:bg-slate-800
+                              {{ request()->routeIs('copy.*') ? 'bg-slate-800' : '' }}">
+                        <i class="fas fa-file-alt w-4 inline-block me-2"></i> Copy
+                    </a>
+                </div>
+            </div>
+
+            {{-- Admin --}}
             @if(Auth::check() && Auth::user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}"
-                   class="block px-3 py-2 rounded hover:bg-slate-800 transition">
-                    <i class="fas fa-users-cog w-5 inline-block me-2"></i>
-                    Manage Users
+                   class="block px-3 py-2 rounded transition hover:bg-slate-800
+                          {{ request()->routeIs('admin.users.*') ? 'bg-slate-800' : '' }}">
+                    <i class="fas fa-users-cog w-5 inline-block me-2"></i> Manage Users
                 </a>
             @endif
         </nav>
 
-        {{-- Logout Form --}}
+        {{-- Logout --}}
         <form method="POST" action="{{ route('logout') }}" class="p-4 border-t border-slate-700">
             @csrf
-            <button type="submit" class="w-full text-left bg-slate-800 hover:bg-slate-700 py-2 px-3 rounded flex items-center">
-                <i class="fas fa-sign-out-alt w-5 inline-block me-2"></i>
-                Logout
+            <button type="submit"
+                    class="w-full flex items-center px-3 py-2 rounded bg-slate-800 hover:bg-slate-700">
+                <i class="fas fa-sign-out-alt w-5 inline-block me-2"></i> Logout
             </button>
         </form>
     </aside>
@@ -89,18 +125,13 @@
 
     {{-- ========== MAIN CONTENT ========== --}}
     <main class="flex-1 p-6">
-        {{-- Content will go here --}}
         @yield('content')
     </main>
-    {{-- ========== END MAIN CONTENT ========== --}}
 </div>
 
-{{-- If you need to init DataTables, do so below or remove this --}}
+{{-- Optional: global DataTables init placeholder --}}
 <script>
-    $(document).ready(function() {
-        // $('#example-table').DataTable();
-    });
+    $(function(){ /* global init here if needed */ });
 </script>
-
 </body>
 </html>

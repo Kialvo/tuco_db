@@ -320,7 +320,7 @@
             <!-- ROW 4: Categories -->
             <div class="mb-2 flex items-center">
                 <label class="text-gray-700 font-medium mr-2">Categories</label>
-                <select id="filterCategories" multiple size="3"
+                <select id="filterCategories" multiple
                         class="border border-gray-300 rounded px-2 py-2 text-xs w-48
                max-h-16 overflow-y-auto focus:ring-cyan-500 focus:border-cyan-500">
 
@@ -451,11 +451,15 @@
             $('#filterCategories').select2({
                 placeholder: 'Select Categories',
                 allowClear: true,
-                width: '10em',           // narrower
-                dropdownAutoWidth: false,
+                closeOnSelect: false,
+                width: 'resolve',
+                dropdownAutoWidth: true,
                 containerCssClass: 'text-xs',
-                dropdownCssClass: 'text-xs limit-height'
+                dropdownCssClass: 'text-xs'
             });
+
+
+
 
             $('#filterCountriesInclude').select2({
                 placeholder: 'Select Countries to Include',

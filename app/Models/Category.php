@@ -16,4 +16,10 @@ class Category extends Model
         return $this->belongsToMany(Website::class, 'category_website')
             ->using(CategoryWebsite::class);
     }
+
+    public function storages()
+    {
+        return $this->belongsToMany(Storage::class, 'category_storage')
+            ->using(CategoryStorage::class);
+    }
 }
