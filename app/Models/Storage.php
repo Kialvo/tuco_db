@@ -68,10 +68,11 @@ class Storage extends Model
     /* --------------------------------------------------------------------
      | Relationships
      |--------------------------------------------------------------------*/
-    public function website()
+    public function site()
     {
-        return $this->belongsTo(Website::class);
+        return $this->belongsTo(Website::class, 'website_id');
     }
+
 
     public function client()
     {

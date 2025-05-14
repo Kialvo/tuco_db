@@ -80,6 +80,11 @@ class Website extends Model
         return $this->belongsTo(Country::class);
     }
 
+    public function storages()
+    {
+        return $this->hasMany(Storage::class, 'website_id');
+    }
+
     public function categories()
     {
         // Many-to-many

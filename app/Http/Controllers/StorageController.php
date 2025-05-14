@@ -34,7 +34,7 @@ class StorageController extends Controller
     public function getData(Request $request)
     {
         $query = Storage::with([
-            'website:id,domain_name',
+            'site:id,domain_name',
             'country:id,country_name',
             'language:id,name',
             'client:id,first_name,last_name',
@@ -70,9 +70,11 @@ class StorageController extends Controller
 
         if ($request->boolean('show_deleted')) $query->onlyTrashed();
 
+
+
         // ── DataTables ────────────────────────────────────────────────
         return DataTables::of($query)
-            ->addColumn('website_domain',   fn($r) => optional($r->website)->domain_name)
+            ->addColumn('website_domain',   fn($r) => optional($r->site)->domain_name)
             ->addColumn('country_name',     fn($r) => optional($r->country)->country_name)
             ->addColumn('language_name',    fn($r) => optional($r->language)->name)
 

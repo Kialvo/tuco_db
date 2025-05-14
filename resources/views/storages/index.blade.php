@@ -10,25 +10,25 @@
             <div class="space-x-2">
                 <button id="toggleFiltersBtn"
                         class="bg-gray-300 text-gray-700 px-4 py-2 rounded shadow text-xs hover:bg-gray-400
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
                     Hide Filters
                 </button>
 
                 <a href="{{ route('storages.create') }}"
                    class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
                     Create Storage
                 </a>
 
                 <a href="#" id="btnExportCsv"
                    class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
                     Export CSV
                 </a>
 
                 <a href="#" id="btnExportPdf"
                    class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
                     Export PDF
                 </a>
             </div>
@@ -128,7 +128,7 @@
                 <label class="text-gray-700 font-medium mr-2">Categories</label>
                 <select id="filterCategories" multiple
                         class="border border-gray-300 rounded px-2 py-2 text-xs w-48 max-h-20 overflow-y-auto
-                           focus:ring-cyan-500 focus:border-cyan-500">
+                               focus:ring-cyan-500 focus:border-cyan-500">
                     @foreach($categories as $cat)
                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                     @endforeach
@@ -139,12 +139,12 @@
             <div class="flex space-x-2">
                 <button id="btnSearch"
                         class="bg-cyan-600 text-white px-4 py-2 rounded shadow text-xs hover:bg-cyan-700
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
                     Search
                 </button>
                 <button id="btnClear"
                         class="bg-gray-400 text-white px-4 py-2 rounded shadow text-xs hover:bg-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
                     Clear
                 </button>
             </div>
@@ -156,10 +156,10 @@
             <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="filterShowDeleted" class="sr-only peer">
                 <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-cyan-600
-                        after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                        after:bg-white after:border-gray-300 after:border
-                        after:rounded-full after:h-5 after:w-5 after:transition-all
-                        peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                            after:bg-white after:border-gray-300 after:border
+                            after:rounded-full after:h-5 after:w-5 after:transition-all
+                            peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
             </label>
         </div>
 
@@ -200,7 +200,6 @@
                     <th class="px-4 py-2">Invoice Menford Nr</th>
                     <th class="px-4 py-2">Invoice Company</th>
                     <th class="px-4 py-2">Pay to Us Date</th>
-                    <th class="px-4 py-2">Publisher Article €</th>
                     <th class="px-4 py-2">Bill Publisher Name</th>
                     <th class="px-4 py-2">Bill Publisher Nr</th>
                     <th class="px-4 py-2">Pay to Publisher Date</th>
@@ -218,6 +217,7 @@
 
 @include('storages.partials.client-modal')
 @include('storages.partials.copy-modal')
+@include('storages.partials.url-modal')   {{-- NEW --}}
 
 @push('scripts')
     <script>
@@ -256,7 +256,7 @@
                 },
                 columns:[
                     {data:'id',name:'id'},
-                    {data:'website_domain',name:'website.domain_name'},
+                    {data:'website_domain',name:'domain_name'},
                     {data:'status',name:'status'},
                     {data:'LB',name:'LB'},
                     {
@@ -284,8 +284,8 @@
                         }
                     },
                     {data:'copy_nr',name:'copy_nr'},
-                    {data:'copywriter_commision_date',name:'copywriter_commision_date',render:fmtDate},
-                    {data:'copywriter_submission_date',name:'copywriter_submission_date',render:fmtDate},
+                    {data:'copywriter_commision_date',name:'copywriter_commision_date',render:fmtDateEU},
+                    {data:'copywriter_submission_date',name:'copywriter_submission_date',render:fmtDateEU},
                     {data:'copywriter_period',name:'copywriter_period'},
                     {data:'language_name',name:'language.name'},
                     {data:'country_name',name:'country.country_name'},
@@ -297,25 +297,47 @@
                     {data:'profit',name:'profit',render:fmtEuro},
                     {data:'campaign',name:'campaign'},
                     {data:'anchor_text',name:'anchor_text'},
-                    {data:'target_url',name:'target_url',render:d=>d?`<a href="${d}" target="_blank" class="underline text-blue-600">link</a>`:''},
+                    {
+                        data:'target_url',
+                        name:'target_url',
+                        orderable:false,
+                        searchable:false,
+                        render:d=>d ? `<a href="#" class="url-link underline text-blue-600" data-url="${d}">link</a>` : ''
+                    },
                     {data:'campaign_code',name:'campaign_code'},
-                    {data:'article_sent_to_publisher',name:'article_sent_to_publisher',render:fmtDate},
-                    {data:'publication_date',name:'publication_date',render:fmtDate},
-                    {data:'expiration_date',name:'expiration_date',render:fmtDate},
+                    {data:'article_sent_to_publisher',name:'article_sent_to_publisher',render:fmtDateEU},
+                    {data:'publication_date',name:'publication_date',render:fmtDateEU},
+                    {data:'expiration_date',name:'expiration_date',render:fmtDateEU},
                     {data:'publisher_period',name:'publisher_period'},
-                    {data:'article_url',name:'article_url',render:d=>d?`<a href="${d}" target="_blank" class="underline text-blue-600">article</a>`:''},
+                    {
+                        data:'article_url',
+                        name:'article_url',
+                        orderable:false,
+                        searchable:false,
+                        render:d=>d ? `<a href="#" class="url-link underline text-blue-600" data-url="${d}">article</a>` : ''
+                    },
                     {data:'method_payment_to_us',name:'method_payment_to_us'},
-                    {data:'invoice_menford',name:'invoice_menford',render:fmtDate},
+                    {data:'invoice_menford',name:'invoice_menford',render:fmtDateEU},
                     {data:'invoice_menford_nr',name:'invoice_menford_nr'},
                     {data:'invoice_company',name:'invoice_company'},
-                    {data:'payment_to_us_date',name:'payment_to_us_date',render:fmtDate},
-                    {data:'publisher_article',name:'publisher_article',render:fmtEuro},
+                    {data:'payment_to_us_date',name:'payment_to_us_date',render:fmtDateEU},
                     {data:'bill_publisher_name',name:'bill_publisher_name'},
                     {data:'bill_publisher_nr',name:'bill_publisher_nr'},
-                    {data:'payment_to_publisher_date',name:'payment_to_publisher_date',render:fmtDate},
+                    {data:'payment_to_publisher_date',name:'payment_to_publisher_date',render:fmtDateEU},
                     {data:'method_payment_to_publisher',name:'method_payment_to_publisher'},
                     {data:'categories_list',name:'categories_list',className:'text-center'},
-                    {data:'files',name:'files',render:d=>d?'<i class="fas fa-paperclip"></i>':''},
+                    {
+                        data: 'files',
+                        name: 'files',
+                        orderable: false,
+                        searchable: false,
+                        render: d => d
+                            ? `<a href="${d}" target="_blank">
+               <i class="fas fa-paperclip text-lg text-blue-600"></i>
+           </a>`
+                            : ''
+                    },
+
                     {data:'action',name:'action',orderable:false,searchable:false}
                 ],
                 order:[[0,'desc']],
@@ -324,7 +346,10 @@
             });
 
             /* ---------- Helper renderers ---------- */
-            function fmtDate(d){return d?d.substring(0,10):'';}
+            function fmtDateEU(iso){
+                if(!iso) return '';
+                return new Date(iso).toLocaleDateString('en-GB');
+            }
             function fmtEuro(d){return d!==null?'<strong>€ '+d+'</strong>':'';}
 
             /* ---------- Buttons & Toggles ---------- */
@@ -397,6 +422,53 @@
                 $('#copyModal').addClass('hidden').removeClass('flex');
             });
 
+            /* ---------- URL modal ---------- */
+            $(document).on('click','.url-link',function(e){
+                e.preventDefault();
+                const url=$(this).data('url');
+                $('#urlModalInput').val(url);
+                $('#urlModalOpen').attr('href',url);
+                $('#urlModal').removeClass('hidden').addClass('flex');
+            });
+            /* ---------- URL‑modal copy button ---------- */
+            $('#urlModalCopy').on('click', function () {
+                const text = $('#urlModalInput').val();
+
+                // tiny helpers
+                const hasSwal   = typeof Swal !== 'undefined';
+                const successUI = () => hasSwal
+                    ? Swal.fire({ icon:'success', title:'Copied to clipboard!', timer:1500, showConfirmButton:false })
+                    : alert('Copied to clipboard!');
+                const errorUI   = () => hasSwal
+                    ? Swal.fire({ icon:'error',   title:'Copy failed', text:'Your browser blocked the operation.' })
+                    : alert('Copy failed');
+
+                // modern API when available and secure
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(successUI).catch(errorUI);
+                    return;
+                }
+
+                // fallback for HTTP / old browsers
+                const tmp = document.createElement('textarea');
+                tmp.style.position = 'fixed';
+                tmp.style.opacity  = '0';
+                tmp.value = text;
+                document.body.appendChild(tmp);
+                tmp.select();
+
+                try {
+                    document.execCommand('copy');
+                    successUI();
+                } catch (e) {
+                    errorUI();
+                }
+                document.body.removeChild(tmp);
+            });
+
+
+
+            $('#urlModalClose').on('click',()=>$('#urlModal').addClass('hidden').removeClass('flex'));
 
             /* ---------- Flash message ---------- */
             @if(session('status'))

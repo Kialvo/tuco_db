@@ -129,9 +129,10 @@ class ClientsController extends Controller
             'last_name' => $client->last_name,
             'email'     => $client->email,
             'company'   => $client->company,
-            'storages'  => $client->storages->map(fn($s) => [
-                'id'     => $s->id,
-                'status' => $s->status,
+            'storages'  => $client->storages->map(fn ($s) => [
+                'id'          => $s->id,
+                'domain_name' => $s->site?->domain_name ?? '',
+                'status'      => $s->status ?? '',
             ]),
 //            'websites'  => $client->websites->map(fn($w) => [
 //                'id'          => $w->id,
