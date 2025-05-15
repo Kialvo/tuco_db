@@ -442,6 +442,7 @@
     </div>
 
     @include('websites.partials.contact-modal')
+    @include('websites.partials.note-modal')
 @endsection
 
 @push('scripts')
@@ -742,7 +743,21 @@
                             return data.substring(0, 10);  // "YYYY-MM-DD"
                         }
                     },
-                    { data: 'extra_notes', name: 'extra_notes', className: 'text-center', },
+                    {
+                        data: 'extra_notes',
+                        name: 'extra_notes',
+                        className: 'text-center',
+                        render: function (data) {
+                            if (!data) return '';
+                            // escape any "<" & ">" so the note can safely live in a data-attribute
+                            const safe = $('<div>').text(data).html();
+                            return `
+            <a href="#" class="note-link text-cyan-700" data-note="${safe}">
+                <i class="fas fa-comment-dots"></i>
+            </a>`;
+                        }
+                    },
+
                     { data: 'action', name: 'action', orderable: false, searchable: false }
                 ],
                 order: [[0, 'desc']],
@@ -895,6 +910,20 @@
 
                 // Change this route to match your PDF export route
                 window.location = "{{ route('websites.export.pdf') }}?" + params;
+            });
+
+
+            // ───────────────────────────────────────────────
+            //  NOTE  MODAL
+            // ───────────────────────────────────────────────
+            $(document).on('click', '.note-link', function (e) {
+                e.preventDefault();
+                const note = $(this).data('note');
+                $('#modalNoteBody').text(note);
+                $('#noteModal').removeClass('hidden');
+            });
+            $('#closeNoteModal, #closeNoteModalBottom').on('click', function () {
+                $('#noteModal').addClass('hidden');
             });
 
             // =====================
