@@ -37,6 +37,9 @@ class StorageController extends Controller
     /*======================================================================
     | DATATABLES JSON
     ======================================================================*/
+    /*======================================================================
+| DATATABLES JSON
+======================================================================*/
     public function getData(Request $request)
     {
         $query = Storage::with([
@@ -49,7 +52,7 @@ class StorageController extends Controller
         ]);
 
         /* ---------- filters ---------- */
-        // Publication date range
+        // publication date range
         if ($request->filled('publication_from') && $request->filled('publication_to')) {
             $query->whereBetween('publication_date', [$request->publication_from, $request->publication_to]);
         } elseif ($request->filled('publication_from')) {
@@ -58,17 +61,27 @@ class StorageController extends Controller
             $query->where('publication_date', '<=', $request->publication_to);
         }
 
-        if ($request->filled('copy_id'))      $query->where('copy_id',     $request->copy_id);
-        if ($request->filled('language_id'))  $query->where('language_id', $request->language_id);
-        if ($request->filled('country_id'))   $query->where('country_id',  $request->country_id);
-        if ($request->filled('client_id'))    $query->where('client_id',   $request->client_id);
-        if ($request->filled('campaign'))     $query->where('campaign', 'like', '%'.$request->campaign.'%');
-        if ($request->filled('status'))       $query->where('status', $request->status);
+        // simple FK / scalar filters
+        if ($request->filled('copy_id'))            $query->where('copy_id',            $request->copy_id);
+        if ($request->filled('language_id'))        $query->where('language_id',        $request->language_id);
+        if ($request->filled('country_id'))         $query->where('country_id',         $request->country_id);
+        if ($request->filled('client_id'))          $query->where('client_id',          $request->client_id);
+        if ($request->filled('status'))             $query->where('status',             $request->status);
 
+        // LIKE-based text filters
+        if ($request->filled('campaign'))           $query->where('campaign',           'like', '%'.$request->campaign.'%');            // Target Domain
+        if ($request->filled('campaign_code'))      $query->where('campaign_code',      'like', '%'.$request->campaign_code.'%');
+        if ($request->filled('invoice_menford_nr')) $query->where('invoice_menford_nr', 'like', '%'.$request->invoice_menford_nr.'%');
+        if ($request->filled('bill_publisher_name'))$query->where('bill_publisher_name','like', '%'.$request->bill_publisher_name.'%');
+        if ($request->filled('target_url'))         $query->where('target_url',         'like', '%'.$request->target_url.'%');
+        if ($request->filled('article_url'))        $query->where('article_url',        'like', '%'.$request->article_url.'%');
+
+        // categories (multi-select)
         if ($request->filled('category_ids') && is_array($request->category_ids)) {
             $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $request->category_ids));
         }
 
+        // soft-deleted toggle
         if ($request->boolean('show_deleted')) $query->onlyTrashed();
 
         /* ---------- DataTables ---------- */
@@ -77,41 +90,37 @@ class StorageController extends Controller
             ->addColumn('country_name',      fn ($r) => optional($r->country)->country_name)
             ->addColumn('language_name',     fn ($r) => optional($r->language)->name)
             ->addColumn('client_name', function ($r) {
-                return $r->client
-                    ? trim($r->client->first_name.' '.$r->client->last_name)
-                    : '';
+                return $r->client ? trim($r->client->first_name.' '.$r->client->last_name) : '';
             })
             ->addColumn('copywriter_name',   fn ($r) => optional($r->copy)->copy_val ?? '')
-            ->editColumn('copywriter_period', fn($r) => (int) $r->copywriter_period)
-
+            ->editColumn('copywriter_period',fn ($r) => (int) $r->copywriter_period)
             ->addColumn('categories_list',   fn ($r) => $r->categories->pluck('name')->join(', '))
             ->addColumn('action', function ($r) {
                 if ($r->trashed()) {
                     $restoreUrl = route('storages.restore', $r->id);
-                    return
-                        '<form action="'.$restoreUrl.'" method="POST" style="display:inline;">'
+                    return '<form action="'.$restoreUrl.'" method="POST" style="display:inline;">'
                         .csrf_field().
                         '<button onclick="return confirm(\'Restore?\')" class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded">
                             <i class="fas fa-undo-alt mr-1"></i>Restore
-                         </button></form>';
+                        </button></form>';
                 }
 
                 $edit = route('storages.edit', $r->id);
                 $del  = route('storages.destroy', $r->id);
 
-                return
-                    '<a href="'.$edit.'" class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded mr-1">
+                return '<a href="'.$edit.'" class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded mr-1">
                         <i class="fas fa-pen mr-1"></i>Edit
-                     </a>'
+                    </a>'
                     .'<form action="'.$del.'" method="POST" style="display:inline-block;">'
                     .csrf_field().method_field('DELETE').
                     '<button onclick="return confirm(\'Delete?\')" class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded">
                         <i class="fas fa-trash mr-1"></i>Delete
-                     </button></form>';
+                    </button></form>';
             })
             ->rawColumns(['action'])
             ->make(true);
     }
+
 
     /*======================================================================
     | CREATE / STORE
@@ -137,10 +146,8 @@ class StorageController extends Controller
     {
         $validated = $this->validateForm($request);
 
-        // Convert USD ➜ EUR where needed
         $this->convertUsdFieldsToEur($validated, $this->priceFields());
 
-        // Apply automatic calculations & clean-up
         $this->applyAutoCalculations($validated);
 
         $storage = Storage::create($validated);
@@ -188,7 +195,6 @@ class StorageController extends Controller
 
         $this->convertUsdFieldsToEur($validated, $this->priceFields());
 
-        // Apply automatic calculations & clean-up
         $this->applyAutoCalculations($validated);
 
         $storage->update($validated);
@@ -257,8 +263,7 @@ class StorageController extends Controller
     private function applyFiltersClone(Request $request)
     {
         $clone = new Request($request->all());
-        $data  = $this->getData($clone)->getData(); // DataTables result
-
+        $data  = $this->getData($clone)->getData();
         return $data->collection ?? Storage::query();
     }
 
@@ -276,6 +281,8 @@ class StorageController extends Controller
             'copywriter_period'           => 'nullable|numeric',
             'language_id'                 => 'nullable|integer',
             'country_id'                  => 'nullable|integer',
+            'publisher_currency'          => 'nullable|string|max:255',
+            'publisher_amount'            => 'nullable|numeric',
             'publisher'                   => 'nullable|numeric',
             'total_cost'                  => 'nullable|numeric',
             'menford'                     => 'nullable|numeric',
@@ -299,6 +306,7 @@ class StorageController extends Controller
             'publisher_article'           => 'nullable|numeric',
             'bill_publisher_name'         => 'nullable|string|max:255',
             'bill_publisher_nr'           => 'nullable|string|max:255',
+            'bill_publisher_date'         => 'nullable|date',        //  ←  added
             'payment_to_publisher_date'   => 'nullable|date',
             'method_payment_to_publisher' => 'nullable|string|max:255',
             'files'                       => 'nullable|string',
@@ -307,7 +315,7 @@ class StorageController extends Controller
         ]);
     }
 
-    private function priceFields()
+    private function priceFields(): array
     {
         return [
             'publisher',
@@ -320,7 +328,7 @@ class StorageController extends Controller
         ];
     }
 
-    private function convertUsdFieldsToEur(array &$d, array $fields)
+    private function convertUsdFieldsToEur(array &$d, array $fields): void
     {
         if (isset($d['currency_code']) && strtoupper($d['currency_code']) === 'USD') {
             foreach ($fields as $f) {
@@ -333,7 +341,7 @@ class StorageController extends Controller
         }
     }
 
-    private function csvRow(Storage $s)
+    private function csvRow(Storage $s): array
     {
         $row = $s->only([
             'website_id',
@@ -370,6 +378,7 @@ class StorageController extends Controller
             'publisher_article',
             'bill_publisher_name',
             'bill_publisher_nr',
+            'bill_publisher_date',     // ←  added (after bill_publisher_nr)
             'payment_to_publisher_date',
             'method_payment_to_publisher',
             'files'
@@ -385,24 +394,18 @@ class StorageController extends Controller
     ======================================================================*/
     private function applyAutoCalculations(array &$data): void
     {
-        /* ---- Copy Period (int) ---- */
         if (isset($data['copywriter_period'])) {
             $data['copywriter_period'] = (int) $data['copywriter_period'];
         }
 
-        /* ---- Total Cost ---- */
-        $publisher        = (float) ($data['publisher']         ?? 0);
-        $copywriterAmount = (float) ($data['copy_nr'] ?? 0); // copywriter €
-
+        $publisher        = (float) ($data['publisher']    ?? 0);
+        $copywriterAmount = (float) ($data['copy_nr']      ?? 0);
         $data['total_cost'] = $publisher + $copywriterAmount;
 
-        /* ---- Total Revenues ---- */
         $menford    = (float) ($data['menford']     ?? 0);
         $clientCopy = (float) ($data['client_copy'] ?? 0);
-
         $data['total_revenues'] = $menford + $clientCopy;
 
-        /* ---- Profit ---- */
         $data['profit'] = $data['total_revenues'] - $data['total_cost'];
     }
 }

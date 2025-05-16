@@ -128,6 +128,28 @@
                 </div>
             </div>
 
+            {{-- ───────────── NEW: Publisher currency & amount ───────────── --}}
+            <div class="grid grid-cols-4 gap-4">
+                {{-- Currency --}}
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Publisher Currency</label>
+                    <select name="publisher_currency"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="EUR" {{ old('publisher_currency', $storage->publisher_currency ?? 'EUR')=='EUR' ? 'selected' : '' }}>EUR</option>
+                        <option value="USD" {{ old('publisher_currency', $storage->publisher_currency)=='USD' ? 'selected' : '' }}>USD</option>
+                    </select>
+                    @error('publisher_currency') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Amount --}}
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Publisher Amount</label>
+                    <input type="number" step="0.01" name="publisher_amount"
+                           value="{{ old('publisher_amount', $storage->publisher_amount) }}"
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    @error('publisher_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+            </div>
             {{-- ───────────── PRICES & COSTS ───────────── --}}
             @php
                 $priceFields = [
@@ -274,6 +296,16 @@
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('bill_publisher_nr')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
+                <!-- Bill Publisher Date -->
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Bill Publisher Date</label>
+                    <input type="date"
+                           name="bill_publisher_date"
+                           value="{{ old('bill_publisher_date', $storage->bill_publisher_date ? \Carbon\Carbon::parse($storage->bill_publisher_date)->format('Y-m-d') : '') }}"
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    @error('bill_publisher_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Pay to Publisher Date</label>
                     <input type="date" name="payment_to_publisher_date"

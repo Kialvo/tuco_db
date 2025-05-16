@@ -37,6 +37,8 @@ class Storage extends Model
         'copywriter_period',
         'language_id',
         'country_id',
+        'publisher_amount',
+        'publisher_currency',
         'publisher',
         'total_cost',
         'menford',
