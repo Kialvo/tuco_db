@@ -7,17 +7,28 @@
                class="w-full border border-gray-300 rounded px-2 py-1 text-sm"
                readonly>
 
+        {{-- Buttons --}}
         <div class="flex justify-end gap-2">
             <a id="urlModalOpen"
                href="#"
                target="_blank"
-               class="bg-cyan-600 text-white px-3 py-1 rounded text-xs">Open</a>
+               class="text-white px-3 py-1 rounded text-xs"
+               style="background-color: #35aa3e;">
+                Open
+            </a>
 
             <button id="urlModalCopy"
-                    class="bg-gray-600 text-white px-3 py-1 rounded text-xs">Copy</button>
+                    class="text-white px-3 py-1 rounded text-xs"
+                    style="background-color: #000000;">
+                Copy
+            </button>
 
             <button id="urlModalClose"
-                    class="bg-red-500 text-white px-3 py-1 rounded text-xs">Close</button>
+                    class="text-white px-3 py-1 rounded text-xs"
+                    style="background-color: #aa35a1;">
+                Close
+            </button>
         </div>
+
     </div>
 </div>
