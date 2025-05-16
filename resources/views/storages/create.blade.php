@@ -20,11 +20,11 @@
                     <select name="status"
                             class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                         <option value="">-- None --</option>
-                        <option value="article_published"  {{ old('status')=='article_published'  ? 'selected' : '' }}>Article Published</option>
-                        <option value="requirements_not_met" {{ old('status')=='requirements_not_met' ? 'selected' : '' }}>Requirements not met</option>
-                        <option value="already_used_by_client" {{ old('status')=='already_used_by_client' ? 'selected' : '' }}>Already used by client</option>
-                        <option value="out_of_topic"  {{ old('status')=='out_of_topic'  ? 'selected' : '' }}>Out of topic</option>
-                        <option value="high_price" {{ old('status')=='high_price' ? 'selected' : '' }}>High Price</option>
+                        <option value="article_published"      {{ old('status')=='article_published'      ? 'selected' : '' }}>Article Published</option>
+                        <option value="requirements_not_met"    {{ old('status')=='requirements_not_met'   ? 'selected' : '' }}>Requirements not met</option>
+                        <option value="already_used_by_client"  {{ old('status')=='already_used_by_client' ? 'selected' : '' }}>Already used by client</option>
+                        <option value="out_of_topic"            {{ old('status')=='out_of_topic'           ? 'selected' : '' }}>Out of topic</option>
+                        <option value="high_price"              {{ old('status')=='high_price'             ? 'selected' : '' }}>High Price</option>
                     </select>
                     @error('status') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
@@ -98,39 +98,42 @@
                 </div>
             </div>
 
-            {{-- ───────────── COPY‑DETAILS ───────────── --}}
+            {{-- ───────────── COPY-DETAILS ───────────── --}}
             <div class="grid grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Nr</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copywriter Amount EUR €</label>
                     <input type="number" name="copy_nr" value="{{ old('copy_nr') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('copy_nr') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Comm. Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copy Comm. Date</label>
                     <input type="date" name="copywriter_commision_date" value="{{ old('copywriter_commision_date') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('copywriter_commision_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Subm. Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copy Subm. Date</label>
                     <input type="date" name="copywriter_submission_date" value="{{ old('copywriter_submission_date') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('copywriter_submission_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Period (days)</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copy Period (days)</label>
                     <input type="number" name="copywriter_period" value="{{ old('copywriter_period') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('copywriter_period') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
 
-            {{-- ───────────── PRICES & COSTS ───────────── --}}
+            {{-- ───────────── PRICES & COSTS (auto-calculated fields are NOT shown) ───────────── --}}
             <div class="grid grid-cols-4 gap-4">
-                @foreach(['publisher'=>'Publisher €','total_cost'=>'Total Cost €','menford'=>'Menford €',
-                          'client_copy'=>'Client Copy €','total_revenues'=>'Total Revenues €','profit'=>'Profit €',
-                          'publisher_article'=>'Publisher Article €'] as $field=>$label)
+                @foreach([
+                    'publisher'         => 'Publisher Agreed Amount €',
+                    'publisher_article' => 'Copywriter Amount €',
+                    'menford'           => 'Menford €',
+                    'client_copy'       => 'Client Copy €',
+                ] as $field => $label)
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">{{ $label }}</label>
                         <input type="number" step="0.01" name="{{ $field }}" value="{{ old($field) }}"
@@ -143,25 +146,25 @@
             {{-- ───────────── CAMPAIGN & LINK FIELDS ───────────── --}}
             <div class="grid grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Campaign</label>
+                    <label class="block text-gray-700 font-medium mb-1">Target Domain</label>
                     <input type="text" name="campaign" value="{{ old('campaign') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('campaign') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Anchor Text</label>
+                    <label class="block text-gray-700 font-medium mb-1">Anchor Text</label>
                     <input type="text" name="anchor_text" value="{{ old('anchor_text') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('anchor_text') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Target URL</label>
+                    <label class="block text-gray-700 font-medium mb-1">Target URL</label>
                     <input type="url" name="target_url" value="{{ old('target_url') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('target_url') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Campaign Code</label>
+                    <label class="block text-gray-700 font-medium mb-1">Campaign Code</label>
                     <input type="text" name="campaign_code" value="{{ old('campaign_code') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('campaign_code') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -171,31 +174,31 @@
             {{-- ───────────── PUBLICATION DATES / PERIODS ───────────── --}}
             <div class="grid grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Sent to Publisher</label>
+                    <label class="block text-gray-700 font-medium mb-1">Sent to Publisher</label>
                     <input type="date" name="article_sent_to_publisher" value="{{ old('article_sent_to_publisher') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('article_sent_to_publisher')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Publication Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Publication Date</label>
                     <input type="date" name="publication_date" value="{{ old('publication_date') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('publication_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Expiration Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Expiration Date</label>
                     <input type="date" name="expiration_date" value="{{ old('expiration_date') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('expiration_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Publisher Period (days)</label>
+                    <label class="block text-gray-700 font-medium mb-1">Publisher Period (days)</label>
                     <input type="number" name="publisher_period" value="{{ old('publisher_period') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('publisher_period')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div class="col-span-2">
-                    <label class="block text-gray-700 font-medium mb-1">Article URL</label>
+                    <label class="block text-gray-700 font-medium mb-1">Article URL</label>
                     <input type="url" name="article_url" value="{{ old('article_url') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('article_url') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
@@ -205,31 +208,31 @@
             {{-- ───────────── INVOICING & PAYMENTS ───────────── --}}
             <div class="grid grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Pay to Us Method</label>
+                    <label class="block text-gray-700 font-medium mb-1">Pay to Us Method</label>
                     <input type="text" name="method_payment_to_us" value="{{ old('method_payment_to_us') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('method_payment_to_us')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Invoice Menford Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Invoice Menford Date</label>
                     <input type="date" name="invoice_menford" value="{{ old('invoice_menford') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('invoice_menford')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Invoice Menford Nr</label>
+                    <label class="block text-gray-700 font-medium mb-1">Invoice Menford Nr</label>
                     <input type="text" name="invoice_menford_nr" value="{{ old('invoice_menford_nr') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('invoice_menford_nr')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Invoice Company</label>
+                    <label class="block text-gray-700 font-medium mb-1">Invoice Company</label>
                     <input type="text" name="invoice_company" value="{{ old('invoice_company') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('invoice_company')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Pay to Us Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Pay to Us Date</label>
                     <input type="date" name="payment_to_us_date" value="{{ old('payment_to_us_date') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('payment_to_us_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
@@ -238,25 +241,25 @@
 
             <div class="grid grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Bill Publisher Name</label>
+                    <label class="block text-gray-700 font-medium mb-1">Bill Publisher Name</label>
                     <input type="text" name="bill_publisher_name" value="{{ old('bill_publisher_name') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('bill_publisher_name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Bill Publisher Nr</label>
+                    <label class="block text-gray-700 font-medium mb-1">Bill Publisher Nr</label>
                     <input type="text" name="bill_publisher_nr" value="{{ old('bill_publisher_nr') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('bill_publisher_nr')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Pay to Publisher Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Pay to Publisher Date</label>
                     <input type="date" name="payment_to_publisher_date" value="{{ old('payment_to_publisher_date') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('payment_to_publisher_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Pay to Publisher Method</label>
+                    <label class="block text-gray-700 font-medium mb-1">Pay to Publisher Method</label>
                     <input type="text" name="method_payment_to_publisher" value="{{ old('method_payment_to_publisher') }}"
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('method_payment_to_publisher')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror

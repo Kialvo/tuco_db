@@ -393,6 +393,7 @@
                 <tr class="border-b border-gray-200 bg-gray-50 text-[12px] uppercase text-gray-500 tracking-wider">
                     <th class="whitespace-nowrap px-4 py-2">ID</th>
                     <th class="whitespace-nowrap px-4 py-2">Domain</th>
+                    <th class="whitespace-nowrap px-4 py-2">Extra Notes</th>
                     <th class="whitespace-nowrap px-4 py-2">Status</th>
                     <th class="whitespace-nowrap px-4 py-2">Country</th>
                     <th class="whitespace-nowrap px-4 py-2">Language</th>
@@ -432,7 +433,7 @@
                     <th class="whitespace-nowrap px-4 py-2">Social Media Sharing</th>
                     <th class="whitespace-nowrap px-4 py-2">Post in Homepage</th>
                     <th class="whitespace-nowrap px-4 py-2">Date Added</th>
-                    <th class="whitespace-nowrap px-4 py-2">Extra Notes</th>
+
                     <th class="whitespace-nowrap px-4 py-2">Action</th>
                 </tr>
                 </thead>
@@ -543,6 +544,20 @@
                 columns: [
                     { data: 'id', name: 'id' },
                     { data: 'domain_name', name: 'domain_name' },
+                    {
+                        data: 'extra_notes',
+                        name: 'extra_notes',
+                        className: 'text-center',
+                        render: function (data) {
+                            if (!data) return '';
+                            // escape any "<" & ">" so the note can safely live in a data-attribute
+                            const safe = $('<div>').text(data).html();
+                            return `
+            <a href="#" class="note-link text-cyan-700" data-note="${safe}">
+                <i class="fas fa-comment-dots"></i>
+            </a>`;
+                        }
+                    },
                     { data: 'status', name: 'status', className: 'text-center', },
                     { data: 'country_name', name: 'country.country_name', className: 'text-center', },
                     { data: 'language_name', name: 'language.name',  className: 'text-center', },
@@ -743,20 +758,7 @@
                             return data.substring(0, 10);  // "YYYY-MM-DD"
                         }
                     },
-                    {
-                        data: 'extra_notes',
-                        name: 'extra_notes',
-                        className: 'text-center',
-                        render: function (data) {
-                            if (!data) return '';
-                            // escape any "<" & ">" so the note can safely live in a data-attribute
-                            const safe = $('<div>').text(data).html();
-                            return `
-            <a href="#" class="note-link text-cyan-700" data-note="${safe}">
-                <i class="fas fa-comment-dots"></i>
-            </a>`;
-                        }
-                    },
+
 
                     { data: 'action', name: 'action', orderable: false, searchable: false }
                 ],
