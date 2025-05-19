@@ -304,7 +304,7 @@ class StorageController extends Controller
 
             // 4) Render & download
             $pdf = PDF::loadView('storages.pdf', compact('header','rows'))
-                ->setPaper('a4','landscape');
+                ->setPaper('a1', 'landscape');
             Log::info('[storages.exportPdf] success');
             return $pdf->download('storages_'.now()->format('Y-m-d_His').'.pdf');
         }
