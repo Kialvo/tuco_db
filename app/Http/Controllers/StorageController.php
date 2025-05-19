@@ -9,7 +9,11 @@ use App\Models\Language;
 use App\Models\Client;
 use App\Models\Copy;
 use App\Models\Category;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
 
 class StorageController extends Controller
@@ -226,46 +230,139 @@ class StorageController extends Controller
     }
 
     /*======================================================================
-    | EXPORT CSV
-    ======================================================================*/
+| EXPORT CSV (with field selection)
+======================================================================*/
     public function exportCsv(Request $request)
     {
-        $query    = $this->applyFiltersClone($request);
+        // 1) Filter + fetch
+        $query    = Storage::with(['site','country','language','client','copy','categories']);
+        $this->applyFilters($request, $query);
         $storages = $query->get();
 
-        $header = array_merge(
-            ['ID'],
-            array_keys($this->csvRow($storages->first() ?? new Storage()))
-        );
-
-        $rows = [$header];
-        foreach ($storages as $s) {
-            $rows[] = array_merge([$s->id], array_values($this->csvRow($s)));
+        // 2) Determine fields
+        $allKeys = array_merge(['id'], array_keys($this->csvRow($storages->first() ?? new Storage())));
+        $fields  = $request->input('fields', $allKeys);
+        if (! in_array('id', $fields, true)) {
+            array_unshift($fields, 'id');
         }
 
-        $file = 'storages_'.date('Y-m-d_His').'.csv';
+        // 3) Build CSV
+        $filename = 'storages_'.now()->format('Y-m-d_His').'.csv';
+        $handle   = fopen('php://temp','r+');
+        fputcsv($handle, array_map([Str::class,'headline'],$fields));
+        foreach ($storages as $s) {
+            $assoc = $this->csvRow($s);
+            $row   = [];
+            foreach ($fields as $f) {
+                $row[] = $f==='id' ? $s->id : ($assoc[$f] ?? '');
+            }
+            fputcsv($handle, $row);
+        }
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
 
-        $h = fopen('php://temp', 'r+');
-        foreach ($rows as $r) { fputcsv($h, $r); }
-        rewind($h);
-        $out = stream_get_contents($h);
-        fclose($h);
-
-        return response($out, 200, [
+        return response($csv, 200, [
             'Content-Type'        => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="'.$file.'"'
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
         ]);
     }
+
+
+    /*======================================================================
+    | EXPORT PDF (with field selection)
+    ======================================================================*/
+    public function exportPdf(Request $request)
+    {
+        Log::info('[storages.exportPdf] begin');
+        try {
+            // 1) Filter + fetch
+            $query    = Storage::with(['site','country','language','client','copy','categories']);
+            $this->applyFilters($request, $query);
+            $storages = $query->get();
+            Log::info('[storages.exportPdf] count='.$storages->count());
+
+            // 2) Fields selection
+            $allKeys = array_merge(['id'], array_keys($this->csvRow($storages->first() ?? new Storage())));
+            $fields  = $request->input('fields', $allKeys);
+            if (! in_array('id', $fields, true)) {
+                array_unshift($fields, 'id');
+            }
+            Log::info('[storages.exportPdf] fields='.implode(',',$fields));
+
+            // 3) Build header & rows
+            $header = collect($fields)->map(fn($f)=> Str::headline($f))->all();
+            $rows   = [];
+            foreach ($storages as $s) {
+                $assoc = $this->csvRow($s);
+                $row   = [];
+                foreach ($fields as $f) {
+                    $row[] = $f === 'id' ? $s->id : ($assoc[$f] ?? '');
+                }
+                $rows[] = $row;
+            }
+
+            // 4) Render & download
+            $pdf = PDF::loadView('storages.pdf', compact('header','rows'))
+                ->setPaper('a4','landscape');
+            Log::info('[storages.exportPdf] success');
+            return $pdf->download('storages_'.now()->format('Y-m-d_His').'.pdf');
+        }
+        catch (\Exception $e) {
+            Log::error('[storages.exportPdf] '.$e->getMessage());
+            Log::error($e->getTraceAsString());
+            abort(500,'PDF generation failed; check logs.');
+        }
+    }
+
+
+
 
     /*======================================================================
     | Helpers
     ======================================================================*/
-    private function applyFiltersClone(Request $request)
+    /**
+     * Extracted filter logic so we can reuse it in DataTables, CSV & PDF exports.
+     */
+    protected function applyFilters(Request $request, $query)
     {
-        $clone = new Request($request->all());
-        $data  = $this->getData($clone)->getData();
-        return $data->collection ?? Storage::query();
+        // Publication date range
+        if ($request->filled('publication_from') && $request->filled('publication_to')) {
+            $query->whereBetween('publication_date', [$request->publication_from, $request->publication_to]);
+        } elseif ($request->filled('publication_from')) {
+            $query->where('publication_date', '>=', $request->publication_from);
+        } elseif ($request->filled('publication_to')) {
+            $query->where('publication_date', '<=', $request->publication_to);
+        }
+
+        // FK & status filters
+        if ($request->filled('copy_id'))       $query->where('copy_id',       $request->copy_id);
+        if ($request->filled('language_id'))   $query->where('language_id',   $request->language_id);
+        if ($request->filled('country_id'))    $query->where('country_id',    $request->country_id);
+        if ($request->filled('client_id'))     $query->where('client_id',     $request->client_id);
+        if ($request->filled('status'))        $query->where('status',        $request->status);
+
+        // LIKE filters
+        if ($request->filled('campaign'))           $query->where('campaign',           'like', '%'.$request->campaign.'%');
+        if ($request->filled('campaign_code'))      $query->where('campaign_code',      'like', '%'.$request->campaign_code.'%');
+        if ($request->filled('invoice_menford_nr')) $query->where('invoice_menford_nr', 'like', '%'.$request->invoice_menford_nr.'%');
+        if ($request->filled('bill_publisher_name'))$query->where('bill_publisher_name', 'like', '%'.$request->bill_publisher_name.'%');
+        if ($request->filled('target_url'))         $query->where('target_url',         'like', '%'.$request->target_url.'%');
+        if ($request->filled('article_url'))        $query->where('article_url',        'like', '%'.$request->article_url.'%');
+
+        // Categories multi‐select
+        if ($request->filled('category_ids') && is_array($request->category_ids)) {
+            $query->whereHas('categories', fn($q)=> $q->whereIn('categories.id', $request->category_ids));
+        }
+
+        // Soft‐deletes toggle
+        if ($request->boolean('show_deleted')) {
+            $query->onlyTrashed();
+        }
+
+        return $query;
     }
+
 
     private function validateForm(Request $r)
     {
@@ -341,8 +438,10 @@ class StorageController extends Controller
         }
     }
 
+
     private function csvRow(Storage $s): array
     {
+        // 1) Grab all the “raw” DB columns
         $row = $s->only([
             'website_id',
             'status',
@@ -378,16 +477,46 @@ class StorageController extends Controller
             'publisher_article',
             'bill_publisher_name',
             'bill_publisher_nr',
-            'bill_publisher_date',     // ←  added (after bill_publisher_nr)
+            'bill_publisher_date',
             'payment_to_publisher_date',
             'method_payment_to_publisher',
-            'files'
+            'files',
         ]);
 
-        $row['categories'] = $s->categories->pluck('name')->join(', ');
+        // 2) Re‐format all date fields to DD-MM-YYYY, stripping off any time
+        $dateFields = [
+            'copywriter_commision_date',
+            'copywriter_submission_date',
+            'article_sent_to_publisher',
+            'publication_date',
+            'expiration_date',
+            'invoice_menford',
+            'payment_to_us_date',
+            'bill_publisher_date',
+            'payment_to_publisher_date',
+        ];
+        foreach ($dateFields as $f) {
+            if (! empty($row[$f])) {
+                $row[$f] = Carbon::parse($row[$f])->format('d-m-Y');
+            }
+        }
+
+        // 3) Inject the “computed” display columns
+        $row['id']               = $s->id;
+        $row['website_domain']   = optional($s->site)->domain_name;
+        $row['client_name']      = $s->client
+            ? trim($s->client->first_name . ' ' . $s->client->last_name)
+            : '';
+        $row['copywriter_name']  = optional($s->copy)->copy_val ?? '';
+        $row['language_name']    = optional($s->language)->name ?? '';
+        $row['country_name']     = optional($s->country)->country_name ?? '';
+        $row['categories_list']  = $s->categories->pluck('name')->join(', ');
 
         return $row;
     }
+
+
+
 
     /*======================================================================
     | NEW: automatic calculations & clean-up
