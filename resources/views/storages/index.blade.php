@@ -101,7 +101,7 @@
 
             {{-- choose columns to export --}}
             <div class="mt-2 flex items-center gap-2">
-                <label class="text-gray-700 font-medium text-xs">Choose Columns:</label>
+                <label class="text-gray-700 font-medium text-xs">Choose Columns to export:</label>
                 <select id="exportFields" multiple
                         class="border border-gray-300 rounded px-2 py-1 text-xs w-64
                                focus:ring-cyan-500 focus:border-cyan-500">
