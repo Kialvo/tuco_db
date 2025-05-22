@@ -43,6 +43,12 @@ class WebsiteController extends Controller
         $query->where('type_of_website', '=', $request->type_of_website);
          }
 
+        if ($request->boolean('no_contact')) {
+            // If you store the FK directly on websites …
+            $query->whereNull('contact_id');
+
+        }
+
         if (!empty($request->status)) {
 
             $query->where('status', '=', $request->status);
@@ -474,6 +480,10 @@ class WebsiteController extends Controller
 
         if (!empty($request->type_of_website)) {
             $query->where('type_of_website', '=', $request->type_of_website);
+        }
+
+        if ($request->boolean('no_contact')) {
+            $query->whereNull('contact_id');
         }
 
         if (!empty($request->status)) {

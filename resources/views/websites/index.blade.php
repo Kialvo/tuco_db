@@ -347,7 +347,24 @@
                         </label>
                     </div>
                 @endforeach
+
+                    {{-- Orphan domains --}}
+                    <div class="flex items-center space-x-1">
+                        <span class="text-gray-700">no contact</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="filterNoContact" class="sr-only peer">
+                            <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-cyan-600
+            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+            after:bg-white after:border-gray-300 after:border after:rounded-full
+            after:h-4 after:w-4 after:transition-all
+            peer-checked:after:translate-x-full peer-focus:outline-none
+            peer-focus:ring-1 peer-focus:ring-cyan-500 peer-checked:after:border-white">
+                            </div>
+                        </label>
+                    </div>
             </div>
+
+
 
             <!-- ROW 6: Buttons -->
             <div class="flex space-x-2">
@@ -490,6 +507,7 @@
                         d.type_of_website = $('#filterWebsiteType').val();
                         d.language_id = $('#filterLanguage').val();
                         d.status = $('#filterStatus').val();
+                        d.no_contact = $('#filterNoContact').is(':checked');
 
                         d.country_ids_include = $('#filterCountriesInclude').val(); // Array
                         d.country_ids_exclude = $('#filterCountriesExclude').val(); // Array
@@ -787,6 +805,7 @@
                 // Specifically clear the multi-selects:
                 $('#filterCountriesInclude').val(null).trigger('change');
                 $('#filterCountriesExclude').val(null).trigger('change');
+                $('#filterNoContact').prop('checked', false);
 
                 $('#filterCategories').val(null).trigger('change');
                 table.ajax.reload();
