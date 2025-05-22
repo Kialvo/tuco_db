@@ -18,6 +18,32 @@ use Yajra\DataTables\DataTables;
 
 class StorageController extends Controller
 {
+
+    /**
+     * All columns that may be updated in bulk.
+     * Feel free to remove any you do NOT want to expose.
+     */
+    public const BULK_EDITABLE = [
+        // GENERAL / FK
+        'status','LB','client_id','copy_id','country_id','language_id',
+        // COPY DETAILS
+        'copy_nr','copywriter_commision_date','copywriter_submission_date','copywriter_period',
+        // PUBLISHER
+        'publisher_currency','publisher_amount',
+        // PRICES & COSTS
+        'publisher','total_cost','menford','client_copy','total_revenues','profit',
+        // CAMPAIGN & LINKS
+        'campaign','anchor_text','target_url','campaign_code',
+        // PUBLICATION
+        'article_sent_to_publisher','publication_date','expiration_date','publisher_period','article_url',
+        // INVOICING / PAYMENTS
+        'method_payment_to_us','invoice_menford','invoice_menford_nr','invoice_company',
+        'payment_to_us_date','bill_publisher_name','bill_publisher_nr','bill_publisher_date',
+        'payment_to_publisher_date','method_payment_to_publisher',
+        // FILES & NOTES
+        'files','extra_notes',
+    ];
+
     /*======================================================================
     | INDEX – filters + DataTable view
     ======================================================================*/
@@ -41,9 +67,6 @@ class StorageController extends Controller
     /*======================================================================
     | DATATABLES JSON
     ======================================================================*/
-    /*======================================================================
-| DATATABLES JSON
-======================================================================*/
     public function getData(Request $request)
     {
         $query = Storage::with([
@@ -125,6 +148,52 @@ class StorageController extends Controller
             ->make(true);
     }
 
+
+    /**
+     * Update the same field for many rows at once.
+     * POST:  ids[] , field , value
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $data = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'integer|exists:storage,id',
+            'field' => ['required','string',function($attr,$val,$fail){
+                if (! in_array($val, self::BULK_EDITABLE, true)) {
+                    $fail('Field not allowed for bulk edit.');
+                }
+            }],
+            'value' => 'nullable|string|max:255',
+        ]);
+
+        $field = $data['field'];
+        $value = $data['value'];
+
+        /* Normalise DD-MM-YYYY → YYYY-MM-DD for *_date fields */
+        /* Normalise dates -----------------------------------------------------*/
+        if (Str::endsWith($field, '_date') && $value !== '') {
+
+            // try the two common day-first / year-first formats
+            $dt = null;
+            foreach (['Y-m-d', 'd-m-Y'] as $fmt) {
+                try {
+                    $dt = Carbon::createFromFormat($fmt, $value);
+                    break;           // stop at the first that parses
+                } catch (\Throwable $e) { /* keep trying */ }
+            }
+
+            if (! $dt) {                      // none matched
+                return response()->json(['message' => 'Invalid date format'], 422);
+            }
+
+            $value = $dt->toDateString();       //  YYYY-MM-DD 00:00:00
+        }
+
+
+        Storage::whereIn('id',$data['ids'])->update([$field=>$value]);
+
+        return response()->json(['message'=>"Updated ".count($data['ids'])." record(s)."]);
+    }
 
     /*======================================================================
     | CREATE / STORE
@@ -274,44 +343,32 @@ class StorageController extends Controller
     ======================================================================*/
     public function exportPdf(Request $request)
     {
-        Log::info('[storages.exportPdf] begin');
         try {
-            // 1) Filter + fetch
+            // 1) fetch
             $query    = Storage::with(['site','country','language','client','copy','categories']);
             $this->applyFilters($request, $query);
             $storages = $query->get();
-            Log::info('[storages.exportPdf] count='.$storages->count());
 
-            // 2) Fields selection
-            $allKeys = array_merge(['id'], array_keys($this->csvRow($storages->first() ?? new Storage())));
+            // 2) fields
+            $allKeys = array_keys($this->csvRow($storages->first() ?? new Storage()));
             $fields  = $request->input('fields', $allKeys);
-            if (! in_array('id', $fields, true)) {
-                array_unshift($fields, 'id');
-            }
-            Log::info('[storages.exportPdf] fields='.implode(',',$fields));
 
-            // 3) Build header & rows
-            $header = collect($fields)->map(fn($f)=> Str::headline($f))->all();
+            // 3) header + rows for the Blade view
+            $header = collect($fields)->map(fn ($f) => Str::headline($f))->all();
             $rows   = [];
             foreach ($storages as $s) {
                 $assoc = $this->csvRow($s);
-                $row   = [];
-                foreach ($fields as $f) {
-                    $row[] = $f === 'id' ? $s->id : ($assoc[$f] ?? '');
-                }
-                $rows[] = $row;
+                $rows[] = collect($fields)->map(fn ($f) => $assoc[$f] ?? '')->all();
             }
 
-            // 4) Render & download
-            $pdf = PDF::loadView('storages.pdf', compact('header','rows'))
+            // 4) generate PDF – create /resources/views/storages/pdf.blade.php
+            $pdf = PDF::loadView('storages.pdf', compact('header', 'rows'))
                 ->setPaper('a1', 'landscape');
-            Log::info('[storages.exportPdf] success');
+
             return $pdf->download('storages_'.now()->format('Y-m-d_His').'.pdf');
-        }
-        catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('[storages.exportPdf] '.$e->getMessage());
-            Log::error($e->getTraceAsString());
-            abort(500,'PDF generation failed; check logs.');
+            abort(500, 'PDF generation failed – check logs.');
         }
     }
 
@@ -439,81 +496,78 @@ class StorageController extends Controller
     }
 
 
+    /**
+     * Build one ordered row for CSV (and PDF) export, with dates in d-m-Y format.
+     */
     private function csvRow(Storage $s): array
     {
-        // 1) Grab all the “raw” DB columns
-        $row = $s->only([
-            'website_id',
-            'status',
-            'LB',
-            'client_id',
-            'copy_id',
-            'copy_nr',
+        // 1) Grab & format all date fields
+        $raw = $s->only([
             'copywriter_commision_date',
             'copywriter_submission_date',
-            'copywriter_period',
-            'language_id',
-            'country_id',
-            'publisher',
-            'total_cost',
-            'menford',
-            'client_copy',
-            'total_revenues',
-            'profit',
-            'campaign',
-            'anchor_text',
-            'target_url',
-            'campaign_code',
             'article_sent_to_publisher',
             'publication_date',
             'expiration_date',
-            'publisher_period',
-            'article_url',
-            'method_payment_to_us',
             'invoice_menford',
-            'invoice_menford_nr',
-            'invoice_company',
             'payment_to_us_date',
-            'publisher_article',
-            'bill_publisher_name',
-            'bill_publisher_nr',
             'bill_publisher_date',
             'payment_to_publisher_date',
-            'method_payment_to_publisher',
-            'files',
         ]);
 
-        // 2) Re‐format all date fields to DD-MM-YYYY, stripping off any time
-        $dateFields = [
-            'copywriter_commision_date',
-            'copywriter_submission_date',
-            'article_sent_to_publisher',
-            'publication_date',
-            'expiration_date',
-            'invoice_menford',
-            'payment_to_us_date',
-            'bill_publisher_date',
-            'payment_to_publisher_date',
-        ];
-        foreach ($dateFields as $f) {
-            if (! empty($row[$f])) {
-                $row[$f] = Carbon::parse($row[$f])->format('d-m-Y');
-            }
+        foreach ($raw as $key => $val) {
+            $raw[$key] = $val
+                ? Carbon::parse($val)->format('d-m-Y')
+                : '';
         }
 
-        // 3) Inject the “computed” display columns
-        $row['id']               = $s->id;
-        $row['website_domain']   = optional($s->site)->domain_name;
-        $row['client_name']      = $s->client
-            ? trim($s->client->first_name . ' ' . $s->client->last_name)
-            : '';
-        $row['copywriter_name']  = optional($s->copy)->copy_val ?? '';
-        $row['language_name']    = optional($s->language)->name ?? '';
-        $row['country_name']     = optional($s->country)->country_name ?? '';
-        $row['categories_list']  = $s->categories->pluck('name')->join(', ');
-
-        return $row;
+        // 2) Return one associative array in exactly the order of your <th> definitions
+        return [
+            'id'                          => $s->id,
+            'website_domain'              => optional($s->site)->domain_name,
+            'status'                       => $s->status,
+            'LB'                           => $s->LB,
+            'client_name'                 => $s->client
+                ? trim($s->client->first_name . ' ' . $s->client->last_name)
+                : '',
+            'copywriter_name'             => optional($s->copy)->copy_val ?? '',
+            'copy_nr'                     => $s->copy_nr,
+            'copywriter_commision_date'   => $raw['copywriter_commision_date'],
+            'copywriter_submission_date'  => $raw['copywriter_submission_date'],
+            'copywriter_period'           => $s->copywriter_period,
+            'language_name'               => optional($s->language)->name ?? '',
+            'country_name'                => optional($s->country)->country_name ?? '',
+            'publisher_currency'          => $s->publisher_currency,
+            'publisher_amount'            => $s->publisher_amount,
+            'publisher'                   => $s->publisher,
+            'total_cost'                  => $s->total_cost,
+            'menford'                     => $s->menford,
+            'client_copy'                 => $s->client_copy,
+            'total_revenues'              => $s->total_revenues,
+            'profit'                      => $s->profit,
+            'campaign'                    => $s->campaign,
+            'anchor_text'                 => $s->anchor_text,
+            'target_url'                  => $s->target_url,
+            'campaign_code'               => $s->campaign_code,
+            'article_sent_to_publisher'   => $raw['article_sent_to_publisher'],
+            'publication_date'            => $raw['publication_date'],
+            'expiration_date'             => $raw['expiration_date'],
+            'publisher_period'            => $s->publisher_period,
+            'article_url'                 => $s->article_url,
+            'method_payment_to_us'        => $s->method_payment_to_us,
+            'invoice_menford'             => $raw['invoice_menford'],
+            'invoice_menford_nr'          => $s->invoice_menford_nr,
+            'invoice_company'             => $s->invoice_company,
+            'payment_to_us_date'          => $raw['payment_to_us_date'],
+            'bill_publisher_name'         => $s->bill_publisher_name,
+            'bill_publisher_nr'           => $s->bill_publisher_nr,
+            'bill_publisher_date'         => $raw['bill_publisher_date'],
+            'payment_to_publisher_date'   => $raw['payment_to_publisher_date'],
+            'method_payment_to_publisher' => $s->method_payment_to_publisher,
+            'categories_list'             => $s->categories->pluck('name')->join(', '),
+            'files'                       => $s->files,
+        ];
     }
+
 
 
 

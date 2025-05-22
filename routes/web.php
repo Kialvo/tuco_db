@@ -115,6 +115,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/storages/export/csv',              [StorageController::class,'exportCsv'])->name('storages.export.csv');
     Route::get('/storages/export/pdf',              [StorageController::class,'exportPdf'])->name('storages.export.pdf');
 
+    Route::post(
+        '/storages/bulk-update',
+        [\App\Http\Controllers\StorageController::class, 'bulkUpdate']
+    )->name('storages.bulkUpdate');
+
+
     Route::resource('storages', StorageController::class)->names([
         'index'   => 'storages.index',
         'show'    => 'storages.show',

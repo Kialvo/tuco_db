@@ -4,56 +4,67 @@
 @section('content')
     <h1 class="text-lg font-bold text-gray-700 py-6">Storages</h1>
 
-    {{-- Define exportable columns --}}
+    {{-- map “database_field” → human label (used by export & bulk-edit) --}}
     @php
         $exportColumns = [
-            'id'                             => 'ID',
-            'website_domain'                => 'Website',
-            'status'                         => 'Status',
-            'LB'                             => 'LB',
-            'client_name'                   => 'Client',
-            'copywriter_name'               => 'Copywriter',
-            'copy_nr'                        => 'Copywriter Amount €',
-            'copywriter_commision_date'     => 'Copy Comm. Date',
-            'copywriter_submission_date'    => 'Copy Subm. Date',
-            'copywriter_period'             => 'Copy Period',
-            'language_name'                 => 'Language',
-            'country_name'                  => 'Country',
-            'publisher_currency'            => 'Publisher Currency',
-            'publisher_amount'              => 'Publisher Amount €',
-            'publisher'                     => 'Publisher Agreed €',
-            'total_cost'                    => 'Total Cost €',
-            'menford'                       => 'Menford €',
-            'client_copy'                   => 'Client Copy €',
-            'total_revenues'                => 'Total Revenues €',
-            'profit'                        => 'Profit €',
-            'campaign'                      => 'Target Domain',
-            'anchor_text'                   => 'Anchor Text',
-            'target_url'                    => 'Target URL',
-            'campaign_code'                 => 'Campaign Code',
-            'article_sent_to_publisher'     => 'Sent to Publisher',
-            'publication_date'              => 'Publication Date',
-            'expiration_date'               => 'Expiration Date',
-            'publisher_period'              => 'Publisher Period',
-            'article_url'                   => 'Article URL',
-            'method_payment_to_us'          => 'Pay to Us Method',
-            'invoice_menford'               => 'Invoice Menford Date',
-            'invoice_menford_nr'            => 'Invoice Menford Nr',
-            'invoice_company'               => 'Invoice Company',
-            'payment_to_us_date'            => 'Pay to Us Date',
-            'bill_publisher_name'           => 'Bill Publisher Name',
-            'bill_publisher_nr'             => 'Bill Publisher Nr',
-            'bill_publisher_date'           => 'Bill Publisher Date',
-            'payment_to_publisher_date'     => 'Pay to Publisher Date',
-            'method_payment_to_publisher'   => 'Pay to Publisher Method',
-            'categories_list'               => 'Categories',
-            'files'                         => 'Files',
+        'id'                             => 'ID',
+        'website_domain'                 => 'Website',
+        'status'                         => 'Status',
+        'LB'                             => 'LB',
+        'client_name'                    => 'Client',
+        'copywriter_name'                => 'Copywriter',
+        'copy_nr'                        => 'Copywriter Amount €',
+        'copywriter_commision_date'      => 'Copy Comm. Date',
+        'copywriter_submission_date'     => 'Copy Subm. Date',
+        'copywriter_period'              => 'Copy Period',
+        'language_name'                  => 'Language',
+        'country_name'                   => 'Country',
+        'publisher_currency'             => 'Publisher Currency',
+        'publisher_amount'               => 'Publisher Amount €',
+        'publisher'                      => 'Publisher Agreed €',
+        'total_cost'                     => 'Total Cost €',
+        'menford'                        => 'Menford €',
+        'client_copy'                    => 'Client Copy €',
+        'total_revenues'                 => 'Total Revenues €',
+        'profit'                         => 'Profit €',
+        'campaign'                       => 'Target Domain',
+        'anchor_text'                    => 'Anchor Text',
+        'target_url'                     => 'Target URL',
+        'campaign_code'                  => 'Campaign Code',
+        'article_sent_to_publisher'      => 'Sent to Publisher',
+        'publication_date'               => 'Publication Date',
+        'expiration_date'                => 'Expiration Date',
+        'publisher_period'               => 'Publisher Period',
+        'article_url'                    => 'Article URL',
+        'method_payment_to_us'           => 'Pay to Us Method',
+        'invoice_menford'                => 'Invoice Menford Date',
+        'invoice_menford_nr'             => 'Invoice Menford Nr',
+        'invoice_company'                => 'Invoice Company',
+        'payment_to_us_date'             => 'Pay to Us Date',
+        'bill_publisher_name'            => 'Bill Publisher Name',
+        'bill_publisher_nr'              => 'Bill Publisher Nr',
+        'bill_publisher_date'            => 'Bill Publisher Date',
+        'payment_to_publisher_date'      => 'Pay to Publisher Date',
+        'method_payment_to_publisher'    => 'Pay to Publisher Method',
+        'categories_list'                => 'Categories',
+        'files'                          => 'Files',
+        ];
+
+        /* fields allowed for bulk-edit (keep in sync with StorageController::BULK_EDITABLE) */
+        $bulkEditable = [
+        'status','LB','client_id','copy_id','copy_nr','copywriter_commision_date',
+        'copywriter_submission_date','copywriter_period','language_id','country_id',
+        'publisher_currency','publisher_amount','publisher','menford','client_copy',
+        'campaign','anchor_text','target_url','campaign_code','article_sent_to_publisher',
+        'publication_date','expiration_date','publisher_period','article_url',
+        'method_payment_to_us','invoice_menford','invoice_menford_nr','invoice_company',
+        'payment_to_us_date','bill_publisher_name','bill_publisher_nr','bill_publisher_date',
+        'payment_to_publisher_date','method_payment_to_publisher'
         ];
     @endphp
 
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
-
-        {{-- ───────────── HEADER BUTTONS ───────────── --}}
+        {{-- ───────────────────── HEADER BUTTONS ───────────────────── --}}
         <div class="flex flex-col gap-3 mb-4">
             <div class="space-x-2 flex flex-wrap items-center">
                 <button id="toggleFiltersBtn"
@@ -68,13 +79,19 @@
                     Create Storage
                 </a>
 
-                {{-- Export Buttons --}}
+                {{-- Bulk-Edit --}}
+                <button id="btnBulkEdit"
+                        class="bg-amber-600 text-white px-4 py-2 rounded shadow hover:bg-amber-700
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 text-xs">
+                    Bulk Edit
+                </button>
+
+                {{-- Export --}}
                 <a href="#" id="btnExportCsv"
                    class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
                     Export CSV
                 </a>
-
                 <a href="#" id="btnExportPdf"
                    class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
@@ -82,21 +99,21 @@
                 </a>
             </div>
 
-            {{-- ───────────── SELECT FIELDS TO EXPORT ───────────── --}}
+            {{-- choose columns to export --}}
             <div class="mt-2 flex items-center gap-2">
                 <label class="text-gray-700 font-medium text-xs">Choose Columns:</label>
                 <select id="exportFields" multiple
                         class="border border-gray-300 rounded px-2 py-1 text-xs w-64
                                focus:ring-cyan-500 focus:border-cyan-500">
-                    @foreach($exportColumns as $fieldKey => $fieldLabel)
-                        <option value="{{ $fieldKey }}">{{ $fieldLabel }}</option>
+                    @foreach($exportColumns as $key=>$label)
+                        <option value="{{ $key }}">{{ $label }}</option>
                     @endforeach
                 </select>
-                <span class="text-gray-500 text-xs">(<em>leave blank for all</em>)</span>
+                <span class="text-gray-500 text-xs">(leave blank for all)</span>
             </div>
         </div>
 
-        {{-- ───────────── FILTERS ───────────── --}}
+        {{-- ───────────────────── FILTERS (unchanged) ───────────────────── --}}
         <div id="filterForm"
              class="bg-white border border-gray-200 rounded shadow p-2 mb-8 inline-block max-w-[2000px]">
             {{-- ROW 1 --}}
@@ -259,26 +276,16 @@
             </div>
         </div><!-- /filterForm -->
 
-        {{-- SHOW-DELETED toggle --}}
-        <div class="flex items-center space-x-2 mb-4">
-            <label for="filterShowDeleted" class="text-lg font-medium text-gray-700">Show Deleted</label>
-            <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="filterShowDeleted" class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-200 rounded-full
-                            peer-checked:bg-cyan-600 after:content-[''] after:absolute
-                            after:top-[2px] after:left-[2px] after:bg-white
-                            after:border-gray-300 after:border after:rounded-full after:h-5
-                            after:w-5 after:transition-all peer-checked:after:translate-x-full
-                            peer-checked:after:border-white">
-                </div>
-            </label>
-        </div>
-
-        {{-- ───────────── DATA TABLE ───────────── --}}
+        {{-- ───────────────────── DATA TABLE ───────────────────── --}}
         <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto max-w-[2400px]">
             <table id="storagesTable" class="text-xs text-gray-700 w-full min-w-[2400px]">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-[11px] uppercase text-gray-500 tracking-wider">
+                    {{-- master checkbox --}}
+                    <th class="px-4 py-2">
+                        <input id="chkAll" type="checkbox" class="form-checkbox h-4 w-4 text-cyan-600">
+                    </th>
+
                     <th class="px-4 py-2">ID</th>
                     <th class="px-4 py-2">Website</th>
                     <th class="px-4 py-2">Status</th>
@@ -329,198 +336,276 @@
     </div>
 @endsection
 
+{{-- existing small modals --}}
 @include('storages.partials.client-modal')
 @include('storages.partials.copy-modal')
 @include('storages.partials.url-modal')
 
+{{-- NEW bulk-edit modal --}}
+@include('storages.partials.bulk-modal')
+
 @push('scripts')
-    {{-- SweetAlert2 (only if not globally loaded) --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        /* ── tiny toast helper ── */
-        const toast = msg =>
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: 'success',
-                title: msg,
-                showConfirmButton: false,
-                timer: 1500,
-                timerProgressBar: true
-            });
+        /* ───────── helpers ───────── */
+        const toast = m=>Swal.fire({toast:true,position:'top-end',icon:'success',title:m,
+            showConfirmButton:false,timer:1500});
+        const oops  = m=>Swal.fire({toast:true,position:'top-end',icon:'error',title:m,
+            showConfirmButton:false,timer:2000});
 
-        /* ── copy helper ── */
-        const copyToClipboard = txt => new Promise((ok,ko)=>{
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(txt).then(ok).catch(ko);
-            } else {
-                const t = document.createElement('textarea');
-                t.value = txt;
-                t.style.position = 'fixed';
-                t.style.opacity  = '0';
-                document.body.appendChild(t);
-                t.select();
-                try {
-                    document.execCommand('copy');
-                    ok();
-                } catch(e) { ko(e) }
-                document.body.removeChild(t);
-            }
-        });
+        /* ───────── document ready ───────── */
+        $(function(){
 
-        $(function () {
-            /* ── Select2 on filters & exportFields ── */
-            $('#filterLanguage, #filterCountry, #filterClient, #filterCopy, #filterCategories, #exportFields')
-                .select2({
-                    width: 'resolve',
-                    dropdownAutoWidth: true,
-                    placeholder: 'Select',
-                    allowClear: true,
-                    containerCssClass: 'text-xs',
-                    dropdownCssClass: 'text-xs'
-                });
+            /* Select2 */
+            $('#filterLanguage,#filterCountry,#filterClient,#filterCopy,#filterCategories,#exportFields')
+                .select2({width:'resolve',dropdownAutoWidth:true,placeholder:'Select',allowClear:true,
+                    containerCssClass:'text-xs',dropdownCssClass:'text-xs'});
 
-            /* ── DataTable ── */
+            /* DataTable */
             const table = $('#storagesTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: "{{ route('storages.data') }}",
-                    type: "POST",
-                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                    data: d => {
-                        d.publication_from      = $('#filterPublicationFrom').val();
-                        d.publication_to        = $('#filterPublicationTo').val();
-                        d.copy_id               = $('#filterCopy').val();
-                        d.language_id           = $('#filterLanguage').val();
-                        d.country_id            = $('#filterCountry').val();
-                        d.client_id             = $('#filterClient').val();
-                        d.campaign              = $('#filterCampaign').val();
-                        d.campaign_code         = $('#filterCampaignCode').val();
-                        d.invoice_menford_nr    = $('#filterInvoiceMenfordNr').val();
-                        d.bill_publisher_name   = $('#filterBillPublisherName').val();
-                        d.target_url            = $('#filterTargetUrl').val();
-                        d.article_url           = $('#filterArticleUrl').val();
-                        d.status                = $('#filterStatus').val();
-                        d.category_ids          = $('#filterCategories').val();
-                        d.show_deleted          = $('#filterShowDeleted').is(':checked');
+                processing:true, serverSide:true,
+                ajax:{
+                    url:"{{ route('storages.data') }}",
+                    type:"POST",
+                    headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')},
+                    data:d=>{
+                        /* filters => request */
+                        d.publication_from =$('#filterPublicationFrom').val();
+                        d.publication_to   =$('#filterPublicationTo').val();
+                        d.copy_id          =$('#filterCopy').val();
+                        d.language_id      =$('#filterLanguage').val();
+                        d.country_id       =$('#filterCountry').val();
+                        d.client_id        =$('#filterClient').val();
+                        d.campaign         =$('#filterCampaign').val();
+                        d.campaign_code    =$('#filterCampaignCode').val();
+                        d.invoice_menford_nr=$('#filterInvoiceMenfordNr').val();
+                        d.bill_publisher_name=$('#filterBillPublisherName').val();
+                        d.target_url       =$('#filterTargetUrl').val();
+                        d.article_url      =$('#filterArticleUrl').val();
+                        d.status           =$('#filterStatus').val();
+                        d.category_ids     =$('#filterCategories').val();
+                        d.show_deleted     =$('#filterShowDeleted').is(':checked');
                     }
                 },
-                columns: [
-                    { data:'id', name:'id' },
-                    { data:'website_domain', name:'site.domain_name' },
-                    { data:'status', name:'status' },
-                    { data:'LB', name:'LB' },
-                    { data:'client_name', name:'client.first_name', render:(d,t,r)=>(r.client_id?`<a href="#" class="client-link underline text-blue-600" data-client-id="${r.client_id}">${d}</a>`:'') },
-                    { data:'copywriter_name', name:'copy.copy_val', render:(d,t,r)=>(r.copy_id?`<a href="#" class="copy-link underline text-blue-600" data-copy-id="${r.copy_id}">${d}</a>`:'') },
-                    { data:'copy_nr', name:'copy_nr' },
-                    { data:'copywriter_commision_date', name:'copywriter_commision_date', render:fmtDateEU },
-                    { data:'copywriter_submission_date', name:'copywriter_submission_date', render:fmtDateEU },
-                    { data:'copywriter_period', name:'copywriter_period' },
-                    { data:'language_name', name:'language.name' },
-                    { data:'country_name', name:'country.country_name' },
-                    { data:'publisher_currency', name:'publisher_currency' },
-                    { data:'publisher_amount', name:'publisher_amount', render:fmtEuro },
-                    { data:'publisher', name:'publisher', render:fmtEuro },
-                    { data:'total_cost', name:'total_cost', render:fmtEuro },
-                    { data:'menford', name:'menford', render:fmtEuro },
-                    { data:'client_copy', name:'client_copy', render:fmtEuro },
-                    { data:'total_revenues', name:'total_revenues', render:fmtEuro },
-                    { data:'profit', name:'profit', render:fmtEuro },
-                    { data:'campaign', name:'campaign' },
-                    { data:'anchor_text', name:'anchor_text' },
-                    { data:'target_url', name:'target_url', orderable:false, searchable:false, render:d=>d?`<a href="#" class="url-link underline text-blue-600" data-url="${d}">link</a>`:'' },
-                    { data:'campaign_code', name:'campaign_code' },
-                    { data:'article_sent_to_publisher', name:'article_sent_to_publisher', render:fmtDateEU },
-                    { data:'publication_date', name:'publication_date', render:fmtDateEU },
-                    { data:'expiration_date', name:'expiration_date', render:fmtDateEU },
-                    { data:'publisher_period', name:'publisher_period' },
-                    { data:'article_url', name:'article_url', orderable:false, searchable:false, render:d=>d?`<a href="#" class="url-link underline text-blue-600" data-url="${d}">article</a>`:'' },
-                    { data:'method_payment_to_us', name:'method_payment_to_us' },
-                    { data:'invoice_menford', name:'invoice_menford', render:fmtDateEU },
-                    { data:'invoice_menford_nr', name:'invoice_menford_nr' },
-                    { data:'invoice_company', name:'invoice_company' },
-                    { data:'payment_to_us_date', name:'payment_to_us_date', render:fmtDateEU },
-                    { data:'bill_publisher_name', name:'bill_publisher_name' },
-                    { data:'bill_publisher_nr', name:'bill_publisher_nr' },
-                    { data:'bill_publisher_date', name:'bill_publisher_date', render:fmtDateEU },
-                    { data:'payment_to_publisher_date', name:'payment_to_publisher_date', render:fmtDateEU },
-                    { data:'method_payment_to_publisher', name:'method_payment_to_publisher' },
-                    { data:'categories_list', name:'categories_list', className:'text-center' },
-                    { data:'files', name:'files', orderable:false, searchable:false, render:d=>d?`<a href="${d}" target="_blank"><i class="fas fa-paperclip text-lg text-blue-600"></i></a>`:'' },
-                    { data:'action', name:'action', orderable:false, searchable:false }
+                columns:[
+                    { /* row checkbox */
+                        data:'id',orderable:false,searchable:false,className:'text-center',
+                        render:id=>`<input type="checkbox" class="rowChk form-checkbox h-4 w-4 text-cyan-600" value="${id}">`
+                    },
+                    {data:'id',name:'id'},
+                    {data:'website_domain',name:'site.domain_name'},
+                    {data:'status',name:'status'},
+                    {data:'LB',name:'LB'},
+                    {data:'client_name',name:'client.first_name',
+                        render:(d,t,r)=>r.client_id?`<a href="#" class="client-link underline text-blue-600"
+                                           data-client-id="${r.client_id}">${d}</a>`:''},
+                    {data:'copywriter_name',name:'copy.copy_val',
+                        render:(d,t,r)=>r.copy_id?`<a href="#" class="copy-link underline text-blue-600"
+                                           data-copy-id="${r.copy_id}">${d}</a>`:''},
+                    {data:'copy_nr',name:'copy_nr'},
+                    {data:'copywriter_commision_date',name:'copywriter_commision_date',render:dt},
+                    {data:'copywriter_submission_date',name:'copywriter_submission_date',render:dt},
+                    {data:'copywriter_period',name:'copywriter_period'},
+                    {data:'language_name',name:'language.name'},
+                    {data:'country_name',name:'country.country_name'},
+                    {data:'publisher_currency',name:'publisher_currency'},
+                    {data:'publisher_amount',name:'publisher_amount',render:eu},
+                    {data:'publisher',name:'publisher',render:eu},
+                    {data:'total_cost',name:'total_cost',render:eu},
+                    {data:'menford',name:'menford',render:eu},
+                    {data:'client_copy',name:'client_copy',render:eu},
+                    {data:'total_revenues',name:'total_revenues',render:eu},
+                    {data:'profit',name:'profit',render:eu},
+                    {data:'campaign',name:'campaign'},
+                    {data:'anchor_text',name:'anchor_text'},
+                    {data:'target_url',name:'target_url',orderable:false,searchable:false,
+                        render:d=>d?`<a href="#" class="url-link underline text-blue-600" data-url="${d}">link</a>`:''},
+                    {data:'campaign_code',name:'campaign_code'},
+                    {data:'article_sent_to_publisher',name:'article_sent_to_publisher',render:dt},
+                    {data:'publication_date',name:'publication_date',render:dt},
+                    {data:'expiration_date',name:'expiration_date',render:dt},
+                    {data:'publisher_period',name:'publisher_period'},
+                    {data:'article_url',name:'article_url',orderable:false,searchable:false,
+                        render:d=>d?`<a href="#" class="url-link underline text-blue-600" data-url="${d}">article</a>`:''},
+                    {data:'method_payment_to_us',name:'method_payment_to_us'},
+                    {data:'invoice_menford',name:'invoice_menford',render:dt},
+                    {data:'invoice_menford_nr',name:'invoice_menford_nr'},
+                    {data:'invoice_company',name:'invoice_company'},
+                    {data:'payment_to_us_date',name:'payment_to_us_date',render:dt},
+                    {data:'bill_publisher_name',name:'bill_publisher_name'},
+                    {data:'bill_publisher_nr',name:'bill_publisher_nr'},
+                    {data:'bill_publisher_date',name:'bill_publisher_date',render:dt},
+                    {data:'payment_to_publisher_date',name:'payment_to_publisher_date',render:dt},
+                    {data:'method_payment_to_publisher',name:'method_payment_to_publisher'},
+                    {data:'categories_list',name:'categories_list',className:'text-center'},
+                    {data:'files',name:'files',orderable:false,searchable:false,
+                        render:d=>d?`<a href="${d}" target="_blank"><i class="fas fa-paperclip text-lg text-blue-600"></i></a>`:''},
+                    {data:'action',name:'action',orderable:false,searchable:false}
                 ],
-                order:[[0,'desc']],
+                order:[[1,'desc']], /* skip checkbox column */
                 autoWidth:false,
                 scrollX:true
             });
 
-            /* ── helper renderers ── */
-            function fmtDateEU(iso){ return iso ? new Date(iso).toLocaleDateString('en-GB') : ''; }
-            function fmtEuro(v){ return v !== null ? '<strong>€ '+v+'</strong>' : ''; }
+            /* cell formatters */
+            function dt(v){return v?new Date(v).toLocaleDateString('en-GB'):'';}
+            function eu(v){return v!==null?'<strong>€ '+v+'</strong>':'';}
 
-            /* ── Search / Clear ── */
-            $('#btnSearch').on('click', e => { e.preventDefault(); table.ajax.reload(); });
-            $('#btnClear').on('click', e => {
+            /* master checkbox */
+            $('#chkAll').on('change',function(){ $('.rowChk').prop('checked',this.checked); });
+
+            /* filters: Search / Clear / toggle-deleted */
+            $('#btnSearch').on('click',e=>{e.preventDefault();table.ajax.reload();});
+            $('#btnClear').on('click',e=>{
                 e.preventDefault();
                 $('#filterForm').find('input[type="text"],input[type="date"]').val('');
                 $('#filterForm').find('select').val('').trigger('change');
-                $('#filterShowDeleted').prop('checked', false);
+                $('#filterShowDeleted').prop('checked',false);
                 table.ajax.reload();
             });
-            $('#filterShowDeleted').on('change', () => table.ajax.reload());
+            $('#filterShowDeleted').on('change',()=>table.ajax.reload());
 
-            /* ── Build params for export ── */
-            const buildParams = () => {
-                let p = {
-                    publication_from: $('#filterPublicationFrom').val(),
-                    publication_to:   $('#filterPublicationTo').val(),
-                    copy_id:          $('#filterCopy').val(),
-                    language_id:      $('#filterLanguage').val(),
-                    country_id:       $('#filterCountry').val(),
-                    client_id:        $('#filterClient').val(),
-                    campaign:         $('#filterCampaign').val(),
-                    campaign_code:    $('#filterCampaignCode').val(),
-                    invoice_menford_nr: $('#filterInvoiceMenfordNr').val(),
-                    bill_publisher_name: $('#filterBillPublisherName').val(),
-                    target_url:       $('#filterTargetUrl').val(),
-                    article_url:      $('#filterArticleUrl').val(),
-                    status:           $('#filterStatus').val(),
-                    category_ids:     $('#filterCategories').val(),
-                    show_deleted:     $('#filterShowDeleted').is(':checked') ? 1 : 0
+            /* build export params (unchanged) */
+            const buildParams=()=>{
+                let p={
+                    publication_from:$('#filterPublicationFrom').val(),
+                    publication_to  :$('#filterPublicationTo').val(),
+                    copy_id         :$('#filterCopy').val(),
+                    language_id     :$('#filterLanguage').val(),
+                    country_id      :$('#filterCountry').val(),
+                    client_id       :$('#filterClient').val(),
+                    campaign        :$('#filterCampaign').val(),
+                    campaign_code   :$('#filterCampaignCode').val(),
+                    invoice_menford_nr:$('#filterInvoiceMenfordNr').val(),
+                    bill_publisher_name:$('#filterBillPublisherName').val(),
+                    target_url      :$('#filterTargetUrl').val(),
+                    article_url     :$('#filterArticleUrl').val(),
+                    status          :$('#filterStatus').val(),
+                    category_ids    :$('#filterCategories').val(),
+                    show_deleted    :$('#filterShowDeleted').is(':checked')?1:0
                 };
-                // include selected fields if any
-                const sel = $('#exportFields').val();
-                if (sel && sel.length) p.fields = sel;
+                const sel=$('#exportFields').val(); if(sel&&sel.length) p.fields=sel;
                 return $.param(p);
             };
 
-            /* ── Export CSV / PDF ── */
-            $('#btnExportCsv').on('click', e => {
-                e.preventDefault();
-                window.location = "{{ route('storages.export.csv') }}?" + buildParams();
-            });
-            $('#btnExportPdf').on('click', e => {
-                e.preventDefault();
-                window.location = "{{ route('storages.export.pdf') }}?" + buildParams();
-            });
+            $('#btnExportCsv').on('click',e=>{e.preventDefault();
+                window.location="{{ route('storages.export.csv') }}?"+buildParams();});
+            $('#btnExportPdf').on('click',e=>{e.preventDefault();
+                window.location="{{ route('storages.export.pdf') }}?"+buildParams();});
 
-            /* ── Toggle filters ── */
-            let filtersVisible = true;
-            $('#toggleFiltersBtn').on('click', function(){
+            /* toggle filter visibility */
+            let filtersVisible=true;
+            $('#toggleFiltersBtn').on('click',function(){
                 $('#filterForm').toggleClass('hidden');
-                filtersVisible = !filtersVisible;
-                this.textContent = filtersVisible ? 'Hide Filters' : 'Show Filters';
+                filtersVisible=!filtersVisible;
+                this.textContent=filtersVisible?'Hide Filters':'Show Filters';
             });
 
             /* ── Modals ── */
-            // client, copy, url code unchanged...
+            /* ---------- Client & Copy modals ---------- */
+            $(document).on('click','.client-link',function(e){
+                e.preventDefault();
+                $.get("{{ route('clients.showAjax','') }}/"+$(this).data('client-id'),res=>{
+                    if(res.status==='success'){
+                        const c=res.data;
+                        $('#modalClientName').text((c.first_name??'')+' '+(c.last_name??''));
+                        $('#modalClientEmail').text(c.email??'');
+                        $('#modalClientCompany').text(c.company??'');
+                        $('#clientModal').removeClass('hidden').addClass('flex');
+                    }else{alert('Could not load client.');}
+                }).fail(()=>alert('Error fetching client.'));
+            });
+            $(document).on('click','#closeClientModal,#closeClientModalBottom',()=>$('#clientModal').addClass('hidden').removeClass('flex'));
 
-            /* ── Flash ── */
-            @if(session('status'))
-            toast('{{ session('status') }}');
-            @endif
+            $(document).on('click','.copy-link',function(e){
+                e.preventDefault();
+                $.get("{{ route('copy.showAjax','') }}/"+$(this).data('copy-id'),res=>{
+                    if(res.status==='success'){
+                        $('#modalCopyVal').text(res.data.copy_val);
+                        $('#copyModal').removeClass('hidden').addClass('flex');
+                    }else{alert('Could not load copy.');}
+                }).fail(()=>alert('Error fetching copy.'));
+            });
+            $(document).on('click','#closeCopyModal,#closeCopyModalBottom',()=>$('#copyModal').addClass('hidden').removeClass('flex'));
+
+            /* ---------- URL modal ---------- */
+            $(document).on('click','.url-link',function(e){
+                e.preventDefault();
+                const url=$(this).data('url');
+                $('#urlModalInput').val(url);
+                $('#urlModalOpen').attr('href',url);
+                $('#urlModal').removeClass('hidden').addClass('flex');
+            });
+            $('#urlModalClose').on('click',()=>$('#urlModal').addClass('hidden').removeClass('flex'));
+
+            $('#urlModalCopy').on('click',function(){
+                copyToClipboard($('#urlModalInput').val())
+                    .then(()=>toast('Copied to clipboard!'))
+                    .catch(()=>Swal.fire({icon:'error',title:'Copy failed'}));
+            });
+            /* ──────────────── BULK-EDIT logic ──────────────── */
+            /* ─── Bulk-Edit ─── */
+            function buildBulkInput() {
+                const field = $('#bulkField').val(),
+                    meta  = window.bulkMeta[field] || {type:'text'},
+                    wrap  = $('#bulkInputWrapper');
+                wrap.empty();
+
+                if (meta.type === 'date') {
+                    wrap.append(`<input id="bulkValue" type="date"
+                           class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                                  focus:ring-cyan-500">`);
+                } else if (meta.type === 'select') {
+                    const opts = Object.entries(meta.options || {})
+                        .map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+                    wrap.append(`<select id="bulkValue"
+                              class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                                     focus:ring-cyan-500">${opts}</select>`);
+                    // enhance big lists with select2
+                    if ($('#bulkValue option').length > 15) {
+                        $('#bulkValue').select2({width:'resolve',dropdownAutoWidth:true});
+                    }
+                } else { // text / number
+                    wrap.append(`<input id="bulkValue" type="text"
+                           class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                                  focus:ring-cyan-500">`);
+                }
+            }
+            $('#bulkField').on('change', buildBulkInput);
+            buildBulkInput(); // first time
+
+            $('#btnBulkEdit').on('click', function () {
+                const cnt = $('.rowChk:checked').length;
+                if (!cnt) { oops('Select at least one row'); return; }
+                $('#bulkEditModal').removeClass('hidden').addClass('flex');
+            });
+            $('#bulkCancel').on('click', () => $('#bulkEditModal').addClass('hidden').removeClass('flex'));
+
+            $('#bulkSave').on('click', function () {
+                const ids   = $('.rowChk:checked').map((_, c) => c.value).get();
+                const field = $('#bulkField').val();
+                const value = $('#bulkValue').val();
+                if (value === '' || value === null) { oops('Value required'); return; }
+
+                $.ajax({
+                    url: "{{ route('storages.bulkUpdate') }}",
+                    type: 'POST',
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    data: { ids, field, value },
+                    success: r => {
+                        toast(r.message);
+                        $('#bulkEditModal').addClass('hidden').removeClass('flex');
+                        $('#chkAll').prop('checked', false);
+                        table.ajax.reload(null, false);
+                    },
+                    error: x => oops(x.responseJSON?.message || 'Error')
+                });
+            });
+
+
+            /* flash from server */
+            @if(session('status')) toast('{{ session('status') }}'); @endif
         });
     </script>
 @endpush
