@@ -54,7 +54,7 @@
         'bill_publisher_date'       => 'Bill Publisher Date',
         'payment_to_publisher_date' => 'Pay to Publisher Date',
         'method_payment_to_publisher'=> 'Pay to Publisher Method',
-
+        'category_ids' => 'Categories',
         // FILES & NOTES
         'files'                     => 'Files',
         'extra_notes'               => 'Extra Notes',
@@ -107,6 +107,8 @@
         'payment_to_us_date'          => ['type'=>'date'],
         'bill_publisher_date'         => ['type'=>'date'],
         'payment_to_publisher_date'   => ['type'=>'date'],
+
+        'category_ids' => ['type'=>'multiselect','options'=> $toOptions($categories,'name')],
 
         /* long text ---------------------------------------*/
         'extra_notes'                 => ['type'=>'textarea'],

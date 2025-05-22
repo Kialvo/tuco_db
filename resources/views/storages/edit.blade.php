@@ -14,6 +14,26 @@
 
             {{-- ───────────── GENERAL / FK SECTION ───────────── --}}
             <div class="grid grid-cols-2 gap-4">
+                {{-- Website --}}
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Website</label>
+                    <select name="website_id" id="websiteSelect"
+                            class="w-full border border-gray-300 rounded px-2 py-1
+                   focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">-- None --</option>
+                        @foreach($websites as $w)
+                            <option value="{{ $w->id }}"
+                                {{ old('website_id', $storage->website_id)==$w->id ? 'selected' : '' }}>
+                                {{ $w->domain_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('website_id')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+
                 {{-- Status --}}
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Status</label>
@@ -364,7 +384,7 @@
 @push('scripts')
     <script>
         $(function () {
-            $('#categorySelect, #clientSelect, #copywriterSelect').select2({
+            $('#categorySelect, #clientSelect, #copywriterSelect,#websiteSelect').select2({
                 placeholder:'Select',
                 closeOnSelect:false,
                 width:'resolve',

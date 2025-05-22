@@ -59,7 +59,7 @@
         'publication_date','expiration_date','publisher_period','article_url',
         'method_payment_to_us','invoice_menford','invoice_menford_nr','invoice_company',
         'payment_to_us_date','bill_publisher_name','bill_publisher_nr','bill_publisher_date',
-        'payment_to_publisher_date','method_payment_to_publisher'
+        'payment_to_publisher_date','method_payment_to_publisher','category_ids'
         ];
     @endphp
 
@@ -546,32 +546,76 @@
             });
             /* ──────────────── BULK-EDIT logic ──────────────── */
             /* ─── Bulk-Edit ─── */
-            function buildBulkInput() {
-                const field = $('#bulkField').val(),
-                    meta  = window.bulkMeta[field] || {type:'text'},
-                    wrap  = $('#bulkInputWrapper');
+            function buildBulkInput () {
+                const field = $('#bulkField').val();
+                const meta  = window.bulkMeta[field] || { type: 'text' };
+                const wrap  = $('#bulkInputWrapper');
+
                 wrap.empty();
 
+                /* ――― date picker ――― */
                 if (meta.type === 'date') {
-                    wrap.append(`<input id="bulkValue" type="date"
-                           class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                                  focus:ring-cyan-500">`);
-                } else if (meta.type === 'select') {
+                    wrap.append(
+                        `<input id="bulkValue" type="date"
+                    class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                           focus:ring-cyan-500">`
+                    );
+                    return;
+                }
+
+                /* ――― select / drop-down ――― */
+                if (meta.type === 'select') {
+                    const none = `<option value="">-- Clear --</option>`;   // let user blank the field
+                    const opts = Object.entries(meta.options || {})
+                        .map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+
+                    wrap.append(
+                        `<select id="bulkValue"
+                     class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                            focus:ring-cyan-500">${none}${opts}</select>`
+                    );
+
+                    /* large lists → enhance with Select2 */
+                    if ($('#bulkValue option').length > 15) {
+                        $('#bulkValue').select2({ width: 'resolve', dropdownAutoWidth: true });
+                    }
+                    return;
+                }
+
+                /* ――― textarea (long text) ――― */
+                if (meta.type === 'textarea') {
+                    wrap.append(
+                        `<textarea id="bulkValue" rows="3"
+                       class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                              focus:ring-cyan-500"></textarea>`
+                    );
+                    return;
+                }
+
+                /* multiselect (many categories) -----------------------------------------*/
+                if (meta.type === 'multiselect') {
                     const opts = Object.entries(meta.options || {})
                         .map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
-                    wrap.append(`<select id="bulkValue"
-                              class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                                     focus:ring-cyan-500">${opts}</select>`);
-                    // enhance big lists with select2
-                    if ($('#bulkValue option').length > 15) {
-                        $('#bulkValue').select2({width:'resolve',dropdownAutoWidth:true});
-                    }
-                } else { // text / number
-                    wrap.append(`<input id="bulkValue" type="text"
-                           class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                                  focus:ring-cyan-500">`);
+
+                    wrap.append(`
+        <select id="bulkValue" multiple
+                class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                       focus:ring-cyan-500">${opts}</select>`);
+
+                    $('#bulkValue').select2({
+                        width:'resolve', dropdownAutoWidth:true, placeholder:'Select'
+                    });
+                    return;
                 }
+
+                /* ――― fallback = plain text/number input ――― */
+                wrap.append(
+                    `<input id="bulkValue" type="text"
+                class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                       focus:ring-cyan-500">`
+                );
             }
+
             $('#bulkField').on('change', buildBulkInput);
             buildBulkInput(); // first time
 
@@ -585,8 +629,12 @@
             $('#bulkSave').on('click', function () {
                 const ids   = $('.rowChk:checked').map((_, c) => c.value).get();
                 const field = $('#bulkField').val();
-                const value = $('#bulkValue').val();
-                if (value === '' || value === null) { oops('Value required'); return; }
+                const value = $('#bulkValue').val();          // may be empty → clears the column
+
+                if (!ids.length) {
+                    oops('Select at least one row');
+                    return;
+                }
 
                 $.ajax({
                     url: "{{ route('storages.bulkUpdate') }}",
@@ -597,11 +645,13 @@
                         toast(r.message);
                         $('#bulkEditModal').addClass('hidden').removeClass('flex');
                         $('#chkAll').prop('checked', false);
+                        $('#bulkValue').val('');
                         table.ajax.reload(null, false);
                     },
                     error: x => oops(x.responseJSON?.message || 'Error')
                 });
             });
+
 
 
             /* flash from server */
