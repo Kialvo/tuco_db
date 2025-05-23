@@ -629,7 +629,13 @@
             $('#bulkSave').on('click', function () {
                 const ids   = $('.rowChk:checked').map((_, c) => c.value).get();
                 const field = $('#bulkField').val();
-                const value = $('#bulkValue').val();          // may be empty → clears the column
+                let   value = $('#bulkValue').val();        // '', null, [], …
+
+                /* -------- guarantee the key exists and allow “clear” ---------- */
+                if (value === undefined || value === null ||
+                    (Array.isArray(value) && value.length === 0)) {
+                    value = '';                             // tells backend to set NULL
+                }
 
                 if (!ids.length) {
                     oops('Select at least one row');
@@ -637,20 +643,20 @@
                 }
 
                 $.ajax({
-                    url: "{{ route('storages.bulkUpdate') }}",
-                    type: 'POST',
-                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                    data: { ids, field, value },
-                    success: r => {
+                    url     : "{{ route('storages.bulkUpdate') }}",
+                    type    : 'POST',
+                    headers : { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    data    : { ids, field, value },
+                    success : r => {
                         toast(r.message);
                         $('#bulkEditModal').addClass('hidden').removeClass('flex');
                         $('#chkAll').prop('checked', false);
-                        $('#bulkValue').val('');
                         table.ajax.reload(null, false);
                     },
-                    error: x => oops(x.responseJSON?.message || 'Error')
+                    error   : x => oops(x.responseJSON?.message || 'Error')
                 });
             });
+
 
 
 

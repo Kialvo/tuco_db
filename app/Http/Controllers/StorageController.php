@@ -291,11 +291,12 @@ class StorageController extends Controller
      * – dates accepted in common formats
      * – category_ids syncs the pivot table
      */
+    // app/Http/Controllers/StorageController.php
     public function bulkUpdate(Request $request)
     {
-        /* ---------- 1. basic validation ------------------------------------ */
-        $fieldRule = ['required','string', function ($attr,$val,$fail) {
-            if (! in_array($val, self::BULK_EDITABLE, true)) {
+        /* ───── 1. validate ───────────────────────────────────────────── */
+        $fieldRule = ['required', 'string', function ($attr, $val, $fail) {
+            if (!in_array($val, self::BULK_EDITABLE, true)) {
                 $fail('Field not allowed for bulk edit.');
             }
         }];
@@ -304,58 +305,61 @@ class StorageController extends Controller
             'ids'   => 'required|array|min:1',
             'ids.*' => 'integer|exists:storage,id',
             'field' => $fieldRule,
-            'value' => 'nullable',                           // may be "", null, array …
+            // key may be missing, null, "", string or array → all accepted
+            'value' => 'sometimes',
         ]);
 
         $field = $data['field'];
-        $value = $data['value'];                            // raw value from AJAX
+        $value = $request->input('value');   // null if key absent OR ""
 
-        /* ---------- 2. special case: categories --------------------------- */
+        /* ───── 2. categories (many-to-many) ──────────────────────────── */
         if ($field === 'category_ids') {
 
-            // value could be "" (user pressed “Clear”), turn into empty array
-            $ids = is_array($value) ? $value : [];
+            // $value can be [] , null , "" …  → always cast to array
+            $catIds = is_array($value) ? $value : [];
 
-            Storage::whereIn('id', $data['ids'])->each(function ($s) use ($ids) {
-                $s->categories()->sync($ids);               // replace the set
-            });
+            Storage::whereIn('id', $data['ids'])->each(
+                fn($s) => $s->categories()->sync($catIds)
+            );
 
             return response()->json([
                 'message' => 'Categories updated for '.count($data['ids']).' record(s).'
             ]);
         }
 
-        /* ---------- 3. generic scalar / date columns ---------------------- */
-        if ($value === '') {                    // empty string clears the column
-            $value = null;
+        /* ───── 3. scalar & date columns ──────────────────────────────── */
+        if ($value === '') {                 // user clicked “Clear”
+            $value = null;                   // store as NULL
         }
 
         if (Str::endsWith($field, '_date') && $value !== null) {
+            // accept many human formats
             $formats = ['Y-m-d','d-m-Y','m-d-Y','Y/m/d','d/m/Y','m/d/Y'];
             $parsed  = null;
 
             foreach ($formats as $fmt) {
-                try { $parsed = Carbon::createFromFormat($fmt,$value); break; }
+                try { $parsed = Carbon::createFromFormat($fmt, $value); break; }
                 catch (\Throwable $e) { /* keep trying */ }
             }
-            if (! $parsed) {                     // give Carbon one free shot
+            if (!$parsed) {                  // last attempt: Carbon::parse()
                 try { $parsed = Carbon::parse($value); } catch (\Throwable $e) {}
             }
-            if (! $parsed) {
-                return response()->json(['message'=>'Invalid date format'],422);
+            if (!$parsed) {
+                return response()->json(['message' => 'Invalid date format'], 422);
             }
-            $value = $parsed->toDateString();    // YYYY-MM-DD
+            $value = $parsed->toDateString();          // YYYY-MM-DD
         }
 
-        /* ---------- 4. update + (optional) auto-totals -------------------- */
-        $drivers = ['copy_nr','publisher','menford','client_copy'];
-        $rows    = Storage::whereIn('id',$data['ids'])->get();
+        /* ───── 4. update rows + auto totals if needed ────────────────── */
+        $recalcDrivers = ['copy_nr','publisher','menford','client_copy'];
+
+        $rows = Storage::whereIn('id', $data['ids'])->get();
 
         foreach ($rows as $s) {
             $s->{$field} = $value;
 
-            if (in_array($field,$drivers,true)) {
-                $payload = array_merge($s->toArray(), [$field=>$value]);
+            if (in_array($field, $recalcDrivers, true)) {
+                $payload = array_merge($s->toArray(), [$field => $value]);
                 $this->applyAutoCalculations($payload);
                 $s->total_cost     = $payload['total_cost'];
                 $s->total_revenues = $payload['total_revenues'];
@@ -368,6 +372,7 @@ class StorageController extends Controller
             'message' => 'Updated '.count($rows).' record(s).'
         ]);
     }
+
 
 
 
