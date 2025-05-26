@@ -53,10 +53,10 @@
         /* fields allowed for bulk-edit (keep in sync with StorageController::BULK_EDITABLE) */
         $bulkEditable = [
         'status','LB','client_id','copy_id','copy_nr','copywriter_commision_date',
-        'copywriter_submission_date','copywriter_period','language_id','country_id',
+        'copywriter_submission_date','language_id','country_id',
         'publisher_currency','publisher_amount','publisher','menford','client_copy',
         'campaign','anchor_text','target_url','campaign_code','article_sent_to_publisher',
-        'publication_date','expiration_date','publisher_period','article_url',
+        'publication_date','expiration_date','article_url',
         'method_payment_to_us','invoice_menford','invoice_menford_nr','invoice_company',
         'payment_to_us_date','bill_publisher_name','bill_publisher_nr','bill_publisher_date',
         'payment_to_publisher_date','method_payment_to_publisher','category_ids'
@@ -78,13 +78,6 @@
                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
                     Create Storage
                 </a>
-
-                {{-- Bulk-Edit --}}
-                <button id="btnBulkEdit"
-                        class="bg-amber-600 text-white px-4 py-2 rounded shadow hover:bg-amber-700
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 text-xs">
-                    Bulk Edit
-                </button>
 
                 {{-- Export --}}
                 <a href="#" id="btnExportCsv"
@@ -276,8 +269,36 @@
             </div>
         </div><!-- /filterForm -->
 
+        {{-- ───────────── TABLE ACTION BAR ───────────── --}}
+        {{-- ───────────── TABLE ACTION BAR ───────────── --}}
+        <div id="actionBar"
+             class="flex items-center gap-3 mb-2
+            sticky top-0 z-10 bg-gray-50 border-b border-gray-200 py-2">
+
+            {{-- Bulk Edit --}}
+            <button id="btnBulkEdit"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
+                   bg-amber-600 hover:bg-amber-700 text-white shadow">
+                <i class="fas fa-pen"></i> Bulk&nbsp;Edit
+            </button>
+
+            {{-- Rollback --}}
+            <button id="btnRollback"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
+                   bg-purple-600 hover:bg-purple-700 text-white shadow">
+                <i class="fas fa-history"></i> Rollback
+            </button>
+
+            {{-- live counter --}}
+            <span class="ml-2 text-sm text-gray-600">
+        Selected:&nbsp;<span id="selCount">0</span>
+    </span>
+        </div>
+
+
         {{-- ───────────────────── DATA TABLE ───────────────────── --}}
         <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto max-w-[2400px]">
+
             <table id="storagesTable" class="text-xs text-gray-700 w-full min-w-[2400px]">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-[11px] uppercase text-gray-500 tracking-wider">
@@ -353,6 +374,75 @@
             showConfirmButton:false,timer:1500});
         const oops  = m=>Swal.fire({toast:true,position:'top-end',icon:'error',title:m,
             showConfirmButton:false,timer:2000});
+
+        function toastUndo(msg, token) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                background: '#2563eb',        // blue-600
+                color: '#fff',
+                html: `<span class="font-semibold">${msg}</span>
+               <button id="undoBtn"
+                       style="background:#f59e0b"
+                       class="ml-3 px-2 py-[2px] rounded text-xs font-bold">
+                       UNDO
+               </button>`,
+                showConfirmButton: false,
+                timer: 4000,                  // 4 000 ms
+                timerProgressBar: true,
+                didOpen: () => {
+                    document.getElementById('undoBtn').onclick = () => {
+                        fetch("{{ route('storages.rollback') }}", {
+                            method : 'POST',
+                            headers: {
+                                'Content-Type':'application/json',
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            body: JSON.stringify({ token })
+                        })
+                            .then(r => r.json())
+                            .then(r => { toast(r.message); table.ajax.reload(null,false); })
+                            .catch(() => oops('Failed to undo'));
+                    };
+                }
+            });
+        }function toastUndo(msg, token) {
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                html: `${msg}
+               <button id="undoBtn"
+                       class="bg-yellow-500 hover:bg-yellow-600
+                              text-white px-2 py-1 rounded text-xs ml-2">
+                       Undo
+               </button>`,
+                showConfirmButton: false,
+                timer   : 4000,         // 4 s
+                timerProgressBar: true,
+                didOpen: () => {
+
+                    document.getElementById('undoBtn').onclick = () => {
+
+                        /* --- send as classical form data -------------------------- */
+                        $.post(
+                            "{{ route('storages.rollback') }}",
+                            { token, _token: $('meta[name="csrf-token"]').attr('content')},
+                            r => {
+                                toast(r.message);           // green toast
+                                if (window.stTable) {       // refresh without losing page/filters
+                                    window.stTable.ajax.reload(null, false);
+                                }
+                            }
+                        ).fail(()=>oops('Failed to undo'));
+                    };
+                }
+            });
+        }
+
+
 
         /* ───────── document ready ───────── */
         $(function(){
@@ -448,6 +538,21 @@
                 scrollX:true
             });
 
+            /* ----------------------------------------------------------
+             * live “Selected: N” badge
+             * ----------------------------------------------------------*/
+            function updateSelCount () {
+                $('#selCount').text($('.rowChk:checked').length);
+            }
+
+            /* every time a row checkbox (or the master one) toggles */
+            $(document).on('change', '.rowChk, #chkAll', updateSelCount);
+
+            /* when the table redraws (pagination, search, etc.) */
+            table.on('draw', updateSelCount);
+
+
+            window.stTable = table;
             /* cell formatters */
             function dt(v){return v?new Date(v).toLocaleDateString('en-GB'):'';}
             function eu(v){return v!==null?'<strong>€ '+v+'</strong>':'';}
@@ -629,12 +734,9 @@
             $('#bulkSave').on('click', function () {
                 const ids   = $('.rowChk:checked').map((_, c) => c.value).get();
                 const field = $('#bulkField').val();
-                let   value = $('#bulkValue').val();        // '', null, [], …
-
-                /* -------- guarantee the key exists and allow “clear” ---------- */
-                if (value === undefined || value === null ||
-                    (Array.isArray(value) && value.length === 0)) {
-                    value = '';                             // tells backend to set NULL
+                let value = $('#bulkValue').val();            // may be null / [] / ''
+                if (value === undefined || value === null) {
+                    value = '';                               // make sure key exists
                 }
 
                 if (!ids.length) {
@@ -643,25 +745,56 @@
                 }
 
                 $.ajax({
-                    url     : "{{ route('storages.bulkUpdate') }}",
-                    type    : 'POST',
-                    headers : { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                    data    : { ids, field, value },
+                    url: "{{ route('storages.bulkUpdate') }}",
+                    type: 'POST',
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    data: { ids, field, value },
                     success : r => {
-                        toast(r.message);
+                        toast(r.message);             // normal green toast
+                        if (r.undo_token) {
+                            toastUndo('Update saved.', r.undo_token);
+                        }
                         $('#bulkEditModal').addClass('hidden').removeClass('flex');
                         $('#chkAll').prop('checked', false);
                         table.ajax.reload(null, false);
                     },
-                    error   : x => oops(x.responseJSON?.message || 'Error')
+
+                    error: x => oops(x.responseJSON?.message || 'Error')
                 });
             });
 
+            $('#btnRollback').on('click',function(){
+                const ids = $('.rowChk:checked').map((_,c)=>c.value).get();
+                if(!ids.length){ oops('Select at least one row'); return; }
+
+                Swal.fire({
+                    title:'Restore previous snapshot?',
+                    icon :'warning',
+                    showCancelButton:true,
+                    confirmButtonText:'Yes, rollback!'
+                }).then(res=>{
+                    if(!res.isConfirmed) return;
+
+                    $.post("{{ route('storages.rollback') }}",
+                        { ids, _token:'{{ csrf_token() }}' },
+                        r=>{
+                            toast(r.message);
+                            $('#chkAll').prop('checked',false);
+                            $('#storagesTable').DataTable().ajax.reload(null,false);
+                        }).fail(()=>oops('Rollback failed'));
+                });
+            });
 
 
 
             /* flash from server */
             @if(session('status')) toast('{{ session('status') }}'); @endif
         });
+
+        @if(session('undo_token'))
+        toastUndo('{{ session('status') }}','{{ session('undo_token') }}');
+        @endif
     </script>
+
+
 @endpush

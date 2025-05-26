@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use AmrShawky\Currency\Facade\Currency;
+use App\Models\RollbackStorage;
 use App\Models\Storage;
 use App\Models\Country;
 use App\Models\Language;
@@ -13,6 +14,7 @@ use App\Models\Website;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
@@ -28,7 +30,7 @@ class StorageController extends Controller
         // GENERAL / FK
         'status','LB','client_id','copy_id','country_id','language_id',
         // COPY DETAILS
-        'copy_nr','copywriter_commision_date','copywriter_submission_date','copywriter_period',
+        'copy_nr','copywriter_commision_date','copywriter_submission_date',
         // PUBLISHER
         'publisher_currency','publisher_amount',
         // PRICES & COSTS
@@ -36,7 +38,7 @@ class StorageController extends Controller
         // CAMPAIGN & LINKS
         'campaign','anchor_text','target_url','campaign_code',
         // PUBLICATION
-        'article_sent_to_publisher','publication_date','expiration_date','publisher_period','article_url',
+        'article_sent_to_publisher','publication_date','expiration_date','article_url',
         // INVOICING / PAYMENTS
         'method_payment_to_us','invoice_menford','invoice_menford_nr','invoice_company',
         'payment_to_us_date','bill_publisher_name','bill_publisher_nr','bill_publisher_date',
@@ -291,92 +293,165 @@ class StorageController extends Controller
      * – dates accepted in common formats
      * – category_ids syncs the pivot table
      */
-    // app/Http/Controllers/StorageController.php
+//    public function bulkUpdate(Request $request)
+//    {
+//        /* ---------- 1. basic validation ------------------------------------ */
+//        $fieldRule = ['required','string', function ($attr,$val,$fail) {
+//            if (! in_array($val, self::BULK_EDITABLE, true)) {
+//                $fail('Field not allowed for bulk edit.');
+//            }
+//        }];
+//
+//        $data = $request->validate([
+//            'ids'   => 'required|array|min:1',
+//            'ids.*' => 'integer|exists:storage,id',
+//            'field' => $fieldRule,
+//            'value' => 'present',                           // may be "", null, array …
+//        ]);
+//
+//        $field = $data['field'];
+//        $value = $request->input('value');   // returns null if empty string was sent
+//
+//        /* ---------- 2. special case: categories --------------------------- */
+//        if ($field === 'category_ids') {
+//
+//            // value could be "" (user pressed “Clear”), turn into empty array
+//            $ids = is_array($value) ? $value : [];
+//
+//            Storage::whereIn('id', $data['ids'])->each(function ($s) use ($ids) {
+//                $s->categories()->sync($ids);               // replace the set
+//            });
+//
+//            return response()->json([
+//                'message' => 'Categories updated for '.count($data['ids']).' record(s).'
+//            ]);
+//        }
+//
+//        /* ---------- 3. generic scalar / date columns ---------------------- */
+//        if ($value === '') {                    // empty string clears the column
+//            $value = null;
+//        }
+//
+//        if (Str::endsWith($field, '_date') && $value !== null) {
+//            $formats = ['Y-m-d','d-m-Y','m-d-Y','Y/m/d','d/m/Y','m/d/Y'];
+//            $parsed  = null;
+//
+//            foreach ($formats as $fmt) {
+//                try { $parsed = Carbon::createFromFormat($fmt,$value); break; }
+//                catch (\Throwable $e) { /* keep trying */ }
+//            }
+//            if (! $parsed) {                     // give Carbon one free shot
+//                try { $parsed = Carbon::parse($value); } catch (\Throwable $e) {}
+//            }
+//            if (! $parsed) {
+//                return response()->json(['message'=>'Invalid date format'],422);
+//            }
+//            $value = $parsed->toDateString();    // YYYY-MM-DD
+//        }
+//
+//        /* ---------- 4. update + (optional) auto-totals -------------------- */
+//        $drivers = ['copy_nr','publisher','menford','client_copy'];
+//        $rows    = Storage::whereIn('id',$data['ids'])->get();
+//
+//        foreach ($rows as $s) {
+//            $s->{$field} = $value;
+//
+//            if (in_array($field,$drivers,true)) {
+//                $payload = array_merge($s->toArray(), [$field=>$value]);
+//                $this->applyAutoCalculations($payload);
+//                $s->total_cost     = $payload['total_cost'];
+//                $s->total_revenues = $payload['total_revenues'];
+//                $s->profit         = $payload['profit'];
+//            }
+//            $s->save();
+//        }
+//
+//        return response()->json([
+//            'message' => 'Updated '.count($rows).' record(s).'
+//        ]);
+//    }
+
+
+
+
     public function bulkUpdate(Request $request)
     {
-        /* ───── 1. validate ───────────────────────────────────────────── */
-        $fieldRule = ['required', 'string', function ($attr, $val, $fail) {
-            if (!in_array($val, self::BULK_EDITABLE, true)) {
-                $fail('Field not allowed for bulk edit.');
-            }
-        }];
+        // ---------- validation -------------------------------------------------
+        $fieldRule = ['required','string',function($a,$v,$f){
+            if(!in_array($v,self::BULK_EDITABLE,true)){
+                $f('Field not allowed for bulk edit.');
+            }}];
 
         $data = $request->validate([
             'ids'   => 'required|array|min:1',
             'ids.*' => 'integer|exists:storage,id',
             'field' => $fieldRule,
-            // key may be missing, null, "", string or array → all accepted
-            'value' => 'sometimes',
+            'value' => 'sometimes',              // may be missing / "" / null / array
         ]);
 
         $field = $data['field'];
-        $value = $request->input('value');   // null if key absent OR ""
+        $value = $request->input('value');       // null if key absent
 
-        /* ───── 2. categories (many-to-many) ──────────────────────────── */
-        if ($field === 'category_ids') {
+        // ---------- BEGIN transaction so snapshot = exact state ---------------
+        $token = Str::uuid();                    // one token per operation
 
-            // $value can be [] , null , "" …  → always cast to array
-            $catIds = is_array($value) ? $value : [];
+        DB::transaction(function() use ($data,$field,&$value,$token){
 
-            Storage::whereIn('id', $data['ids'])->each(
-                fn($s) => $s->categories()->sync($catIds)
-            );
+            /* ===== take SNAPSHOT ============================================ */
+            $rows = Storage::with('categories')
+                ->whereIn('id',$data['ids'])->get();
 
-            return response()->json([
-                'message' => 'Categories updated for '.count($data['ids']).' record(s).'
-            ]);
-        }
-
-        /* ───── 3. scalar & date columns ──────────────────────────────── */
-        if ($value === '') {                 // user clicked “Clear”
-            $value = null;                   // store as NULL
-        }
-
-        if (Str::endsWith($field, '_date') && $value !== null) {
-            // accept many human formats
-            $formats = ['Y-m-d','d-m-Y','m-d-Y','Y/m/d','d/m/Y','m/d/Y'];
-            $parsed  = null;
-
-            foreach ($formats as $fmt) {
-                try { $parsed = Carbon::createFromFormat($fmt, $value); break; }
-                catch (\Throwable $e) { /* keep trying */ }
+            foreach ($rows as $row) {
+                RollbackStorage::create([
+                    'token'      => $token,
+                    'storage_id' => $row->id,
+                    'snapshot'   => [
+                        'attributes' => $row->getAttributes(),
+                        'categories' => $row->categories->pluck('id')->all()
+                    ]
+                ]);
             }
-            if (!$parsed) {                  // last attempt: Carbon::parse()
-                try { $parsed = Carbon::parse($value); } catch (\Throwable $e) {}
+
+            /* ===== normalise incoming VALUE (dates / NULL) =================== */
+            if ($field === 'category_ids') {
+                // will never hit here – categories handled with the rollback mech
+                $value = is_array($value) ? $value : [];
+                foreach ($rows as $s) { $s->categories()->sync($value); }
+                return;
             }
-            if (!$parsed) {
-                return response()->json(['message' => 'Invalid date format'], 422);
+
+            if ($value === '') { $value = null; }
+
+            if(Str::endsWith($field,'_date') && $value !== null){
+                $value = Carbon::parse($value)->toDateString();  // any human format
             }
-            $value = $parsed->toDateString();          // YYYY-MM-DD
-        }
 
-        /* ───── 4. update rows + auto totals if needed ────────────────── */
-        $recalcDrivers = ['copy_nr','publisher','menford','client_copy'];
+            /* ===== update + optional totals ================================== */
+            $drivers = [
+                'copy_nr','publisher','menford','client_copy',          // money drivers
+                'copywriter_commision_date','copywriter_submission_date',
+                'article_sent_to_publisher','publication_date'          // period drivers ← NEW
+            ];
 
-        $rows = Storage::whereIn('id', $data['ids'])->get();
+            foreach ($rows as $s) {
+                $s->{$field} = $value;
 
-        foreach ($rows as $s) {
-            $s->{$field} = $value;
-
-            if (in_array($field, $recalcDrivers, true)) {
-                $payload = array_merge($s->toArray(), [$field => $value]);
-                $this->applyAutoCalculations($payload);
-                $s->total_cost     = $payload['total_cost'];
-                $s->total_revenues = $payload['total_revenues'];
-                $s->profit         = $payload['profit'];
+                if(in_array($field,$drivers,true)){
+                    $payload = array_merge($s->toArray(),[$field=>$value]);
+                    $this->applyAutoCalculations($payload);
+                    $s->total_cost     = $payload['total_cost'];
+                    $s->total_revenues = $payload['total_revenues'];
+                    $s->profit         = $payload['profit'];
+                }
+                $s->save();
             }
-            $s->save();
-        }
+        });
 
         return response()->json([
-            'message' => 'Updated '.count($rows).' record(s).'
+            'message'    => 'Updated '.count($data['ids']).' record(s).',
+            'undo_token' => $token            // <-- the JS needs this!
         ]);
     }
-
-
-
-
-
 
 
     /*======================================================================
@@ -475,8 +550,121 @@ class StorageController extends Controller
     ======================================================================*/
     public function destroy(Storage $storage)
     {
+        $token = Str::uuid();
+        RollbackStorage::create([
+            'token'      => $token,
+            'storage_id' => $storage->id,
+            'snapshot'   => [
+                'attributes'=>$storage->getAttributes(),
+                'categories'=>$storage->categories->pluck('id')->all()
+            ]
+        ]);
+
+
         $storage->delete();
         return back()->with('status', 'Storage soft-deleted!');
+    }
+
+    public function undo(Request $request)
+    {
+        $token = $request->input('token');
+        if(!$token){ return response()->json(['message'=>'Missing token'],422); }
+
+        $items = RollbackStorage::where('token',$token)->get();
+        if($items->isEmpty()){
+            return response()->json(['message'=>'Nothing to undo'],422);
+        }
+
+        DB::transaction(function() use ($items){
+            foreach ($items as $snap) {
+                /* ---- restore attributes ---- */
+                $store = Storage::withTrashed()->find($snap->storage_id);
+                if(!$store){ continue; }
+
+                $store->fill($snap->snapshot['attributes']);
+                $store->save();
+
+                /* ---- restore categories ---- */
+                $store->categories()->sync($snap->snapshot['categories']);
+            }
+            // remove snapshots so we don’t restore twice
+            RollbackStorage::whereIn('id',$items->pluck('id'))->delete();
+        });
+
+        return response()->json(['message'=>'Undo successful']);
+    }
+
+    public function rollback(Request $request)
+    {
+        /* ── A) Undo-button in toast  → we get  {token: "..."} ───────────── */
+        if ($request->filled('token')) {
+
+            $token = $request->input('token');
+
+            $snaps = RollbackStorage::where('token', $token)->get();
+
+            if ($snaps->isEmpty()) {
+                return response()->json(['message' => 'Nothing to undo (expired)'], 404);
+            }
+
+            DB::transaction(function() use ($snaps) {
+
+                foreach ($snaps as $snap) {
+
+                    /** @var \App\Models\Storage $row */
+                    $row   = Storage::find($snap->storage_id);
+
+                    if (!$row) {                       // row could have been deleted
+                        continue;
+                    }
+
+                    /* restore every column */
+                    $row->fill($snap->snapshot['attributes']);
+                    $row->save();
+
+                    /* restore many-to-many categories */
+                    $row->categories()->sync($snap->snapshot['categories']);
+                }
+
+                /* delete snapshots so the same token can’t be reused */
+                RollbackStorage::whereIn('id', $snaps->pluck('id'))->delete();
+            });
+
+            return response()->json(['message' => 'Undo complete']);
+        }
+
+        /* ── B) Manual “Rollback” button  → we get  ids[] ─────────────────── */
+        $ids = $request->input('ids', []);
+        if (!is_array($ids) || !count($ids)) {
+            return response()->json(['message' => 'No rows selected'], 422);
+        }
+
+        $snaps = RollbackStorage::whereIn('storage_id', $ids)
+            ->latest()            // newest snapshot per storage
+            ->get()
+            ->groupBy('storage_id');
+
+        DB::transaction(function() use ($snaps) {
+
+            foreach ($snaps as $storageId => $rows) {
+
+                $snap = $rows->first();               // newest one
+
+                /** @var \App\Models\Storage $row */
+                $row = Storage::find($storageId);
+                if (!$row) { continue; }
+
+                $row->fill($snap->snapshot['attributes']);
+                $row->save();
+                $row->categories()->sync($snap->snapshot['categories']);
+
+                RollbackStorage::where('id', $snap->id)->delete();
+            }
+        });
+
+        return response()->json([
+            'message' => 'Rollback successful'
+        ]);
     }
 
     public function restore($id)
@@ -764,10 +952,7 @@ class StorageController extends Controller
     ======================================================================*/
     private function applyAutoCalculations(array &$data): void
     {
-        if (isset($data['copywriter_period'])) {
-            $data['copywriter_period'] = (int) $data['copywriter_period'];
-        }
-
+        /* ---------------- prices / profit -------------------------------- */
         $publisher        = (float) ($data['publisher']    ?? 0);
         $copywriterAmount = (float) ($data['copy_nr']      ?? 0);
         $data['total_cost'] = $publisher + $copywriterAmount;
@@ -777,5 +962,19 @@ class StorageController extends Controller
         $data['total_revenues'] = $menford + $clientCopy;
 
         $data['profit'] = $data['total_revenues'] - $data['total_cost'];
+
+        /* ---------------- Copy period  (submission − commission) --------- */
+        if (!empty($data['copywriter_commision_date']) && !empty($data['copywriter_submission_date'])) {
+            $from = Carbon::parse($data['copywriter_commision_date']);
+            $to   = Carbon::parse($data['copywriter_submission_date']);
+            $data['copywriter_period'] = $from->diffInDays($to);     // int
+        }
+
+        /* ---------------- Publisher period  (publication − sent) --------- */
+        if (!empty($data['article_sent_to_publisher']) && !empty($data['publication_date'])) {
+            $from = Carbon::parse($data['article_sent_to_publisher']);
+            $to   = Carbon::parse($data['publication_date']);
+            $data['publisher_period'] = $from->diffInDays($to);      // int
+        }
     }
 }

@@ -136,12 +136,6 @@
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('copywriter_submission_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-                <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Period (days)</label>
-                    <input type="number" name="copywriter_period" value="{{ old('copywriter_period') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
-                    @error('copywriter_period') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
             </div>
 
             <div class="grid grid-cols-4 gap-4">
@@ -229,12 +223,7 @@
                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('expiration_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-                <div>
-                    <label class="block text-gray-700 font-medium mb-1">Publisher Period (days)</label>
-                    <input type="number" name="publisher_period" value="{{ old('publisher_period') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
-                    @error('publisher_period')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
+
                 <div class="col-span-2">
                     <label class="block text-gray-700 font-medium mb-1">Article URL</label>
                     <input type="url" name="article_url" value="{{ old('article_url') }}"

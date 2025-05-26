@@ -141,10 +141,15 @@
                     @error('copywriter_submission_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Period (days)</label>
-                    <input type="number" name="copywriter_period" value="{{ old('copywriter_period', $storage->copywriter_period) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
-                    @error('copywriter_period') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="block text-gray-600 font-medium mb-1">
+                        Copy Period (days) <span class="text-xs text-gray-400">(auto)</span>
+                    </label>
+                    <input type="number"
+                           name="copywriter_period"
+                           value="{{ old('copywriter_period', $storage->copywriter_period) }}"
+                           class="w-full border border-gray-200 rounded px-2 py-1 bg-gray-100 text-gray-500
+                  cursor-not-allowed"
+                           readonly>
                 </div>
             </div>
 
@@ -254,10 +259,15 @@
                     @error('expiration_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Publisher Period (days)</label>
-                    <input type="number" name="publisher_period" value="{{ old('publisher_period', $storage->publisher_period) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
-                    @error('publisher_period')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    <label class="block text-gray-600 font-medium mb-1">
+                        Publisher Period (days) <span class="text-xs text-gray-400">(auto)</span>
+                    </label>
+                    <input type="number"
+                           name="publisher_period"
+                           value="{{ old('publisher_period', $storage->publisher_period) }}"
+                           class="w-full border border-gray-200 rounded px-2 py-1 bg-gray-100 text-gray-500
+                  cursor-not-allowed"
+                           readonly>
                 </div>
                 <div class="col-span-2">
                     <label class="block text-gray-700 font-medium mb-1">Article URL</label>
