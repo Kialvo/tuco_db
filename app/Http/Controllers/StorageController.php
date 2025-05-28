@@ -442,7 +442,15 @@ class StorageController extends Controller
                     $s->total_cost     = $payload['total_cost'];
                     $s->total_revenues = $payload['total_revenues'];
                     $s->profit         = $payload['profit'];
+
+                   if (isset($payload['copywriter_period'])) {
+                      $s->copywriter_period = $payload['copywriter_period'];
+                     }
+                   if (isset($payload['publisher_period'])) {
+                   $s->publisher_period = $payload['publisher_period'];
+                 }
                 }
+
                 $s->save();
             }
         });
