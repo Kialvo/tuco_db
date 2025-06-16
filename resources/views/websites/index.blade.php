@@ -811,6 +811,10 @@
                 table.ajax.reload();
             });
 
+            function csvList(selector){
+                const v = $(selector).val();
+                return Array.isArray(v) ? v.join(',') : '';
+            }
             // =====================
             // CSV Export
             // =====================
@@ -828,8 +832,9 @@
                     kialvo_max: $('#filterKialvo_evaluationMax').val(),
                     profit_min: $('#filterProfitMin').val(),
                     profit_max: $('#filterProfitMax').val(),
-                    category_ids: $('#filterCategories').val(),
-
+                    category_ids        : csvList('#filterCategories'),        // ← NEW
+                    country_ids_include : csvList('#filterCountriesInclude'),  // ← NEW
+                    country_ids_exclude : csvList('#filterCountriesExclude'),  // ← NEW
                     DA_min: $('#filterDAMin').val(),
                     DA_max: $('#filterDAMax').val(),
                     PA_min: $('#filterPAMin').val(),
@@ -889,7 +894,9 @@
                     kialvo_max: $('#filterKialvo_evaluationMax').val(),
                     profit_min: $('#filterProfitMin').val(),
                     profit_max: $('#filterProfitMax').val(),
-                    category_ids: $('#filterCategories').val(),
+                    category_ids        : csvList('#filterCategories'),        // ← NEW
+                    country_ids_include : csvList('#filterCountriesInclude'),  // ← NEW
+                    country_ids_exclude : csvList('#filterCountriesExclude'),  // ← NEW
 
                     DA_min: $('#filterDAMin').val(),
                     DA_max: $('#filterDAMax').val(),
