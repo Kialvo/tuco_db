@@ -126,6 +126,7 @@ class StorageController extends Controller
             })
             ->addColumn('copywriter_name',   fn ($r) => optional($r->copy)->copy_val ?? '')
             ->editColumn('copywriter_period',fn ($r) => (int) $r->copywriter_period)
+            ->editColumn('publisher_period', fn ($r) => (int) $r->publisher_period)
             ->addColumn('categories_list',   fn ($r) => $r->categories->pluck('name')->join(', '))
             ->addColumn('action', function ($r) {
                 if ($r->trashed()) {
