@@ -493,7 +493,7 @@
                     {data:'copywriter_name',name:'copy.copy_val',
                         render:(d,t,r)=>r.copy_id?`<a href="#" class="copy-link underline text-blue-600"
                                            data-copy-id="${r.copy_id}">${d}</a>`:''},
-                    {data:'copy_nr',name:'copy_nr'},
+                    {data:'copy_nr',name:'copy_nr',render:eu},
                     {data:'copywriter_commision_date',name:'copywriter_commision_date',render:dt},
                     {data:'copywriter_submission_date',name:'copywriter_submission_date',render:dt},
                     {data:'copywriter_period',name:'copywriter_period'},

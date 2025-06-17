@@ -118,12 +118,12 @@
 
             {{-- ───────────── COPY-DETAILS ───────────── --}}
             <div class="grid grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copywriter Amount EUR €</label>
-                    <input type="number" name="copy_nr" value="{{ old('copy_nr') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
-                    @error('copy_nr') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
+{{--                <div>--}}
+{{--                    <label class="block text-gray-700 font-medium mb-1">Copywriter Amount EUR €</label>--}}
+{{--                    <input type="number" name="copy_nr" value="{{ old('copy_nr') }}"--}}
+{{--                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">--}}
+{{--                    @error('copy_nr') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror--}}
+{{--                </div>--}}
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Copy Comm. Date</label>
                     <input type="date" name="copywriter_commision_date" value="{{ old('copywriter_commision_date') }}"
@@ -162,7 +162,7 @@
             <div class="grid grid-cols-4 gap-4">
                 @foreach([
                     'publisher'         => 'Publisher Agreed Amount €',
-                    'publisher_article' => 'Copywriter Amount €',
+                    'copy_nr' => 'Copywriter Amount €',
                     'menford'           => 'Menford €',
                     'client_copy'       => 'Client Copy €',
                 ] as $field => $label)

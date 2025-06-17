@@ -386,6 +386,14 @@ class WebsiteController extends Controller
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
 
+        foreach ([
+                     'date_publisher_price',
+                     'date_kialvo_evaluation',
+                     'seo_metrics_date',
+                 ] as $field) {
+            $validated[$field] = $this->euDate($validated[$field] ?? null);
+        }
+
         // 2) Compute the automatic evaluation from your formula
         //    Formula: {DA}*2.4 + {TF}*1.45 + {DR}*0.5 + IF({SR}>=9700, {SR}/15000, 0)*1.35
         $da = $validated['DA'] ?? 0;
@@ -431,6 +439,7 @@ class WebsiteController extends Controller
             $validated['keyword_vs_traffic'] = 0;
         }
 
+
         // 4) Create the new Website using the final data
         $website = Website::create($validated);
 
@@ -475,6 +484,14 @@ class WebsiteController extends Controller
     {
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
+
+        foreach ([
+                     'date_publisher_price',
+                     'date_kialvo_evaluation',
+                     'seo_metrics_date',
+                 ] as $field) {
+            $validated[$field] = $this->euDate($validated[$field] ?? null);
+        }
 
         // 2) Compute automatic evaluation
         $da = $validated['DA'] ?? 0;
@@ -554,6 +571,16 @@ class WebsiteController extends Controller
     }
 
 
+    /** Convert `dd/mm/yyyy` → `yyyy-mm-dd` (or return null/unchanged) */
+    private function euDate(?string $v): ?string
+    {
+        if (!$v) return null;
+        try {
+            return \Carbon\Carbon::createFromFormat('d/m/Y', $v)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return $v;                 // let validation scream if format is wrong
+        }
+    }
     private function convertUsdFieldsToEur(array &$validated, array $fields)
     {
         // Only convert if the user explicitly said "USD" in the form
