@@ -315,10 +315,16 @@ class WebsiteController extends Controller
         }
 
         /* ───── many-to-many categories ───── */
-        if ($ids = $request->category_ids) {
+//        if ($ids = $request->category_ids) {
+//            $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $ids));
+//        }
+
+        if (!empty($request->category_ids)) {
+            $ids = is_array($request->category_ids)
+                ? $request->category_ids              // existing behaviour
+                : explode(',', $request->category_ids); // <─ NEW: split string
             $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $ids));
         }
-
         /* ───── soft-delete toggle ───── */
         if ($request->boolean('show_deleted')) {
             $query->onlyTrashed();
