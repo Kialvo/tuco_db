@@ -493,6 +493,7 @@
             });
             // Initialize the DataTable
             let table = $('#websitesTable').DataTable({
+
                 processing: true,
                 serverSide: true,
                 ajax: {
@@ -660,16 +661,8 @@
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
-                    { data: 'date_publisher_price', name: 'date_publisher_price',
-                        className: 'text-center',
-                        render: function(data, type, row) {
-                            if (!data) {
-                                return '';
-                            }
-                            // Simple substring if it's "YYYY-MM-DD HH:MM:SS":
-                            return data.substring(0, 10);  // "YYYY-MM-DD"
-                        }
-                    },
+                    { data:'date_publisher_price', name:'date_publisher_price',
+                       className:'text-center', render:dt },
 
                     { data: 'linkbuilder', name: 'linkbuilder', className: 'text-center', },
                     { data: 'type_of_website', name: 'type_of_website', className: 'text-center', },
@@ -688,16 +681,8 @@
                     { data: 'ahrefs_keyword', name: 'ahrefs_keyword', className: 'text-center', },
                     { data: 'ahrefs_traffic', name: 'ahrefs_traffic', className: 'text-center', },
                     { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic', className: 'text-center', },
-                    { data: 'seo_metrics_date', name: 'seo_metrics_date',
-                        className: 'text-center',
-                        render: function(data, type, row) {
-                            if (!data) {
-                                return '';
-                            }
-                            // Simple substring if it's "YYYY-MM-DD HH:MM:SS":
-                            return data.substring(0, 10);  // "YYYY-MM-DD"
-                        }
-                    },
+                    { data:'seo_metrics_date', name:'seo_metrics_date',
+                      className:'text-center', render:dt },
                     { data: 'betting', name: 'betting', className: 'text-center',
                         render: function (data, type, row) {
                             if (data === 1 )  {
@@ -766,16 +751,8 @@
                                 return 'NO';
                         }
                     },
-                    { data: 'created_at', name: 'date_added',
-                        className: 'text-center',
-                        render: function(data, type, row) {
-                            if (!data) {
-                                return '';
-                            }
-                            // Simple substring if it's "YYYY-MM-DD HH:MM:SS":
-                            return data.substring(0, 10);  // "YYYY-MM-DD"
-                        }
-                    },
+                    { data:'created_at', name:'date_added',
+                     className:'text-center', render:dt },
 
 
                     { data: 'action', name: 'action', orderable: false, searchable: false }
@@ -784,7 +761,7 @@
                 responsive: false,
                 autoWidth: false
             });
-
+            function dt(v){ return v ? new Date(v).toLocaleDateString('en-GB') : ''; }
             // Toggle-based filter
             $('#filterShowDeleted').on('change', function() {
                 table.ajax.reload();

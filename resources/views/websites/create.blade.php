@@ -174,10 +174,10 @@
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Date Publisher Price</label>
                 <input
-                    type="date"
+                    type="text"
                     name="date_publisher_price"
                     value="{{ old('date_publisher_price') }}"
-                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                    class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
                 >
                 @error('date_publisher_price')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -284,10 +284,10 @@
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Date Kialvo Evaluation</label>
                 <input
-                    type="date"
+                    type="text"
                     name="date_kialvo_evaluation"
                     value="{{ old('date_kialvo_evaluation') }}"
-                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                    class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
                 >
                 @error('date_kialvo_evaluation')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -453,10 +453,11 @@
             <div>
                 <label class="block text-gray-700 font-medium mb-1">SEO Metrics Date</label>
                 <input
-                    type="date"
+                    type="text"
+
                     name="seo_metrics_date"
                     value="{{ old('seo_metrics_date') }}"
-                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                    class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
                 >
                 @error('seo_metrics_date')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -620,7 +621,14 @@
                 width: '25%',
                 dropdownAutoWidth: true
             });
+
+            flatpickr('.date-input', {
+                dateFormat: 'd/m/Y',   // what the user sees *and* what is sent to PHP
+                allowInput: true
+            });
         });
+
+
     </script>
 @endpush
 

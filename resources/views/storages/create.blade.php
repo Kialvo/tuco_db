@@ -126,14 +126,14 @@
 {{--                </div>--}}
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Copy Comm. Date</label>
-                    <input type="date" name="copywriter_commision_date" value="{{ old('copywriter_commision_date') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="copywriter_commision_date" value="{{ old('copywriter_commision_date') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('copywriter_commision_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Copy Subm. Date</label>
-                    <input type="date" name="copywriter_submission_date" value="{{ old('copywriter_submission_date') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="copywriter_submission_date" value="{{ old('copywriter_submission_date') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('copywriter_submission_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -207,20 +207,20 @@
             <div class="grid grid-cols-4 gap-4">
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Sent to Publisher</label>
-                    <input type="date" name="article_sent_to_publisher" value="{{ old('article_sent_to_publisher') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="article_sent_to_publisher" value="{{ old('article_sent_to_publisher') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('article_sent_to_publisher')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Publication Date</label>
-                    <input type="date" name="publication_date" value="{{ old('publication_date') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="publication_date" value="{{ old('publication_date') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('publication_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Expiration Date</label>
-                    <input type="date" name="expiration_date" value="{{ old('expiration_date') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="expiration_date" value="{{ old('expiration_date') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('expiration_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
@@ -242,8 +242,8 @@
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Invoice Menford Date</label>
-                    <input type="date" name="invoice_menford" value="{{ old('invoice_menford') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="invoice_menford" value="{{ old('invoice_menford') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('invoice_menford')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
@@ -260,8 +260,8 @@
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Pay to Us Date</label>
-                    <input type="date" name="payment_to_us_date" value="{{ old('payment_to_us_date') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="payment_to_us_date" value="{{ old('payment_to_us_date') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('payment_to_us_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -281,14 +281,14 @@
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Bill Publisher Date</label>
-                    <input type="date" name="bill_publisher_date" value="{{ old('bill_publisher_date') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="bill_publisher_date" value="{{ old('bill_publisher_date') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('bill_publisher_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Pay to Publisher Date</label>
-                    <input type="date" name="payment_to_publisher_date" value="{{ old('payment_to_publisher_date') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="text" name="payment_to_publisher_date" value="{{ old('payment_to_publisher_date') }}"
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                     @error('payment_to_publisher_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
@@ -341,7 +341,8 @@
 
 @push('scripts')
     <script>
-        $(function () {
+        $(document).ready(function() {
+
             $('#categorySelect, #clientSelect, #copywriterSelect, #websiteSelect').select2({
                 placeholder:'Select',
                 closeOnSelect:false,
@@ -350,6 +351,12 @@
                 containerCssClass:'text-xs',
                 dropdownCssClass:'text-xs'
             });
+
+            flatpickr('.date-input', {
+                dateFormat: 'd/m/Y',   // what the user sees *and* what is sent to PHP
+                allowInput: true
+            });
+
         });
 
 

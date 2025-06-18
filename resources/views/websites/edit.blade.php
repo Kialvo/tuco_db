@@ -131,10 +131,10 @@
             </div>
             <div>
                 <label class="block">Date Publisher Price</label>
-                <input type="date"
+                <input type="text"
                        name="date_publisher_price"
-                       value="{{ old('date_publisher_price', $website->date_publisher_price ? \Carbon\Carbon::parse($website->date_publisher_price)->format('Y-d-m') : '') }}"
-                       class="w-full border-gray-300 rounded">
+                       value="{{ old('date_publisher_price', $website->date_publisher_price ? \Carbon\Carbon::parse($website->date_publisher_price)->format('d-m-Y') : '') }}"
+                       class="date-input w-full border-gray-300 rounded">
                 @error('date_publisher_price')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
@@ -213,10 +213,10 @@
 
         <div>
             <label class="block">Date Kialvo Evaluation</label>
-            <input type="date"
+            <input type="text"
                    name="date_kialvo_evaluation"
-                   value="{{ old('date_kialvo_evaluation', $website->date_kialvo_evaluation ? \Carbon\Carbon::parse($website->date_kialvo_evaluation)->format('Y-d-m') : '') }}"
-                   class="w-full border-gray-300 rounded">
+                   value="{{ old('date_kialvo_evaluation', $website->date_kialvo_evaluation ? \Carbon\Carbon::parse($website->date_kialvo_evaluation)->format('d-m-Y') : '') }}"
+                   class="date-input w-full border-gray-300 rounded">
             @error('date_kialvo_evaluation')
             <p class="text-red-500 text-sm">{{ $message }}</p>
             @enderror
@@ -327,10 +327,10 @@
 
             <div>
                 <label class="block">SEO Metrics Date</label>
-                <input type="date"
+                <input type="text"
                        name="seo_metrics_date"
-                       value="{{ old('seo_metrics_date', $website->seo_metrics_date ? \Carbon\Carbon::parse($website->seo_metrics_date)->format('Y-m-d') : '') }}"
-                       class="w-full border-gray-300 rounded">
+                       value="{{ old('seo_metrics_date', $website->seo_metrics_date ? \Carbon\Carbon::parse($website->seo_metrics_date)->format('d-m-Y') : '') }}"
+                       class="date-input w-full border-gray-300 rounded">
                 @error('seo_metrics_date')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
@@ -423,10 +423,10 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block">Date Added</label>
-                <input type="date"
+                <input type="text"
                        name="date_added"
-                       value="{{ old('date_added', $website->created_at ? \Carbon\Carbon::parse($website->created_at)->format('Y-d-m') : '') }}"
-                       class="w-full border-gray-300 rounded">
+                       value="{{ old('date_added', $website->created_at ? \Carbon\Carbon::parse($website->created_at)->format('d-m-Y') : '') }}"
+                       class="date-input w-full border-gray-300 rounded">
                 @error('date_added')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
@@ -468,6 +468,12 @@
                 width: '25%',
                 dropdownAutoWidth: true
             });
+
+            flatpickr('.date-input', {
+                dateFormat: 'd/m/Y',   // what the user sees *and* what is sent to PHP
+                allowInput: true
+            });
+
         });
     </script>
 @endpush
