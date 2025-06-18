@@ -423,8 +423,14 @@ class StorageController extends Controller
 
             if ($value === '') { $value = null; }
 
-            if(Str::endsWith($field,'_date') && $value !== null){
-                $value = Carbon::parse($value)->toDateString();  // any human format
+            if (Str::endsWith($field,'_date') && $value !== null) {
+
+                // if the user typed / bulk-pasted dd/mm/yyyy  → convert it first
+                if (preg_match('#^\d{2}/\d{2}/\d{4}$#', $value)) {
+                    $value = Carbon::createFromFormat('d/m/Y', $value)->toDateString();  // 2025-06-18
+                } else {
+                    $value = Carbon::parse($value)->toDateString();                      // let Carbon guess
+                }
             }
 
             /* ===== update + optional totals ================================== */
@@ -488,6 +494,9 @@ class StorageController extends Controller
     {
         $validated = $this->validateForm($request);
 
+        foreach (self::DATE_COLS as $c) {
+            $validated[$c] = $this->euDate($validated[$c] ?? null);
+        }
         $this->convertUsdFieldsToEur($validated, $this->priceFields());
 
         $this->applyAutoCalculations($validated);
@@ -536,6 +545,10 @@ class StorageController extends Controller
     public function update(Request $request, Storage $storage)
     {
         $validated = $this->validateForm($request);
+
+        foreach (self::DATE_COLS as $c) {
+            $validated[$c] = $this->euDate($validated[$c] ?? null);
+        }
 
         $this->convertUsdFieldsToEur($validated, $this->priceFields());
 
@@ -853,6 +866,26 @@ class StorageController extends Controller
         ]);
     }
 
+    /** every column that stores a date (no timestamps) */
+    private const DATE_COLS = [
+        'copywriter_commision_date',
+        'copywriter_submission_date',
+        'article_sent_to_publisher',
+        'publication_date',
+        'expiration_date',
+        'invoice_menford',
+        'payment_to_us_date',
+        'bill_publisher_date',
+        'payment_to_publisher_date',
+    ];
+
+    /** 18/06/2025  →  2025-06-18   (returns null if empty) */
+    private function euDate(?string $v): ?string
+    {
+        if (!$v) return null;
+        try   { return Carbon::createFromFormat('d/m/Y', $v)->format('Y-m-d'); }
+        catch (\Throwable $e) { return $v; }         // let validation complain if needed
+    }
     private function priceFields(): array
     {
         return [
