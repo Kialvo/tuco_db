@@ -126,6 +126,11 @@ Route::middleware('auth')->group(function () {
     )->name('storages.rollback');
 
 
+    /* ───── STORAGE summary row ───── */
+    Route::post('/storages/summary', [StorageController::class,'summary'])
+        ->name('storages.summary');
+
+
     Route::resource('storages', StorageController::class)->names([
         'index'   => 'storages.index',
         'show'    => 'storages.show',

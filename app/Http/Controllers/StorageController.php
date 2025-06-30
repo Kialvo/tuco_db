@@ -154,226 +154,52 @@ class StorageController extends Controller
             ->make(true);
     }
 
+    /*======================================================================
+| AJAX  →  aggregate numbers for the summary row
+|======================================================================*/
+    public function summary(Request $request)
+    {
+        $cols = [
+            'copy_nr',
+            'copywriter_period',
+            'publisher_amount',
+            'publisher',
+            'total_cost',
+            'menford',
+            'client_copy',
+            'total_revenues',
+            'profit',
+            'publisher_period',
+        ];
 
-    /**
-     * Update the same field for many rows at once.
-     * POST:  ids[] , field , value
-     */
-//    public function bulkUpdate(Request $request)
-//    {
-//        $data = $request->validate([
-//            'ids'   => 'required|array|min:1',
-//            'ids.*' => 'integer|exists:storage,id',
-//            'field' => ['required','string',function($attr,$val,$fail){
-//                if (! in_array($val, self::BULK_EDITABLE, true)) {
-//                    $fail('Field not allowed for bulk edit.');
-//                }
-//            }],
-//            'value' => 'nullable|string|max:255',
-//        ]);
-//
-//        $field = $data['field'];
-//        $value = $data['value'];
-//
-//        /* Normalise DD-MM-YYYY → YYYY-MM-DD for *_date fields */
-//        /* Normalise dates -----------------------------------------------------*/
-//        if (Str::endsWith($field, '_date') && $value !== '') {
-//
-//            // try the two common day-first / year-first formats
-//            $dt = null;
-//            foreach (['Y-m-d', 'd-m-Y'] as $fmt) {
-//                try {
-//                    $dt = Carbon::createFromFormat($fmt, $value);
-//                    break;           // stop at the first that parses
-//                } catch (\Throwable $e) { /* keep trying */ }
-//            }
-//
-//            if (! $dt) {                      // none matched
-//                return response()->json(['message' => 'Invalid date format'], 422);
-//            }
-//
-//            $value = $dt->toDateString();       //  YYYY-MM-DD 00:00:00
-//        }
-//
-//
-//        Storage::whereIn('id',$data['ids'])->update([$field=>$value]);
-//
-//        return response()->json(['message'=>"Updated ".count($data['ids'])." record(s)."]);
-//    }
+        $query = Storage::query();
 
-    /**
-     * One field → many rows.
-     * Request:  ids[] , field , value
-     */
-//    public function bulkUpdate(Request $request)
-//    {
-//        /* --------- 1. validation --------- */
-//        $data = $request->validate([
-//            'ids'   => 'required|array|min:1',
-//            'ids.*' => 'integer|exists:storage,id',
-//            'field' => ['required','string',function($a,$v,$f){
-//                if (! in_array($v, self::BULK_EDITABLE, true)) {
-//                    $f('Field not allowed for bulk-edit.');
-//                }
-//            }],
-//            'value' => 'nullable|string|max:255',
-//        ]);
-//
-//        $field = $data['field'];
-//        $value = $data['value'];
-//
-//        /* --------- 2. normalise dates --------- */
-//        if (Str::endsWith($field,'_date') && $value !== '') {
-//
-//            $dt = null;
-//            foreach (['d-m-Y','Y-m-d'] as $fmt) {          // day-first & year-first
-//                try { $dt = Carbon::createFromFormat($fmt,$value); break; }
-//                catch (\Throwable $e) { /* keep trying */ }
-//            }
-//            if (! $dt) {
-//                return response()->json(['message'=>'Invalid date format'],422);
-//            }
-//            $value = $dt->toDateString();                  // YYYY-MM-DD
-//        }
-//
-//        /* --------- 3. update + auto-recalc --------- */
-//        $recalcDrivers = ['copy_nr','publisher','menford','client_copy'];
-//
-//        // pull all affected rows at once
-//        $storages = Storage::whereIn('id',$data['ids'])->get();
-//
-//        foreach ($storages as $s) {
-//
-//            /* 3.1 set the user-chosen value */
-//            $s->{$field} = $value;
-//
-//            /* 3.2 if the edited field influences totals, recompute them */
-//            if (in_array($field,$recalcDrivers, true)) {
-//
-//                // put current attributes in an array, run the same helper
-//                $payload = $s->attributesToArray();
-//                $payload[$field] = is_numeric($value) ? (float)$value : $value;
-//
-//                $this->applyAutoCalculations($payload);
-//
-//                $s->publisher       = $payload['publisher'];
-//                $s->total_cost      = $payload['total_cost'];
-//                $s->menford         = $payload['menford'];
-//                $s->client_copy     = $payload['client_copy'];
-//                $s->total_revenues  = $payload['total_revenues'];
-//                $s->profit          = $payload['profit'];
-//            }
-//
-//            $s->save();
-//        }
-//
-//        return response()->json([
-//            'message' => 'Updated '.count($storages).' record(s).'
-//        ]);
-//    }
-    /**
-     * One field → many rows.
-     * Request:  ids[] , field , value
-     */
-    /**
-     * Bulk-edit: update one column on many rows at once.
-     * Expects:  POST  ids[] , field , value
-     */
-    /**
-     * Bulk-edit: update one column on many rows at once.
-     * Accepts empty value (clears column) and multiple date formats.
-     */
-    /**
-     * Bulk-edit: update the same column on many rows.
-     * – blank value (“”)   ⇒ NULL
-     * – dates are accepted in several formats, otherwise left NULL
-     */
-    /**
-     * Bulk-edit: update one column on many rows.
-     * – blank (“”) is saved as NULL
-     * – dates accepted in common formats
-     * – category_ids syncs the pivot table
-     */
-//    public function bulkUpdate(Request $request)
-//    {
-//        /* ---------- 1. basic validation ------------------------------------ */
-//        $fieldRule = ['required','string', function ($attr,$val,$fail) {
-//            if (! in_array($val, self::BULK_EDITABLE, true)) {
-//                $fail('Field not allowed for bulk edit.');
-//            }
-//        }];
-//
-//        $data = $request->validate([
-//            'ids'   => 'required|array|min:1',
-//            'ids.*' => 'integer|exists:storage,id',
-//            'field' => $fieldRule,
-//            'value' => 'present',                           // may be "", null, array …
-//        ]);
-//
-//        $field = $data['field'];
-//        $value = $request->input('value');   // returns null if empty string was sent
-//
-//        /* ---------- 2. special case: categories --------------------------- */
-//        if ($field === 'category_ids') {
-//
-//            // value could be "" (user pressed “Clear”), turn into empty array
-//            $ids = is_array($value) ? $value : [];
-//
-//            Storage::whereIn('id', $data['ids'])->each(function ($s) use ($ids) {
-//                $s->categories()->sync($ids);               // replace the set
-//            });
-//
-//            return response()->json([
-//                'message' => 'Categories updated for '.count($data['ids']).' record(s).'
-//            ]);
-//        }
-//
-//        /* ---------- 3. generic scalar / date columns ---------------------- */
-//        if ($value === '') {                    // empty string clears the column
-//            $value = null;
-//        }
-//
-//        if (Str::endsWith($field, '_date') && $value !== null) {
-//            $formats = ['Y-m-d','d-m-Y','m-d-Y','Y/m/d','d/m/Y','m/d/Y'];
-//            $parsed  = null;
-//
-//            foreach ($formats as $fmt) {
-//                try { $parsed = Carbon::createFromFormat($fmt,$value); break; }
-//                catch (\Throwable $e) { /* keep trying */ }
-//            }
-//            if (! $parsed) {                     // give Carbon one free shot
-//                try { $parsed = Carbon::parse($value); } catch (\Throwable $e) {}
-//            }
-//            if (! $parsed) {
-//                return response()->json(['message'=>'Invalid date format'],422);
-//            }
-//            $value = $parsed->toDateString();    // YYYY-MM-DD
-//        }
-//
-//        /* ---------- 4. update + (optional) auto-totals -------------------- */
-//        $drivers = ['copy_nr','publisher','menford','client_copy'];
-//        $rows    = Storage::whereIn('id',$data['ids'])->get();
-//
-//        foreach ($rows as $s) {
-//            $s->{$field} = $value;
-//
-//            if (in_array($field,$drivers,true)) {
-//                $payload = array_merge($s->toArray(), [$field=>$value]);
-//                $this->applyAutoCalculations($payload);
-//                $s->total_cost     = $payload['total_cost'];
-//                $s->total_revenues = $payload['total_revenues'];
-//                $s->profit         = $payload['profit'];
-//            }
-//            $s->save();
-//        }
-//
-//        return response()->json([
-//            'message' => 'Updated '.count($rows).' record(s).'
-//        ]);
-//    }
+        // A. If specific IDs are selected, use only them
+        if ($request->filled('ids') && is_array($request->ids)) {
+            $query->whereIn('id', $request->ids);
+        } else {
+            // B. Otherwise fall back to filters
+            $this->applyFilters($request, $query);
+        }
 
+        $agg = [];
+        $rows = $query->get($cols); // only fetch numeric columns
 
+        foreach ($cols as $c) {
+            $vec = $rows->pluck($c)->filter(fn($v) => $v !== null)->values();
 
+            $agg[$c] = [
+                'sum'    => $vec->sum(),
+                'average'    => $vec->isEmpty() ? 0 : $vec->avg(),
+                'median' => $vec->median(),
+                'min'    => $vec->min(),
+                'max'    => $vec->max(),
+                'count'  => $vec->count(),
+            ];
+        }
+
+        return response()->json($agg);
+    }
 
     public function bulkUpdate(Request $request)
     {

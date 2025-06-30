@@ -352,7 +352,57 @@
                 </tr>
                 </thead>
                 <tbody></tbody>
+                <tfoot>
+                <tr id="summaryRow">
+                    {{-- 1–7: No summary --}}
+                    <td></td>   {{-- 1: Checkbox --}}
+                    <td></td>   {{-- 2: ID --}}
+                    <td></td>   {{-- 3: Website --}}
+                    <td></td>   {{-- 4: Status --}}
+                    <td></td>   {{-- 5: LB --}}
+                    <td></td>   {{-- 6: Client --}}
+                    <td></td>   {{-- 7: Copywriter --}}
+
+                    {{-- 8–10: Some summary --}}
+                    <td data-col="copy_nr" data-index="7"></td>   {{-- 8: Copywriter Amount € --}}
+                    <td></td>                                     {{-- 9: Copy Comm. Date --}}
+                    <td></td>                                     {{-- 10: Copy Subm. Date --}}
+                    <td data-col="copywriter_period" data-index="10"></td> {{-- 11: Copy Period --}}
+
+                    {{-- 12–14: No summary --}}
+                    <td></td>   {{-- 12: Language --}}
+                    <td></td>   {{-- 13: Country --}}
+                    <td></td>   {{-- 14: Publisher Currency --}}
+
+                    {{-- 15–21: Summary fields --}}
+                    <td data-col="publisher_amount" data-index="14"></td>     {{-- 15 --}}
+                    <td data-col="publisher" data-index="15"></td>            {{-- 16 --}}
+                    <td data-col="total_cost" data-index="16"></td>           {{-- 17 --}}
+                    <td data-col="menford" data-index="17"></td>              {{-- 18 --}}
+                    <td data-col="client_copy" data-index="18"></td>          {{-- 19 --}}
+                    <td data-col="total_revenues" data-index="19"></td>       {{-- 20 --}}
+                    <td data-col="profit" data-index="20"></td>               {{-- 21 --}}
+
+                    {{-- 22–27: No summary --}}
+                    <td></td> <td></td> <td></td> <td></td> <td></td> <td></td>
+
+                    {{-- 28: Summary again --}}
+                    <td data-col="publisher_period" data-index="28"></td>     {{-- 28 --}}
+
+                    {{-- 29–43: No summary --}}
+                    <td></td> <td></td> <td></td> <td></td> <td></td>
+                    <td></td> <td></td> <td></td> <td></td> <td></td>
+                    <td></td> <td></td> <td></td> <td></td> <td></td>
+                </tr>
+                </tfoot>
+
             </table>
+            <div id="calcPortal"
+                 class="fixed z-[999999] hidden"
+                 style="min-width:110px;background:#1f2937;color:#f3f4f6;
+            border:1px solid #4b5563;border-radius:4px;
+            padding:.25rem 0;white-space:nowrap"></div>
+
         </div>
     </div>
 @endsection
@@ -538,6 +588,133 @@
                 scrollX:true
             });
 
+            /* ───────────────────────── SUMMARY ROW ───────────────────────── */
+            const numericCols = [
+                'copy_nr','copywriter_period','publisher_amount','publisher',
+                'total_cost','menford','client_copy','total_revenues',
+                'profit','publisher_period'
+            ];
+            const calcLabels = {none:'None',sum:'Sum',average:'Average',
+                median:'Median',min:'Min',max:'Max',count:'Count'};
+            const prefsKey   = 'stSummaryPrefs';
+            let   prefs      = JSON.parse(localStorage.getItem(prefsKey)||'{}');
+
+            /* A.--- build mini-widgets */          /* default is “none” (= no calc) */
+            $('#summaryRow td[data-col]').each(function () {
+                const col  = $(this).data('col');
+                const mode = prefs[col] || 'none';          // <- changed default
+                $(this).html(`
+        <div class="flex flex-col items-center relative w-full">
+            <span class="sum-val font-semibold"></span>
+           <button class="calc-toggle mt-0.5 text-[10px] px-1 rounded
+                      border border-blue-400 text-blue-300 w-max"
+                      data-col="${col}">
+
+        </div>`);
+            });
+
+            /* B.--- move footer once */
+            table.one('init', () => {
+                $('.dataTables_scrollFootInner tfoot').append($('#summaryRow'));
+
+                $('#summaryRow td[data-col]').each(function () {
+                    const index = +$(this).data('index');
+                    $(this).css('text-align', 'right');
+                    $('#storagesTable').find('th').eq(index).css('text-align', 'right');
+                });
+            });
+
+
+
+            /* C. current filter helper (same keys as controller expects) */
+            function currentFilters(){
+                return {
+                    publication_from : $('#filterPublicationFrom').val(),
+                    publication_to   : $('#filterPublicationTo').val(),
+                    client_id        : $('#filterClient').val(),
+                    /* add others if your summary route needs them */
+                };
+            }
+
+            /* D.--- fetch + paint                                   */
+            function refreshSummary(){
+                const selectedIds = $('.rowChk:checked').map((_, c) => c.value).get();
+
+                // No selection = clear all
+                if (selectedIds.length === 0) {
+                    $('#summaryRow .sum-val').text('—');
+                    return;
+                }
+
+                // Only call summary route if something is selected
+                $.ajax({
+                    url : "{{ route('storages.summary') }}",
+                    type: "POST",
+                    data: {
+                        ...currentFilters(),
+                        ids: selectedIds
+                    },
+                    dataType:'json',
+                    headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')},
+                    success: json => {
+                        $('#summaryRow td[data-col]').each(function(){
+                            const col  = $(this).data('col'),
+                                mode = prefs[col] || 'none',
+                                val  = json[col] ? json[col][mode] : null;
+
+                            $(this).find('.sum-val').text(
+                                mode==='none'||val===null ? '—'
+                                    : Number(val).toLocaleString('en-US')
+                            );
+                            $(this).find('.calc-toggle').text(calcLabels[mode]);
+                        });
+                    }
+                });
+            }
+
+
+            /* E. refresh on every redraw AND first load */
+            table.on('draw', refreshSummary);
+            refreshSummary();
+
+            /* F.  interactions */
+            $(document).on('click', '.calc-toggle', function (e) {
+                e.stopPropagation();
+
+                const $btn   = $(this);
+                const col    = $btn.data('col');
+                const rect   = $btn[0].getBoundingClientRect();        // button position
+                const portal = $('#calcPortal');
+
+                // build menu HTML
+                portal.html(Object.entries(calcLabels).map(
+                    ([k,l]) => `<div class="calc-opt px-2 py-1 text-[11px] hover:bg-blue-600 cursor-pointer"
+                         data-col="${col}" data-opt="${k}">
+                         ${l}</div>`
+                ).join(''));
+
+                // position it above the button (or below if not enough room)
+                const menuH =  portal.outerHeight();
+                let   top   = rect.top - menuH - 6;                    // try above
+                if (top < 0) top = rect.bottom + 6;                    // fallback below
+
+                portal.css({left: rect.left, top}).removeClass('hidden');
+            });
+
+            $(document).on('click', '.calc-opt', function (e) {
+                const col  = $(this).data('col');
+                const opt  = $(this).data('opt');
+                prefs[col] = opt;
+                localStorage.setItem(prefsKey, JSON.stringify(prefs));
+                $('#calcPortal').addClass('hidden');
+                refreshSummary();
+            });
+
+            $(document).on('click', () => $('#calcPortal').addClass('hidden'));
+
+            /* ─────────────────────────────────────────────────────────────── */
+
+
             /* ----------------------------------------------------------
              * live “Selected: N” badge
              * ----------------------------------------------------------*/
@@ -547,6 +724,8 @@
 
             /* every time a row checkbox (or the master one) toggles */
             $(document).on('change', '.rowChk, #chkAll', updateSelCount);
+            $(document).on('change', '.rowChk, #chkAll', refreshSummary);
+
 
             /* when the table redraws (pagination, search, etc.) */
             table.on('draw', updateSelCount);
@@ -798,3 +977,58 @@
 
 
 @endpush
+@push('styles')
+    <style>
+        .dataTables_wrapper {
+            overflow: visible !important;
+            position: relative;
+        }
+
+        /* Ensure dropdown menus appear above and within viewport */
+        .dataTables_scrollBody,
+        .dataTables_scrollFoot,
+        .dataTables_scroll,
+        .dataTables_scrollFootInner {
+            overflow: visible !important;
+        }
+
+        /* Sticky footer and alignment fixes */
+        .dataTables_scrollFoot {
+            position: sticky;
+            bottom: 0;
+            z-index: 15;
+            background: #1f2937;
+        }
+
+        .dataTables_scrollFootInner tr {
+            background: #1f2937;
+        }
+
+        .dataTables_scrollFootInner td,
+        .dataTables_scrollFootInner th {
+            padding: .35rem .25rem;
+            color: #e5e7eb;
+            text-align: right;
+            vertical-align: top;
+        }
+
+        /* Fix positioning of calc-menu */
+        .calc-menu {
+            bottom: 115%;
+            z-index: 99999;
+            position: absolute;
+            background: #1f2937;
+            color: #f3f4f6;
+            border: 1px solid #4b5563;
+            padding: 0.25rem 0;
+            border-radius: 0.25rem;
+            white-space: nowrap;
+            max-height: 300px;
+            overflow-y: auto;
+            display: block;
+        }
+
+        .sum-val {
+            font-weight: bold;
+        }
+    </style>@endpush
