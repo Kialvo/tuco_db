@@ -594,9 +594,12 @@
                 ],
                 order:[[1,'desc']], /* skip checkbox column */
                 autoWidth:false,
-                scrollX:true
+                scrollX:true,
+                lengthMenu: [[10, 25, 50, 100, 200, 500, -1],
+                    [10, 25, 50, 100, 200, 500, "All"]],
             });
 
+            let filtersApplied = false;
             setTimeout(syncFooterWidths, 0);
             /* ───────────────────────── SUMMARY ROW ───────────────────────── */
             // ── helper keeps footer cells the same width as their header  ──
@@ -683,37 +686,57 @@
 
 
             /* C. current filter helper (same keys as controller expects) */
-            function currentFilters(){
+            /* C. helper – send EVERY filter the backend knows -------------------- */
+            function currentFilters () {
                 return {
-                    publication_from : $('#filterPublicationFrom').val(),
-                    publication_to   : $('#filterPublicationTo').val(),
-                    client_id        : $('#filterClient').val(),
-                    /* add others if your summary route needs them */
+                    publication_from  : $('#filterPublicationFrom').val(),
+                    publication_to    : $('#filterPublicationTo').val(),
+                    copy_id           : $('#filterCopy').val(),
+                    language_id       : $('#filterLanguage').val(),
+                    country_id        : $('#filterCountry').val(),
+                    client_id         : $('#filterClient').val(),
+                    status            : $('#filterStatus').val(),
+
+                    campaign          : $('#filterCampaign').val(),
+                    campaign_code     : $('#filterCampaignCode').val(),
+                    invoice_menford_nr: $('#filterInvoiceMenfordNr').val(),
+                    bill_publisher_name:$('#filterBillPublisherName').val(),
+                    target_url        : $('#filterTargetUrl').val(),
+                    article_url       : $('#filterArticleUrl').val(),
+
+                    category_ids      : $('#filterCategories').val(),   // array or null
+                    show_deleted      : $('#filterShowDeleted').is(':checked')
                 };
             }
 
+
             /* D.--- fetch + paint                                   */
-            function refreshSummary(){
+            /* D.--- fetch + paint  — now works on first load too — */
+            /* D.--- fetch + paint — only when needed — */
+            function refreshSummary() {
+
                 const selectedIds = $('.rowChk:checked').map((_, c) => c.value).get();
 
-                // No selection = clear all
-                if (selectedIds.length === 0) {
+                /* run ONLY if
+                   a) filters were applied (Search pressed)  OR
+                   b) at least one row is selected                           */
+                if (!filtersApplied && selectedIds.length === 0) {
                     $('#summaryRow .sum-val').text('—');
                     return;
                 }
 
-                // Only call summary route if something is selected
+                /* build payload */
+                const payload = { ...currentFilters() };
+                if (selectedIds.length) payload.ids = selectedIds;
+
                 $.ajax({
                     url : "{{ route('storages.summary') }}",
                     type: "POST",
-                    data: {
-                        ...currentFilters(),
-                        ids: selectedIds
-                    },
+                    data: payload,
                     dataType:'json',
                     headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')},
                     success: json => {
-                        $('#summaryRow td[data-col]').each(function(){
+                        $('#summaryRow td[data-col]').each(function () {
                             const col  = $(this).data('col'),
                                 mode = prefs[col] || 'none',
                                 val  = json[col] ? json[col][mode] : null;
@@ -722,16 +745,17 @@
                                 mode==='none'||val===null ? '—'
                                     : Number(val).toLocaleString('en-US')
                             );
-                            const $pill = $(this).find('.calc-toggle');
-                            $pill
-                                .text(calcLabels[mode])
-                                .toggleClass('active',   mode !== 'none')
-                                .toggleClass('inactive', mode === 'none');
 
+                            $(this).find('.calc-toggle')
+                                .text(calcLabels[mode])
+                                .toggleClass('active',   mode!=='none')
+                                .toggleClass('inactive', mode==='none');
                         });
                     }
                 });
             }
+
+
 
 
             /* E. refresh on every redraw AND first load */
@@ -803,13 +827,20 @@
             $('#chkAll').on('change',function(){ $('.rowChk').prop('checked',this.checked); });
 
             /* filters: Search / Clear / toggle-deleted */
-            $('#btnSearch').on('click',e=>{e.preventDefault();table.ajax.reload();});
+            $('#btnSearch').on('click',e=>{
+                e.preventDefault();
+                table.ajax.reload();
+                filtersApplied = true;                     // mark that filters are active
+                table.ajax.reload(refreshSummary);
+            });
             $('#btnClear').on('click',e=>{
                 e.preventDefault();
                 $('#filterForm').find('input[type="text"],input[type="date"]').val('');
                 $('#filterForm').find('select').val('').trigger('change');
                 $('#filterShowDeleted').prop('checked',false);
-                table.ajax.reload();
+                filtersApplied = false;                    // back to “no filters”
+                table.ajax.reload();                       // redraw table
+                $('#summaryRow .sum-val').text('—');
             });
             $('#filterShowDeleted').on('change',()=>table.ajax.reload());
 
