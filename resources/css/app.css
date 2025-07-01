@@ -33,3 +33,18 @@
        @apply float-right;
     */
 }
+/* ────────────────────── Datatable SUMMARY ROW ────────────────────── */
+#summaryRow               { background:#0f172a; }          /* slate-900   */
+#summaryRow td            { box-sizing:border-box; padding:.5rem .4rem; }
+#summaryRow .sum-val      { font:700 0.95rem/1 'Inter',sans-serif; color:#facc15; } /* amber-400 */
+
+#summaryRow .calc-toggle  {
+    font-size:10px; line-height:1; padding:.2rem .45rem;
+    border:1px solid #3b82f6;   /* blue-500 */
+    color:#bfdbfe;              /* blue-100 */
+    background:#1e3a8a;         /* blue-900 */
+    border-radius:4px;
+    transition:all .15s;
+}
+#summaryRow .calc-toggle:hover   { background:#2563eb; color:#fff; }
+#summaryRow .calc-toggle.active  { background:#059669; color:#ecfdf5; border-color:transparent; }

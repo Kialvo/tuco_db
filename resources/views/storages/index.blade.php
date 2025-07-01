@@ -354,47 +354,56 @@
                 <tbody></tbody>
                 <tfoot>
                 <tr id="summaryRow">
-                    {{-- 1–7: No summary --}}
-                    <td></td>   {{-- 1: Checkbox --}}
-                    <td></td>   {{-- 2: ID --}}
-                    <td></td>   {{-- 3: Website --}}
-                    <td></td>   {{-- 4: Status --}}
-                    <td></td>   {{-- 5: LB --}}
-                    <td></td>   {{-- 6: Client --}}
-                    <td></td>   {{-- 7: Copywriter --}}
+                    {{-- 0–6 ─ no summary --}}
+                    <td></td>  {{-- 0 Checkbox --}}
+                    <td></td>  {{-- 1 ID --}}
+                    <td></td>  {{-- 2 Website --}}
+                    <td></td>  {{-- 3 Status --}}
+                    <td></td>  {{-- 4 LB --}}
+                    <td></td>  {{-- 5 Client --}}
+                    <td></td>  {{-- 6 Copywriter --}}
 
-                    {{-- 8–10: Some summary --}}
-                    <td data-col="copy_nr" data-index="7"></td>   {{-- 8: Copywriter Amount € --}}
-                    <td></td>                                     {{-- 9: Copy Comm. Date --}}
-                    <td></td>                                     {{-- 10: Copy Subm. Date --}}
-                    <td data-col="copywriter_period" data-index="10"></td> {{-- 11: Copy Period --}}
+                    {{-- 7–10 ─ summary / some empty --}}
+                    <td data-col="copy_nr"            data-index="7"></td>  {{-- 7 Copywriter Amount € --}}
+                    <td></td>                                            {{-- 8 Copy Comm. Date --}}
+                    <td></td>                                            {{-- 9 Copy Subm. Date --}}
+                    <td data-col="copywriter_period"  data-index="10"></td> {{-- 10 Copy Period --}}
 
-                    {{-- 12–14: No summary --}}
-                    <td></td>   {{-- 12: Language --}}
-                    <td></td>   {{-- 13: Country --}}
-                    <td></td>   {{-- 14: Publisher Currency --}}
+                    {{-- 11–13 ─ no summary --}}
+                    <td></td>  {{-- 11 Language --}}
+                    <td></td>  {{-- 12 Country --}}
+                    <td></td>  {{-- 13 Publisher Currency --}}
 
-                    {{-- 15–21: Summary fields --}}
-                    <td data-col="publisher_amount" data-index="14"></td>     {{-- 15 --}}
-                    <td data-col="publisher" data-index="15"></td>            {{-- 16 --}}
-                    <td data-col="total_cost" data-index="16"></td>           {{-- 17 --}}
-                    <td data-col="menford" data-index="17"></td>              {{-- 18 --}}
-                    <td data-col="client_copy" data-index="18"></td>          {{-- 19 --}}
-                    <td data-col="total_revenues" data-index="19"></td>       {{-- 20 --}}
-                    <td data-col="profit" data-index="20"></td>               {{-- 21 --}}
+                    {{-- 14–20 ─ numeric summaries --}}
+                    <td data-col="publisher_amount"   data-index="14"></td>  {{-- 14 --}}
+                    <td data-col="publisher"          data-index="15"></td>  {{-- 15 --}}
+                    <td data-col="total_cost"         data-index="16"></td>  {{-- 16 --}}
+                    <td data-col="menford"            data-index="17"></td>  {{-- 17 --}}
+                    <td data-col="client_copy"        data-index="18"></td>  {{-- 18 --}}
+                    <td data-col="total_revenues"     data-index="19"></td>  {{-- 19 --}}
+                    <td data-col="profit"             data-index="20"></td>  {{-- 20 --}}
 
-                    {{-- 22–27: No summary --}}
-                    <td></td> <td></td> <td></td> <td></td> <td></td> <td></td>
+                    {{-- 21–26 ─ still plain cells --}}
+                    <td></td> {{-- 21 Target Domain --}}
+                    <td></td> {{-- 22 Anchor Text --}}
+                    <td></td> {{-- 23 Target URL --}}
+                    <td></td> {{-- 24 Campaign Code --}}
+                    <td></td> {{-- 25 Sent to Publisher --}}
+                    <td></td> {{-- 26 Publication Date --}}
 
-                    {{-- 28: Summary again --}}
-                    <td data-col="publisher_period" data-index="28"></td>     {{-- 28 --}}
+                    {{-- 27 <<< NEW empty cell for Expiration Date --}}
+                    <td></td>
 
-                    {{-- 29–43: No summary --}}
+                    {{-- 28 Publisher Period summary (now perfectly aligned) --}}
+                    <td data-col="publisher_period"   data-index="26"></td>
+
+                    {{-- 29–42 ─ remaining columns, no summary --}}
                     <td></td> <td></td> <td></td> <td></td> <td></td>
                     <td></td> <td></td> <td></td> <td></td> <td></td>
-                    <td></td> <td></td> <td></td> <td></td> <td></td>
+                    <td></td> <td></td> <td></td> <td></td>
                 </tr>
                 </tfoot>
+
 
             </table>
             <div id="calcPortal"
@@ -588,7 +597,35 @@
                 scrollX:true
             });
 
+            setTimeout(syncFooterWidths, 0);
             /* ───────────────────────── SUMMARY ROW ───────────────────────── */
+            // ── helper keeps footer cells the same width as their header  ──
+            // — keep footer cells exactly under the scroll-X header —
+            /* ———————————————————————————————————————————
+ * Perfectly align footer cells to header cells
+ * ——————————————————————————————————————————— */
+            function syncFooterWidths () {
+                const $head       = $('.dataTables_scrollHeadInner table th');   // visible header cells
+                const $footerTds  = $('#summaryRow td');
+
+                // 1. Set every footer <td> to match its header <th>
+                $footerTds.each(function (i) {
+                    $(this).css('width', $head.eq(i).outerWidth() + 'px');
+                });
+
+                // 2. Compensate for the vertical scroll-bar that appears inside
+                //    the DataTables scroll body: its width pushes the very last
+                //    header cell left by a few pixels, so we must subtract it.
+                const $body        = $('.dataTables_scrollBody')[0];
+                const scrollBarW   = $body.offsetWidth - $body.clientWidth;      // 0‒20 px depending on OS
+                if (scrollBarW) {
+                    const $last = $footerTds.last();
+                    $last.css('width',
+                        ($last.outerWidth() - scrollBarW) + 'px');
+                }
+            }
+
+
             const numericCols = [
                 'copy_nr','copywriter_period','publisher_amount','publisher',
                 'total_cost','menford','client_copy','total_revenues',
@@ -600,22 +637,41 @@
             let   prefs      = JSON.parse(localStorage.getItem(prefsKey)||'{}');
 
             /* A.--- build mini-widgets */          /* default is “none” (= no calc) */
+            /* A.–– build mini-widgets — default = “sum” */
             $('#summaryRow td[data-col]').each(function () {
                 const col  = $(this).data('col');
-                const mode = prefs[col] || 'none';          // <- changed default
-                $(this).html(`
-        <div class="flex flex-col items-center relative w-full">
-            <span class="sum-val font-semibold"></span>
-           <button class="calc-toggle mt-0.5 text-[10px] px-1 rounded
-                      border border-blue-400 text-blue-300 w-max"
-                      data-col="${col}">
+                let mode = prefs[col];
+                if (!mode || mode === 'none') mode = 'sum';
+                prefs[col] = mode;               // save back         // default → Sum
+                // write back so it’s stored
 
-        </div>`);
+                $(this).html(`
+        <div class="flex flex-col items-center w-full">
+            <span class="sum-val font-semibold"></span>
+
+            <button class="calc-toggle ${mode!=='none'?'active':'inactive'}"
+                    data-col="${col}">
+                ${calcLabels[mode]}
+            </button>
+        </div>
+    `);
             });
+
+
 
             /* B.--- move footer once */
             table.one('init', () => {
                 $('.dataTables_scrollFootInner tfoot').append($('#summaryRow'));
+
+                /* perfectly align footer cells under their headers */
+                table.one('init', () => {
+                    table.columns().every(function () {
+                        const idx   = this.index();
+                        const width = $(this.header()).outerWidth();
+                        $('#summaryRow td').eq(idx).css({width});
+                    });
+                });
+
 
                 $('#summaryRow td[data-col]').each(function () {
                     const index = +$(this).data('index');
@@ -666,7 +722,12 @@
                                 mode==='none'||val===null ? '—'
                                     : Number(val).toLocaleString('en-US')
                             );
-                            $(this).find('.calc-toggle').text(calcLabels[mode]);
+                            const $pill = $(this).find('.calc-toggle');
+                            $pill
+                                .text(calcLabels[mode])
+                                .toggleClass('active',   mode !== 'none')
+                                .toggleClass('inactive', mode === 'none');
+
                         });
                     }
                 });
@@ -675,6 +736,8 @@
 
             /* E. refresh on every redraw AND first load */
             table.on('draw', refreshSummary);
+            table.on('draw init', syncFooterWidths);
+            $(window).on('resize', syncFooterWidths);
             refreshSummary();
 
             /* F.  interactions */
@@ -977,58 +1040,3 @@
 
 
 @endpush
-@push('styles')
-    <style>
-        .dataTables_wrapper {
-            overflow: visible !important;
-            position: relative;
-        }
-
-        /* Ensure dropdown menus appear above and within viewport */
-        .dataTables_scrollBody,
-        .dataTables_scrollFoot,
-        .dataTables_scroll,
-        .dataTables_scrollFootInner {
-            overflow: visible !important;
-        }
-
-        /* Sticky footer and alignment fixes */
-        .dataTables_scrollFoot {
-            position: sticky;
-            bottom: 0;
-            z-index: 15;
-            background: #1f2937;
-        }
-
-        .dataTables_scrollFootInner tr {
-            background: #1f2937;
-        }
-
-        .dataTables_scrollFootInner td,
-        .dataTables_scrollFootInner th {
-            padding: .35rem .25rem;
-            color: #e5e7eb;
-            text-align: right;
-            vertical-align: top;
-        }
-
-        /* Fix positioning of calc-menu */
-        .calc-menu {
-            bottom: 115%;
-            z-index: 99999;
-            position: absolute;
-            background: #1f2937;
-            color: #f3f4f6;
-            border: 1px solid #4b5563;
-            padding: 0.25rem 0;
-            border-radius: 0.25rem;
-            white-space: nowrap;
-            max-height: 300px;
-            overflow-y: auto;
-            display: block;
-        }
-
-        .sum-val {
-            font-weight: bold;
-        }
-    </style>@endpush
