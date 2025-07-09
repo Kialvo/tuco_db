@@ -127,9 +127,12 @@
             <label class="block text-sm font-medium text-gray-700">Field</label>
             <select id="bulkField"
                     class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-cyan-500">
-                @foreach($bulkEditable as $f)
+                <option value="recalculate_totals">Apply Auto Calculation</option>
+
+            @foreach($bulkEditable as $f)
                     <option value="{{ $f }}">{{ $bulkLabels[$f] ?? Str::headline($f) }}</option>
                 @endforeach
+
             </select>
 
             <div id="bulkInputWrapper"></div> {{-- rebuilt by JS --}}

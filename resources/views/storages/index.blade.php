@@ -47,6 +47,7 @@
         'payment_to_publisher_date'      => 'Pay to Publisher Date',
         'method_payment_to_publisher'    => 'Pay to Publisher Method',
         'categories_list'                => 'Categories',
+        'created_at'                     => 'Date Created',
         'files'                          => 'Files',
         ];
 
@@ -59,7 +60,7 @@
         'publication_date','expiration_date','article_url',
         'method_payment_to_us','invoice_menford','invoice_menford_nr','invoice_company',
         'payment_to_us_date','bill_publisher_name','bill_publisher_nr','bill_publisher_date',
-        'payment_to_publisher_date','method_payment_to_publisher','category_ids'
+        'payment_to_publisher_date','method_payment_to_publisher','category_ids','recalculate_totals'
         ];
     @endphp
 
@@ -347,6 +348,7 @@
                     <th class="px-4 py-2">Pay to Publisher Date</th>
                     <th class="px-4 py-2">Pay to Publisher Method</th>
                     <th class="px-4 py-2 whitespace-nowrap">Categories</th>
+                    <th class="px-4 py-2">Date Added</th>
                     <th class="px-4 py-2">Files</th>
                     <th class="px-4 py-2">Action</th>
                 </tr>
@@ -400,7 +402,7 @@
                     {{-- 29–42 ─ remaining columns, no summary --}}
                     <td></td> <td></td> <td></td> <td></td> <td></td>
                     <td></td> <td></td> <td></td> <td></td> <td></td>
-                    <td></td> <td></td> <td></td> <td></td>
+                    <td></td> <td></td> <td></td> <td></td> <td></td>
                 </tr>
                 </tfoot>
 
@@ -588,6 +590,7 @@
                     {data:'payment_to_publisher_date',name:'payment_to_publisher_date',render:dt},
                     {data:'method_payment_to_publisher',name:'method_payment_to_publisher'},
                     {data:'categories_list',name:'categories_list',className:'text-center'},
+                    { data:'created_at', name:'created_at', render:dt },
                     {data:'files',name:'files',orderable:false,searchable:false,
                         render:d=>d?`<a href="${d}" target="_blank"><i class="fas fa-paperclip text-lg text-blue-600"></i></a>`:''},
                     {data:'action',name:'action',orderable:false,searchable:false}
@@ -930,7 +933,11 @@
                 const wrap  = $('#bulkInputWrapper');
 
                 wrap.empty();
-
+                /* NEW – Apply Auto Calculation needs no additional value */
+                if (field === 'recalculate_totals') {
+                    wrap.append('<p class="text-gray-500 text-xs">Nothing to fill in – just click “Save”.</p>');
+                    return;                                 // stop here
+                }
                 /* ――― date picker ――― */
                 if (meta.type === 'date') {
                     wrap.append(

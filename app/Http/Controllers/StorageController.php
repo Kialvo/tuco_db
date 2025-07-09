@@ -45,8 +45,10 @@ class StorageController extends Controller
         'payment_to_publisher_date','method_payment_to_publisher','category_ids',
         // FILES & NOTES
         'files','extra_notes',
+        self::FIELD_RECALC,
     ];
 
+    private const FIELD_RECALC = 'recalculate_totals';
     /*======================================================================
     | INDEX – filters + DataTable view
     ======================================================================*/
@@ -127,6 +129,8 @@ class StorageController extends Controller
             ->addColumn('copywriter_name',   fn ($r) => optional($r->copy)->copy_val ?? '')
             ->editColumn('copywriter_period',fn ($r) => (int) $r->copywriter_period)
             ->editColumn('publisher_period', fn ($r) => (int) $r->publisher_period)
+            ->editColumn('created_at',       fn ($r) =>
+            $r->created_at?->format('Y/m/d'))   // ← NEW
             ->addColumn('categories_list',   fn ($r) => $r->categories->pluck('name')->join(', '))
             ->addColumn('action', function ($r) {
                 if ($r->trashed()) {
@@ -203,30 +207,30 @@ class StorageController extends Controller
 
     public function bulkUpdate(Request $request)
     {
-        // ---------- validation -------------------------------------------------
-        $fieldRule = ['required','string',function($a,$v,$f){
-            if(!in_array($v,self::BULK_EDITABLE,true)){
-                $f('Field not allowed for bulk edit.');
-            }}];
-
+        /* -------- validation -------- */
         $data = $request->validate([
             'ids'   => 'required|array|min:1',
             'ids.*' => 'integer|exists:storage,id',
-            'field' => $fieldRule,
-            'value' => 'sometimes',              // may be missing / "" / null / array
+            'field' => ['required','string',function($a,$v,$f){
+                if (!in_array($v, self::BULK_EDITABLE, true)) {
+                    $f('Field not allowed for bulk edit.');
+                }
+            }],
+            'value' => 'sometimes',
         ]);
 
         $field = $data['field'];
-        $value = $request->input('value');       // null if key absent
+        $value = $request->input('value', null);
+        if ($value === '') $value = null;                       // normalise
 
-        // ---------- BEGIN transaction so snapshot = exact state ---------------
-        $token = Str::uuid();                    // one token per operation
+        $token = Str::uuid();                                   // for undo
 
-        DB::transaction(function() use ($data,$field,&$value,$token){
+        DB::transaction(function () use ($data, $field, &$value, $token) {
 
-            /* ===== take SNAPSHOT ============================================ */
+            /* 1. snapshots --------------------------------------------------- */
             $rows = Storage::with('categories')
-                ->whereIn('id',$data['ids'])->get();
+                ->whereIn('id', $data['ids'])
+                ->get();
 
             foreach ($rows as $row) {
                 RollbackStorage::create([
@@ -234,65 +238,68 @@ class StorageController extends Controller
                     'storage_id' => $row->id,
                     'snapshot'   => [
                         'attributes' => $row->getAttributes(),
-                        'categories' => $row->categories->pluck('id')->all()
-                    ]
+                        'categories' => $row->categories->pluck('id')->all(),
+                    ],
                 ]);
             }
 
-            /* ===== normalise incoming VALUE (dates / NULL) =================== */
-            if ($field === 'category_ids') {
-                // will never hit here – categories handled with the rollback mech
-                $value = is_array($value) ? $value : [];
-                foreach ($rows as $s) { $s->categories()->sync($value); }
-                return;
-            }
+            /* 2. special action – just recalc ------------------------------- */
+            if ($field === self::FIELD_RECALC) {
+                foreach ($rows as $s) {
+                    $payload = $s->getAttributes();             // live row
+                    $this->applyAutoCalculations($payload);      // mutate array
 
-            if ($value === '') { $value = null; }
-
-            if (Str::endsWith($field,'_date') && $value !== null) {
-
-                // if the user typed / bulk-pasted dd/mm/yyyy  → convert it first
-                if (preg_match('#^\d{2}/\d{2}/\d{4}$#', $value)) {
-                    $value = Carbon::createFromFormat('d/m/Y', $value)->toDateString();  // 2025-06-18
-                } else {
-                    $value = Carbon::parse($value)->toDateString();                      // let Carbon guess
+                    $s->fill([
+                        'total_cost'        => $payload['total_cost'],
+                        'total_revenues'    => $payload['total_revenues'],
+                        'profit'            => $payload['profit'],
+                        'copywriter_period' => $payload['copywriter_period'] ?? $s->copywriter_period,
+                        'publisher_period'  => $payload['publisher_period']  ?? $s->publisher_period,
+                    ])->save();
                 }
+                return;                                         // done
             }
 
-            /* ===== update + optional totals ================================== */
+            /* 3. normal bulk update ----------------------------------------- */
+            /*   (currency change is NOT a driver, so no auto-recalc here)     */
             $drivers = [
-                'copy_nr','publisher','menford','client_copy',          // money drivers
+                'copy_nr','publisher_amount','menford','client_copy',
                 'copywriter_commision_date','copywriter_submission_date',
-                'article_sent_to_publisher','publication_date'          // period drivers ← NEW
+                'article_sent_to_publisher','publication_date',
             ];
+
+            /* normalise dates once */
+            if (Str::endsWith($field, '_date') && $value !== null) {
+                $value = preg_match('#^\d{2}/\d{2}/\d{4}$#', $value)
+                    ? Carbon::createFromFormat('d/m/Y', $value)->toDateString()
+                    : Carbon::parse($value)->toDateString();
+            }
 
             foreach ($rows as $s) {
                 $s->{$field} = $value;
 
-                if(in_array($field,$drivers,true)){
-                    $payload = array_merge($s->toArray(),[$field=>$value]);
+                if (in_array($field, $drivers, true)) {
+                    $payload = array_merge($s->getAttributes(), [$field => $value]);
                     $this->applyAutoCalculations($payload);
-                    $s->total_cost     = $payload['total_cost'];
-                    $s->total_revenues = $payload['total_revenues'];
-                    $s->profit         = $payload['profit'];
 
-                   if (isset($payload['copywriter_period'])) {
-                      $s->copywriter_period = $payload['copywriter_period'];
-                     }
-                   if (isset($payload['publisher_period'])) {
-                   $s->publisher_period = $payload['publisher_period'];
-                 }
+                    $s->fill([
+                        'total_cost'        => $payload['total_cost'],
+                        'total_revenues'    => $payload['total_revenues'],
+                        'profit'            => $payload['profit'],
+                        'copywriter_period' => $payload['copywriter_period'] ?? $s->copywriter_period,
+                        'publisher_period'  => $payload['publisher_period']  ?? $s->publisher_period,
+                    ]);
                 }
-
                 $s->save();
             }
         });
 
         return response()->json([
             'message'    => 'Updated '.count($data['ids']).' record(s).',
-            'undo_token' => $token            // <-- the JS needs this!
+            'undo_token' => $token,
         ]);
     }
+
 
 
     /*======================================================================
@@ -821,7 +828,7 @@ class StorageController extends Controller
     private function applyAutoCalculations(array &$data): void
     {
         /* ---------------- prices / profit -------------------------------- */
-        $publisher        = (float) ($data['publisher']    ?? 0);
+        $publisher = (float) ($data['publisher_amount'] ?? $data['publisher'] ?? 0);
         $copywriterAmount = (float) ($data['copy_nr']      ?? 0);
         $data['total_cost'] = $publisher + $copywriterAmount;
 
