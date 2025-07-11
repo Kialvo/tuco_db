@@ -386,6 +386,15 @@ class WebsiteController extends Controller
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
 
+        $this->convertUsdFieldsToEur($validated, [
+            'publisher_price',
+            'link_insertion_price',
+            'no_follow_price',
+            'special_topic_price',
+            'profit',               // in case you send it from the form
+            'automatic_evaluation', // unlikely on CREATE, but safe
+        ]);
+
         foreach ([
                      'date_publisher_price',
                      'date_kialvo_evaluation',
@@ -484,6 +493,16 @@ class WebsiteController extends Controller
     {
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
+
+        //  --- do exactly the same in update() -------------
+        $this->convertUsdFieldsToEur($validated, [
+            'publisher_price',
+            'link_insertion_price',
+            'no_follow_price',
+            'special_topic_price',
+            'profit',
+            'automatic_evaluation',
+        ]);
 
         foreach ([
                      'date_publisher_price',
@@ -655,4 +674,44 @@ class WebsiteController extends Controller
             'original_special_topic_price'        => 'nullable|numeric',
         ]);
     }
+
+    // WebsiteController.php
+    public function bulkConvertToEur(Request $request)
+    {
+        $ids  = $request->input('ids', []);
+        $rate = (float) app('db')->table('app_settings')
+            ->where('setting_name','usd_eur_rate')
+            ->value('setting_value');
+
+        $fields = [
+            'publisher_price',
+            'link_insertion_price',
+            'no_follow_price',
+            'special_topic_price',
+            'profit',
+            'automatic_evaluation',
+        ];
+
+        DB::transaction(function() use ($ids, $rate, $fields) {
+            Website::whereIn('id', $ids)
+                ->where('currency_code', 'USD')
+                ->each(function ($w) use ($rate, $fields) {
+                    foreach ($fields as $f) {
+                        if (!is_null($w->$f)) $w->$f *= $rate;
+                    }
+                    $w->currency_code = 'EUR';                       // optional
+                    $w->save();
+
+                    // upsert conversion log
+                    DB::table('websites_conversion_log')
+                        ->updateOrInsert(
+                            ['website_id' => $w->id],
+                            ['last_used_rate' => $rate]
+                        );
+                });
+        });
+
+        return response()->json(['status' => 'success']);
+    }
+
 }
