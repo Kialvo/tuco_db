@@ -411,6 +411,12 @@ class WebsiteController extends Controller
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
 
+        foreach (['date_publisher_price',
+                     'date_kialvo_evaluation',
+                     'seo_metrics_date'] as $f) {
+            $validated[$f] = $this->euDate($validated[$f] ?? null);
+        }
+
         // 2) Compute the automatic evaluation from your formula
         //    Formula: {DA}*2.4 + {TF}*1.45 + {DR}*0.5 + IF({SR}>=9700, {SR}/15000, 0)*1.35
         $da = $validated['DA'] ?? 0;
@@ -674,7 +680,6 @@ class WebsiteController extends Controller
             'original_sitewide_link_price' => 'nullable|numeric',
             'banner_price'                 => 'nullable|numeric',
             'sitewide_link_price'          => 'nullable|numeric',
-
         ]);
     }
 }
