@@ -155,7 +155,37 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+
+                {{--  Banner Price Min / Max  --}}
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Banner € Min</label>
+                    <input type="number" step="0.01" id="filterBannerMin"
+                           class="border border-gray-300 w-16 rounded px-2 py-2
+                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Banner € Max</label>
+                    <input type="number" step="0.01" id="filterBannerMax"
+                           class="border border-gray-300 rounded w-16 px-2 py-2
+                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                </div>
+
+                {{--  Site-wide Price Min / Max  --}}
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Site-wide € Min</label>
+                    <input type="number" step="0.01" id="filterSWMin"
+                           class="border border-gray-300 rounded w-16 px-2 py-2
+                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Site-wide € Max</label>
+                    <input type="number" step="0.01" id="filterSWMax"
+                           class="border border-gray-300 rounded w-16 px-2 py-2
+                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                </div>
+
             </div>
+
 
             <!-- ROW 3: DA/PA, TF/CF, DR/UR, etc. -->
             <div class="flex flex-wrap gap-2 mb-2">
@@ -420,6 +450,8 @@
                     <th class="whitespace-nowrap px-4 py-2">No Follow Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Special Topic Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Link Insertion Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Banner €</th>
+                    <th class="whitespace-nowrap px-4 py-2">Site-wide €</th>
                     <th class="whitespace-nowrap px-4 py-2">Kialvo</th>
                     <strong><th class="whitespace-nowrap px-4 py-2">Profit</th></strong>
                     <th class="whitespace-nowrap px-4 py-2">Date Publisher Price</th>
@@ -519,6 +551,10 @@
                         d.kialvo_max = $('#filterKialvo_evaluationMax').val();
                         d.profit_min = $('#filterProfitMin').val();
                         d.profit_max = $('#filterProfitMax').val();
+                        d.banner_price_min   = $('#filterBannerMin').val();
+                        d.banner_price_max   = $('#filterBannerMax').val();
+                        d.sitewide_price_min = $('#filterSWMin').val();
+                        d.sitewide_price_max = $('#filterSWMax').val();
                         d.category_ids = $('#filterCategories').val();
 
                         d.DA_min = $('#filterDAMin').val();
@@ -639,6 +675,27 @@
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
+                    {
+                        data:'banner_price',
+                        name:'banner_price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> € ' + data + '</strong>';
+                        }},
+                    {
+                        data:'sitewide_link_price',
+                        name:'sitewide_link_price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> € ' + data + '</strong>';
+                        }},
+
                     {
                         data: 'kialvo_evaluation',
                         name: 'kialvo_evaluation',
@@ -783,6 +840,7 @@
                 $('#filterCountriesInclude').val(null).trigger('change');
                 $('#filterCountriesExclude').val(null).trigger('change');
                 $('#filterNoContact').prop('checked', false);
+                $('#filterBannerMin,#filterBannerMax,#filterSWMin,#filterSWMax').val('');
 
                 $('#filterCategories').val(null).trigger('change');
                 table.ajax.reload();

@@ -266,6 +266,41 @@
             </div>
         </div>
 
+        {{-- Banner & Sitewide Link --}}
+        <div class="grid grid-cols-3 gap-4 mt-4">
+            {{-- Banner --}}
+            <div>
+                <label class="block font-medium mb-1">Banner Price</label>
+                <input type="number" step="0.01" name="banner_price"
+                       value="{{ old('banner_price', $website->banner_price ?? '') }}"
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                @error('banner_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="block font-medium mb-1">Original Banner Price</label>
+                <input type="number" step="0.01" name="original_banner_price"
+                       value="{{ old('original_banner_price', $website->original_banner_price ?? '') }}"
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                @error('original_banner_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- Site-wide link --}}
+            <div>
+                <label class="block font-medium mb-1">Site-wide Link Price</label>
+                <input type="number" step="0.01" name="sitewide_link_price"
+                       value="{{ old('sitewide_link_price', $website->sitewide_link_price ?? '') }}"
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                @error('sitewide_link_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="block font-medium mb-1">Original Site-wide Link Price</label>
+                <input type="number" step="0.01" name="original_sitewide_link_price"
+                       value="{{ old('original_sitewide_link_price', $website->original_sitewide_link_price ?? '') }}"
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                @error('original_sitewide_link_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+            </div>
+        </div>
+
         <!-- Evaluations -->
         <div class="grid grid-cols-2 gap-4">
             <div>

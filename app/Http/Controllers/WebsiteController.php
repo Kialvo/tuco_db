@@ -40,6 +40,8 @@ class WebsiteController extends Controller
 
         // 3) feed into Yajra
         return DataTables::of($query)
+            ->addColumn('banner_price',        fn($r)=>$r->banner_price)
+            ->addColumn('sitewide_link_price', fn($r)=>$r->sitewide_link_price)
             ->addColumn('country_name',    fn ($r) => optional($r->country)->country_name)
             ->addColumn('language_name',   fn ($r) => optional($r->language)->name)
             ->addColumn('contact_name',    fn ($r) => optional($r->contact)->name)
@@ -125,6 +127,8 @@ class WebsiteController extends Controller
             'Publisher Price',
             'Kialvo',
             'Profit',
+            'Banner Price',        // ← new
+            'Site-wide Link Price',// ← new
             'DA',
             'Country',
             'Language',
@@ -174,6 +178,8 @@ class WebsiteController extends Controller
                 $web->publisher_price,
                 $web->kialvo_evaluation,
                 $web->profit,
+                $web->banner_price,         // ← new
+                $web->sitewide_link_price,  // ← new
                 $web->DA,
                 optional($web->country)->country_name,  // Safely handle null
                 optional($web->language)->name,
@@ -238,6 +244,23 @@ class WebsiteController extends Controller
     }
 
 
+    private function mirrorOriginals(array &$v): void
+    {
+        $map = [
+            'publisher_price'        => 'original_publisher_price',
+            'link_insertion_price'   => 'original_link_insertion_price',
+            'no_follow_price'        => 'original_no_follow_price',
+            'special_topic_price'    => 'original_special_topic_price',
+            'banner_price'        => 'original_banner_price',
+            'sitewide_link_price' => 'original_sitewide_link_price',
+        ];
+        foreach ($map as $dst => $src) {
+            if (empty($v[$dst]) && !empty($v[$src])) {
+                $v[$dst] = $v[$src];
+            }
+        }
+    }
+
     /**
      * Apply every possible filter coming from the front-end.
      * Called by DataTable, CSV export and PDF export – the SINGLE
@@ -281,6 +304,8 @@ class WebsiteController extends Controller
         $rng($request->publisher_price_min,    $request->publisher_price_max,    'publisher_price');
         $rng($request->kialvo_min,             $request->kialvo_max,             'kialvo_evaluation');
         $rng($request->profit_min,             $request->profit_max,             'profit');
+        $rng($request->banner_price_min,   $request->banner_price_max,   'banner_price');
+        $rng($request->sitewide_price_min, $request->sitewide_price_max, 'sitewide_link_price');
         $rng($request->DA_min,                 $request->DA_max,                 'DA');
         $rng($request->PA_min,                 $request->PA_max,                 'PA');
         $rng($request->TF_min,                 $request->TF_max,                 'TF');
@@ -386,23 +411,6 @@ class WebsiteController extends Controller
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
 
-        $this->convertUsdFieldsToEur($validated, [
-            'publisher_price',
-            'link_insertion_price',
-            'no_follow_price',
-            'special_topic_price',
-            'profit',               // in case you send it from the form
-            'automatic_evaluation', // unlikely on CREATE, but safe
-        ]);
-
-        foreach ([
-                     'date_publisher_price',
-                     'date_kialvo_evaluation',
-                     'seo_metrics_date',
-                 ] as $field) {
-            $validated[$field] = $this->euDate($validated[$field] ?? null);
-        }
-
         // 2) Compute the automatic evaluation from your formula
         //    Formula: {DA}*2.4 + {TF}*1.45 + {DR}*0.5 + IF({SR}>=9700, {SR}/15000, 0)*1.35
         $da = $validated['DA'] ?? 0;
@@ -493,16 +501,6 @@ class WebsiteController extends Controller
     {
         // 1) Validate your form inputs
         $validated = $this->validateForm($request);
-
-        //  --- do exactly the same in update() -------------
-        $this->convertUsdFieldsToEur($validated, [
-            'publisher_price',
-            'link_insertion_price',
-            'no_follow_price',
-            'special_topic_price',
-            'profit',
-            'automatic_evaluation',
-        ]);
 
         foreach ([
                      'date_publisher_price',
@@ -672,46 +670,11 @@ class WebsiteController extends Controller
             'original_no_follow_price'        => 'nullable|numeric',
             'original_link_insertion_price'        => 'nullable|numeric',
             'original_special_topic_price'        => 'nullable|numeric',
+            'original_banner_price'        => 'nullable|numeric',
+            'original_sitewide_link_price' => 'nullable|numeric',
+            'banner_price'                 => 'nullable|numeric',
+            'sitewide_link_price'          => 'nullable|numeric',
+
         ]);
     }
-
-    // WebsiteController.php
-    public function bulkConvertToEur(Request $request)
-    {
-        $ids  = $request->input('ids', []);
-        $rate = (float) app('db')->table('app_settings')
-            ->where('setting_name','usd_eur_rate')
-            ->value('setting_value');
-
-        $fields = [
-            'publisher_price',
-            'link_insertion_price',
-            'no_follow_price',
-            'special_topic_price',
-            'profit',
-            'automatic_evaluation',
-        ];
-
-        DB::transaction(function() use ($ids, $rate, $fields) {
-            Website::whereIn('id', $ids)
-                ->where('currency_code', 'USD')
-                ->each(function ($w) use ($rate, $fields) {
-                    foreach ($fields as $f) {
-                        if (!is_null($w->$f)) $w->$f *= $rate;
-                    }
-                    $w->currency_code = 'EUR';                       // optional
-                    $w->save();
-
-                    // upsert conversion log
-                    DB::table('websites_conversion_log')
-                        ->updateOrInsert(
-                            ['website_id' => $w->id],
-                            ['last_used_rate' => $rate]
-                        );
-                });
-        });
-
-        return response()->json(['status' => 'success']);
-    }
-
 }

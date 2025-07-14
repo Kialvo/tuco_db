@@ -11,51 +11,32 @@ class Website extends Model
 
     // If you want to allow mass assignment on certain fields:
     protected $fillable = [
-        'domain_name',
-        'status',
-        'country_id',
-        'contact_id',
-        'currency_code',
-        'language_id',
-        'publisher_price',
-        'date_publisher_price',
-        'link_insertion_price',
-        'no_follow_price',
-        'special_topic_price',
-        'profit',
-        'linkbuilder',
-        'automatic_evaluation',
-        'kialvo_evaluation',
-        'date_kialvo_evaluation',
-        'type_of_website',
-        'DA',
-        'PA',
-        'TF',
-        'CF',
-        'DR',
-        'UR',
-        'ZA',
-        'as_metric',
-        'seozoom',
-        'TF_vs_CF',
-        'semrush_traffic',
-        'ahrefs_keyword',
-        'ahrefs_traffic',
-        'keyword_vs_traffic',
-        'seo_metrics_date',
-        'betting',
-        'trading',
-        'more_than_one_link',
-        'copywriting',
-        'no_sponsored_tag',
-        'social_media_sharing',
-        'post_in_homepage',
+        // identifiers / f-keys
+        'domain_name','status','country_id','language_id','contact_id',
+        'currency_code','type_of_website','linkbuilder',
+
+        // price columns *****  ← the ones now missing
+        'publisher_price','link_insertion_price','no_follow_price','special_topic_price',
+        'original_publisher_price','original_link_insertion_price',
+        'original_no_follow_price','original_special_topic_price',
+
+        // calculated
+        'profit','automatic_evaluation','kialvo_evaluation','TF_vs_CF','keyword_vs_traffic',
+
+        // seo numbers
+        'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
+        'semrush_traffic','ahrefs_keyword','ahrefs_traffic',
+
+        // dates
+        'date_publisher_price','date_kialvo_evaluation','seo_metrics_date',
+
+        // flags & notes
+        'betting','trading','permanent_link','more_than_one_link',
+        'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
         'extra_notes',
-        'original_publisher_price',
-        'original_no_follow_price',
-        'original_link_insertion_price',
-        'original_special_topic_price',
-        'permanent_link'
+
+        'banner_price','sitewide_link_price',
+        'original_banner_price','original_sitewide_link_price',
     ];
 
     // RELATIONSHIPS:
