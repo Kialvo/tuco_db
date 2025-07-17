@@ -41,6 +41,7 @@
                             class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                         <option value="">-- None --</option>
                         <option value="article_published"       {{ old('status', $storage->status)=='article_published'       ? 'selected' : '' }}>Article Published</option>
+                        <option value="publisher_refused"      {{ old('status')=='publisher_refused'      ? 'selected' : '' }}>Publisher Refused</option>
                         <option value="requirements_not_met"    {{ old('status', $storage->status)=='requirements_not_met'    ? 'selected' : '' }}>Requirements not met</option>
                         <option value="already_used_by_client"  {{ old('status', $storage->status)=='already_used_by_client'  ? 'selected' : '' }}>Already used by client</option>
                         <option value="out_of_topic"            {{ old('status', $storage->status)=='out_of_topic'            ? 'selected' : '' }}>Out of topic</option>
