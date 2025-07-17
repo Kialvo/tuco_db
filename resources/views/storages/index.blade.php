@@ -182,6 +182,7 @@
                                    focus:ring-cyan-500 focus:border-cyan-500">
                         <option value="">-- Any --</option>
                         <option value="article_published">Article Published</option>
+                        <option value="publisher_refused">Publisher Refused</option>
                         <option value="requirements_not_met">Requirements not met</option>
                         <option value="already_used_by_client">Already used by client</option>
                         <option value="out_of_topic">Out of topic</option>
