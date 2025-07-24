@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Tool\WebScraperController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminMiddleware;
 
@@ -96,6 +97,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/websites/export/csv',              [WebsiteController::class, 'exportCsv'])->name('websites.export.csv');
     Route::get('/websites/export/pdf',              [WebsiteController::class, 'exportPdf'])->name('websites.export.pdf');
 
+    // routes/web.php
+    Route::post('/websites/bulk-convert-eur',
+        [WebsiteController::class, 'bulkConvertToEur']
+    )->name('websites.bulkConvertToEur');
+
+
     Route::resource('websites', WebsiteController::class)->names([
         'index'   => 'websites.index',
         'show'    => 'websites.show',
@@ -126,6 +133,7 @@ Route::middleware('auth')->group(function () {
     )->name('storages.rollback');
 
 
+
     /* ───── STORAGE summary row ───── */
     Route::post('/storages/summary', [StorageController::class,'summary'])
         ->name('storages.summary');
@@ -140,6 +148,20 @@ Route::middleware('auth')->group(function () {
         'update'  => 'storages.update',
         'destroy' => 'storages.destroy',
     ]);
+
+
+    /*--------------------------------------------------------------
+  | SCRAPER
+  --------------------------------------------------------------*/
+
+
+    Route::middleware('auth')->prefix('tools')->name('tools.')->group(function () {
+        Route::view ('discover',           'tools.discover')->name('discover');        // page
+        Route::post ('discover/search',    [WebScraperController::class, 'search'])->name('discover.search');
+        Route::post ('discover/import',    [WebScraperController::class, 'import'])->name('discover.import');
+        Route::get  ('discover/export',    [WebScraperController::class, 'exportCsv'])->name('discover.export');
+    });
+
 });
 
 /*======================================================================

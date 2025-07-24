@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'brave' => [
+        'token' => env('BRAVE_API_TOKEN'),
+    ],
+
+    'serper' => [
+        'key' => env('SERPER_API_KEY'),
+    ],
+
 ];

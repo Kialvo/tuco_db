@@ -111,6 +111,41 @@
                     <i class="fas fa-users-cog w-5 inline-block me-2"></i> Manage Users
                 </a>
             @endif
+
+            {{-- resources/views/layouts/dashboard.blade.php --}}
+            {{-- ============ Tools ============ --}}
+            <div
+                x-data="{ open: {{ request()->routeIs('tools.*') ? 'true' : 'false' }} }"
+            >
+                {{-- Parent row (label + chevron) --}}
+                <div
+                    class="flex items-center justify-between px-3 py-2 rounded transition
+               hover:bg-slate-800 {{ request()->routeIs('tools.*') ? 'bg-slate-800' : '' }}"
+                >
+                    <a href="#"
+                       class="flex-1 inline-flex items-center select-none"
+                       @click.prevent="open = !open">
+                        <i class="fas fa-tools w-5 inline-block me-2"></i> Tools
+                    </a>
+
+                    <button @click="open = !open" class="focus:outline-none">
+                        <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
+                    </button>
+                </div>
+
+                {{-- Sub-menu --}}
+                <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
+                    <a href="{{ route('tools.discover') }}"
+                       class="block px-3 py-2 rounded transition hover:bg-slate-800
+                  {{ request()->routeIs('tools.discover') ? 'bg-slate-800' : '' }}">
+                        <i class="fas fa-search w-4 inline-block me-2"></i> Discover Websites
+                    </a>
+
+                    {{-- Add future tool links here --}}
+                </div>
+            </div>
+
+
         </nav>
 
         {{-- Logout --}}
@@ -132,7 +167,12 @@
 
 {{-- Optional: global DataTables init placeholder --}}
 <script>
-    $(function(){ /* global init here if needed */ });
+$.ajaxSetup({
+    headers: {
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+    }
+});
 </script>
+
 </body>
 </html>
