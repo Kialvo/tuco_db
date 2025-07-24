@@ -9,7 +9,7 @@
             {{--  ➜ Keywords (required)  --}}
             <input id="kwInput" name="query" type="text"
                    class="w-full border px-3 py-2 rounded"
-                   placeholder="Keywords (e.g. fintech konferenz)">
+                   placeholder="Keywords (e.g. fintech konferenz)" required>
 
             <div class="flex flex-wrap items-center gap-3">
 
@@ -54,87 +54,63 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const $form    = $('#searchForm');
+            const $hideGov = $('#toggleGovEdu');
+            const $box     = $('#resultBox');
+            const $list    = $('#domainList');
+            const $count   = $('#freshCount');
 
-            /* ── handles ───────────────────────────── */
-            const $form     = $('#searchForm');
-            const $keywords = $('#kwInput');
-            const $lang     = $('#langInput');
-            const $tld      = $('#tldInput');
-            const $limit    = $('#limitInput');
-            const $hideGov  = $('#toggleGovEdu');
-
-            const $box   = $('#resultBox');
-            const $list  = $('#domainList');
-            const $count = $('#freshCount');
-
-            /* ── submit ────────────────────────────── */
             $form.on('submit', e => {
                 e.preventDefault();
-
-                const payload = $form.serializeArray();          // → array of {name,val}
-                if ($hideGov.is(':checked')) {
-                    payload.push({ name: 'exclude_gov_edu', value: 1 });
-                }
+                const payload = $form.serializeArray();
+                if ($hideGov.is(':checked')) payload.push({name:'exclude_gov_edu',value:1});
 
                 $.post("{{ route('tools.discover.search') }}",
                     $.param(payload),
                     res => renderList(res.new)
                 ).fail(xhr => {
-                    alert(xhr.responseJSON?.message ?? 'Brave API failed');
-                    console.warn(xhr.responseJSON);
+                    alert(xhr.responseJSON?.message ?? 'Search failed');
+                    console.error(xhr);
                 });
             });
 
-
-
-            /* ── render list + filters ─────────────── */
             function renderList(urls) {
-                $('#domainList').empty();
-
+                $list.empty();
                 urls.forEach(u => {
-                    $('#domainList').append(`
-      <li data-host="${u}">
-        <label>
-          <input type="checkbox" class="mr-1" value="${u}" checked>
-          <a href="//${u}" target="_blank" class="underline text-blue-600">
-            ${u}
-          </a>
-        </label>
-      </li>
-    `);
+                    $list.append(`
+                <li data-host="${u}">
+                  <label>
+                    <input type="checkbox" class="mr-1" value="${u}" checked>
+                    <a href="//${u}" target="_blank" class="underline text-blue-600">
+                      ${u}
+                    </a>
+                  </label>
+                </li>
+            `);
                 });
 
+                // 1) show/hide result panel
+                $box.toggleClass('hidden', $list.children().length === 0);
+                // 2) then run your filter & count
                 applyGovEduFilter();
-                $('#resultBox').toggleClass('hidden', $('#domainList li').length === 0);
             }
 
-
-
-            $hideGov.on('change', applyGovEduFilter);
             function applyGovEduFilter() {
                 const hide = $hideGov.is(':checked');
-                $('#domainList li').each((_, li) => {
+                $list.children().each((_,li) => {
                     const host = $(li).data('host').toLowerCase();
                     const bad  = /\.(gov|edu|org)$/i.test(host);
                     $(li).toggle(!(hide && bad));
                 });
-                $count.text($('#domainList li:visible').length);
+                $count.text($list.children(':visible').length);
             }
 
-            function normaliseTld(raw) {
-                raw = raw.trim();
-                if (!raw) return '';
-                return raw.startsWith('.') ? raw.toLowerCase() : '.' + raw.toLowerCase();
-            }
-
-            /* ── CSV export ────────────────────────── */
             $('#btnExport').on('click', () => {
-                const hosts = $('#domainList li:visible input:checked')
-                    .map((_, el) => el.value).get();
-                if (!hosts.length) return alert('Select at least one host');
-                window.location = "{{ route('tools.discover.export') }}?" + $.param({domains: hosts});
+                const domains = $list.find('input:checked').map((_,i)=>i.value).get();
+                if (!domains.length) return alert('Select at least one');
+                window.location = "{{ route('tools.discover.export') }}?" + $.param({domains});
             });
-
         });
     </script>
 @endpush
+
