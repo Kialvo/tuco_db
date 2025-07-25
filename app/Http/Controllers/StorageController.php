@@ -207,13 +207,13 @@ class StorageController extends Controller
 
     public function bulkUpdate(Request $request)
     {
-        /* -------- validation -------- */
+        // Validate incoming payload -------------------------------------------
         $data = $request->validate([
             'ids'   => 'required|array|min:1',
             'ids.*' => 'integer|exists:storage,id',
-            'field' => ['required','string',function($a,$v,$f){
-                if (!in_array($v, self::BULK_EDITABLE, true)) {
-                    $f('Field not allowed for bulk edit.');
+            'field' => ['required', 'string', function ($attr, $val, $fail) {
+                if (!in_array($val, self::BULK_EDITABLE, true)) {
+                    $fail('Field not allowed for bulk edit.');
                 }
             }],
             'value' => 'sometimes',
@@ -221,13 +221,17 @@ class StorageController extends Controller
 
         $field = $data['field'];
         $value = $request->input('value', null);
-        if ($value === '') $value = null;                       // normalise
+        if ($value === '') {
+            $value = null;                                     // normalise blanks
+        }
 
-        $token = Str::uuid();                                   // for undo
+        $token = Str::uuid();                                 // for undo support
 
         DB::transaction(function () use ($data, $field, &$value, $token) {
 
-            /* 1. snapshots --------------------------------------------------- */
+            // -----------------------------------------------------------------
+            // 1) Take snapshots for rollback
+            // -----------------------------------------------------------------
             $rows = Storage::with('categories')
                 ->whereIn('id', $data['ids'])
                 ->get();
@@ -243,11 +247,13 @@ class StorageController extends Controller
                 ]);
             }
 
-            /* 2. special action – just recalc ------------------------------- */
+            // -----------------------------------------------------------------
+            // 2) “Recalculate totals” pseudo-field
+            // -----------------------------------------------------------------
             if ($field === self::FIELD_RECALC) {
                 foreach ($rows as $s) {
-                    $payload = $s->getAttributes();             // live row
-                    $this->applyAutoCalculations($payload);      // mutate array
+                    $payload = $s->getAttributes();
+                    $this->applyAutoCalculations($payload);
 
                     $s->fill([
                         'total_cost'        => $payload['total_cost'],
@@ -257,18 +263,35 @@ class StorageController extends Controller
                         'publisher_period'  => $payload['publisher_period']  ?? $s->publisher_period,
                     ])->save();
                 }
-                return;                                         // done
+                return;                                        // done
             }
 
-            /* 3. normal bulk update ----------------------------------------- */
-            /*   (currency change is NOT a driver, so no auto-recalc here)     */
+            // -----------------------------------------------------------------
+            // 3) Categories (many-to-many)
+            // -----------------------------------------------------------------
+            if ($field === 'category_ids') {
+                $catIds = is_array($value)
+                    ? array_filter($value)
+                    : array_filter(explode(',', (string) $value));
+
+                foreach ($rows as $s) {
+                    // Replace the entire set; use syncWithoutDetaching() if you
+                    // prefer to *add* instead of replace.
+                    $s->categories()->sync($catIds);
+                }
+                return;                                        // done
+            }
+
+            // -----------------------------------------------------------------
+            // 4) Regular scalar bulk updates
+            // -----------------------------------------------------------------
             $drivers = [
-                'copy_nr','publisher_amount','menford','client_copy',
-                'copywriter_commision_date','copywriter_submission_date',
-                'article_sent_to_publisher','publication_date',
+                'copy_nr', 'publisher_amount', 'menford', 'client_copy',
+                'copywriter_commision_date', 'copywriter_submission_date',
+                'article_sent_to_publisher', 'publication_date',
             ];
 
-            /* normalise dates once */
+            // Convert dd/mm/yyyy → yyyy-mm-dd if needed
             if (Str::endsWith($field, '_date') && $value !== null) {
                 $value = preg_match('#^\d{2}/\d{2}/\d{4}$#', $value)
                     ? Carbon::createFromFormat('d/m/Y', $value)->toDateString()
@@ -278,6 +301,7 @@ class StorageController extends Controller
             foreach ($rows as $s) {
                 $s->{$field} = $value;
 
+                // Re-run automatic totals if this field is a driver
                 if (in_array($field, $drivers, true)) {
                     $payload = array_merge($s->getAttributes(), [$field => $value]);
                     $this->applyAutoCalculations($payload);
@@ -290,15 +314,17 @@ class StorageController extends Controller
                         'publisher_period'  => $payload['publisher_period']  ?? $s->publisher_period,
                     ]);
                 }
+
                 $s->save();
             }
         });
 
         return response()->json([
-            'message'    => 'Updated '.count($data['ids']).' record(s).',
+            'message'    => 'Updated ' . count($data['ids']) . ' record(s).',
             'undo_token' => $token,
         ]);
     }
+
 
 
 
