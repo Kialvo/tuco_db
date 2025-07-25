@@ -64,7 +64,11 @@ class WebScraperController extends Controller
         $fresh = $domains->diff($existing);
 
         // 6) blacklist social & retail giants
-        $blacklist = ['amazon','facebook','instagram','tiktok','twitter','linkedin','youtube'];
+        $blacklist = [
+            'amazon','facebook','instagram','tiktok','twitter','linkedin','youtube',
+            'x','imdb','twitchtracker','audacy','threads','spotify','deezer','sedo',
+            'podfollow','ebay','google','reddit'
+        ];
         $fresh = $fresh->reject(fn($h) =>
         collect($blacklist)->contains(fn($b) =>
             // match label as either subdomain or SLD
