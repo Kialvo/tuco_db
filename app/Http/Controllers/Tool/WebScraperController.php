@@ -16,70 +16,75 @@ class WebScraperController extends Controller
     public function search(Request $request)
     {
         $data = $request->validate([
-            // either query or tld must be present
+            // either “query” or “tld” must be given
             'query'           => 'nullable|string|max:255|required_without:tld',
             'tld'             => 'nullable|string|max:10|required_without:query',
             'language'        => 'nullable|alpha|size:2',
             'exclude_gov_edu' => 'sometimes|boolean',
-            // <-- no more 'limit' here
         ]);
 
-        // ← hard-code 100
         $limit = 100;
 
-        // build the SERP query pieces
+        // 1) build the SERP query
         $pieces = [];
-
-        if (!empty($data['query'])) {
+        if (! empty($data['query'])) {
             $pieces[] = $data['query'];
         }
-
-        if (!empty($data['tld'])) {
-            // normalize “.IT” → “it”
-            $dotless = ltrim(Str::lower($data['tld']), '.');
+        if (! empty($data['tld'])) {
+            $dotless  = ltrim(Str::lower($data['tld']), '.');
             $pieces[] = 'site:.' . $dotless;
         }
-
         $searchString = implode(' ', $pieces);
 
-        // fetch full URLs (up to $limit) from Serper.dev
+        // 2) fetch up to 100 URLs
         $urls = $this->serperSearch(
             $searchString,
             $limit,
             $data['language'] ?? null
         );
 
-        // drop out any existing hosts, gov/edu/org, etc.
+        // 3) extract & dedupe hosts
         $domains = collect($urls)
             ->map(fn($u) => parse_url($u, PHP_URL_HOST))
             ->filter()
             ->map(fn($h) => Str::lower($h))
             ->unique();
 
-        if (!empty($data['exclude_gov_edu'])) {
+        // 4) drop gov / edu / org if requested
+        if (! empty($data['exclude_gov_edu'])) {
             $domains = $domains->reject(fn($h) =>
-            Str::endsWith($h, ['.gov', '.edu', '.org'])
+            preg_match('/\.(gov|edu|org)$/i', $h)
             );
         }
 
+        // 5) drop any you already have in DB
         $existing = Website::whereIn('domain_name', $domains)
             ->pluck('domain_name')
             ->map(fn($d) => Str::lower($d));
+        $fresh = $domains->diff($existing);
 
-        $freshHosts = $domains->diff($existing);
+        // 6) blacklist social & retail giants
+        $blacklist = ['amazon','facebook','instagram','tiktok','twitter','linkedin','youtube'];
+        $fresh = $fresh->reject(fn($h) =>
+        collect($blacklist)->contains(fn($b) =>
+            // match label as either subdomain or SLD
+        preg_match('/(^|\.)' . preg_quote($b, '/') . '(\.|$)/i', $h)
+        )
+        );
 
-        // pick the main domains (just hostnames) up to $limit
-        $mainDomains = $freshHosts
-            ->values()         // reindex numeric keys
-            ->take($limit)     // enforce our hard-coded 100
+        // 7) take first 100 and return
+        $final = $fresh
+            ->values()
+            ->take($limit)
             ->all();
 
         return response()->json([
             'total'      => $domains->count(),
-            'duplicates' => $domains->count() - count($mainDomains),
-            'new'        => $mainDomains,  // ["example.com", "foo.org", …]
+            'duplicates' => $domains->count() - count($final),
+            'new'        => $final,
         ]);
     }
+
 
 
     /* ----------  GET /tools/discover/export  ---------- */

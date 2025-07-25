@@ -60,10 +60,15 @@
             const $list    = $('#domainList');
             const $count   = $('#freshCount');
 
+            // Re-bind the toggle listener
+            $hideGov.on('change', applyGovEduFilter);
+
             $form.on('submit', e => {
                 e.preventDefault();
                 const payload = $form.serializeArray();
-                if ($hideGov.is(':checked')) payload.push({name:'exclude_gov_edu',value:1});
+                if ($hideGov.is(':checked')) {
+                    payload.push({ name: 'exclude_gov_edu', value: 1 });
+                }
 
                 $.post("{{ route('tools.discover.search') }}",
                     $.param(payload),
@@ -89,15 +94,16 @@
             `);
                 });
 
-                // 1) show/hide result panel
+                // 1) show or hide the result panel
                 $box.toggleClass('hidden', $list.children().length === 0);
-                // 2) then run your filter & count
+
+                // 2) apply your checkbox filter & update count
                 applyGovEduFilter();
             }
 
             function applyGovEduFilter() {
                 const hide = $hideGov.is(':checked');
-                $list.children().each((_,li) => {
+                $list.children().each((_, li) => {
                     const host = $(li).data('host').toLowerCase();
                     const bad  = /\.(gov|edu|org)$/i.test(host);
                     $(li).toggle(!(hide && bad));
@@ -106,11 +112,14 @@
             }
 
             $('#btnExport').on('click', () => {
-                const domains = $list.find('input:checked').map((_,i)=>i.value).get();
+                const domains = $list.find('input:checked')
+                    .map((_, el) => el.value)
+                    .get();
                 if (!domains.length) return alert('Select at least one');
-                window.location = "{{ route('tools.discover.export') }}?" + $.param({domains});
+                window.location = "{{ route('tools.discover.export') }}?" + $.param({ domains });
             });
         });
     </script>
 @endpush
+
 
