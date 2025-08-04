@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\HistoricalEntryController;
+use App\Http\Controllers\NewEntryController;
 use App\Http\Controllers\Tool\WebScraperController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminMiddleware;
@@ -112,6 +114,56 @@ Route::middleware('auth')->group(function () {
         'update'  => 'websites.update',
         'destroy' => 'websites.destroy',
     ]);
+
+    /*--------------------------------------------------------------
+| New Entry
+--------------------------------------------------------------*/
+
+    /*  DataTables JSON feed (GET when you refresh page, POST via AJAX) */
+    Route::match(
+        ['get','post'],
+        'new-entries/data',
+        [NewEntryController::class,'getData']
+    )->name('new_entries.data');
+
+    /*  Inline status change (select dropdown in the table)  */
+    Route::put(
+        'new-entries/{new_entry}/status',
+        [NewEntryController::class,'updateStatus']
+    )->name('new_entries.status');
+
+    /*  Soft-delete restore  */
+    Route::post(
+        'new-entries/{new_entry}/restore',
+        [NewEntryController::class,'restore']
+    )->name('new_entries.restore');
+
+    /* ----------  “Historical” pre-filtered view  ---------- */
+    /* UI page */
+    Route::get('new-entries/historical',
+        [HistoricalEntryController::class,'index']
+    )->name('historical_view.index');
+
+    /* DataTables JSON feed  (POST because we send many params) */
+    Route::match(['get','post'],'new-entries/historical/data',
+        [HistoricalEntryController::class,'getData']
+    )->name('historical_view.data');
+
+    /* ----------  FULL CRUD (resource) ----------
+       parameters() keeps route-model binding variable singular (new_entry),
+       names() gives you the explicit route names just like Websites. */
+    Route::resource('new-entries', NewEntryController::class)
+        ->parameters(['new-entries' => 'new_entry'])
+        ->names([
+            'index'   => 'new_entries.index',
+            'show'    => 'new_entries.show',    // optional — remove if you don’t have a “show” blade
+            'create'  => 'new_entries.create',
+            'store'   => 'new_entries.store',
+            'edit'    => 'new_entries.edit',
+            'update'  => 'new_entries.update',
+            'destroy' => 'new_entries.destroy',
+        ]);
+
 
     /*--------------------------------------------------------------
     | Storages

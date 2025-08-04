@@ -24,6 +24,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     {{-- Alpine.js for dropdown toggles --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
@@ -73,6 +74,39 @@
                     </a>
                 </div>
             </div>
+            {{-- ============ New Entry ============ --}}
+            {{-- ============ New Entries ============ --}}
+            <div
+                x-data="{ open: {{ request()->routeIs('new_entries.*') || request()->routeIs('new_entries.historical*') ? 'true' : 'false' }} }"
+            >
+                <div class="flex items-center justify-between px-3 py-2 rounded transition
+                hover:bg-slate-800 {{ request()->routeIs('new_entries.*') || request()->routeIs('new_entries.historical*') ? 'bg-slate-800' : '' }}">
+                    {{-- Main link --}}
+                    {{-- Main link --}}
+                    <a href="{{ route('new_entries.index') }}" class="flex-1 inline-flex items-center">
+                        {{-- icon that exists in FA 6.0-beta3 --}}
+                        <i class="fas fa-folder-plus w-5 inline-block me-2"></i> New Entries
+                    </a>
+
+
+                    {{-- Toggle --}}
+                    <button @click="open = !open" class="focus:outline-none">
+                        <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
+                    </button>
+                </div>
+
+                {{-- Sub-menu --}}
+                <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
+                    <a href="{{ route('historical_view.index') }}"
+                       class="block px-3 py-2 rounded transition hover:bg-slate-800
+              {{ request()->routeIs('historical_view.*') ? 'bg-slate-800' : '' }}">
+                        <i class="fas fa-clock-rotate-left w-4 inline-block me-2"></i> Historical View
+                    </a>
+                </div>
+
+            </div>
+
+
 
             {{-- ============ Storages ============ --}}
             <div x-data="{ open: {{ request()->routeIs('storages.*') || request()->routeIs('clients.*') || request()->routeIs('copy.*') ? 'true' : 'false' }} }">
