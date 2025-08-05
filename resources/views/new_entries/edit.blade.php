@@ -39,7 +39,6 @@
                     $currentStatus = old('status', $entry->status);
                 @endphp
                 <select name="status" class="w-full border-gray-300 rounded">
-                    <option value="">-- None --</option>
                     @foreach($statuses as $val => $label)
                         <option value="{{ $val }}" {{ $currentStatus === $val ? 'selected' : '' }}>
                             {{ $label }}

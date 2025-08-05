@@ -30,7 +30,6 @@
                             name="status"
                             class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
                         >
-                            <option value="">-- None --</option>
 
                             <option value="never_opened"
                                 {{ old('status', $entry->status ?? '') === 'never_opened' ? 'selected' : '' }}>
