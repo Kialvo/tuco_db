@@ -168,18 +168,40 @@ class NewEntryController extends Controller
 
     public function store(Request $r)
     {
-        $data = $this->validateForm($r); $this->normaliseDates($data);
+        /* 1) Validate form */
+        $data = $this->validateForm($r);
 
-        DB::transaction(function() use ($data,$r,&$entry) {
+        /* 2) Date fields to ISO */
+        foreach ([
+                     'first_contact_date',
+                     'date_publisher_price',
+                     'date_kialvo_evaluation',
+                     'seo_metrics_date',
+                 ] as $f) {
+            $data[$f] = $this->euDate($data[$f] ?? null);
+        }
+
+        /* 3) Automatic maths */
+        $this->recalcArray($data);   // see helper below ⬇
+
+
+        /* 4) DB write */
+        DB::transaction(function () use ($data, $r, &$entry) {
+
             $entry = NewEntry::create($data);
-            $entry->categories()->sync($r->category_ids ?? []);
-            $this->recalc($entry); $entry->save();
 
-            if (strtoupper($entry->status) === 'ACTIVE') $this->moveToWebsites($entry);
+            $entry->categories()->sync($r->category_ids ?? []);
+
+            // if ACTIVE, clone into Websites
+            if (strtolower($entry->status) === 'active') {
+                $this->moveToWebsites($entry);
+            }
         });
 
-        return redirect()->route('new_entries.index')->with('status','Entry created!');
+        return redirect()->route('new_entries.index')
+            ->with('status', 'Entry created!');
     }
+
 
     public function edit(NewEntry $new_entry)
     {
@@ -190,19 +212,67 @@ class NewEntryController extends Controller
 
     public function update(Request $r, NewEntry $new_entry)
     {
-        $data = $this->validateForm($r); $this->normaliseDates($data);
-        $wasActive = strtoupper($new_entry->status) === 'ACTIVE';
+        $data = $this->validateForm($r);
 
-        DB::transaction(function() use ($data,$r,$new_entry,$wasActive){
-            $new_entry->fill($data); $this->recalc($new_entry); $new_entry->save();
+        /* normalise dates */
+        foreach ([
+                     'first_contact_date',
+                     'date_publisher_price',
+                     'date_kialvo_evaluation',
+                     'seo_metrics_date',
+                 ] as $f) {
+            $data[$f] = $this->euDate($data[$f] ?? null);
+        }
+
+        /* automatic maths on the *incoming* data */
+        $this->recalcArray($data);
+
+        $wasActive = strtolower($new_entry->status) === 'active';
+
+        DB::transaction(function () use ($data, $r, $new_entry, $wasActive) {
+            $new_entry->fill($data)->save();
             $new_entry->categories()->sync($r->category_ids ?? []);
-            $nowActive = strtoupper($new_entry->status) === 'ACTIVE';
 
-            if (!$wasActive && $nowActive) $this->moveToWebsites($new_entry);
+            $nowActive = strtolower($new_entry->status) === 'active';
+            if (!$wasActive && $nowActive) {
+                $this->moveToWebsites($new_entry);
+            }
         });
 
-        return back()->with('status','Entry updated!');
+        return back()->with('status', 'Entry updated!');
     }
+
+    /**
+     * Mutate an array with all automatic calculations
+     * (used by both store() and update()).
+     */
+    private function recalcArray(array &$d): void
+    {
+        $da = $d['DA'] ?? 0;
+        $tf = $d['TF'] ?? 0;
+        $dr = $d['DR'] ?? 0;
+        $sr = $d['semrush_traffic'] ?? 0;
+
+        $auto = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
+        if ($sr >= 9700) {
+            $auto += ($sr / 15000) * 1.35;
+        }
+        $d['automatic_evaluation'] = $auto;
+
+        /* profit */
+        $d['profit'] = ($d['kialvo_evaluation'] ?? 0) - ($d['publisher_price'] ?? 0);
+
+        /* TF vs CF */
+        $cf = $d['CF'] ?? 0;
+        $d['TF_vs_CF'] = $cf ? (($d['TF'] ?? 0) / $cf) : 0;
+
+        /* keyword vs traffic */
+        $ahrefsTraffic = $d['ahrefs_traffic'] ?? 0;
+        $d['keyword_vs_traffic'] = $ahrefsTraffic
+            ? round(($d['ahrefs_keyword'] ?? 0) / $ahrefsTraffic, 2)
+            : 0;
+    }
+
 
     /**
      * Display a single New Entry.
@@ -307,4 +377,13 @@ class NewEntryController extends Controller
         $e->keyword_vs_traffic=($e->ahrefs_traffic??0)
             ? round(($e->ahrefs_keyword??0)/$e->ahrefs_traffic,2) : 0;
     }
+
+    /** Convert `dd/mm/yyyy` → `yyyy-mm-dd` (or return null / unchanged). */
+    private function euDate(?string $v): ?string
+    {
+        if (!$v) return null;
+        try   { return \Carbon\Carbon::createFromFormat('d/m/Y', $v)->format('Y-m-d'); }
+        catch (\Exception $e) { return $v; }
+    }
+
 }

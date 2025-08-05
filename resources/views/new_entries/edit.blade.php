@@ -29,7 +29,7 @@
                     $statuses = [
                         'never_opened'            => 'Never Opened',
                         'read_but_never_answered' => 'Read but never answered',
-                        'waiting_for_1st_answer'  => 'Waiting for 1st answer',
+                        'waiting_for_first_answer'  => 'Waiting for 1st answer',
                         'refused_by_us'           => 'Refused by us',
                         'publisher_refused'       => 'Publisher refused',
                         'negotiation'             => 'Negotiation',
