@@ -375,6 +375,17 @@
                        class="date-input w-full border-gray-300 rounded">
                 @error('seo_metrics_date') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
             </div>
+
+            <div>
+                <label class="block">First Contact Date</label>
+                <input type="text" name="first_contact_date"
+                       value="{{ old('first_contact_date',
+                             $entry->first_contact_date
+                                ? \Carbon\Carbon::parse($entry->first_contact_date)->format('d/m/Y')
+                                : '') }}"
+                       class="date-input w-full border-gray-300 rounded">
+                @error('first_contact_date') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+            </div>
         </div>
 
         <!-- ───── BOOLEAN FIELDS ───── -->

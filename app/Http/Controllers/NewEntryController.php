@@ -327,6 +327,7 @@ class NewEntryController extends Controller
         return $r->validate([
             'domain_name' => 'required|string|max:255',
             'status'      => 'nullable|string|max:255',
+            'linkbuilder'  => 'nullable|string|max:255',
             'country_id'  => 'nullable|integer',  'language_id' =>'nullable|integer',
             'contact_id'  => 'nullable|integer',  'currency_code'=>'nullable|string|max:10',
             'type_of_website' => 'nullable|string|max:255',
