@@ -275,6 +275,18 @@
                 autoWidth:false
             });
 
+            @if(session('status'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text : @json(session('status')),
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false
+                // no “toast”, no “position”  → default is centred modal
+            });
+            @endif
+
             /* ─── buttons ─── */
             $('#btnSearch').click(()=>tbl.ajax.reload());
             $('#btnClear').click(function(){

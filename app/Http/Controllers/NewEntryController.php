@@ -198,8 +198,8 @@ class NewEntryController extends Controller
             }
         });
 
-        return redirect()->route('new_entries.index')
-            ->with('status', 'Entry created!');
+        return redirect()->route('new_entries.edit', $entry->id)
+                      ->with('status', 'Entry created – you can now complete / review it!');
     }
 
 
@@ -239,7 +239,8 @@ class NewEntryController extends Controller
             }
         });
 
-        return back()->with('status', 'Entry updated!');
+        return redirect()->route('new_entries.index')
+                       ->with('status', 'Entry updated!');
     }
 
     /**
