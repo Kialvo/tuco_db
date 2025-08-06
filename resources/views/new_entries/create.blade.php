@@ -41,7 +41,7 @@
                                 Read but never answered
                             </option>
 
-                            <option value="waiting_for_1st_answer"
+                            <option value="waiting_for_first_answer"
                                 {{ old('status', $entry->status ?? '') === 'waiting_for_first_answer' ? 'selected' : '' }}>
                                 Waiting for 1st answer
                             </option>
