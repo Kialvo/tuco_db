@@ -290,7 +290,7 @@ class WebsiteController extends Controller
             $ids = is_array($request->country_ids_exclude)
                 ? $request->country_ids_exclude              // existing behaviour
                 : explode(',', $request->country_ids_exclude); // <─ NEW: split string
-            $query->whereIn('country_id', $ids);
+            $query->whereNotIn('country_id', $ids);
         }
 
 
