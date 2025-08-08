@@ -104,6 +104,15 @@ Route::middleware('auth')->group(function () {
         [WebsiteController::class, 'bulkConvertToEur']
     )->name('websites.bulkConvertToEur');
 
+    Route::post('/websites/bulk-update',   [WebsiteController::class,'bulkUpdate']
+    )->name('websites.bulkUpdate');
+
+    Route::post('/websites/undo',          [WebsiteController::class,'undo']
+    )->name('websites.undo');
+
+    Route::post('/websites/rollback',      [WebsiteController::class,'rollback']
+    )->name('websites.rollback');
+
 
     Route::resource('websites', WebsiteController::class)->names([
         'index'   => 'websites.index',

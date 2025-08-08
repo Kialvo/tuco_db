@@ -3,16 +3,43 @@
 namespace App\Http\Controllers;
 
 use AmrShawky\Currency\Facade\Currency;
+use App\Models\RollbackWebsite;
 use App\Models\Website;
 use App\Models\Country;
 use App\Models\Language;
 use App\Models\Contact;
 use App\Models\Category;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
 
 class WebsiteController extends Controller
 {
+    public const BULK_EDITABLE = [
+        'status','language_id','country_id','linkbuilder','type_of_website',
+        // SEO METRICS
+        'DR','UR','DA','PA','TF','CF','ZA','as_metric',
+        'seozoom','semrush_traffic','ahrefs_keyword','ahrefs_traffic','keyword_vs_traffic',
+        'publisher_price','no_follow_price','special_topic_price',
+        'link_insertion_price','banner_price','sitewide_link_price',
+        'kialvo_evaluation','profit',
+        'date_publisher_price',
+        'seo_metrics_date',
+        'date_kialvo_evaluation',   // ← add this
+        'category_ids',              // <── NEW
+        self::FIELD_RECALC,          // <── NEW
+    ];
+    public const FIELD_RECALC = 'recalculate_totals';
+
+    /* ------------------------------------------------------------------ */
+    /*  NEW: columns that drive the auto-recalculation                    */
+    /* ------------------------------------------------------------------ */
+    private const DRIVER_COLS = [
+        'publisher_price','banner_price','sitewide_link_price',
+        'kialvo_evaluation','ahrefs_keyword','ahrefs_traffic',
+    ];
     /**
      * Display the index page with filters and DataTable.
      */
@@ -570,6 +597,139 @@ class WebsiteController extends Controller
             ->with('status', 'Website updated successfully!');
     }
 
+    public function bulkUpdate(Request $request)
+    {
+        $data = $request->validate([
+            'ids'   => 'required',
+            'field' => ['required','string', function($a,$v,$f){
+                if (!in_array($v, self::BULK_EDITABLE, true)) $f('Field not allowed for bulk edit.');
+            }],
+            'value' => 'sometimes',
+        ]);
+
+        // normalize ids: array or comma-separated string → array<int>
+        $ids = is_array($request->ids)
+            ? array_values($request->ids)
+            : array_filter(array_map('intval', explode(',', (string)$request->ids)));
+
+        if (empty($ids)) {
+            return response()->json(['message' => 'No valid ids provided'], 422);
+        }
+
+        $field = $data['field'];
+        $value = $request->input('value', null);
+        if ($value === '') $value = null;
+
+        $token = (string) Str::uuid();                  // for undo
+
+        DB::transaction(function () use ($ids, $field, &$value, $token) {
+            $rows = Website::with('categories')->whereIn('id', $ids)->get();
+
+            foreach ($rows as $row) {
+                RollbackWebsite::create([
+                    'token'      => $token,
+                    'website_id' => $row->id,
+                    'snapshot'   => [
+                        'attributes' => $row->getAttributes(),
+                        'categories' => $row->categories->pluck('id')->all(),
+                    ],
+                ]);
+            }
+
+            /* --------- 2) pseudo-field “Re-calculate totals” ------------- */
+            if ($field === self::FIELD_RECALC) {
+                foreach ($rows as $w) {
+                    $payload = $w->getAttributes();
+                    $this->applyAutoCalculations($payload);
+
+                    $w->fill([
+                        'profit'              => $payload['profit'],
+                        'total_cost'          => $payload['total_cost'],
+                        'total_revenues'      => $payload['total_revenues'],
+                        'keyword_vs_traffic'  => $payload['keyword_vs_traffic'],
+                        'TF_vs_CF'            => $payload['TF_vs_CF'],
+                    ])->save();
+                }
+                return;                                     // done
+            }
+
+            /* --------- 3) many-to-many  categories ----------------------- */
+            if ($field === 'category_ids') {
+                $catIds = is_array($value)
+                    ? array_filter($value)
+                    : array_filter(explode(',', (string) $value));
+
+                foreach ($rows as $w) {
+                    $w->categories()->sync($catIds);        // replace whole set
+                }
+                return;
+            }
+
+            /* --------- 4) date strings dd/mm/yyyy → yyyy-mm-dd ----------- */
+            if ((Str::endsWith($field, '_date') || Str::startsWith($field, 'date_')) && $value !== null) {
+                $value = preg_match('#^\d{2}/\d{2}/\d{4}$#', $value)
+                    ? Carbon::createFromFormat('d/m/Y', $value)->toDateString()
+                    : Carbon::parse($value)->toDateString();
+            }
+
+
+            /* --------- 5) regular scalar bulk updates -------------------- */
+            foreach ($rows as $w) {
+
+                $w->{$field} = $value;
+
+                /* re-run auto KPIs when a driver field changes */
+                if (in_array($field, self::DRIVER_COLS, true)) {
+                    $payload = array_merge($w->getAttributes(), [$field=>$value]);
+                    $this->applyAutoCalculations($payload);
+
+                    $w->fill([
+                        'profit'             => $payload['profit'],
+                        'total_cost'         => $payload['total_cost'],
+                        'total_revenues'     => $payload['total_revenues'],
+                        'keyword_vs_traffic' => $payload['keyword_vs_traffic'],
+                        'TF_vs_CF'           => $payload['TF_vs_CF'],
+                    ]);
+                }
+
+                $w->save();
+            }
+        });
+
+        return response()->json([
+            'message'    => 'Updated '.count($ids).' record(s).',
+            'undo_token' => $token,
+        ]);
+    }
+
+
+    /**
+     * Simple derived-metric helper (extend as needed).
+     */
+    private function applyAutoCalculations(array &$d): void
+    {
+        $cost  = (float) ($d['publisher_price'] ?? 0);
+        $rev   = (float) ($d['kialvo_evaluation'] ?? 0)
+            + (float) ($d['banner_price'] ?? 0)
+            + (float) ($d['sitewide_link_price'] ?? 0);
+
+        $d['profit']         = $rev - $cost;
+        $d['total_cost']     = $cost;
+        $d['total_revenues'] = $rev;
+
+        /* keyword_vs_traffic */
+        $kw  = (float) ($d['ahrefs_keyword']  ?? 0);
+        $tr  = (float) ($d['ahrefs_traffic']  ?? 0);
+        $d['keyword_vs_traffic'] = $tr>0 ? round($kw/$tr,2) : 0;
+
+        /* TF vs CF */
+        $tf = (float) ($d['TF'] ?? 0);
+        $cf = (float) ($d['CF'] ?? 0);
+        $d['TF_vs_CF'] = $cf ? round($tf/$cf,2) : 0;
+    }
+
+
+
     /**
      * Delete a website.
      */
@@ -624,6 +784,56 @@ class WebsiteController extends Controller
             // DO NOT change $validated['currency_code'];
             // We keep it as 'USD' per your request.
         }
+    }
+
+    public function rollback(Request $request)
+    {
+        /* A) 4-second undo-toast */
+        if ($request->filled('token')) {
+
+            $token = $request->input('token');
+            $snaps = RollbackWebsite::where('token', $token)->get();
+
+            if ($snaps->isEmpty()) {
+                return response()->json(['message' => 'Nothing to undo (expired)'], 404);
+            }
+
+            DB::transaction(function () use ($snaps) {
+                foreach ($snaps as $snap) {
+                    $row = Website::find($snap->website_id);
+                    if (!$row) continue;
+
+                    $row->fill($snap->snapshot['attributes'])->save();
+                    $row->categories()->sync($snap->snapshot['categories']);
+                }
+                RollbackWebsite::whereIn('id', $snaps->pluck('id'))->delete();
+            });
+
+            return response()->json(['message' => 'Undo complete']);
+        }
+
+        /* B) Manual “Rollback” button */
+        $ids = $request->input('ids', []);
+        if (!is_array($ids) || !count($ids)) {
+            return response()->json(['message' => 'No rows selected'], 422);
+        }
+
+        $snaps = RollbackWebsite::whereIn('website_id', $ids)
+            ->latest()->get()->groupBy('website_id');
+
+        DB::transaction(function () use ($snaps) {
+            foreach ($snaps as $wid => $rows) {
+                $snap = $rows->first();                 // newest
+                $row = Website::find($wid);
+                if (!$row) continue;
+
+                $row->fill($snap->snapshot['attributes'])->save();
+                $row->categories()->sync($snap->snapshot['categories']);
+                RollbackWebsite::where('id', $snap->id)->delete();
+            }
+        });
+
+        return response()->json(['message' => 'Rollback successful']);
     }
     /**
      * Validate form data for create/update.

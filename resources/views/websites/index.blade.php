@@ -1,3 +1,23 @@
+@php
+    // ① Just list EVERY real db column once.
+    //    If tomorrow you add a new column, drop its name here and
+    //    (optionally) extend bulkMeta below with a prettier <select>.
+    $bulkEditable = [
+        // id is NOT editable, everything else is:
+        'status','country_id','language_id','linkbuilder','type_of_website',
+        'contact_id','currency_code','publisher_price','no_follow_price',
+        'special_topic_price','link_insertion_price','banner_price','sitewide_link_price',
+        'kialvo_evaluation','profit','date_publisher_price',
+        'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
+        'TF_vs_CF','semrush_traffic','ahrefs_keyword','ahrefs_traffic',
+        'keyword_vs_traffic','seo_metrics_date',
+        'betting','trading','permanent_link','more_than_one_link',
+        'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
+        'category_ids',              // m-m
+        'recalculate_totals',        // pseudo
+    ];
+@endphp
+
 @extends('layouts.dashboard')
 
 @section('content')
@@ -430,6 +450,33 @@
             </label>
         </div>
 
+        {{-- ───────────── TABLE ACTION BAR ───────────── --}}
+        <div id="actionBar"
+             class="flex items-center gap-3 mb-2
+            sticky top-0 z-10 bg-gray-50 border-b border-gray-200 py-2">
+
+            {{-- Bulk Edit --}}
+            <button id="btnBulkEdit"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
+                   bg-amber-600 hover:bg-amber-700 text-white shadow disabled:opacity-50
+                   disabled:cursor-not-allowed">
+                <i class="fas fa-pen"></i> Bulk&nbsp;Edit
+            </button>
+
+            {{-- Restore / Rollback --}}
+            <button id="btnBulkRestore"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
+                   bg-purple-600 hover:bg-purple-700 text-white shadow disabled:opacity-50
+                   disabled:cursor-not-allowed">
+                <i class="fas fa-history"></i> Restore
+            </button>
+
+            {{-- live counter --}}
+            <span class="ml-2 text-sm text-gray-600">
+        Selected:&nbsp;<span id="selCount">0</span>
+    </span>
+        </div>
+
         <!-- TABLE WRAPPER for horizontal scrolling if needed -->
         <div class="bg-white border border-gray-200 rounded shadow p-2
             overflow-x-auto
@@ -438,6 +485,10 @@
             <table id="websitesTable" class="text-xs text-gray-700 w-full min-w-[1500px]">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-[12px] uppercase text-gray-500 tracking-wider">
+                    <th class="px-4 py-2">
+                        <input type="checkbox" id="chkAll" class="form-checkbox h-4 w-4 text-cyan-600">
+                    </th>
+
                     <th class="whitespace-nowrap px-4 py-2">ID</th>
                     <th class="whitespace-nowrap px-4 py-2">Domain</th>
                     <th class="whitespace-nowrap px-4 py-2">Extra Notes</th>
@@ -453,7 +504,7 @@
                     <th class="whitespace-nowrap px-4 py-2">Banner €</th>
                     <th class="whitespace-nowrap px-4 py-2">Site-wide €</th>
                     <th class="whitespace-nowrap px-4 py-2">Kialvo</th>
-                    <strong><th class="whitespace-nowrap px-4 py-2">Profit</th></strong>
+                    <th class="whitespace-nowrap px-4 py-2">Profit</th>
                     <th class="whitespace-nowrap px-4 py-2">Date Publisher Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Linkbuilder</th>
                     <th class="whitespace-nowrap px-4 py-2">Type of Website</th>
@@ -493,10 +544,113 @@
 
     @include('websites.partials.contact-modal')
     @include('websites.partials.note-modal')
+    @include('websites.partials.bulk-modal')
+
 @endsection
 
 @push('scripts')
+    {{-- ###############################################
+     Bulk-edit metadata – MUST load before buildBulkInput()
+############################################### --}}
     <script>
+        window.bulkMeta = {
+            /* ========= SELECTS ========= */
+            status : {type:'select',options:{active:'Active',past:'Past'}},
+            currency_code : {type:'select',options:{EUR:'EUR',USD:'USD'}},
+            type_of_website : {type:'select',options:{
+                    FORUM:'Forum',GENERALIST:'Generalist',VERTICAL:'Vertical',LOCAL:'Local'
+                }},
+
+            /* ---------- look-ups straight from PHP --------- */
+            country_id  : {type:'select',options:@json($countries ->pluck('country_name','id'))},
+            language_id : {type:'select',options:@json($languages ->pluck('name','id'))},
+            contact_id  : {type:'select',options:@json($contacts  ->pluck('name','id'))},
+
+            /* ========= NUMBERS / TEXT ========= */
+            publisher_price      : {type:'number'},
+            no_follow_price      : {type:'number'},
+            special_topic_price  : {type:'number'},
+            link_insertion_price : {type:'number'},
+            banner_price         : {type:'number'},
+            sitewide_link_price  : {type:'number'},
+            kialvo_evaluation    : {type:'number'},
+            profit               : {type:'number'},
+            DA:{type:'number'}, PA:{type:'number'}, TF:{type:'number'}, CF:{type:'number'},
+            DR:{type:'number'}, UR:{type:'number'}, ZA:{type:'number'}, as_metric:{type:'number'},
+            seozoom:{type:'text'}, linkbuilder:{type:'text'},
+            semrush_traffic:{type:'number'}, ahrefs_keyword:{type:'number'},
+            ahrefs_traffic:{type:'number'}, keyword_vs_traffic:{type:'number'}, TF_vs_CF:{type:'number'},
+
+            /* ========= DATES ========= */
+            date_publisher_price : {type:'date'},
+            date_kialvo_evaluation : {type:'date'},
+            seo_metrics_date     : {type:'date'},
+
+            /* ========= BOOLEAN FLAGS ========= */
+            betting:{type:'select',options:{1:'Yes',0:'No'}},
+            trading:{type:'select',options:{1:'Yes',0:'No'}},
+            permanent_link:{type:'select',options:{1:'Yes',0:'No'}},
+            more_than_one_link:{type:'select',options:{1:'Yes',0:'No'}},
+            copywriting:{type:'select',options:{1:'Yes',0:'No'}},
+            no_sponsored_tag:{type:'select',options:{1:'Yes',0:'No'}},
+            social_media_sharing:{type:'select',options:{1:'Yes',0:'No'}},
+            post_in_homepage:{type:'select',options:{1:'Yes',0:'No'}},
+
+            /* ========= MANY-TO-MANY ========= */
+            category_ids:{type:'multiselect',options:@json($categories->pluck('name','id'))},
+
+            /* ========= PSEUDO FIELD ========= */
+            recalculate_totals:{type:'noop'}   // shows the grey “Nothing to fill in” text
+        };
+    </script>
+
+    <script>
+        /* ========= generic toasts identical to Storages ========= */
+        const toast = m => Swal.fire({
+            toast: true, position: 'top-end', icon: 'success', title: m,
+            showConfirmButton: false, timer: 1500
+        });
+
+        const oops  = m => Swal.fire({
+            toast: true, position: 'top-end', icon: 'error', title: m,
+            showConfirmButton: false, timer: 2000
+        });
+
+        function toastUndo (msg, token) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'info',
+                html: `<span class="font-semibold">${msg}</span>
+                   <button id="undoBtn"
+                           style="background:#f59e0b"
+                           class="ml-3 px-2 py-[2px] rounded text-xs font-bold">
+                       UNDO
+                   </button>`,
+                background: '#2563eb',          // blue-600
+                color: '#fff',
+                showConfirmButton: false,
+                timer: 4000,                    // 4 s
+                timerProgressBar: true,
+                didOpen: () => {
+                    document.getElementById('undoBtn').onclick = () => {
+                        Swal.close();
+                        fetch("{{ route('websites.rollback') }}", {
+                            method : 'POST',
+                            headers: {
+                                'Content-Type' : 'application/json',
+                                'X-CSRF-TOKEN' : $('meta[name="csrf-token"]').attr('content')
+                            },
+                            body: JSON.stringify({ token })
+                        })
+                            .then(r => r.json())
+                            .then(r => { toast(r.message); table.ajax.reload(null,false); })
+                            .catch(() => oops('Failed to undo'));
+                    };
+                }
+            });
+        }
+
         $(document).ready(function() {
             // Initialize select2 with smaller text
             $('#filterCategories').select2({
@@ -524,7 +678,7 @@
                 width: '10em',
             });
             // Initialize the DataTable
-            let table = $('#websitesTable').DataTable({
+            window.table =$('#websitesTable').DataTable({
 
                 processing: true,
                 serverSide: true,
@@ -597,6 +751,16 @@
                     }
                 },
                 columns: [
+                    {
+                        data      : 'id',                     // re-use the row’s id
+                        orderable : false,
+                        searchable: false,
+                        className : 'text-center',
+                        render    : id =>
+                            `<input type="checkbox"
+                class="rowChk form-checkbox h-4 w-4 text-cyan-600"
+                value="${id}">`
+                    },
                     { data: 'id', name: 'id' },
                     { data: 'domain_name', name: 'domain_name' },
                     {
@@ -814,11 +978,173 @@
 
                     { data: 'action', name: 'action', orderable: false, searchable: false }
                 ],
-                order: [[0, 'desc']],
+                order: [[1, 'desc']],
                 responsive: false,
                 autoWidth: false
             });
             function dt(v){ return v ? new Date(v).toLocaleDateString('en-GB') : ''; }
+
+            /* ---------- live “Selected: N” badge ---------- */
+            function updateSelCount () {
+                $('#selCount').text($('.rowChk:checked').length);
+            }
+            function toggleActionButtons () {
+                const any = $('.rowChk:checked').length > 0;
+                $('#btnBulkEdit, #btnBulkRestore').prop('disabled', !any);
+            }
+
+            /* row & master checkboxes */
+            $(document).on('change', '.rowChk, #chkAll', (e) => {
+                  if (e.target.id === 'chkAll') {
+                    $('.rowChk').prop('checked', $('#chkAll').is(':checked'));
+                }
+                updateSelCount();
+                toggleActionButtons();
+            });
+
+            /* keep count after pagination / search redraws */
+            table.on('draw', () => {
+                updateSelCount();
+                toggleActionButtons();
+            });
+
+            /*──────────────────────────────────────────────────────────────────*/
+            /* BULK-EDIT  (identical to Storages, just hits the Websites route) */
+            /*──────────────────────────────────────────────────────────────────*/
+            function buildBulkInput () {
+                const field = $('#bulkField').val();
+                const meta  = window.bulkMeta[field] || { type: 'text' };
+                const wrap  = $('#bulkInputWrapper');
+
+                wrap.empty();
+
+                if (field === 'recalculate_totals') {
+                    wrap.append('<p class="text-gray-500 text-xs">Nothing to fill in – just click “Save”.</p>');
+                    return;
+                }
+
+                if (meta.type === 'date') {
+                    wrap.append(`<input id="bulkValue" type="date"
+                            class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                                   focus:ring-cyan-500">`);
+                    return;
+                }
+
+                if (meta.type === 'select') {
+                    const none = `<option value="">-- Clear --</option>`;
+                    const opts = Object.entries(meta.options || {})
+                        .map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+                    wrap.append(
+                        `<select id="bulkValue"
+                     class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                            focus:ring-cyan-500">${none}${opts}</select>`);
+                    if ($('#bulkValue option').length > 15) {
+                        $('#bulkValue').select2({ width: 'resolve', dropdownAutoWidth: true });
+                    }
+                    return;
+                }
+
+                if (meta.type === 'multiselect') {
+                    const opts = Object.entries(meta.options || {})
+                        .map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+                    wrap.append(
+                        `<select id="bulkValue" multiple
+                     class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                            focus:ring-cyan-500">${opts}</select>`);
+                    $('#bulkValue').select2({ width:'resolve', dropdownAutoWidth:true });
+                    return;
+                }
+
+                if (meta.type === 'textarea') {
+                    wrap.append(`<textarea id="bulkValue" rows="3"
+                               class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                                      focus:ring-cyan-500"></textarea>`);
+                    return;
+                }
+
+                /* default = plain text/number */
+                wrap.append(`<input id="bulkValue" type="text"
+                       class="w-full border border-gray-300 rounded px-2 py-1 text-xs
+                              focus:ring-cyan-500">`);
+            }
+
+            $('#bulkField').on('change', buildBulkInput);
+
+            /* open modal -------------------------------------------------------*/
+            $('#btnBulkEdit').on('click', function () {
+                if ($('.rowChk:checked').length === 0) {
+                    Swal.fire('Select at least one row first');   // quick feedback
+                    return;
+                }
+                $('#bulkIds').val(
+                    JSON.stringify($('.rowChk:checked').map((_, c) => +c.value).get())
+                );
+
+                $('#bulkField').val('recalculate_totals').trigger('change');   // default choice
+                buildBulkInput();
+                $('#bulkEditModal').removeClass('hidden');
+            });
+
+            /* cancel -----------------------------------------------------------*/
+            $('#bulkCancel').on('click', () => $('#bulkEditModal').addClass('hidden'));
+
+            /* save -------------------------------------------------------------*/
+            $('#bulkSave').on('click', function () {
+                const ids = $('.rowChk:checked').map((_, c) => parseInt(c.value, 10)).get();
+                const field = $('#bulkField').val();
+                let   value = $('#bulkValue').length ? $('#bulkValue').val() : '';
+
+                if (!ids.length) { Swal.fire('No rows selected'); return; }
+
+
+                $.ajax({
+                    url : "{{ route('websites.bulkUpdate') }}",
+                    type: 'POST',
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    data: { 'ids[]': ids, field, value },
+                    traditional: true,
+                    success : res => {
+                        toast(res.message);                     // green toast
+
+                        if (res.undo_token) {                   // show 4-sec UNDO
+                            toastUndo('Update saved.', res.undo_token);
+                        }
+
+                        $('#bulkEditModal').addClass('hidden').removeClass('flex');
+                        $('#chkAll').prop('checked', false);
+                        table.ajax.reload(null, false);
+                    },
+
+                    error  : xhr => Swal.fire('Error', xhr.responseJSON?.message ?? 'Server error','error')
+                });
+            });
+
+            /* ---------- Rollback selected rows ---------- */
+            $('#btnBulkRestore').on('click', function () {
+
+                const ids = $('.rowChk:checked').map((_, c) => c.value).get();
+                if (!ids.length) { oops('Select at least one row'); return; }
+
+                Swal.fire({
+                    title: 'Restore previous snapshot?',
+                    icon : 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, rollback!'
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+
+                    $.post(
+                        "{{ route('websites.rollback') }}",
+                        { ids, _token: $('meta[name="csrf-token"]').attr('content') },
+                        r => {
+                            toast(r.message);
+                            $('#chkAll').prop('checked', false);
+                            table.ajax.reload(null, false);
+                        }
+                    ).fail(() => oops('Rollback failed'));
+                });
+            });
+
             // Toggle-based filter
             $('#filterShowDeleted').on('change', function() {
                 table.ajax.reload();
@@ -1080,5 +1406,12 @@
             @endif
         });
 
+        @if (session('undo_token'))
+        toastUndo('{{ session('status') }}', '{{ session('undo_token') }}');
+        @elseif (session('status'))
+        toast('{{ session('status') }}');
+        @endif
+
     </script>
+
 @endpush
