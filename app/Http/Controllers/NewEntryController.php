@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use AmrShawky\Currency\Facade\Currency;
+
 
 class NewEntryController extends Controller
 {
@@ -297,18 +299,72 @@ class NewEntryController extends Controller
      * =======================================================*/
     private function moveToWebsites(NewEntry $e): void
     {
-        // 1. clone allowed attributes
-        $w = Website::create($e->only((new Website)->getFillable()));
+        // Copy only model-fillable attributes
+        $data = $e->only((new Website)->getFillable());
 
-        // 2. copy pivot rows
-        $w->categories()->sync($e->categories->pluck('id'));
+        // --- normalize dates coming from NewEntry (dd/mm/yyyy -> Y-m-d)
+        foreach (['date_publisher_price','date_kialvo_evaluation','seo_metrics_date'] as $f) {
+            if (!empty($data[$f])) {
+                try {
+                    $data[$f] = \Carbon\Carbon::createFromFormat('d/m/Y', $data[$f])->format('Y-m-d');
+                } catch (\Throwable $ignored) { /* leave as-is */ }
+            }
+        }
 
-        // 3. flag the entry as copied
+        // --- fields affected by the websites trigger
+        $triggerFields = [
+            'publisher_price','link_insertion_price','no_follow_price',
+            'special_topic_price','banner_price','sitewide_link_price',
+            'profit','automatic_evaluation',
+        ];
+
+        // --- when currency_code is USD, pre-divide to neutralize BEFORE INSERT conversion
+        if (!empty($data['currency_code']) && strtoupper($data['currency_code']) === 'USD') {
+            // read the same rate the trigger uses
+            $rate = (float) DB::table('app_settings')
+                ->where('setting_name','usd_eur_rate')
+                ->value('setting_value');
+
+            if ($rate > 0) {
+                foreach ($triggerFields as $f) {
+                    if (isset($data[$f]) && $data[$f] !== '' && $data[$f] !== null) {
+                        // keep precision; trigger will multiply back
+                        $val = (float) str_replace(',', '.', $data[$f]);
+                        $data[$f] = round($val / $rate, 8);
+                    }
+                }
+            }
+        }
+
+        // --- ensure original_* are set (store the pre-divided USD values as "original")
+        $map = [
+            'publisher_price'        => 'original_publisher_price',
+            'link_insertion_price'   => 'original_link_insertion_price',
+            'no_follow_price'        => 'original_no_follow_price',
+            'special_topic_price'    => 'original_special_topic_price',
+            'banner_price'           => 'original_banner_price',
+            'sitewide_link_price'    => 'original_sitewide_link_price',
+        ];
+        foreach ($map as $field => $original) {
+            if (empty($data[$original]) && isset($data[$field])) {
+                $data[$original] = $data[$field];
+            }
+        }
+
+        // --- insert (trigger runs, multiplying USD values; end result = values you saw in NewEntry)
+        $website = Website::create($data);
+
+        // copy categories
+        $website->categories()->sync($e->categories->pluck('id'));
+
+        // mark entry as copied
         $e->updateQuietly([
-            'copied_to_overview' => 1,               //  <-- here
-            'date_added'         => Carbon::now(),
+            'copied_to_overview' => 1,
+            'date_added'         => \Carbon\Carbon::now(),
         ]);
     }
+
+
 
 
 
