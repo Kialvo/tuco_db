@@ -16,6 +16,12 @@
                    class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700">
                     Create Entry
                 </a>
+
+                <a href="{{ route('new_entries.import.index') }}"
+                   class="bg-cyan-600 text-white px-3 py-2 rounded shadow hover:bg-cyan-700">
+                    Import CSV
+                </a>
+
             </div>
         </div>
 

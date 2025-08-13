@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HistoricalEntryController;
 use App\Http\Controllers\NewEntryController;
+use App\Http\Controllers\NewEntryImportController;
 use App\Http\Controllers\Tool\WebScraperController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminMiddleware;
@@ -38,6 +39,16 @@ Route::middleware('auth')->group(function () {
     | Dashboard
     --------------------------------------------------------------*/
     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
+
+    /*--------------------------------------------------------------
+| IMPORT
+--------------------------------------------------------------*/
+    Route::prefix('new-entries/import')->name('new_entries.import.')->group(function () {
+        Route::get('/',        [NewEntryImportController::class, 'index'])->name('index');
+        Route::post('/preview',[NewEntryImportController::class, 'preview'])->name('preview');
+        Route::post('/commit', [NewEntryImportController::class, 'commit'])->name('commit');
+        Route::get('/sample',  [NewEntryImportController::class, 'sample'])->name('sample'); // optional
+    });
 
     /*--------------------------------------------------------------
     | Contacts
@@ -224,6 +235,9 @@ Route::middleware('auth')->group(function () {
     });
 
 });
+
+
+
 
 /*======================================================================
 |  ADMIN‑ONLY  (User management)
