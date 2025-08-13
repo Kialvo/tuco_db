@@ -1094,6 +1094,11 @@
                 const field = $('#bulkField').val();
                 let   value = $('#bulkValue').length ? $('#bulkValue').val() : '';
 
+                // If multiselect produced an array, encode as comma-separated string
+                if (Array.isArray(value)) {
+                    value = value.join(',');
+                }
+
                 if (!ids.length) { Swal.fire('No rows selected'); return; }
 
 

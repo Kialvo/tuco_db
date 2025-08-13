@@ -658,6 +658,7 @@ class WebsiteController extends Controller
 
             /* --------- 3) many-to-many  categories ----------------------- */
             if ($field === 'category_ids') {
+                // Accept both array and comma-separated string
                 $catIds = is_array($value)
                     ? array_filter($value)
                     : array_filter(explode(',', (string) $value));
@@ -678,8 +679,42 @@ class WebsiteController extends Controller
 
             /* --------- 5) regular scalar bulk updates -------------------- */
             foreach ($rows as $w) {
+                // Special handling for USD price fields: mirror into original_* and convert
+                $priceFields = [
+                    'publisher_price','link_insertion_price','no_follow_price','special_topic_price',
+                    'banner_price','sitewide_link_price',
+                ];
 
-                $w->{$field} = $value;
+                if (in_array($field, $priceFields, true)) {
+                    // If site is USD, store the raw value in original_* and convert to EUR for display field
+                    if (strtoupper((string) $w->currency_code) === 'USD' && $value !== null && $value !== '') {
+                        $originalMap = [
+                            'publisher_price'      => 'original_publisher_price',
+                            'link_insertion_price' => 'original_link_insertion_price',
+                            'no_follow_price'      => 'original_no_follow_price',
+                            'special_topic_price'  => 'original_special_topic_price',
+                            'banner_price'         => 'original_banner_price',
+                            'sitewide_link_price'  => 'original_sitewide_link_price',
+                        ];
+                        $origField = $originalMap[$field] ?? null;
+                        if ($origField) {
+                            $w->{$origField} = $value;
+                        }
+
+                        try {
+                            $converted = \AmrShawky\Currency\Facade\Currency::convert()
+                                ->from('USD')->to('EUR')->amount((float) $value)->get();
+                            $w->{$field} = $converted;
+                        } catch (\Throwable $e) {
+                            // Fallback: store numeric as-is
+                            $w->{$field} = $value;
+                        }
+                    } else {
+                        $w->{$field} = $value;
+                    }
+                } else {
+                    $w->{$field} = $value;
+                }
 
                 /* re-run auto KPIs when a driver field changes */
                 if (in_array($field, self::DRIVER_COLS, true)) {
