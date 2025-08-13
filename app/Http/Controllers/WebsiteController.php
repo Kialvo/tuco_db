@@ -28,6 +28,9 @@ class WebsiteController extends Controller
         'date_publisher_price',
         'seo_metrics_date',
         'date_kialvo_evaluation',   // ← add this
+            // BOOLEAN FLAGS
+            'betting','trading','permanent_link','more_than_one_link',
+            'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
         'category_ids',              // <── NEW
         self::FIELD_RECALC,          // <── NEW
     ];

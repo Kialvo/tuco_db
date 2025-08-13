@@ -52,9 +52,9 @@ class NewEntryController extends Controller
 
         if ($r->boolean('research_mode')) {
             $q->whereNot(function ($x) {
-                $x->whereIn('status', ['Negotiation', 'Active', 'Publisher refused', 'Refused by us'])
+                $x->whereIn('status', ['negotiation','active','publisher_refused','refused_by_us'])
                     ->orWhere(function ($y) {
-                        $y->where('status', 'Waiting for 1st answer')
+                        $y->where('status', 'waiting_for_1st_answer')
                             ->whereDate('first_contact_date', '>', now()->subDays(15));
                     });
             });

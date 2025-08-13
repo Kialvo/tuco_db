@@ -39,6 +39,15 @@
         // MANY-TO-MANY
         'category_ids'=>'Categories',
 
+        // BOOLEAN FLAGS
+        'betting'              => 'Betting',
+        'trading'              => 'Trading',
+        'permanent_link'       => 'Permanent Link',
+        'more_than_one_link'   => 'More than one link',
+        'copywriting'          => 'Copywriting',
+        'no_sponsored_tag'     => 'No Sponsored Tag',
+        'social_media_sharing' => 'Social Media Sharing',
+        'post_in_homepage'     => 'Post in Homepage',
 
     ];
 
@@ -56,6 +65,15 @@
         /* multiselect (Select2) */
         'category_ids' => ['type'=>'multiselect','options'=>$categories],
 
+        /* booleans as select yes/no with clear */
+        'betting'              => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
+        'trading'              => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
+        'permanent_link'       => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
+        'more_than_one_link'   => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
+        'copywriting'          => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
+        'no_sponsored_tag'     => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
+        'social_media_sharing' => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
+        'post_in_homepage'     => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
 
 
         /* everything else defaults to a plain <input type=text> */

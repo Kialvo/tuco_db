@@ -101,6 +101,7 @@ class NewEntryImportController extends Controller
         // derived
         'keyword_vs_traffic',
         'TF_vs_CF',
+        'date_added',
     ];
 
     public function index()
@@ -262,10 +263,13 @@ class NewEntryImportController extends Controller
                             continue;
                         }
 
-// ⬇️ force the same automatic calculations as the UI
+                        // compute automatic fields, as you already do
                         $this->recalcArray($data);
 
-// …then proceed to upsert + attach categories
+                        // Ensure date_added exists (use today's date if missing)
+                        if (empty($data['date_added'])) {
+                            $data['date_added'] = now()->toDateString(); // 'YYYY-MM-DD' for DATE columns
+                        }
 
 
                         // Create missing categories if requested
@@ -394,6 +398,7 @@ class NewEntryImportController extends Controller
         if (!$domain) $errors[] = 'Website/domain is required.';
         $data['domain_name'] = $this->cleanDomain($domain);
 
+        // linkbuilder / status / currency / type
         $data['linkbuilder']     = $row['linkbuilder']       ?? null;
 
 // status -> snake_case (e.g., "Never Opened" => "never_opened")
@@ -403,6 +408,12 @@ class NewEntryImportController extends Controller
 
 // type_of_website -> keep wording but force UPPERCASE (e.g., "Local Media" => "LOCAL MEDIA")
         $data['type_of_website'] = $this->toUpper($row['type_of_website'] ?? null);
+
+        // Default status when missing → waiting_for_1st_answer
+        if (empty($data['status'])) {
+            $data['status'] = 'waiting_for_1st_answer';
+        }
+
 
 
         // Country
@@ -444,11 +455,15 @@ class NewEntryImportController extends Controller
         $data['no_follow_price']     = $this->num($row['no_follow_price'] ?? null);
         $data['special_topic_price'] = $this->num($row['special_topic_price'] ?? null);
 
+        // Dates
         $data['date_publisher_price']   = $this->date($row['date_publisher_price'] ?? null);
         $data['kialvo_evaluation']      = $this->num($row['kialvo_evaluation'] ?? null);
         $data['automatic_evaluation']   = $this->num($row['automatic_evaluation'] ?? null);
         $data['profit']                 = $this->num($row['profit'] ?? null);
         $data['date_kialvo_evaluation'] = $this->date($row['date_kialvo_evaluation'] ?? null);
+
+// 👇 add this line
+        $data['date_added']             = $this->date($row['date_added'] ?? null);
 
         // SEO metrics
         foreach (['DA','PA','TF','CF','DR','UR','ZA','semrush_traffic','seozoom','ahrefs_keyword','ahrefs_traffic'] as $m) {
