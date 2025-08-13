@@ -229,7 +229,7 @@ class NewEntryImportController extends Controller
         $options = $payload['options'] ?? [];
 
         // (optional testing limiter)
-        $limit = (int) ($request->input('limit') ?? env('IMPORT_ROW_LIMIT', 10));
+        $limit = (int) ($request->input('limit') ?? env('IMPORT_ROW_LIMIT', 20));
         if ($limit > 0) $rows = array_slice($rows, 0, $limit);
 
         $created = 0; $updated = 0; $failed = 0;
