@@ -70,6 +70,7 @@ class NewEntry extends Model
     {
         // Many-to-many
         return $this->belongsToMany(Category::class, 'category_new_entry')
-            ->using(CategoryNewEntry::class);
+            ->using(CategoryNewEntry::class)
+             ->withTimestamps();
     }
 }

@@ -28,7 +28,7 @@ class HistoricalEntry extends Model
             'category_new_entry',  // pivot table
             'new_entry_id',        // FOREIGN KEY on the pivot pointing to *this* model
             'category_id'          // FOREIGN KEY on the pivot pointing to Category
-        )->using(CategoryNewEntry::class);   // keep the custom pivot class if you need it
+        )->using(CategoryNewEntry::class)->withTimestamps();   // keep the custom pivot class if you need it
     }
 
 }

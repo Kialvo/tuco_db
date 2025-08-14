@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 class CategoryStorage extends Pivot
 {
     protected $table = 'category_storage';
-
+    public $timestamps = true;
     // If you have extra columns on the pivot table (besides website_id and category_id),
     // you can list them here in $fillable or $guarded.
     protected $fillable = [

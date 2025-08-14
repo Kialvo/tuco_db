@@ -100,6 +100,6 @@ class Storage extends Model
     {
         // Many‑to‑many (pivot: category_storage)
         return $this->belongsToMany(Category::class, 'category_storage')
-            ->using(CategoryStorage::class);
+            ->using(CategoryStorage::class)->withTimestamps();
     }
 }

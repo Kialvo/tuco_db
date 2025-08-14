@@ -70,6 +70,6 @@ class Website extends Model
     {
         // Many-to-many
         return $this->belongsToMany(Category::class, 'category_website')
-        ->using(CategoryWebsite::class);
+        ->using(CategoryWebsite::class)->withTimestamps();
     }
 }

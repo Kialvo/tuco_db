@@ -218,8 +218,7 @@ class NewEntryImportController extends Controller
             'limit' => 'nullable|integer|min:1|max:10000',
         ]);
 
-        // ✅ Cast to string (or use input())
-        $token = (string) $request->string('token');   // or: $request->input('token');
+        $token = (string) $request->string('token');
         $payload = Cache::get($token);
 
         if (!is_array($payload)) {
@@ -229,27 +228,56 @@ class NewEntryImportController extends Controller
         $rows    = $payload['rows'] ?? [];
         $options = $payload['options'] ?? [];
 
-        // (optional testing limiter)
-        $limit = (int) ($request->input('limit') ?? env('IMPORT_ROW_LIMIT', 20));
-        if ($limit > 0) $rows = array_slice($rows, 0, $limit);
+        // optional limiter while testing
+        if ($request->filled('limit')) {
+            $limit = max(1, (int) $request->input('limit'));
+            $rows  = array_slice($rows, 0, $limit);
+        }
 
         $created = 0; $updated = 0; $failed = 0;
         $failures = [];
 
-        // prefetch dictionaries to reduce queries
-        $countryDict  = Country::query()->pluck('id','country_name')->mapWithKeys(fn($id,$n)=>[strtolower(trim($n))=>$id])->all();
-        $languageDict = Language::query()->pluck('id','name')->mapWithKeys(fn($id,$n)=>[strtolower(trim($n))=>$id])->all();
+        // === FIXED COLUMN SET (must match your DB!) ==========================
+        // If a column below doesn't exist in your new_entries table, remove it.
+        $insertCols = [
+            'domain_name','status','country_id','language_id','contact_id',
+            'currency_code','type_of_website','linkbuilder',
+            'publisher_price','no_follow_price','special_topic_price','date_publisher_price',
+            'kialvo_evaluation','automatic_evaluation','profit','date_kialvo_evaluation',
+            'DA','PA','TF','CF','DR','UR','ZA','semrush_traffic','seozoom',
+            'ahrefs_keyword','ahrefs_traffic','seo_metrics_date',
+            'more_than_one_link','copywriting','no_sponsored_tag',
+            'social_media_sharing','post_in_homepage','extra_notes',
+            'keyword_vs_traffic','TF_vs_CF','date_added',
+        ];
+        $allCols = array_merge($insertCols, ['created_at','updated_at']);
+        // =====================================================================
 
-        // category dictionary by normalized name
-        $categoryDict = Category::query()->pluck('id','name')->mapWithKeys(fn($id,$n)=>[strtolower(trim($n))=>$id])->all();
+        // Prefetch dictionaries
+        $countryDict  = Country::query()->pluck('id','country_name')
+            ->mapWithKeys(fn($id,$n)=>[strtolower(trim($n))=>$id])->all();
+        $languageDict = Language::query()->pluck('id','name')
+            ->mapWithKeys(fn($id,$n)=>[strtolower(trim($n))=>$id])->all();
+        $categoryDict = Category::query()->pluck('id','name')
+            ->mapWithKeys(fn($id,$n)=>[strtolower(trim($n))=>$id])->all();
 
-        // process in chunks for memory + transaction safety
-        foreach (array_chunk($rows, self::CHUNK_SIZE) as $chunkIndex => $chunk) {
+        // Process in chunks
+        foreach (array_chunk($rows, self::CHUNK_SIZE, true) as $chunkOffset => $chunk) {
             DB::transaction(function () use (
-                $chunk,$options,&$created,&$updated,&$failed,&$failures,
+                $chunk,$chunkOffset,&$created,&$updated,&$failed,&$failures,
+                $options,$insertCols,$allCols,
                 &$countryDict,&$languageDict,&$categoryDict
             ) {
-                foreach ($chunk as $lineIndex => $raw) {
+                $now = now();
+
+                // Build padded rows for bulk upsert + remember categories per domain
+                $bulkByDomain = [];         // domain => row payload (padded)
+                $catsByDomain = [];         // domain => [category_id,...]
+                $domainsThisChunk = [];     // list of domains for post-upsert lookup
+
+                foreach ($chunk as $absoluteIndex => $raw) {
+                    $lineNo = $absoluteIndex + 2; // header is line 1
+
                     try {
                         [$data, $catNames, $rowErrors] = $this->normalizeRow(
                             $raw,
@@ -259,18 +287,17 @@ class NewEntryImportController extends Controller
 
                         if ($rowErrors) {
                             $failed++;
-                            $failures[] = ['line'=>$lineIndex+2,'errors'=>$rowErrors];
+                            $failures[] = ['line' => $lineNo, 'errors' => $rowErrors];
                             continue;
                         }
 
-                        // compute automatic fields, as you already do
+                        // compute automatic fields
                         $this->recalcArray($data);
 
-                        // Ensure date_added exists (use today's date if missing)
+                        // Ensure date_added exists
                         if (empty($data['date_added'])) {
-                            $data['date_added'] = now()->toDateString(); // 'YYYY-MM-DD' for DATE columns
+                            $data['date_added'] = $now->toDateString();
                         }
-
 
                         // Create missing categories if requested
                         $catIds = [];
@@ -278,7 +305,7 @@ class NewEntryImportController extends Controller
                             $key = strtolower(trim($cn));
                             if (!isset($categoryDict[$key])) {
                                 if (!($options['create_missing_categories'] ?? false)) {
-                                    continue; // simply skip if not allowed
+                                    continue;
                                 }
                                 $cat = Category::firstOrCreate(['name'=>$cn], ['name'=>$cn]);
                                 $categoryDict[$key] = $cat->id;
@@ -286,33 +313,97 @@ class NewEntryImportController extends Controller
                             $catIds[] = $categoryDict[$key];
                         }
 
-                        // Insert or upsert by domain
-                        $entry = null;
-
-                        if (($options['dedupe_by_domain'] ?? true) && !empty($data['domain_name'])) {
-                            $entry = NewEntry::where('domain_name',$data['domain_name'])->first();
+                        $domain = $data['domain_name'] ?? null;
+                        if (!$domain) {
+                            $failed++;
+                            $failures[] = ['line' => $lineNo, 'errors' => ['Website/domain is required.']];
+                            continue;
                         }
 
-                        if (!$entry) {
-                            $entry = new NewEntry();
-                        }
+                        // Pad row: every column present, missing → null
+                        $padded = array_replace(
+                            array_fill_keys($allCols, null),
+                            Arr::only($data, $insertCols),
+                            ['created_at' => $now, 'updated_at' => $now]
+                        );
 
-                        foreach (self::ASSIGNABLE as $f) {
-                            if (array_key_exists($f, $data)) {
-                                $entry->{$f} = $data[$f];
-                            }
+                        // In-chunk de-dupe by domain if requested: last one wins
+                        if (($options['dedupe_by_domain'] ?? true)) {
+                            $bulkByDomain[$domain] = $padded;
+                            $catsByDomain[$domain] = $catIds;
+                        } else {
+                            // if not deduping, still keep categories by domain (multiple)
+                            $bulkByDomain[$domain.'#'.spl_object_id((object)$raw)] = $padded;
+                            $catsByDomain[$domain] = array_unique(array_merge($catsByDomain[$domain] ?? [], $catIds));
                         }
-                        $entry->save();
-
-                        if ($catIds) {
-                            $entry->categories()->syncWithoutDetaching($catIds);
-                        }
-
-                        ($entry->wasRecentlyCreated) ? $created++ : $updated++;
                     } catch (\Throwable $e) {
                         $failed++;
-                        $failures[] = ['line'=>$lineIndex+2, 'errors'=>[$e->getMessage()]];
+                        $failures[] = ['line' => $lineNo, 'errors' => [$e->getMessage()]];
                     }
+                }
+
+                if (empty($bulkByDomain)) {
+                    return;
+                }
+
+                // Figure out created vs updated counts by checking which domains already exist
+                $domainsThisChunk = [];
+                foreach (array_keys($bulkByDomain) as $k) {
+                    // strip the "#<id>" used above when dedupe=false
+                    $d = explode('#',$k,2)[0];
+                    $domainsThisChunk[$d] = true;
+                }
+                $domains = array_keys($domainsThisChunk);
+
+                $existing = NewEntry::query()
+                    ->whereIn('domain_name', $domains)
+                    ->pluck('domain_name')
+                    ->all();
+                $existingSet = array_fill_keys($existing, true);
+
+                $wouldUpdate = 0;
+                foreach ($domains as $d) {
+                    if (isset($existingSet[$d])) $wouldUpdate++;
+                }
+                $wouldCreate = count($domains) - $wouldUpdate;
+
+                // Bulk UPSERT (requires a UNIQUE index on domain_name for true dedupe)
+                // If you don't have it yet, add a migration:
+                // Schema::table('new_entries', fn(Blueprint $t) => $t->unique('domain_name'));
+                $updateCols = array_diff($allCols, ['domain_name','created_at']);
+                DB::table('new_entries')->upsert(
+                    array_values($bulkByDomain),
+                    ['domain_name'],
+                    $updateCols
+                );
+
+                $created += $wouldCreate;
+                $updated += $wouldUpdate;
+
+                // Re-fetch IDs for all domains in this chunk
+                $idByDomain = NewEntry::query()
+                    ->whereIn('domain_name', $domains)
+                    ->pluck('id','domain_name')
+                    ->all();
+
+                // Prepare pivot rows with timestamps, avoid duplicates
+                $pivot = [];
+                foreach ($catsByDomain as $domain => $catIds) {
+                    $entryId = $idByDomain[$domain] ?? null;
+                    if (!$entryId || empty($catIds)) continue;
+                    foreach ($catIds as $cid) {
+                        $pivot[] = [
+                            'category_id'   => $cid,
+                            'new_entry_id'  => $entryId,
+                            'created_at'    => $now,
+                            'updated_at'    => $now,
+                        ];
+                    }
+                }
+
+                // Insert pivot (ignore duplicates)
+                foreach (array_chunk($pivot, 1000) as $pv) {
+                    DB::table('category_new_entry')->insertOrIgnore($pv);
                 }
             });
         }
@@ -325,6 +416,7 @@ class NewEntryImportController extends Controller
             'failures' => $failures,
         ]);
     }
+
 
     /**
      * Read CSV rows into arrays; returns [rows, stats].
