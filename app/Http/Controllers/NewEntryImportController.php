@@ -113,7 +113,7 @@ class NewEntryImportController extends Controller
     {
         // Optional: serve a minimal sample CSV header your users can download.
         $headers = [
-            'Website','Country','Contact','Status','LB','Currency',
+            'Website','Country','Language','Contact','Status','LB','Currency',
             'Publisher','No Follow Price','Special Topic Price','Date Publisher Price',
             'Kialvo','AI','Profit',"Kialvo's date",
             'DA','PA','TF','CF','ZA','DR','Semrush Traffic','Seozoom',
