@@ -128,7 +128,34 @@ class NewEntryImportController extends Controller
         ]);
     }
 
-    // app/Http/Controllers/NewEntryImportController.php
+    // Normalize status values from CSV to your canonical strings.
+    private function canonicalStatus(?string $v): ?string
+    {
+        if ($v === null) return null;
+
+        $v = trim($v);
+        if ($v === '' || in_array(strtolower($v), ['?','n/a','na','none','-'], true)) {
+            return null;
+        }
+
+        // turn "1st" into "first" so snake_case becomes stable
+        $v = preg_replace('/\b1st\b/i', 'first', $v);
+
+        // unify separators, drop symbols, snake_case
+        $v = str_replace(['&','+'], ' and ', $v);
+        $v = preg_replace('/[\/\-]+/u', ' ', $v);
+        $v = preg_replace('/[^\pL\pN ]+/u', '', $v);
+        $s = \Illuminate\Support\Str::snake($v);
+
+        // Map synonyms to your single canonical value
+        $map = [
+            'waiting_for_first_answer' => 'waiting_for_first_answer',
+            'waiting_for_1st_answer'   => 'waiting_for_first_answer', // safety
+            'waiting_for_answer'       => 'waiting_for_first_answer', // optional
+        ];
+        return $map[$s] ?? $s;
+    }
+
 
     public function preview(NewEntryImportRequest $request)
     {
@@ -494,7 +521,14 @@ class NewEntryImportController extends Controller
         $data['linkbuilder']     = $row['linkbuilder']       ?? null;
 
 // status -> snake_case (e.g., "Never Opened" => "never_opened")
-        $data['status']          = $this->enumSnake($row['status'] ?? null);
+        // Normalize CSV value like "Waiting for 1st answer" → "waiting_for_first_answer"
+        $data['status'] = $this->canonicalStatus($row['status'] ?? null);
+
+// Default when missing/blank
+        if (empty($data['status'])) {
+            $data['status'] = 'waiting_for_first_answer';
+        }
+
 
         $data['currency_code']   = $row['currency_code']     ?? null;
 
