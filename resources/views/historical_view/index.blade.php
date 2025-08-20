@@ -49,10 +49,23 @@
                 {{-- Country --}}
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Country</label>
-                    <select id="filterCountries" multiple
-                            class="border border-gray-300 rounded px-2 py-2 w-48">
+                    <select id="filterCountries"
+                            class="border border-gray-300 rounded px-2 py-2 w-40">
+                        <option value="">-- Any --</option>
                         @foreach($countries as $c)
                             <option value="{{ $c->id }}">{{ $c->country_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Language (single) -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Language</label>
+                    <select id="filterLanguage"
+                            class="border border-gray-300 rounded px-2 py-2 w-40">
+                        <option value="">-- Any --</option>
+                        @foreach($languages as $lang)
+                            <option value="{{ $lang->id }}">{{ $lang->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -175,7 +188,7 @@
             const dateFmt = v=> v ? new Date(v).toLocaleDateString('en-GB') : '';
 
             /* widgets */
-            $('#filterCountries').select2({placeholder:'Countries',width:'15em'});
+
             flatpickr('#filterFirstFrom',{dateFormat:'Y-m-d',allowInput:true});
             flatpickr('#filterFirstTo'  ,{dateFormat:'Y-m-d',allowInput:true});
 
@@ -189,7 +202,8 @@
                     data:d=>{
                         d.domain_name        = $('#filterDomainName').val();
                         d.status             = $('#filterStatus').val();
-                        d.country_ids        = $('#filterCountries').val();
+                        d.country_ids        = $('#filterCountries').val();   // multi
+                        d.language_id        = $('#filterLanguage').val();    // single
                         d.first_contact_from = $('#filterFirstFrom').val();
                         d.first_contact_to   = $('#filterFirstTo').val();
                     }
@@ -245,7 +259,8 @@
             $('#btnClear').click(function(){
                 $('#filterForm input').val('');
                 $('#filterStatus').val('');
-                $('#filterCountries').val(null).trigger('change');
+                $('#filterLanguage').val('');            // <— add
+                $('#filterCountries').val('');
                 tbl.ajax.reload();
             });
 

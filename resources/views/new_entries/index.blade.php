@@ -57,7 +57,7 @@
 
                 <!-- Language (single) -->
                 <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Language</label>
+                    <label class="text-gray-700 font-medium">Country</label>
                     <select id="filterCountries"
                             class="border border-gray-300 rounded px-2 py-2 w-40">
                         <option value="">-- Any --</option>

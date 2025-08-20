@@ -26,9 +26,8 @@ class HistoricalEntryController extends Controller
         /* same filters you already use in NewEntryController ---------------- */
         if ($v = $r->domain_name) $q->where('domain_name','like',"%$v%");
         if ($v = $r->status)      $q->where('status',$v);
-        if ($ids = $r->country_ids) {
-            $q->whereIn('country_id', is_array($ids) ? $ids : explode(',',$ids));
-        }
+        if ($v = $r->country_ids)  $q->where('country_id', $v);
+        if ($v = $r->language_id) $q->where('language_id', $v);
         if ($f = $r->first_contact_from) $q->whereDate('first_contact_date','>=',$f);
         if ($t = $r->first_contact_to)   $q->whereDate('first_contact_date','<=',$t);
 
