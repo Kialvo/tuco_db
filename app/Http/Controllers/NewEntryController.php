@@ -39,10 +39,11 @@ class NewEntryController extends Controller
          * ────────────────────────────────────────────*/
         $q = NewEntry::with(['country', 'language', 'contact', 'categories']);
 
+
         // (all your existing filters – unchanged)
         if ($v = $r->domain_name) $q->where('domain_name', 'like', "%$v%");
         if ($v = $r->status)      $q->where('status', $v);
-        if ($v = $r->country_id)  $q->where('country_id', $v);
+        if ($v = $r->country_ids)  $q->where('country_id', $v);
         if ($v = $r->language_id) $q->where('language_id', $v);
 
         if ($ids = $r->category_ids) {
@@ -50,11 +51,24 @@ class NewEntryController extends Controller
             $q->whereHas('categories', fn ($x) => $x->whereIn('categories.id', $ids));
         }
 
+        // 1st CONTACT DATE RANGE (guard against bad input)
+        $from = $r->first_contact_from;
+        $to   = $r->first_contact_to;
+        $isDate = fn($s) => is_string($s) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $s);
+        if ($isDate($from) && $isDate($to)) {
+            $q->whereBetween('first_contact_date', [$from, $to]);
+        } elseif ($isDate($from)) {
+            $q->whereDate('first_contact_date', '>=', $from);
+        } elseif ($isDate($to)) {
+            $q->whereDate('first_contact_date', '<=', $to);
+        }
+
+
         if ($r->boolean('research_mode')) {
             $q->whereNot(function ($x) {
                 $x->whereIn('status', ['negotiation','active','publisher_refused','refused_by_us'])
                     ->orWhere(function ($y) {
-                        $y->where('status', 'waiting_for_1st_answer')
+                        $y->where('status', 'waiting_for_first_answer')
                             ->whereDate('first_contact_date', '>', now()->subDays(15));
                     });
             });
