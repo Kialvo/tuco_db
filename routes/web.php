@@ -3,6 +3,7 @@
 use App\Http\Controllers\HistoricalEntryController;
 use App\Http\Controllers\NewEntryController;
 use App\Http\Controllers\NewEntryImportController;
+use App\Http\Controllers\Tool\AhrefsCleanerController;
 use App\Http\Controllers\Tool\WebScraperController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminMiddleware;
@@ -232,6 +233,10 @@ Route::middleware('auth')->group(function () {
         Route::post ('discover/search',    [WebScraperController::class, 'search'])->name('discover.search');
         Route::post ('discover/import',    [WebScraperController::class, 'import'])->name('discover.import');
         Route::get  ('discover/export',    [WebScraperController::class, 'exportCsv'])->name('discover.export');
+
+        //Ahrefs cleaner
+        Route::get ('ahrefs-cleaner',     [AhrefsCleanerController::class, 'index'])->name('ahrefs.index');
+        Route::post('ahrefs-cleaner/run', [AhrefsCleanerController::class, 'run'])->name('ahrefs.run');
     });
 
 });

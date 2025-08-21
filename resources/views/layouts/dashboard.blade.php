@@ -175,6 +175,12 @@
                         <i class="fas fa-search w-4 inline-block me-2"></i> Discover Websites
                     </a>
 
+                    <a href="{{ route('tools.ahrefs.index') }}"
+                       class="block px-3 py-2 rounded transition hover:bg-slate-800
+                  {{ request()->routeIs('tools.ahrefs.index') ? 'bg-slate-800' : '' }}">
+                        <i class="fas fa-broom w-4 inline-block me-2"></i> Clean Ahrefs CSV
+                    </a>
+
                     {{-- Add future tool links here --}}
                 </div>
             </div>
