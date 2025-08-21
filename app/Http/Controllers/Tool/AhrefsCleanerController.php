@@ -41,30 +41,92 @@ class AhrefsCleanerController extends Controller
         $headers = array_map(fn($h) => Str::lower(trim((string)$h)), $headers);
 
         $hosts = [];
-
-        // read rows
         while (($row = fgetcsv($handle, 0, $delim)) !== false) {
             $host = $this->extractHostFromRow($headers, $row);
             if (!$host) continue;
-
-            // normalize host (lowercase, strip www.)
             $host = Str::lower($host);
             $host = preg_replace('/^www\./i', '', $host);
-
             $hosts[] = $host;
         }
         fclose($handle);
 
-        // unique
+        // unique base list
         $hosts = array_values(array_unique(array_filter($hosts)));
 
-        // ---- rule (1): drop .gov/.edu/.org (including multi-label like .gov.ro) ----
-        $hosts = array_values(array_filter($hosts, function ($h) {
-            return !preg_match('/\.(gov|edu|org)(\.|$)/i', $h);
-        }));
+        // We'll track reasons per removed domain
+        $reasons = []; // [domain => ['reason1','reason2', ...]]
 
-        // ---- rule (2): drop "big websites" list (exact domains + their subdomains) ----
-        $big = [
+        // helper to mark removed
+        $markRemoved = function(array $toRemove, string $reason) use (&$reasons) {
+            foreach ($toRemove as $d) {
+                $reasons[$d] = array_values(array_unique(array_merge($reasons[$d] ?? [], [$reason])));
+            }
+        };
+
+        // ---- rule (1): .gov/.edu/.org (incl. multi-label like .gov.ro)
+        $drop1 = array_values(array_filter($hosts, fn($h) => preg_match('/\.(gov|edu|org)(\.|$)/i', $h)));
+        $markRemoved($drop1, '.gov/.edu/.org');
+        $hosts = array_values(array_diff($hosts, $drop1));
+
+        // ---- rule (2): big platforms (exact + subdomains, and families like amazon.xx)
+        $drop2 = array_values(array_filter($hosts, fn($h) => $this->isBigPlatform($h)));
+        $markRemoved($drop2, 'big platform');
+        $hosts = array_values(array_diff($hosts, $drop2));
+
+        // ---- rule (3): already in our DB (websites table)
+        $dbExisting = Website::whereIn('domain_name', $hosts)
+            ->pluck('domain_name')
+            ->map(fn($d) => Str::lower($d))
+            ->all();
+        $drop3 = array_values(array_intersect($hosts, $dbExisting));
+        $markRemoved($drop3, 'already in websites');
+        $hosts = array_values(array_diff($hosts, $drop3));
+
+        // ---- rule (4): "new_entries" status + first contact < 15 days
+        if (Schema::hasTable('new_entries')) {
+            $cutoff = now()->subDays(15);
+            $blocked = DB::table('new_entries')
+                ->select('domain_name')
+                ->whereIn('domain_name', $hosts)
+                ->where('status', 'waiting_for_first_answer')
+                ->where('first_contact_date', '>=', $cutoff)
+                ->pluck('domain_name')
+                ->map(fn($d) => Str::lower($d))
+                ->all();
+
+            $drop4 = array_values(array_intersect($hosts, $blocked));
+            $markRemoved($drop4, 'new entry (<15d) & waiting');
+            $hosts = array_values(array_diff($hosts, $drop4));
+        }
+
+        // remaining hosts are "kept"
+        $kept = $hosts;
+
+        // build removed list for the table [{domain:'x', reason:[...]}]
+        $removed = [];
+        foreach ($reasons as $domain => $why) {
+            $removed[] = ['domain' => $domain, 'reason' => $why];
+        }
+        // optional: sort alphabetically
+        usort($removed, fn($a, $b) => strcmp($a['domain'], $b['domain']));
+        sort($kept, SORT_STRING);
+
+        // create a data URL for the Download button
+        $csvOut = "domain\n" . implode("\n", $kept);
+        $downloadDataUrl = 'data:text/csv;base64,' . base64_encode($csvOut);
+
+        return view('tools.ahrefs_cleaner', [
+            'removed'           => $removed,
+            'kept_count'        => count($kept),
+            'removed_count'     => count($removed),
+            'total_count'       => count($kept) + count($removed),
+            'download_data_url' => $downloadDataUrl,
+        ]);
+    }
+    private function isBigPlatform(string $host): bool
+    {
+        // Exact-domain list (and their subdomains)
+        static $big = [
             'facebook.com','twitter.com','instagram.com','linkedin.com','youtube.com','pinterest.com',
             'reddit.com','tiktok.com','whatsapp.com','amazon.com','ebay.com','aliexpress.com',
             'netflix.com','booking.com','airbnb.com','tripadvisor.com','apple.com','microsoft.com',
@@ -74,60 +136,41 @@ class AhrefsCleanerController extends Controller
             'sony.com','lenovo.com','hp.com','dell.com','lg.com',
             'pokerstars.ro','forbes.ro','volkswagen.ro','bmw.ro',
             'news.microsoft.com','news.samsung.com',
+
+            // Extended blacklist you provided earlier:
+            'x.com','imdb.com','twitchtracker.com','audacy.com','threads.com','spotify.com','deezer.com',
+            'sedo.com','podfollow.com','ebay.com','play.google.com','apps.apple.com','reddit.com',
+            'chromewebstore.google.com',
+            // podcasts & open.spotify subdomains etc will be caught by subdomain check below
+            'podcasts.apple.com','open.spotify.com','chromewebstore.google.com','play.google.com','apps.apple.com',
         ];
 
-        $hosts = array_values(array_filter($hosts, function ($h) use ($big) {
-            foreach ($big as $d) {
-                if ($h === $d || Str::endsWith($h, '.'.$d)) {
-                    return false;
-                }
-            }
-            // families with many ccTLDs
-            if (preg_match('/(^|\.)amazon\.[a-z.]+$/i', $h)) return false;
-            if (preg_match('/(^|\.)ebay\.[a-z.]+$/i', $h))   return false;
-            return true;
-        }));
-
-        // ---- rule (3): drop already in our database (websites table) ----
-        $dbExisting = Website::whereIn('domain_name', $hosts)
-            ->pluck('domain_name')
-            ->map(fn($d) => Str::lower($d))
-            ->all();
-
-        if (!empty($dbExisting)) {
-            $existingSet = array_flip($dbExisting);
-            $hosts = array_values(array_filter($hosts, fn($h) => !isset($existingSet[$h])));
-        }
-
-        // ---- rule (4): drop those in "new entry" with status & first contact < 15 days ----
-        // This block only runs if you have a table named `new_entries` with columns:
-        // domain_name, status, first_contact_date (DATE/DATETIME)
-        if (Schema::hasTable('new_entries')) {
-            $cutoff = now()->subDays(15);
-            $blocked = DB::table('new_entries')
-                ->select('domain_name')
-                ->whereIn('domain_name', $hosts)
-                ->where('status', 'Waiting for 1st Answer')
-                ->where('first_contact_date', '>=', $cutoff)
-                ->pluck('domain_name')
-                ->map(fn($d) => Str::lower($d))
-                ->all();
-
-            if (!empty($blocked)) {
-                $blockedSet = array_flip($blocked);
-                $hosts = array_values(array_filter($hosts, fn($h) => !isset($blockedSet[$h])));
+        // If $host equals or ends with any of the domains above -> block
+        foreach ($big as $d) {
+            if ($host === $d || Str::endsWith($host, '.'.$d)) {
+                return true;
             }
         }
 
-        // ---- export cleaned CSV (one column: domain) ----
-        $out = "domain\n" . implode("\n", $hosts);
-        $filename = 'cleaned_ahrefs_' . now()->format('Ymd_His') . '.csv';
+        // Families with many ccTLDs (amazon.xx / ebay.xx)
+        if (preg_match('/(^|\.)amazon\.[a-z.]+$/i', $host)) return true;
+        if (preg_match('/(^|\.)ebay\.[a-z.]+$/i', $host))   return true;
 
-        return Response::make($out, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
+        // Major social and app store families across subdomains (safety belt)
+        $families = [
+            'facebook', 'instagram', 'twitter', 'x', 'tiktok', 'linkedin',
+            'youtube', 'spotify', 'deezer', 'threads', 'whatsapp', 'reddit',
+            'google', 'apple'
+        ];
+        foreach ($families as $needle) {
+            if (preg_match('/(^|\.)'.$needle.'\.[a-z0-9.-]+$/i', $host)) {
+                return true;
+            }
+        }
+
+        return false;
     }
+
 
     /**
      * Find a usable host from the row.
