@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\NewEntry;
 use App\Models\RollbackNewEntry;
-use App\Models\RollbackWebsite;
+// use App\Models\RollbackWebsite;   // ← removed
 use App\Models\Website;
 use App\Models\Category;
 use App\Models\Country;
@@ -165,8 +165,7 @@ class NewEntryController extends Controller
             $new_entry->save();
 
             if ($old !== 'active' && $new === 'active') {
-                // single-row copy
-                $this->moveToWebsites($new_entry);
+                $this->moveToWebsites($new_entry); // single-row copy
             }
         });
 
@@ -182,9 +181,7 @@ class NewEntryController extends Controller
     {
         $data = $this->validateForm($r);
 
-        foreach ([
-                     'first_contact_date','date_publisher_price','date_kialvo_evaluation','seo_metrics_date',
-                 ] as $f) {
+        foreach (['first_contact_date','date_publisher_price','date_kialvo_evaluation','seo_metrics_date'] as $f) {
             $data[$f] = $this->euDate($data[$f] ?? null);
         }
 
@@ -206,17 +203,14 @@ class NewEntryController extends Controller
     public function edit(NewEntry $new_entry)
     {
         $new_entry->load('categories');
-        return view('new_entries.edit',
-            array_merge(['entry'=>$new_entry], $this->lookups()));
+        return view('new_entries.edit', array_merge(['entry'=>$new_entry], $this->lookups()));
     }
 
     public function update(Request $r, NewEntry $new_entry)
     {
         $data = $this->validateForm($r);
 
-        foreach ([
-                     'first_contact_date','date_publisher_price','date_kialvo_evaluation','seo_metrics_date',
-                 ] as $f) {
+        foreach (['first_contact_date','date_publisher_price','date_kialvo_evaluation','seo_metrics_date'] as $f) {
             $data[$f] = $this->euDate($data[$f] ?? null);
         }
 
@@ -251,7 +245,7 @@ class NewEntryController extends Controller
     }
 
     /* =========================================================
-     * BULK UPDATE  (with Website copy + UNDO support)
+     * BULK UPDATE  (with Website copy; UNDO only touches NewEntry)
      * =======================================================*/
     public function bulkUpdate(Request $request)
     {
@@ -263,7 +257,7 @@ class NewEntryController extends Controller
             'value' => 'sometimes',
         ]);
 
-        // normalize ids
+        // ids → array<int>
         $ids = is_array($request->ids)
             ? array_values($request->ids)
             : array_filter(array_map('intval', explode(',', (string)$request->ids)));
@@ -276,12 +270,12 @@ class NewEntryController extends Controller
         $value = $request->input('value', null);
         if ($value === '') $value = null;
 
-        $token = (string) Str::uuid(); // used for UNDO
+        $token = (string) Str::uuid(); // UNDO token (NewEntry only)
 
         DB::transaction(function () use ($ids, $field, &$value, $token) {
             $rows = NewEntry::with('categories')->whereIn('id', $ids)->get();
 
-            // 1) snapshot for rollback
+            // 1) snapshot for rollback (NewEntry only)
             foreach ($rows as $row) {
                 RollbackNewEntry::create([
                     'token'        => $token,
@@ -293,7 +287,7 @@ class NewEntryController extends Controller
                 ]);
             }
 
-            // 2) pseudo-field
+            // 2) pseudo-field: recalc derived KPIs
             if ($field === self::FIELD_RECALC) {
                 foreach ($rows as $w) {
                     $payload = $w->getAttributes();
@@ -309,10 +303,9 @@ class NewEntryController extends Controller
                 return;
             }
 
-            // 3) many-to-many categories
+            // 3) m2m categories
             if ($field === 'category_ids') {
-                $catIds = is_array($value)
-                    ? array_filter($value)
+                $catIds = is_array($value) ? array_filter($value)
                     : array_filter(explode(',', (string) $value));
                 foreach ($rows as $w) {
                     $w->categories()->sync($catIds);
@@ -320,18 +313,18 @@ class NewEntryController extends Controller
                 return;
             }
 
-            // 4) dates normalization
+            // 4) normalize yyyy-mm-dd (or dd/mm/yyyy) → Y-m-d
             if ((Str::endsWith($field, '_date') || Str::startsWith($field, 'date_')) && $value !== null) {
                 $value = preg_match('#^\d{2}/\d{2}/\d{4}$#', $value)
                     ? Carbon::createFromFormat('d/m/Y', $value)->toDateString()
                     : Carbon::parse($value)->toDateString();
             }
 
-            // 5) scalar fields + recalc drivers + bulk copy when status -> active
+            // 5) scalar bulk updates + recalc drivers + bulk copy when status → active
             foreach ($rows as $w) {
                 $oldStatus = strtolower((string) $w->status);
 
-                // price fields special USD handling
+                // USD handling for price fields
                 $priceFields = [
                     'publisher_price','link_insertion_price','no_follow_price','special_topic_price',
                     'banner_price','sitewide_link_price',
@@ -348,12 +341,11 @@ class NewEntryController extends Controller
                             'sitewide_link_price'  => 'original_sitewide_link_price',
                         ];
                         $origField = $originalMap[$field] ?? null;
-                        if ($origField) {
-                            $w->{$origField} = $value;
-                        }
+                        if ($origField) $w->{$origField} = $value;
 
                         try {
-                            $converted = Currency::convert()->from('USD')->to('EUR')->amount((float) $value)->get();
+                            $converted = Currency::convert()
+                                ->from('USD')->to('EUR')->amount((float) $value)->get();
                             $w->{$field} = $converted;
                         } catch (\Throwable $e) {
                             $w->{$field} = $value;
@@ -365,7 +357,7 @@ class NewEntryController extends Controller
                     $w->{$field} = $value;
                 }
 
-                // Recalc when a driver column changed
+                // Recalc when driver changes
                 if (in_array($field, self::DRIVER_COLS, true)) {
                     $payload = array_merge($w->getAttributes(), [$field=>$value]);
                     $this->applyAutoCalculations($payload);
@@ -380,23 +372,11 @@ class NewEntryController extends Controller
 
                 $w->save();
 
-                // 6) BULK COPY: when status becomes active
+                // 6) BULK COPY: when status becomes active (no rollback in Websites)
                 if ($field === 'status') {
                     $newStatus = strtolower((string) $value);
                     if ($oldStatus !== 'active' && $newStatus === 'active') {
-                        $website = null;
-                        try {
-                            $website = $this->moveToWebsites($w); // returns Website (or existing)
-                        } catch (\Throwable $e) {
-                            // if copy fails, we still keep the NewEntry update
-                        }
-                        // track created website for UNDO (token-level)
-                        if ($website instanceof Website) {
-                            RollbackWebsite::create([
-                                'token'      => $token,
-                                'website_id' => $website->id,
-                            ]);
-                        }
+                        try { $this->moveToWebsites($w); } catch (\Throwable $e) { /* keep going */ }
                     }
                 }
             }
@@ -410,9 +390,7 @@ class NewEntryController extends Controller
 
     /**
      * UNDO (by token) or Restore selection (by ids).
-     * - If `token` is provided → revert all NewEntries to their snapshots AND
-     *   delete any Websites created as part of that bulk (tracked in RollbackWebsite).
-     * - Else if `ids[]` provided → for each id, restore the latest snapshot for that row.
+     * → Only revert NewEntries (do NOT touch Websites).
      */
     public function rollback(Request $r)
     {
@@ -421,25 +399,9 @@ class NewEntryController extends Controller
             'ids'   => 'nullable',
         ]);
 
+        // Undo whole bulk by token
         if ($token = $r->input('token')) {
             DB::transaction(function () use ($token) {
-
-                // 1) Delete websites created in that bulk (if any)
-                $wRecs = RollbackWebsite::where('token', $token)->get();
-                foreach ($wRecs as $rec) {
-                    if ($rec->website_id) {
-                        $w = Website::with('categories')->find($rec->website_id);
-                        if ($w) {
-                            // detach categories first (safety), then delete
-                            try { $w->categories()->detach(); } catch (\Throwable $e) {}
-                            $w->delete();
-                        }
-                    }
-                }
-                // clean up RollbackWebsite rows
-                RollbackWebsite::where('token',$token)->delete();
-
-                // 2) Restore all NewEntry snapshots saved with this token
                 $snaps = RollbackNewEntry::where('token',$token)->orderByDesc('id')->get();
                 foreach ($snaps as $snap) {
                     $attrs = (array) ($snap->snapshot['attributes'] ?? []);
@@ -448,14 +410,12 @@ class NewEntryController extends Controller
                     $entry = NewEntry::withTrashed()->find($snap->new_entry_id);
                     if (!$entry) continue;
 
-                    // force fill original attrs, then sync categories
                     $entry->forceFill($attrs);
                     $entry->save();
-
                     try { $entry->categories()->sync($cats); } catch (\Throwable $e) {}
                 }
 
-                // Optionally purge the snapshots used for this undo
+                // purge snapshots for this token
                 RollbackNewEntry::where('token',$token)->delete();
             });
 
@@ -495,10 +455,7 @@ class NewEntryController extends Controller
      * HELPERS
      * =======================================================*/
 
-    /**
-     * Copy to Websites. Returns the Website instance (created or existing) or null.
-     * - Skips duplicate creation if a Website with the same domain already exists.
-     */
+    /** Copy to Websites; returns Website (created or existing) or null. */
     private function moveToWebsites(NewEntry $e): ?Website
     {
         // If a Website already exists for this domain, mark copied and skip create
@@ -531,7 +488,7 @@ class NewEntryController extends Controller
             'profit','automatic_evaluation',
         ];
 
-        // If USD, pre-divide to neutralize BEFORE INSERT conversion (same as your Websites logic)
+        // If USD, pre-divide to neutralize BEFORE INSERT conversion
         if (!empty($data['currency_code']) && strtoupper($data['currency_code']) === 'USD') {
             $rate = (float) DB::table('app_settings')
                 ->where('setting_name','usd_eur_rate')
@@ -674,6 +631,36 @@ class NewEntryController extends Controller
             ? round(($e->ahrefs_keyword??0)/$e->ahrefs_traffic,2) : 0;
     }
 
+    /** Compute derived metrics on an associative array (form payload). */
+    private function recalcArray(array &$d): void
+    {
+        $da = (float) ($d['DA'] ?? 0);
+        $tf = (float) ($d['TF'] ?? 0);
+        $dr = (float) ($d['DR'] ?? 0);
+        $sr = (float) ($d['semrush_traffic'] ?? 0);
+
+        // Automatic evaluation (same logic you used before)
+        $auto = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
+        if ($sr >= 9700) {
+            $auto += ($sr / 15000) * 1.35;
+        }
+        $d['automatic_evaluation'] = $auto;
+
+        // Profit (basic form)
+        $d['profit'] = (float) ($d['kialvo_evaluation'] ?? 0) - (float) ($d['publisher_price'] ?? 0);
+
+        // TF vs CF
+        $cf = (float) ($d['CF'] ?? 0);
+        $d['TF_vs_CF'] = $cf ? round(((float) ($d['TF'] ?? 0)) / $cf, 2) : 0;
+
+        // Keyword vs traffic
+        $ahrefsTraffic = (float) ($d['ahrefs_traffic'] ?? 0);
+        $d['keyword_vs_traffic'] = $ahrefsTraffic
+            ? round(((float) ($d['ahrefs_keyword'] ?? 0)) / $ahrefsTraffic, 2)
+            : 0;
+    }
+
+    /** Derived metrics used by bulk ops; now also ensures automatic_evaluation is set. */
     /** dd/mm/yyyy → yyyy-mm-dd */
     private function euDate(?string $v): ?string
     {

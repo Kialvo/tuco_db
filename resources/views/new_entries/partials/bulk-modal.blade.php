@@ -43,6 +43,11 @@
 
     /* Widget hints */
     $bulkMeta = [
+        'date_publisher_price'   => ['type' => 'date'],
+        'seo_metrics_date'       => ['type' => 'date'],
+        'date_kialvo_evaluation' => ['type' => 'date'],
+
+
         'status' => ['type'=>'select','options'=>[
             ''=>'-- Clear --',
             'never_opened'=>'Never Opened',
