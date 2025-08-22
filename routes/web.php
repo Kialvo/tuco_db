@@ -170,6 +170,14 @@ Route::middleware('auth')->group(function () {
         [HistoricalEntryController::class,'getData']
     )->name('historical_view.data');
 
+
+    // routes/web.php
+    // routes/web.php
+    Route::post('/new-entries/data', [NewEntryController::class,'getData'])->name('new_entries.data');
+    Route::post('/new-entries/bulk', [NewEntryController::class,'bulkUpdate'])->name('new_entries.bulkUpdate');
+    Route::post('/new-entries/rollback', [NewEntryController::class,'rollback'])->name('new_entries.rollback');
+    Route::put('/new-entries/{new_entry}/status', [NewEntryController::class,'updateStatus']);
+
     /* ----------  FULL CRUD (resource) ----------
        parameters() keeps route-model binding variable singular (new_entry),
        names() gives you the explicit route names just like Websites. */

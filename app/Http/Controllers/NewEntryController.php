@@ -3,22 +3,50 @@
 namespace App\Http\Controllers;
 
 use App\Models\NewEntry;
+use App\Models\RollbackNewEntry;
+use App\Models\RollbackWebsite;
 use App\Models\Website;
 use App\Models\Category;
 use App\Models\Country;
 use App\Models\Language;
 use App\Models\Contact;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use AmrShawky\Currency\Facade\Currency;
 
-
 class NewEntryController extends Controller
 {
+    public const BULK_EDITABLE = [
+        'status','language_id','country_id','linkbuilder','type_of_website',
+        // SEO METRICS
+        'DR','UR','DA','PA','TF','CF','ZA','as_metric',
+        'seozoom','semrush_traffic','ahrefs_keyword','ahrefs_traffic','keyword_vs_traffic',
+        'publisher_price','no_follow_price','special_topic_price',
+        'link_insertion_price','banner_price','sitewide_link_price',
+        'kialvo_evaluation','profit',
+        'date_publisher_price',
+        'seo_metrics_date',
+        'date_kialvo_evaluation',
+        // BOOLEAN FLAGS
+        'betting','trading','permanent_link','more_than_one_link',
+        'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
+        'category_ids',
+        self::FIELD_RECALC,
+    ];
+
+    public const FIELD_RECALC = 'recalculate_totals';
+
+    /** Recalc drivers */
+    private const DRIVER_COLS = [
+        'publisher_price','banner_price','sitewide_link_price',
+        'kialvo_evaluation','ahrefs_keyword','ahrefs_traffic',
+    ];
+
     /* =========================================================
-     *  LIST + DATATABLE
+     * LIST + DATATABLE
      * =======================================================*/
     public function index()
     {
@@ -34,16 +62,11 @@ class NewEntryController extends Controller
 
     public function getData(Request $r)
     {
-        /* ─────────────────────────────────────────────
-         * 1) base query + eager-loads
-         * ────────────────────────────────────────────*/
         $q = NewEntry::with(['country', 'language', 'contact', 'categories']);
 
-
-        // (all your existing filters – unchanged)
         if ($v = $r->domain_name) $q->where('domain_name', 'like', "%$v%");
         if ($v = $r->status)      $q->where('status', $v);
-        if ($v = $r->country_ids)  $q->where('country_id', $v);
+        if ($v = $r->country_ids) $q->where('country_id', $v);
         if ($v = $r->language_id) $q->where('language_id', $v);
 
         if ($ids = $r->category_ids) {
@@ -51,7 +74,6 @@ class NewEntryController extends Controller
             $q->whereHas('categories', fn ($x) => $x->whereIn('categories.id', $ids));
         }
 
-        // 1st CONTACT DATE RANGE (guard against bad input)
         $from = $r->first_contact_from;
         $to   = $r->first_contact_to;
         $isDate = fn($s) => is_string($s) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $s);
@@ -62,7 +84,6 @@ class NewEntryController extends Controller
         } elseif ($isDate($to)) {
             $q->whereDate('first_contact_date', '<=', $to);
         }
-
 
         if ($r->boolean('research_mode')) {
             $q->whereNot(function ($x) {
@@ -78,96 +99,73 @@ class NewEntryController extends Controller
             $q->onlyTrashed();
         }
 
-        /* ─────────────────────────────────────────────
-         * 2) DataTables build-up
-         * ────────────────────────────────────────────*/
         return DataTables::of($q)
             ->addColumn('country_name',    fn ($r) => optional($r->country)->country_name)
             ->addColumn('language_name',   fn ($r) => optional($r->language)->name)
             ->addColumn('contact_name',    fn ($r) => optional($r->contact)->name)
             ->addColumn('categories_list', fn ($r) => $r->categories->pluck('name')->join(', '))
-
-            /* ------------- Action buttons ------------- */
             ->addColumn('action', function ($row) {
-
-                /* If the entry is trashed → only “Restore” */
                 if ($row->trashed()) {
                     $restoreUrl = route('new_entries.restore', $row->id);
-
                     return '
-        <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
-            '.csrf_field().'
-            <button
-                onclick="return confirm(\'Are you sure you want to restore this entry?\')"
-                class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
-                       hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                <i class="fas fa-undo-alt mr-1"></i> Restore
-            </button>
-        </form>
-                ';
+                        <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
+                            '.csrf_field().'
+                            <button
+                                onclick="return confirm(\'Are you sure you want to restore this entry?\')"
+                                class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
+                                       hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                <i class="fas fa-undo-alt mr-1"></i> Restore
+                            </button>
+                        </form>';
                 }
 
-                /* Otherwise → View · Edit · Delete */
                 $viewUrl   = route('new_entries.show',    $row->id);
                 $editUrl   = route('new_entries.edit',    $row->id);
                 $deleteUrl = route('new_entries.destroy', $row->id);
 
                 return '
-        <div class="inline-flex space-x-1">
-
-            <!-- VIEW -->
-            <a href="'.$viewUrl.'"
-               class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
-                      hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                <i class="fas fa-eye mr-1"></i> View
-            </a>
-
-            <!-- EDIT -->
-            <a href="'.$editUrl.'"
-               class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
-                      hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                <i class="fas fa-pen mr-1"></i> Edit
-            </a>
-
-            <!-- DELETE -->
-            <form action="'.$deleteUrl.'" method="POST" style="display:inline-block;">
-                '.csrf_field().method_field("DELETE").'
-                <button
-                    onclick="return confirm(\'Are you sure you want to delete this entry?\')"
-                    class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
-                           hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                    <i class="fas fa-trash mr-1"></i> Delete
-                </button>
-            </form>
-
-        </div>
-            ';
+                <div class="inline-flex space-x-1">
+                    <a href="'.$viewUrl.'"
+                       class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
+                              hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <i class="fas fa-eye mr-1"></i> View
+                    </a>
+                    <a href="'.$editUrl.'"
+                       class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
+                              hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
+                        <i class="fas fa-pen mr-1"></i> Edit
+                    </a>
+                    <form action="'.$deleteUrl.'" method="POST" style="display:inline-block;">
+                        '.csrf_field().method_field("DELETE").'
+                        <button
+                            onclick="return confirm(\'Are you sure you want to delete this entry?\')"
+                            class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
+                                   hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <i class="fas fa-trash mr-1"></i> Delete
+                        </button>
+                    </form>
+                </div>';
             })
-
-            ->rawColumns(['action'])   // allow HTML in the action cell
+            ->rawColumns(['action'])
             ->make(true);
     }
 
-
     /* =========================================================
-     *  INLINE STATUS UPDATE (AJAX)
+     * INLINE STATUS UPDATE (single-row)
      * =======================================================*/
-    // 1. updateStatus -------------------------------------------------
     public function updateStatus(Request $r, NewEntry $new_entry)
     {
         $r->validate(['status'=>'required|string|max:255']);
 
-        // normalise to lower-case
-        $old = strtolower($new_entry->status);
-        $new = strtolower($r->status);
+        $old = strtolower((string) $new_entry->status);
+        $new = strtolower((string) $r->status);
 
         DB::transaction(function () use ($new_entry, $new, $old) {
-
             $new_entry->status = $new;
             $new_entry->save();
 
-            // compare with lower-case literal now
             if ($old !== 'active' && $new === 'active') {
+                // single-row copy
                 $this->moveToWebsites($new_entry);
             }
         });
@@ -175,49 +173,35 @@ class NewEntryController extends Controller
         return response()->json(['ok'=>true]);
     }
 
-
     /* =========================================================
-     *  CREATE / STORE / EDIT / UPDATE / DESTROY
-     *  (unchanged except they now call moveToWebsites internally)
+     * CRUD
      * =======================================================*/
     public function create() { return view('new_entries.create', $this->lookups()); }
 
     public function store(Request $r)
     {
-        /* 1) Validate form */
         $data = $this->validateForm($r);
 
-        /* 2) Date fields to ISO */
         foreach ([
-                     'first_contact_date',
-                     'date_publisher_price',
-                     'date_kialvo_evaluation',
-                     'seo_metrics_date',
+                     'first_contact_date','date_publisher_price','date_kialvo_evaluation','seo_metrics_date',
                  ] as $f) {
             $data[$f] = $this->euDate($data[$f] ?? null);
         }
 
-        /* 3) Automatic maths */
-        $this->recalcArray($data);   // see helper below ⬇
+        $this->recalcArray($data);
 
-
-        /* 4) DB write */
         DB::transaction(function () use ($data, $r, &$entry) {
-
             $entry = NewEntry::create($data);
-
             $entry->categories()->sync($r->category_ids ?? []);
 
-            // if ACTIVE, clone into Websites
-            if (strtolower($entry->status) === 'active') {
+            if (strtolower((string) $entry->status) === 'active') {
                 $this->moveToWebsites($entry);
             }
         });
 
         return redirect()->route('new_entries.edit', $entry->id)
-                      ->with('status', 'Entry created – you can now complete / review it!');
+            ->with('status', 'Entry created – you can now complete / review it!');
     }
-
 
     public function edit(NewEntry $new_entry)
     {
@@ -230,75 +214,33 @@ class NewEntryController extends Controller
     {
         $data = $this->validateForm($r);
 
-        /* normalise dates */
         foreach ([
-                     'first_contact_date',
-                     'date_publisher_price',
-                     'date_kialvo_evaluation',
-                     'seo_metrics_date',
+                     'first_contact_date','date_publisher_price','date_kialvo_evaluation','seo_metrics_date',
                  ] as $f) {
             $data[$f] = $this->euDate($data[$f] ?? null);
         }
 
-        /* automatic maths on the *incoming* data */
         $this->recalcArray($data);
 
-        $wasActive = strtolower($new_entry->status) === 'active';
+        $wasActive = strtolower((string) $new_entry->status) === 'active';
 
         DB::transaction(function () use ($data, $r, $new_entry, $wasActive) {
             $new_entry->fill($data)->save();
             $new_entry->categories()->sync($r->category_ids ?? []);
 
-            $nowActive = strtolower($new_entry->status) === 'active';
+            $nowActive = strtolower((string) $new_entry->status) === 'active';
             if (!$wasActive && $nowActive) {
                 $this->moveToWebsites($new_entry);
             }
         });
 
         return redirect()->route('new_entries.index')
-                       ->with('status', 'Entry updated!');
+            ->with('status', 'Entry updated!');
     }
 
-    /**
-     * Mutate an array with all automatic calculations
-     * (used by both store() and update()).
-     */
-    private function recalcArray(array &$d): void
-    {
-        $da = $d['DA'] ?? 0;
-        $tf = $d['TF'] ?? 0;
-        $dr = $d['DR'] ?? 0;
-        $sr = $d['semrush_traffic'] ?? 0;
-
-        $auto = ($da * 2.4) + ($tf * 1.45) + ($dr * 0.5);
-        if ($sr >= 9700) {
-            $auto += ($sr / 15000) * 1.35;
-        }
-        $d['automatic_evaluation'] = $auto;
-
-        /* profit */
-        $d['profit'] = ($d['kialvo_evaluation'] ?? 0) - ($d['publisher_price'] ?? 0);
-
-        /* TF vs CF */
-        $cf = $d['CF'] ?? 0;
-        $d['TF_vs_CF'] = $cf ? (($d['TF'] ?? 0) / $cf) : 0;
-
-        /* keyword vs traffic */
-        $ahrefsTraffic = $d['ahrefs_traffic'] ?? 0;
-        $d['keyword_vs_traffic'] = $ahrefsTraffic
-            ? round(($d['ahrefs_keyword'] ?? 0) / $ahrefsTraffic, 2)
-            : 0;
-    }
-
-
-    /**
-     * Display a single New Entry.
-     */
     public function show(NewEntry $new_entry)
     {
-        // eager-load the look-ups so the Blade can access them without N+1
         $new_entry->load(['country', 'language', 'contact', 'categories']);
-
         return view('new_entries.show', compact('new_entry'));
     }
 
@@ -309,32 +251,288 @@ class NewEntryController extends Controller
     }
 
     /* =========================================================
-     *  INTERNAL HELPERS
+     * BULK UPDATE  (with Website copy + UNDO support)
      * =======================================================*/
-    private function moveToWebsites(NewEntry $e): void
+    public function bulkUpdate(Request $request)
     {
+        $data = $request->validate([
+            'ids'   => 'required',
+            'field' => ['required','string', function($a,$v,$f){
+                if (!in_array($v, self::BULK_EDITABLE, true)) $f('Field not allowed for bulk edit.');
+            }],
+            'value' => 'sometimes',
+        ]);
+
+        // normalize ids
+        $ids = is_array($request->ids)
+            ? array_values($request->ids)
+            : array_filter(array_map('intval', explode(',', (string)$request->ids)));
+
+        if (empty($ids)) {
+            return response()->json(['message' => 'No valid ids provided'], 422);
+        }
+
+        $field = $data['field'];
+        $value = $request->input('value', null);
+        if ($value === '') $value = null;
+
+        $token = (string) Str::uuid(); // used for UNDO
+
+        DB::transaction(function () use ($ids, $field, &$value, $token) {
+            $rows = NewEntry::with('categories')->whereIn('id', $ids)->get();
+
+            // 1) snapshot for rollback
+            foreach ($rows as $row) {
+                RollbackNewEntry::create([
+                    'token'        => $token,
+                    'new_entry_id' => $row->id,
+                    'snapshot'     => [
+                        'attributes' => $row->getAttributes(),
+                        'categories' => $row->categories->pluck('id')->all(),
+                    ],
+                ]);
+            }
+
+            // 2) pseudo-field
+            if ($field === self::FIELD_RECALC) {
+                foreach ($rows as $w) {
+                    $payload = $w->getAttributes();
+                    $this->applyAutoCalculations($payload);
+                    $w->fill([
+                        'profit'              => $payload['profit'],
+                        'total_cost'          => $payload['total_cost'],
+                        'total_revenues'      => $payload['total_revenues'],
+                        'keyword_vs_traffic'  => $payload['keyword_vs_traffic'],
+                        'TF_vs_CF'            => $payload['TF_vs_CF'],
+                    ])->save();
+                }
+                return;
+            }
+
+            // 3) many-to-many categories
+            if ($field === 'category_ids') {
+                $catIds = is_array($value)
+                    ? array_filter($value)
+                    : array_filter(explode(',', (string) $value));
+                foreach ($rows as $w) {
+                    $w->categories()->sync($catIds);
+                }
+                return;
+            }
+
+            // 4) dates normalization
+            if ((Str::endsWith($field, '_date') || Str::startsWith($field, 'date_')) && $value !== null) {
+                $value = preg_match('#^\d{2}/\d{2}/\d{4}$#', $value)
+                    ? Carbon::createFromFormat('d/m/Y', $value)->toDateString()
+                    : Carbon::parse($value)->toDateString();
+            }
+
+            // 5) scalar fields + recalc drivers + bulk copy when status -> active
+            foreach ($rows as $w) {
+                $oldStatus = strtolower((string) $w->status);
+
+                // price fields special USD handling
+                $priceFields = [
+                    'publisher_price','link_insertion_price','no_follow_price','special_topic_price',
+                    'banner_price','sitewide_link_price',
+                ];
+
+                if (in_array($field, $priceFields, true)) {
+                    if (strtoupper((string) $w->currency_code) === 'USD' && $value !== null && $value !== '') {
+                        $originalMap = [
+                            'publisher_price'      => 'original_publisher_price',
+                            'link_insertion_price' => 'original_link_insertion_price',
+                            'no_follow_price'      => 'original_no_follow_price',
+                            'special_topic_price'  => 'original_special_topic_price',
+                            'banner_price'         => 'original_banner_price',
+                            'sitewide_link_price'  => 'original_sitewide_link_price',
+                        ];
+                        $origField = $originalMap[$field] ?? null;
+                        if ($origField) {
+                            $w->{$origField} = $value;
+                        }
+
+                        try {
+                            $converted = Currency::convert()->from('USD')->to('EUR')->amount((float) $value)->get();
+                            $w->{$field} = $converted;
+                        } catch (\Throwable $e) {
+                            $w->{$field} = $value;
+                        }
+                    } else {
+                        $w->{$field} = $value;
+                    }
+                } else {
+                    $w->{$field} = $value;
+                }
+
+                // Recalc when a driver column changed
+                if (in_array($field, self::DRIVER_COLS, true)) {
+                    $payload = array_merge($w->getAttributes(), [$field=>$value]);
+                    $this->applyAutoCalculations($payload);
+                    $w->fill([
+                        'profit'             => $payload['profit'],
+                        'total_cost'         => $payload['total_cost'],
+                        'total_revenues'     => $payload['total_revenues'],
+                        'keyword_vs_traffic' => $payload['keyword_vs_traffic'],
+                        'TF_vs_CF'           => $payload['TF_vs_CF'],
+                    ]);
+                }
+
+                $w->save();
+
+                // 6) BULK COPY: when status becomes active
+                if ($field === 'status') {
+                    $newStatus = strtolower((string) $value);
+                    if ($oldStatus !== 'active' && $newStatus === 'active') {
+                        $website = null;
+                        try {
+                            $website = $this->moveToWebsites($w); // returns Website (or existing)
+                        } catch (\Throwable $e) {
+                            // if copy fails, we still keep the NewEntry update
+                        }
+                        // track created website for UNDO (token-level)
+                        if ($website instanceof Website) {
+                            RollbackWebsite::create([
+                                'token'      => $token,
+                                'website_id' => $website->id,
+                            ]);
+                        }
+                    }
+                }
+            }
+        });
+
+        return response()->json([
+            'message'    => 'Updated '.count($ids).' record(s).',
+            'undo_token' => $token,
+        ]);
+    }
+
+    /**
+     * UNDO (by token) or Restore selection (by ids).
+     * - If `token` is provided → revert all NewEntries to their snapshots AND
+     *   delete any Websites created as part of that bulk (tracked in RollbackWebsite).
+     * - Else if `ids[]` provided → for each id, restore the latest snapshot for that row.
+     */
+    public function rollback(Request $r)
+    {
+        $r->validate([
+            'token' => 'nullable|string',
+            'ids'   => 'nullable',
+        ]);
+
+        if ($token = $r->input('token')) {
+            DB::transaction(function () use ($token) {
+
+                // 1) Delete websites created in that bulk (if any)
+                $wRecs = RollbackWebsite::where('token', $token)->get();
+                foreach ($wRecs as $rec) {
+                    if ($rec->website_id) {
+                        $w = Website::with('categories')->find($rec->website_id);
+                        if ($w) {
+                            // detach categories first (safety), then delete
+                            try { $w->categories()->detach(); } catch (\Throwable $e) {}
+                            $w->delete();
+                        }
+                    }
+                }
+                // clean up RollbackWebsite rows
+                RollbackWebsite::where('token',$token)->delete();
+
+                // 2) Restore all NewEntry snapshots saved with this token
+                $snaps = RollbackNewEntry::where('token',$token)->orderByDesc('id')->get();
+                foreach ($snaps as $snap) {
+                    $attrs = (array) ($snap->snapshot['attributes'] ?? []);
+                    $cats  = (array) ($snap->snapshot['categories'] ?? []);
+
+                    $entry = NewEntry::withTrashed()->find($snap->new_entry_id);
+                    if (!$entry) continue;
+
+                    // force fill original attrs, then sync categories
+                    $entry->forceFill($attrs);
+                    $entry->save();
+
+                    try { $entry->categories()->sync($cats); } catch (\Throwable $e) {}
+                }
+
+                // Optionally purge the snapshots used for this undo
+                RollbackNewEntry::where('token',$token)->delete();
+            });
+
+            return response()->json(['message' => 'Changes undone.']);
+        }
+
+        // Restore latest snapshot per selected id
+        $ids = $r->input('ids', []);
+        if (!is_array($ids)) $ids = explode(',', (string)$ids);
+        $ids = array_filter(array_map('intval', $ids));
+
+        if (empty($ids)) {
+            return response()->json(['message'=>'Nothing to restore'], 422);
+        }
+
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $id) {
+                $snap = RollbackNewEntry::where('new_entry_id',$id)->orderByDesc('id')->first();
+                if (!$snap) continue;
+
+                $attrs = (array) ($snap->snapshot['attributes'] ?? []);
+                $cats  = (array) ($snap->snapshot['categories'] ?? []);
+
+                $entry = NewEntry::withTrashed()->find($id);
+                if (!$entry) continue;
+
+                $entry->forceFill($attrs);
+                $entry->save();
+                try { $entry->categories()->sync($cats); } catch (\Throwable $e) {}
+            }
+        });
+
+        return response()->json(['message'=>'Restored previous snapshot for selected rows.']);
+    }
+
+    /* =========================================================
+     * HELPERS
+     * =======================================================*/
+
+    /**
+     * Copy to Websites. Returns the Website instance (created or existing) or null.
+     * - Skips duplicate creation if a Website with the same domain already exists.
+     */
+    private function moveToWebsites(NewEntry $e): ?Website
+    {
+        // If a Website already exists for this domain, mark copied and skip create
+        $existing = Website::where('domain_name', $e->domain_name)->first();
+        if ($existing) {
+            $e->updateQuietly([
+                'copied_to_overview' => 1,
+                'date_added'         => Carbon::now(),
+            ]);
+            // keep categories synced (idempotent)
+            $existing->categories()->sync($e->categories()->pluck('categories.id'));
+            return $existing;
+        }
+
         // Copy only model-fillable attributes
         $data = $e->only((new Website)->getFillable());
 
-        // --- normalize dates coming from NewEntry (dd/mm/yyyy -> Y-m-d)
+        // normalize dates dd/mm/yyyy -> Y-m-d
         foreach (['date_publisher_price','date_kialvo_evaluation','seo_metrics_date'] as $f) {
             if (!empty($data[$f])) {
-                try {
-                    $data[$f] = \Carbon\Carbon::createFromFormat('d/m/Y', $data[$f])->format('Y-m-d');
-                } catch (\Throwable $ignored) { /* leave as-is */ }
+                try { $data[$f] = Carbon::createFromFormat('d/m/Y', $data[$f])->format('Y-m-d'); }
+                catch (\Throwable $ignored) {}
             }
         }
 
-        // --- fields affected by the websites trigger
+        // fields influenced by DB trigger
         $triggerFields = [
             'publisher_price','link_insertion_price','no_follow_price',
             'special_topic_price','banner_price','sitewide_link_price',
             'profit','automatic_evaluation',
         ];
 
-        // --- when currency_code is USD, pre-divide to neutralize BEFORE INSERT conversion
+        // If USD, pre-divide to neutralize BEFORE INSERT conversion (same as your Websites logic)
         if (!empty($data['currency_code']) && strtoupper($data['currency_code']) === 'USD') {
-            // read the same rate the trigger uses
             $rate = (float) DB::table('app_settings')
                 ->where('setting_name','usd_eur_rate')
                 ->value('setting_value');
@@ -342,7 +540,6 @@ class NewEntryController extends Controller
             if ($rate > 0) {
                 foreach ($triggerFields as $f) {
                     if (isset($data[$f]) && $data[$f] !== '' && $data[$f] !== null) {
-                        // keep precision; trigger will multiply back
                         $val = (float) str_replace(',', '.', $data[$f]);
                         $data[$f] = round($val / $rate, 8);
                     }
@@ -350,7 +547,7 @@ class NewEntryController extends Controller
             }
         }
 
-        // --- ensure original_* are set (store the pre-divided USD values as "original")
+        // ensure original_* mirrors
         $map = [
             'publisher_price'        => 'original_publisher_price',
             'link_insertion_price'   => 'original_link_insertion_price',
@@ -365,22 +562,41 @@ class NewEntryController extends Controller
             }
         }
 
-        // --- insert (trigger runs, multiplying USD values; end result = values you saw in NewEntry)
+        // Create website
         $website = Website::create($data);
 
-        // copy categories
+        // categories
         $website->categories()->sync($e->categories->pluck('id'));
 
-        // mark entry as copied
+        // mark as copied
         $e->updateQuietly([
             'copied_to_overview' => 1,
-            'date_added'         => \Carbon\Carbon::now(),
+            'date_added'         => Carbon::now(),
         ]);
+
+        return $website;
     }
 
+    /** derive metrics for array payload (used in bulk + CSV import) */
+    private function applyAutoCalculations(array &$d): void
+    {
+        $cost  = (float) ($d['publisher_price'] ?? 0);
+        $rev   = (float) ($d['kialvo_evaluation'] ?? 0)
+            + (float) ($d['banner_price'] ?? 0)
+            + (float) ($d['sitewide_link_price'] ?? 0);
 
+        $d['profit']         = $rev - $cost;
+        $d['total_cost']     = $cost;
+        $d['total_revenues'] = $rev;
 
+        $kw = (float) ($d['ahrefs_keyword'] ?? 0);
+        $tr = (float) ($d['ahrefs_traffic'] ?? 0);
+        $d['keyword_vs_traffic'] = $tr > 0 ? round($kw / $tr, 2) : 0;
 
+        $tf = (float) ($d['TF'] ?? 0);
+        $cf = (float) ($d['CF'] ?? 0);
+        $d['TF_vs_CF'] = $cf ? round($tf / $cf, 2) : 0;
+    }
 
     private function lookups(): array
     {
@@ -394,37 +610,44 @@ class NewEntryController extends Controller
 
     private function validateForm(Request $r): array
     {
-        /* identical rules you already have for Websites/NewEntry */
         return $r->validate([
             'domain_name' => 'required|string|max:255',
             'status'      => 'nullable|string|max:255',
-            'linkbuilder'  => 'nullable|string|max:255',
-            'country_id'  => 'nullable|integer',  'language_id' =>'nullable|integer',
-            'contact_id'  => 'nullable|integer',  'currency_code'=>'nullable|string|max:10',
+            'linkbuilder' => 'nullable|string|max:255',
+            'country_id'  => 'nullable|integer',
+            'language_id' => 'nullable|integer',
+            'contact_id'  => 'nullable|integer',
+            'currency_code'=>'nullable|string|max:10',
             'type_of_website' => 'nullable|string|max:255',
+
             'publisher_price'=>'nullable|numeric','link_insertion_price'=>'nullable|numeric',
             'no_follow_price'=>'nullable|numeric','special_topic_price'=>'nullable|numeric',
             'banner_price'=>'nullable|numeric','sitewide_link_price'=>'nullable|numeric',
+
             'original_publisher_price'=>'nullable|numeric',
             'original_link_insertion_price'=>'nullable|numeric',
             'original_no_follow_price'=>'nullable|numeric',
             'original_special_topic_price'=>'nullable|numeric',
             'original_banner_price'=>'nullable|numeric',
             'original_sitewide_link_price'=>'nullable|numeric',
+
             'DA'=>'nullable|integer','PA'=>'nullable|integer',
             'TF'=>'nullable|integer','CF'=>'nullable|integer',
             'DR'=>'nullable|integer','UR'=>'nullable|integer','ZA'=>'nullable|integer',
             'as_metric'=>'nullable|integer','seozoom'=>'nullable|string|max:255',
             'semrush_traffic'=>'nullable|integer','ahrefs_keyword'=>'nullable|integer',
             'ahrefs_traffic'=>'nullable|integer','kialvo_evaluation'=>'nullable|numeric',
+
             'first_contact_date'=>'nullable|date_format:d/m/Y',
             'date_publisher_price'=>'nullable|date_format:d/m/Y',
             'date_kialvo_evaluation'=>'nullable|date_format:d/m/Y',
             'seo_metrics_date'=>'nullable|date_format:d/m/Y',
+
             'betting'=>'boolean','trading'=>'boolean','permanent_link'=>'boolean',
             'more_than_one_link'=>'boolean','copywriting'=>'boolean',
             'no_sponsored_tag'=>'boolean','social_media_sharing'=>'boolean',
             'post_in_homepage'=>'boolean','extra_notes'=>'nullable|string',
+
             'category_ids'=>'nullable|array','category_ids.*'=>'integer',
         ]);
     }
@@ -434,7 +657,7 @@ class NewEntryController extends Controller
         foreach (['first_contact_date','date_publisher_price','date_kialvo_evaluation','seo_metrics_date'] as $f) {
             if (!empty($d[$f])) {
                 try { $d[$f]=Carbon::createFromFormat('d/m/Y',$d[$f])->format('Y-m-d'); }
-                catch (\Exception $e) { /* leave */ }
+                catch (\Exception $e) {}
             }
         }
     }
@@ -442,7 +665,8 @@ class NewEntryController extends Controller
     private function recalc(NewEntry $e): void
     {
         $da=$e->DA??0; $tf=$e->TF??0; $dr=$e->DR??0; $sr=$e->semrush_traffic??0;
-        $auto = ($da*2.4)+($tf*1.45)+($dr*0.5); if($sr>=9700)$auto+=($sr/15000)*1.35;
+        $auto = ($da*2.4)+($tf*1.45)+($dr*0.5);
+        if($sr>=9700) $auto+=($sr/15000)*1.35;
         $e->automatic_evaluation=$auto;
         $e->profit=($e->kialvo_evaluation??0)-($e->publisher_price??0);
         $e->TF_vs_CF=($e->CF??0)?($e->TF/$e->CF):0;
@@ -450,12 +674,11 @@ class NewEntryController extends Controller
             ? round(($e->ahrefs_keyword??0)/$e->ahrefs_traffic,2) : 0;
     }
 
-    /** Convert `dd/mm/yyyy` → `yyyy-mm-dd` (or return null / unchanged). */
+    /** dd/mm/yyyy → yyyy-mm-dd */
     private function euDate(?string $v): ?string
     {
         if (!$v) return null;
-        try   { return \Carbon\Carbon::createFromFormat('d/m/Y', $v)->format('Y-m-d'); }
+        try   { return Carbon::createFromFormat('d/m/Y', $v)->format('Y-m-d'); }
         catch (\Exception $e) { return $v; }
     }
-
 }
