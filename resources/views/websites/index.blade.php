@@ -471,6 +471,13 @@
                 <i class="fas fa-history"></i> Restore
             </button>
 
+            <button id="btnBulkOutreach"
+                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
+           bg-cyan-700 hover:bg-cyan-800 text-white shadow disabled:opacity-50
+           disabled:cursor-not-allowed">
+                <i class="fas fa-paper-plane"></i> Bulk Outreach
+            </button>
+
             {{-- live counter --}}
             <span class="ml-2 text-sm text-gray-600">
         Selected:&nbsp;<span id="selCount">0</span>
@@ -545,6 +552,7 @@
     @include('websites.partials.contact-modal')
     @include('websites.partials.note-modal')
     @include('websites.partials.bulk-modal')
+    @include('websites.partials.outreach-modal')
 
 @endsection
 
@@ -1380,6 +1388,130 @@
 
         }); // <-- END of $(document).ready()
 
+        function boOpenModal() {
+            // reset preview box
+            $('#boPreviewBox').addClass('hidden');
+            // default template if not chosen
+            if (!$('#boTemplate').val()) $('#boTemplate').val('first');
+            // ensure subject/body match the selected template only if empty
+            var k = $('#boTemplate').val();
+            if (!$('#boSubject').val() && window.BO_TEMPLATES && window.BO_TEMPLATES[k]) {
+                $('#boSubject').val(window.BO_TEMPLATES[k].subject || '');
+            }
+            if (!$('#boBody').val() && window.BO_TEMPLATES && window.BO_TEMPLATES[k]) {
+                $('#boBody').val(window.BO_TEMPLATES[k].body || '');
+            }
+            $('#bulkOutreachModal').removeClass('hidden');
+        }
+        function boCloseModal() {
+            $('#bulkOutreachModal').addClass('hidden');
+        }
+
+        /* ========= Wire up the button ========= */
+        $(document).on('click', '#btnBulkOutreach', function () {
+            if ($('.rowChk:checked').length === 0) { Swal.fire('Select at least one row first'); return; }
+            boOpenModal();
+        });
+        $(document).on('click', '#boCloseTop,#boCloseBottom', boCloseModal);
+
+        /* ========= Real-time template switch ========= */
+        $(document).on('change', '#boTemplate', function () {
+            var k = $(this).val();
+            if (window.BO_TEMPLATES && window.BO_TEMPLATES[k]) {
+                $('#boSubject').val(window.BO_TEMPLATES[k].subject || '');
+                $('#boBody').val(window.BO_TEMPLATES[k].body || '');
+            }
+        });
+
+        /* ========= Preview recipients ========= */
+        $(document).on('click', '#boCheck', function () {
+            var ids = $('.rowChk:checked').map(function(_, c){ return parseInt(c.value,10); }).get();
+            var onlyPast = $('#boOnlyPast').is(':checked');
+            var tplKey   = $('#boTemplate').val() || 'first';
+
+            $('#boSelTotal').text(ids.length);
+            $('#boEligible').text('0');
+            $('#boSkipped').text('0');
+            $('#boNoSpecialCount').text('0');
+            $('#boSkippedList').empty();
+
+            fetch("{{ route('websites.outreach.preview') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                body: JSON.stringify({ ids: ids, only_past: !!onlyPast, template_key: tplKey })
+            })
+                .then(function(r){ return r.json(); })
+                .then(function(r){
+                    if (!r || r.status !== 'ok') throw new Error(r && r.message ? r.message : 'Preview failed');
+                    $('#boPreviewBox').removeClass('hidden');
+                    $('#boEligible').text(r.data.eligible.length);
+                    $('#boSkipped').text(r.data.skipped.length);
+                    $('#boNoSpecialCount').text(r.data.no_special_count || 0);
+
+                    if (r.data.skipped.length) {
+                        var lines = r.data.skipped.map(function(s){ return '<div>• #'+s.id+' '+s.domain+' — '+s.reason+'</div>'; });
+                        $('#boSkippedList').html(lines.join(''));
+                    } else {
+                        $('#boSkippedList').html('<div class="text-green-700">All selected are eligible.</div>');
+                    }
+                })
+                .catch(function(err){ oops(err.message || 'Preview error'); });
+        });
+
+        /* ========= Send ========= */
+        $(document).on('click', '#boSend', function () {
+            var ids        = $('.rowChk:checked').map(function(_, c){ return parseInt(c.value,10); }).get();
+            var target_url = $('#boTargetUrl').val().trim();
+            var brand      = $('#boBrand').val().trim();
+            var subject    = $('#boSubject').val().trim();
+            var body       = $('#boBody').val().trim();
+            var only_past  = $('#boOnlyPast').is(':checked');
+            var tplKey     = $('#boTemplate').val() || 'first';
+
+            if (!subject) { oops('Subject is required'); return; }
+            if (!body)    { oops('Email body is required'); return; }
+
+            $('#boSend').prop('disabled', true).text('Sending...');
+
+            fetch("{{ route('websites.outreach.send') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                body: JSON.stringify({
+                    ids: ids,
+                    template_key: tplKey,
+                    target_url: target_url,
+                    brand: brand,
+                    subject: subject,
+                    body: body,
+                    only_past: only_past
+                })
+            })
+                .then(function(r){ return r.json(); })
+                .then(function(r){
+                    if (r.status !== 'ok') throw new Error(r.message || 'Send failed');
+
+                    var msg = 'Sent '+r.data.sent+' email(s)';
+                    if (r.data.failed) msg += ', '+r.data.failed+' failed';
+                    toast(msg);
+
+                    if (r.data.failed_details && r.data.failed_details.length) {
+                        var lines = r.data.failed_details.map(function(s){ return '#'+s.id+' '+s.domain+': '+s.error; }).join('\n');
+                        Swal.fire('Some emails failed', lines.substring(0, 1800), 'warning');
+                    }
+
+                    $('#chkAll').prop('checked', false);
+                    if (window.table) window.table.ajax.reload(null, false);
+                    boCloseModal();
+                })
+                .catch(function(err){ oops(err.message || 'Send error'); })
+                .finally(function(){ $('#boSend').prop('disabled', false).text('Send'); });
+        });
 
         document.addEventListener('DOMContentLoaded', function() {
             let toggleBtn = document.getElementById('toggleFiltersBtn');

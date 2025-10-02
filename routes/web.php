@@ -3,6 +3,7 @@
 use App\Http\Controllers\HistoricalEntryController;
 use App\Http\Controllers\NewEntryController;
 use App\Http\Controllers\NewEntryImportController;
+use App\Http\Controllers\OutreachController;
 use App\Http\Controllers\Tool\AhrefsCleanerController;
 use App\Http\Controllers\Tool\WebScraperController;
 use Illuminate\Support\Facades\Route;
@@ -110,6 +111,12 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/websites/export/csv',              [WebsiteController::class, 'exportCsv'])->name('websites.export.csv');
     Route::get('/websites/export/pdf',              [WebsiteController::class, 'exportPdf'])->name('websites.export.pdf');
+
+    Route::post('/websites/outreach/preview', [OutreachController::class, 'preview'])
+        ->middleware(['auth', 'verified'])->name('websites.outreach.preview');
+
+    Route::post('/websites/outreach/send', [OutreachController::class, 'send'])
+        ->middleware(['auth', 'verified'])->name('websites.outreach.send');
 
     // routes/web.php
     Route::post('/websites/bulk-convert-eur',
