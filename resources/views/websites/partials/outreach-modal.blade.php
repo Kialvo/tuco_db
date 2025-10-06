@@ -1,41 +1,13 @@
 @php
-    // ===============================
-    //  Two built-in templates (backend defaults)
-    // ===============================
-    // Use square-bracket placeholders so they render safely: [domain], [publisher price], [special topic price]
-    $boTemplates = [
-        'first' => [
-            'label'   => 'First email',
-            'subject' => 'Quick confirmation on guest post rates',
-            'body'    => "Hi,
+    $outreach   = config('outreach');
+    $languages  = $outreach['languages'] ?? [];
+    $templates  = $outreach['templates'] ?? [];
 
-I hope you’re doing well. This is Martina from Menford.
+    $defaultLang = 'en';
+    $defaultKind = 'first';
 
-We’ve already collaborated with you on [domain] and really appreciated the experience.
-
-I’m reaching out to confirm your current rates for publishing a guest post with a permanent dofollow link, without the sponsored tag. Could you please confirm that the rate for a standard article is [publisher price], and that the rate for an article on sensitive topics is [special topic price]?
-
-Looking forward to your reply so I can offer your site to our client.
-
-Best,
-Martina",
-        ],
-        'followup' => [
-            'label'   => 'Follow-up',
-            'subject' => 'Following up on guest post rates',
-            'body'    => "Hi,
-
-Just following up on my previous email — could you confirm your current rates for a guest post with a permanent dofollow link?
-
-It would help me propose your site to our client.
-
-Best,
-Martina",
-        ],
-    ];
-
-    // initial template = first
-    $tplKey = 'first';
+    $subjectDefault = $templates[$defaultLang][$defaultKind]['subject'] ?? '';
+    $bodyDefault    = $templates[$defaultLang][$defaultKind]['body']    ?? '';
 @endphp
 
 <div id="bulkOutreachModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -50,24 +22,31 @@ Martina",
 
         <!-- Body -->
         <div class="p-4 space-y-3 text-xs">
-            <!-- Template selector -->
+            <!-- Language + Template -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div class="md:col-span-1">
-                    <label for="boTemplate" class="block text-gray-700 font-medium mb-1">Template</label>
-                    <select id="boTemplate"
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Language</label>
+                    <select id="boLanguage"
                             class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
-                        @foreach($boTemplates as $key => $tpl)
-                            <option value="{{ $key }}" @selected($key === $tplKey)>{{ $tpl['label'] }}</option>
+                        @foreach($languages as $code => $label)
+                            <option value="{{ $code }}" @selected($code === $defaultLang)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="md:col-span-2">
-                    <div class="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded p-2">
-                        For the <b>First email</b>, the sentence about <i>“sensitive topics”</i> will be
-                        <b>automatically removed</b> for any site where <code>special_topic_price</code> is empty.
-                        This happens per recipient during bulk send.
-                    </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Template</label>
+                    <select id="boTemplate"
+                            class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="first" @selected($defaultKind==='first')>First email</option>
+                        <option value="followup" @selected($defaultKind==='followup')>Follow-up</option>
+                    </select>
+                </div>
+
+                <div class="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded p-2">
+                    In the <b>First</b> template, the part about <i>“sensitive topics”</i> is inserted per recipient via
+                    <code>@{{ sensitive_line }}</code> and <b>automatically removed</b> when a site has no
+                    <code>special_topic_price</code>.
                 </div>
             </div>
 
@@ -84,22 +63,25 @@ Martina",
                            class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
                 </div>
 
+                <!-- Subject -->
                 <div class="col-span-1 md:col-span-2">
                     <label class="block text-gray-700 font-medium mb-1">Subject *</label>
                     <input type="text" id="boSubject"
-                           value="{{ $boTemplates[$tplKey]['subject'] }}"
+                           value="{{ $subjectDefault }}"
                            class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
                 </div>
 
+                <!-- Body -->
                 <div class="col-span-1 md:col-span-2">
                     <label class="block text-gray-700 font-medium mb-1">
                         Email body *
                         <span class="text-gray-500 font-normal">
-                            (placeholders you can use: <code>[domain] [publisher price] [special topic price] [brand] [target url]</code>)
+                            (placeholders: <code>[domain] [publisher price] [special topic price] [brand] [target url]</code>;
+                            the first template also uses <code>@{{ sensitive_line }}</code>)
                         </span>
                     </label>
                     <textarea id="boBody" rows="10"
-                              class="w-full border border-gray-300 rounded px-2 py-2 leading-5 font-mono focus:ring-cyan-500 focus:border-cyan-500">{{ $boTemplates[$tplKey]['body'] }}</textarea>
+                              class="w-full border border-gray-300 rounded px-2 py-2 leading-5 font-mono focus:ring-cyan-500 focus:border-cyan-500">{{ $bodyDefault }}</textarea>
                 </div>
             </div>
 
@@ -143,7 +125,37 @@ Martina",
     </div>
 </div>
 
-{{-- Provide templates to JS in a safe way --}}
+{{-- Provide templates to JS safely --}}
 <script>
-    window.BO_TEMPLATES = @json($boTemplates);
+    window.BO_TEMPLATES     = @json($templates);
+    window.BO_LANGUAGES     = @json($languages);
+    window.BO_DEFAULT_LANG  = @json($defaultLang);
+    window.BO_DEFAULT_KIND  = @json($defaultKind);
+
+    (function () {
+        const langSel = document.getElementById('boLanguage');
+        const kindSel = document.getElementById('boTemplate');
+        const subjEl  = document.getElementById('boSubject');
+        const bodyEl  = document.getElementById('boBody');
+
+        function loadTemplate() {
+            const lang = (langSel?.value || window.BO_DEFAULT_LANG || 'en');
+            const kind = (kindSel?.value || window.BO_DEFAULT_KIND || 'first');
+            const t = (window.BO_TEMPLATES[lang] && window.BO_TEMPLATES[lang][kind]) ? window.BO_TEMPLATES[lang][kind] : null;
+            if (t) {
+                subjEl.value = t.subject || '';
+                bodyEl.value = t.body || '';
+            }
+        }
+
+        if (langSel && kindSel) {
+            langSel.addEventListener('change', loadTemplate);
+            kindSel.addEventListener('change', loadTemplate);
+        }
+        // Ensure defaults are painted once on load:
+        loadTemplate();
+        // Also expose for the outer page script (boOpenModal) to force-refresh when opening:
+        window.BO_loadTemplate = loadTemplate;
+    })();
 </script>
+

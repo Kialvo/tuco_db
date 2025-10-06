@@ -1388,24 +1388,44 @@
 
         }); // <-- END of $(document).ready()
 
+        // ----- Outreach helpers (multilang) -----
+        function boGetTemplate(lang, kind) {
+            try {
+                if (window.BO_TEMPLATES && window.BO_TEMPLATES[lang] && window.BO_TEMPLATES[lang][kind]) {
+                    return window.BO_TEMPLATES[lang][kind];
+                }
+            } catch(e) {}
+            return { subject:'', body:'' };
+        }
+        function boLoadSubjectBodyFromConfig() {
+            const lang = $('#boLanguage').val() || window.BO_DEFAULT_LANG || 'en';
+            const kind = $('#boTemplate').val()  || window.BO_DEFAULT_KIND || 'first';
+            const t = boGetTemplate(lang, kind);
+            $('#boSubject').val(t.subject || '');
+            $('#boBody').val(t.body || '');
+        }
+
         function boOpenModal() {
             // reset preview box
             $('#boPreviewBox').addClass('hidden');
-            // default template if not chosen
-            if (!$('#boTemplate').val()) $('#boTemplate').val('first');
-            // ensure subject/body match the selected template only if empty
-            var k = $('#boTemplate').val();
-            if (!$('#boSubject').val() && window.BO_TEMPLATES && window.BO_TEMPLATES[k]) {
-                $('#boSubject').val(window.BO_TEMPLATES[k].subject || '');
+            // force-refresh from current language/template selections:
+
+            // defaults for selectors
+            if (!$('#boLanguage').val()) $('#boLanguage').val(window.BO_DEFAULT_LANG || 'en');
+            if (!$('#boTemplate').val()) $('#boTemplate').val(window.BO_DEFAULT_KIND || 'first');
+
+            // if user fields are empty, load from config;
+            // if they already typed something, don't overwrite.
+            if (!$('#boSubject').val() || !$('#boBody').val()) {
+                boLoadSubjectBodyFromConfig();
             }
-            if (!$('#boBody').val() && window.BO_TEMPLATES && window.BO_TEMPLATES[k]) {
-                $('#boBody').val(window.BO_TEMPLATES[k].body || '');
-            }
+
+            if (window.BO_loadTemplate) window.BO_loadTemplate();
             $('#bulkOutreachModal').removeClass('hidden');
+
         }
-        function boCloseModal() {
-            $('#bulkOutreachModal').addClass('hidden');
-        }
+        function boCloseModal() { $('#bulkOutreachModal').addClass('hidden'); }
+
 
         /* ========= Wire up the button ========= */
         $(document).on('click', '#btnBulkOutreach', function () {
@@ -1415,13 +1435,11 @@
         $(document).on('click', '#boCloseTop,#boCloseBottom', boCloseModal);
 
         /* ========= Real-time template switch ========= */
-        $(document).on('change', '#boTemplate', function () {
-            var k = $(this).val();
-            if (window.BO_TEMPLATES && window.BO_TEMPLATES[k]) {
-                $('#boSubject').val(window.BO_TEMPLATES[k].subject || '');
-                $('#boBody').val(window.BO_TEMPLATES[k].body || '');
-            }
+        /* ========= Real-time template/lang switch ========= */
+        $(document).on('change', '#boTemplate, #boLanguage', function () {
+            boLoadSubjectBodyFromConfig();
         });
+
 
         /* ========= Preview recipients ========= */
         $(document).on('click', '#boCheck', function () {
@@ -1441,7 +1459,13 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                body: JSON.stringify({ ids: ids, only_past: !!onlyPast, template_key: tplKey })
+                body: JSON.stringify({
+                    ids: ids,
+                    only_past: !!onlyPast,
+                    template_key: tplKey,
+                    language: $('#boLanguage').val() || window.BO_DEFAULT_LANG || 'en'
+                })
+
             })
                 .then(function(r){ return r.json(); })
                 .then(function(r){
@@ -1470,6 +1494,8 @@
             var body       = $('#boBody').val().trim();
             var only_past  = $('#boOnlyPast').is(':checked');
             var tplKey     = $('#boTemplate').val() || 'first';
+            var lang       = $('#boLanguage').val() || window.BO_DEFAULT_LANG || 'en';
+
 
             if (!subject) { oops('Subject is required'); return; }
             if (!body)    { oops('Email body is required'); return; }
@@ -1480,38 +1506,40 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    'X-CSRF-TOKEN' : $('meta[name="csrf-token"]').attr('content')
                 },
                 body: JSON.stringify({
                     ids: ids,
                     template_key: tplKey,
+                    language: lang,          // <— send language
                     target_url: target_url,
                     brand: brand,
                     subject: subject,
                     body: body,
-                    only_past: only_past
+                    only_past: only_past,
+
                 })
             })
-                .then(function(r){ return r.json(); })
-                .then(function(r){
+                .then(r => r.json())
+                .then(r => {
                     if (r.status !== 'ok') throw new Error(r.message || 'Send failed');
 
-                    var msg = 'Sent '+r.data.sent+' email(s)';
-                    if (r.data.failed) msg += ', '+r.data.failed+' failed';
-                    toast(msg);
-
-                    if (r.data.failed_details && r.data.failed_details.length) {
-                        var lines = r.data.failed_details.map(function(s){ return '#'+s.id+' '+s.domain+': '+s.error; }).join('\n');
+                    var msg = 'Sent ' + r.data.sent + ' email(s)';
+                    if (r.data.failed) msg += ', ' + r.data.failed + ' failed';
+                    toast(msg);                          // ✅ same toast style
+                    if (r.data.failed_details?.length) {
+                        var lines = r.data.failed_details.map(s => '#'+s.id+' '+s.domain+': '+s.error).join('\n');
                         Swal.fire('Some emails failed', lines.substring(0, 1800), 'warning');
                     }
 
                     $('#chkAll').prop('checked', false);
                     if (window.table) window.table.ajax.reload(null, false);
-                    boCloseModal();
+                    boCloseModal();                      // ✅ close modal
                 })
-                .catch(function(err){ oops(err.message || 'Send error'); })
-                .finally(function(){ $('#boSend').prop('disabled', false).text('Send'); });
+                .catch(err => oops(err.message || 'Send error'))
+                .finally(() => $('#boSend').prop('disabled', false).text('Send'));
         });
+
 
         document.addEventListener('DOMContentLoaded', function() {
             let toggleBtn = document.getElementById('toggleFiltersBtn');
