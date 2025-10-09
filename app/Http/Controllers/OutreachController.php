@@ -180,20 +180,20 @@ class OutreachController extends Controller
 
         // 3) General punctuation tidy-ups (handles cases like "… price{{token}}?" or double question marks)
         // remove extra spaces before punctuation
-        $out = preg_replace('/\s+([,.;!?])/', '$1', $out);
-        // ", ?" -> "?"
-        $out = preg_replace('/,\s*\?/', '?', $out);
-        // collapse "??" -> "?"
-        $out = preg_replace('/\?{2,}/', '?', $out);
-        // collapse multiple spaces
-        $out = preg_replace('/\s{2,}/', ' ', $out);
-        // trim
+        // Punctuation tidying (preserve line breaks)
+        $out = preg_replace('/[ \t]+([,.;!?])/', '$1', $out); // spaces before punctuation
+        $out = preg_replace('/,\s*\?/', '?', $out);           // ", ?" -> "?"
+        $out = preg_replace('/\?{2,}/', '?', $out);           // "??" -> "?"
+        $out = preg_replace('/[ \t]{2,}/', ' ', $out);        // collapse spaces/tabs only (keep \r\n)
+        $out = preg_replace("/(\r?\n){3,}/", "\n\n", $out);   // 3+ blank lines -> one empty line
+
         $out = trim($out);
 
-        // Subjects should be single line
         if ($isSubject) {
+            // Subjects should be single-line, spaces only
             $out = preg_replace('/\s+/', ' ', $out);
         }
+
 
         return $out;
     }

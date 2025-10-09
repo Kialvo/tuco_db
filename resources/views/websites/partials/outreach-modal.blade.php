@@ -86,7 +86,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <input id="boOnlyPast" type="checkbox" class="h-4 w-4 text-cyan-600" checked>
+                <input id="boOnlyPast" type="checkbox" class="h-4 w-4 text-cyan-600">
                 <label for="boOnlyPast" class="text-gray-700">
                     Only send to websites with Status = <b>past</b> (prior collaboration)
                 </label>
