@@ -202,20 +202,18 @@ class OutreachController extends Controller
     private function formatMoney($value, ?string $currency): string
     {
         if ($value === null || $value === '') return '';
+        $num = (float) $value;
 
-        // Always display Euro symbol
         $symbol = '€';
+        if (is_string($currency)) {
+            $c = strtoupper($currency);
+            if ($c === 'USD') $symbol = '€';
+            if ($c === 'EUR') $symbol = '€';
+        }
 
-        // Ensure it’s a clean numeric
-        $value = (float) $value;
+        // Drop decimals if integer-like
+        $formatted = (floor($num) == $num) ? number_format($num, 0) : number_format($num, 2);
 
-        // Format: no decimals if integer, 2 decimals otherwise
-        $formatted = (floor($value) == $value)
-            ? number_format($value, 0, ',', '.')
-            : number_format($value, 2, ',', '.');
-
-        // Example output: "€ 85" or "€ 123,50"
         return $symbol . ' ' . $formatted;
     }
-
 }
