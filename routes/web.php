@@ -6,6 +6,7 @@ use App\Http\Controllers\NewEntryImportController;
 use App\Http\Controllers\OutreachController;
 use App\Http\Controllers\Tool\AhrefsCleanerController;
 use App\Http\Controllers\Tool\WebScraperController;
+use App\Http\Controllers\WebsiteImportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminMiddleware;
 
@@ -117,6 +118,19 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/websites/outreach/send', [OutreachController::class, 'send'])
         ->middleware(['auth', 'verified'])->name('websites.outreach.send');
+
+    /*--------------------------------------------------------------
+| IMPORT
+--------------------------------------------------------------*/
+
+    Route::prefix('websites/import')->name('websites.import.')->group(function () {
+        Route::get('/',        [WebsiteImportController::class, 'index'])->name('index');   // the page
+        Route::get('/sample',  [WebsiteImportController::class, 'sample'])->name('sample'); // sample CSV
+        Route::post('/preview',[WebsiteImportController::class, 'preview'])->name('preview');
+        Route::post('/commit', [WebsiteImportController::class, 'commit'])->name('commit');
+    });
+
+
 
     // routes/web.php
     Route::post('/websites/bulk-convert-eur',
