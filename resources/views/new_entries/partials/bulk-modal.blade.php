@@ -28,7 +28,7 @@
         'date_publisher_price'=>'Date – Publisher',
         'seo_metrics_date'    =>'Date – SEO metrics',
         'date_kialvo_evaluation' => 'Date – Kialvo',
-
+        'first_contact_date' => 'Date – First Contact',
         'category_ids'=>'Categories',
 
         'betting'              => 'Betting',
@@ -46,7 +46,7 @@
         'date_publisher_price'   => ['type' => 'date'],
         'seo_metrics_date'       => ['type' => 'date'],
         'date_kialvo_evaluation' => ['type' => 'date'],
-
+        'first_contact_date'     => ['type' => 'date'],
 
         'status' => ['type'=>'select','options'=>[
             ''=>'-- Clear --',
