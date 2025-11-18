@@ -111,7 +111,7 @@
 
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-gray-700 font-medium mb-1">Contact</label>
+                <label class="block text-gray-700 font-medium mb-1">Publisher</label>
                 <select
                     name="contact_id"
                     class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"

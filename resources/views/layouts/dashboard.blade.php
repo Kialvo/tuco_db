@@ -57,7 +57,7 @@
                             hover:bg-slate-800 {{ request()->routeIs('websites.*') ? 'bg-slate-800' : '' }}">
                     {{-- Main link --}}
                     <a href="{{ route('websites.index') }}" class="flex-1 inline-flex items-center">
-                        <i class="fas fa-globe w-5 inline-block me-2"></i> Websites
+                        <i class="fas fa-globe w-5 inline-block me-2"></i> Domains
                     </a>
                     {{-- Toggle --}}
                     <button @click="open = !open" class="focus:outline-none">
@@ -172,7 +172,7 @@
                     <a href="{{ route('tools.discover') }}"
                        class="block px-3 py-2 rounded transition hover:bg-slate-800
                   {{ request()->routeIs('tools.discover') ? 'bg-slate-800' : '' }}">
-                        <i class="fas fa-search w-4 inline-block me-2"></i> Discover Websites
+                        <i class="fas fa-search w-4 inline-block me-2"></i> Discover Domains
                     </a>
 
                     <a href="{{ route('tools.ahrefs.index') }}"

@@ -111,7 +111,7 @@
         <div class="grid grid-cols-2 gap-4">
             {{-- Contact --}}
             <div>
-                <label class="block">Contact</label>
+                <label class="block">Publisher</label>
                 <select name="contact_id" class="w-full border-gray-300 rounded">
                     <option value="">-- None --</option>
                     @foreach($contacts as $cnt)

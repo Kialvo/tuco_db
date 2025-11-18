@@ -162,7 +162,7 @@
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">Country</th>
                     <th class="px-4 py-2">Language</th>
-                    <th class="px-4 py-2">Contact</th>
+                    <th class="px-4 py-2">Publisher</th>
                     <th class="px-4 py-2">Currency</th>
 
                     <th class="px-4 py-2">Publisher Price</th>
@@ -456,15 +456,15 @@
                                 });
                                 websitesHtml += '</ul>';
                             } else {
-                                websitesHtml = '<p>No websites found for this contact.</p>';
+                                websitesHtml = '<p>No websites found for this publisher.</p>';
                             }
                             $('#modalContactWebsites').html(websitesHtml);
                             $('#contactModal').removeClass('hidden');
                         } else {
-                            alert('Could not load contact info.');
+                            alert('Could not load publisher info.');
                         }
                     },
-                    error: function() { alert('Error fetching contact info.'); }
+                    error: function() { alert('Error fetching publisher info.'); }
                 });
             });
             $('#closeContactModal, #closeContactModalBottom').on('click', function() {

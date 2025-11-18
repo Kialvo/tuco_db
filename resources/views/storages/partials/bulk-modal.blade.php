@@ -8,6 +8,7 @@
         'status'                    => 'Status',
         'LB'                        => 'LB',
         'client_id'                 => 'Client',
+        'contact_id'                 => 'Publisher',
         'copy_id'                   => 'Copywriter',
         'country_id'                => 'Country',
         'language_id'               => 'Language',
@@ -91,8 +92,21 @@
             'type'    => 'select',
             'options' => ['EUR'=>'EUR','USD'=>'USD'],
         ],
+
         'client_id'   => ['type'=>'select','options'=>$toOptions($clients,
                                 fn($c)=>$c->first_name.' '.$c->last_name)],
+
+                                // 🔹 NEW: bulk “Publisher / Contact” dropdown
+    'contact_id'  => [
+        'type'    => 'select',
+        'options' => $toOptions($contacts, function ($c) {
+            $label = $c->name ?? '';
+            if ($c->email) {
+                $label .= ' ('.$c->email.')';
+            }
+            return $label;
+        }),
+    ],
         'copy_id'     => ['type'=>'select','options'=>$toOptions($copies ,'copy_val')],
         'language_id' => ['type'=>'select','options'=>$toOptions($languages,'name')],
         'country_id'  => ['type'=>'select','options'=>$toOptions($countries,'country_name')],
