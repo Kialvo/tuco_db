@@ -8,10 +8,11 @@
     @php
         $exportColumns = [
         'id'                             => 'ID',
-        'website_domain'                 => 'Website',
+        'website_domain'                 => 'Domain',
         'status'                         => 'Status',
         'LB'                             => 'LB',
         'client_name'                    => 'Client',
+        'contact_name'                   => 'Publisher',
         'copywriter_name'                => 'Copywriter',
         'copy_nr'                        => 'Copywriter Amount €',
         'copywriter_commision_date'      => 'Copy Comm. Date',
@@ -53,7 +54,7 @@
 
         /* fields allowed for bulk-edit (keep in sync with StorageController::BULK_EDITABLE) */
         $bulkEditable = [
-        'status','LB','client_id','copy_id','copy_nr','copywriter_commision_date',
+        'status','LB','client_id','contact_id','copy_id','copy_nr','copywriter_commision_date',
         'copywriter_submission_date','language_id','country_id',
         'publisher_currency','publisher_amount','publisher','menford','client_copy',
         'campaign','anchor_text','target_url','campaign_code','article_sent_to_publisher',
@@ -174,6 +175,24 @@
                         @endforeach
                     </select>
                 </div>
+                <!-- Contact -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Publisher</label>
+                    <select id="filterContact"
+                            class="border border-gray-300 rounded px-2 py-2 w-44
+                   focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">-- Any --</option>
+                        @foreach($contacts as $contact)
+                            <option value="{{ $contact->id }}">
+                                {{ $contact->name }}
+                                @if($contact->email)
+                                    ({{ $contact->email }})
+                                @endif
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 {{-- Status --}}
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Status</label>
@@ -310,10 +329,11 @@
                     </th>
 
                     <th class="px-4 py-2">ID</th>
-                    <th class="px-4 py-2">Website</th>
+                    <th class="px-4 py-2">Domain</th>
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">LB</th>
                     <th class="px-4 py-2">Client</th>
+                    <th class="px-4 py-2">Publisher</th>
                     <th class="px-4 py-2">Copywriter</th>
                     <th class="px-4 py-2">Copywriter Amount €</th>
                     <th class="px-4 py-2">Copy Comm.<br>Date</th>
@@ -364,6 +384,7 @@
                     <td></td>  {{-- 3 Status --}}
                     <td></td>  {{-- 4 LB --}}
                     <td></td>  {{-- 5 Client --}}
+                    <td></td>  {{-- 3 Contact --}}
                     <td></td>  {{-- 6 Copywriter --}}
 
                     {{-- 7–10 ─ summary / some empty --}}
@@ -426,6 +447,7 @@
 
 {{-- NEW bulk-edit modal --}}
 @include('storages.partials.bulk-modal')
+@include('websites.partials.contact-modal')
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -510,7 +532,7 @@
         $(function(){
 
             /* Select2 */
-            $('#filterLanguage,#filterCountry,#filterClient,#filterCopy,#filterCategories,#exportFields')
+            $('#filterLanguage,#filterCountry,#filterClient,#filterContact,#filterCopy,#filterCategories,#exportFields')
                 .select2({width:'resolve',dropdownAutoWidth:true,placeholder:'Select',allowClear:true,
                     containerCssClass:'text-xs',dropdownCssClass:'text-xs'});
 
@@ -529,6 +551,7 @@
                         d.language_id      =$('#filterLanguage').val();
                         d.country_id       =$('#filterCountry').val();
                         d.client_id        =$('#filterClient').val();
+                        d.contact_id = $('#filterContact').val();
                         d.campaign         =$('#filterCampaign').val();
                         d.campaign_code    =$('#filterCampaignCode').val();
                         d.invoice_menford_nr=$('#filterInvoiceMenfordNr').val();
@@ -552,6 +575,24 @@
                     {data:'client_name',name:'client.first_name',
                         render:(d,t,r)=>r.client_id?`<a href="#" class="client-link underline text-blue-600"
                                            data-client-id="${r.client_id}">${d}</a>`:''},
+                    {
+                        data: 'contact_name',
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            if (!row.contact_id || !data) {
+                                return 'No Publisher';
+                            }
+                            return `
+            <a href="#"
+               class="contact-link text-blue-600 underline"
+               data-contact-id="${row.contact_id}">
+                ${data}
+            </a>
+        `;
+                        }
+                    },
+
                     {data:'copywriter_name',name:'copy.copy_val',
                         render:(d,t,r)=>r.copy_id?`<a href="#" class="copy-link underline text-blue-600"
                                            data-copy-id="${r.copy_id}">${d}</a>`:''},
@@ -926,6 +967,58 @@
                     .then(()=>toast('Copied to clipboard!'))
                     .catch(()=>Swal.fire({icon:'error',title:'Copy failed'}));
             });
+
+            // ---------- Contact modal (same as Websites) ----------
+            $(document).on('click', '.contact-link', function(e) {
+                e.preventDefault();
+                let contactId = $(this).data('contact-id');
+
+                $.ajax({
+                    url: "{{ route('contacts.showAjax', '') }}/" + contactId,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            let c = response.data;
+                            $('#modalContactName').text(c.name ?? '');
+                            $('#modalContactEmail').text(c.email ?? '');
+                            $('#modalContactPhone').text(c.phone ?? '');
+                            $('#modalContactFacebook').text(c.facebook ?? '');
+                            $('#modalContactInstagram').text(c.instagram ?? '');
+
+                            // Build websites list (same as Websites index)
+                            let websitesHtml = '';
+                            if (c.websites && c.websites.length > 0) {
+                                websitesHtml = '<ul>';
+                                c.websites.forEach(function (w) {
+                                    let url = "/websites/" + w.id;
+                                    websitesHtml += `
+                            <li>
+                                <a href="${url}" class="underline text-blue-600">
+                                    ${w.domain_name}
+                                </a>
+                            </li>`;
+                                });
+                                websitesHtml += '</ul>';
+                            } else {
+                                websitesHtml = '<p>No domains found for this publisher.</p>';
+                            }
+                            $('#modalContactWebsites').html(websitesHtml);
+
+                            $('#contactModal').removeClass('hidden');
+                        } else {
+                            alert('Could not load publisher info.');
+                        }
+                    },
+                    error: function() {
+                        alert('Error fetching publisher info.');
+                    }
+                });
+            });
+
+            $('#closeContactModal, #closeContactModalBottom').on('click', function() {
+                $('#contactModal').addClass('hidden');
+            });
+
             /* ──────────────── BULK-EDIT logic ──────────────── */
             /* ─── Bulk-Edit ─── */
             function buildBulkInput () {

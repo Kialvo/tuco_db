@@ -16,22 +16,58 @@
 
                 {{-- Website --}}
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Website</label>
+                    <label class="block text-gray-700 font-medium mb-1">Domain</label>
                     <select name="website_id" id="websiteSelect"
                             class="w-full border border-gray-300 rounded px-2 py-1
-                   focus:ring-cyan-500 focus:border-cyan-500">
+               focus:ring-cyan-500 focus:border-cyan-500">
                         <option value="">-- None --</option>
                         @foreach($websites as $w)
-                            <option value="{{ $w->id }}"
-                                {{ old('website_id')==$w->id ? 'selected' : '' }}>
+                            @php
+                                $contactLabel = $w->contact
+                                    ? trim($w->contact->name . ($w->contact->email ? ' <'.$w->contact->email.'>' : ''))
+                                    : '';
+                            @endphp
+                            <option
+                                value="{{ $w->id }}"
+                                data-contact-id="{{ $w->contact->id ?? '' }}"
+                                data-contact-label="{{ $contactLabel }}"
+                                {{ old('website_id')==$w->id ? 'selected' : '' }}
+                            >
                                 {{ $w->domain_name }}
+                                @if($contactLabel)
+                                    ({{ $contactLabel }})
+                                @endif
                             </option>
                         @endforeach
                     </select>
+
                     @error('website_id')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+
+                {{-- Contact (primary publisher contact) --}}
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1">Publisher</label>
+                    <select name="contact_id" id="contactSelect"
+                            class="w-full border border-gray-300 rounded px-2 py-1
+                   focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">-- None --</option>
+                        @foreach($contacts as $ct)
+                            @php
+                                $label = trim($ct->name . ($ct->email ? ' <'.$ct->email.'>' : ''));
+                            @endphp
+                            <option value="{{ $ct->id }}"
+                                {{ old('contact_id') == $ct->id ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('contact_id')
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 {{-- Status --}}
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Status</label>
@@ -344,7 +380,7 @@
     <script>
         $(document).ready(function() {
 
-            $('#categorySelect, #clientSelect, #copywriterSelect, #websiteSelect').select2({
+            $('#categorySelect, #clientSelect, #copywriterSelect, #websiteSelect, #contactSelect').select2({
                 placeholder:'Select',
                 closeOnSelect:false,
                 width:'resolve',
@@ -354,12 +390,22 @@
             });
 
             flatpickr('.date-input', {
-                dateFormat: 'd/m/Y',   // what the user sees *and* what is sent to PHP
+                dateFormat: 'd/m/Y',
                 allowInput: true
             });
 
+            // When website changes → auto-select its contact (if any)
+            $('#websiteSelect').on('change', function () {
+                var selected   = $(this).find('option:selected');
+                var contactId  = selected.data('contact-id');
+
+                if (contactId) {
+                    $('#contactSelect')
+                        .val(String(contactId))
+                        .trigger('change');
+                }
+            });
         });
-
-
     </script>
 @endpush
+

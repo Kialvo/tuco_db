@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use AmrShawky\Currency\Facade\Currency;
+use App\Models\Contact;
 use App\Models\RollbackStorage;
 use App\Models\Storage;
 use App\Models\Country;
@@ -28,7 +29,7 @@ class StorageController extends Controller
      */
     public const BULK_EDITABLE = [
         // GENERAL / FK
-        'status','LB','client_id','copy_id','country_id','language_id',
+        'status','LB','client_id','contact_id','copy_id','country_id','language_id',
         // COPY DETAILS
         'copy_nr','copywriter_commision_date','copywriter_submission_date',
         // PUBLISHER
@@ -52,6 +53,8 @@ class StorageController extends Controller
     /*======================================================================
     | INDEX – filters + DataTable view
     ======================================================================*/
+
+
     public function index()
     {
         $countries  = Country::all();
@@ -60,15 +63,26 @@ class StorageController extends Controller
         $categories = Category::all();
         $copies     = Copy::all();
 
+        // pick one id per (name,email) pair, ordered by name
+        $contacts = Contact::select(
+            DB::raw('MIN(id) as id'),
+            'name',
+            'email'
+        )
+            ->groupBy('name', 'email')
+            ->orderBy('name')
+            ->get();
+
         return view('storages.index', compact(
             'countries',
             'languages',
             'clients',
+            'contacts',
             'copies',
             'categories',
-
         ));
     }
+
 
     /*======================================================================
     | DATATABLES JSON
@@ -76,14 +90,21 @@ class StorageController extends Controller
     public function getData(Request $request)
     {
         $query = Storage::with([
-            'site:id,domain_name',
+            // Website (site) + its contact
+            'site:id,domain_name,contact_id',
+            'site.contact:id,name,email,phone',
+
+            // Direct contacts via pivot
+            'contacts:id,name,email,phone',
+
+            // Existing stuff
             'country:id,country_name',
             'language:id,name',
             'client:id,first_name,last_name',
             'copy:id,copy_val',
-            'categories:id,name'
-
+            'categories:id,name',
         ]);
+
 
         /* ---------- filters ---------- */
         // publication date range
@@ -100,6 +121,19 @@ class StorageController extends Controller
         if ($request->filled('language_id'))        $query->where('language_id',        $request->language_id);
         if ($request->filled('country_id'))         $query->where('country_id',         $request->country_id);
         if ($request->filled('client_id'))          $query->where('client_id',          $request->client_id);
+
+        if ($request->filled('contact_id')) {
+            $contactId = $request->contact_id;
+
+            $query->where(function ($q) use ($contactId) {
+                $q->whereHas('contacts', function ($sub) use ($contactId) {
+                    $sub->where('contacts.id', $contactId);
+                })
+                    ->orWhereHas('site', function ($sub) use ($contactId) {
+                        $sub->where('contact_id', $contactId);
+                    });
+            });
+        }
         if ($request->filled('status'))             $query->where('status',             $request->status);
 
         // LIKE-based text filters
@@ -126,6 +160,21 @@ class StorageController extends Controller
             ->addColumn('client_name', function ($r) {
                 return $r->client ? trim($r->client->first_name.' '.$r->client->last_name) : '';
             })
+            // Primary contact name (for table display & filter)
+            ->addColumn('contact_name', function (Storage $r) {
+                /** @var \App\Models\Contact|null $primary */
+                $primary = $r->primary_contact;   // uses accessor from Storage model
+
+                return $primary ? $primary->name : null;
+            })
+
+// Primary contact id (for modal / link)
+            ->addColumn('contact_id', function (Storage $r) {
+                $primary = $r->primary_contact;
+
+                return $primary ? $primary->id : null;
+            })
+
             ->addColumn('copywriter_name',   fn ($r) => optional($r->copy)->copy_val ?? '')
             ->editColumn('copywriter_period',fn ($r) => (int) $r->copywriter_period)
             ->editColumn('publisher_period', fn ($r) => (int) $r->publisher_period)
@@ -232,9 +281,10 @@ class StorageController extends Controller
             // -----------------------------------------------------------------
             // 1) Take snapshots for rollback
             // -----------------------------------------------------------------
-            $rows = Storage::with('categories')
+            $rows = Storage::with(['categories', 'contacts'])
                 ->whereIn('id', $data['ids'])
                 ->get();
+
 
             foreach ($rows as $row) {
                 RollbackStorage::create([
@@ -243,9 +293,22 @@ class StorageController extends Controller
                     'snapshot'   => [
                         'attributes' => $row->getAttributes(),
                         'categories' => $row->categories->pluck('id')->all(),
+
+                        // 🔹 NEW: store contacts with pivot data (for undo/rollback)
+                        'contacts'   => $row->contacts
+                            ->mapWithKeys(function ($c) {
+                                return [
+                                    $c->id => [
+                                        'is_primary' => (bool) ($c->pivot->is_primary ?? false),
+                                        'role'       => $c->pivot->role ?? null,
+                                    ],
+                                ];
+                            })
+                            ->all(),
                     ],
                 ]);
             }
+
 
             // -----------------------------------------------------------------
             // 2) “Recalculate totals” pseudo-field
@@ -280,6 +343,40 @@ class StorageController extends Controller
                     $s->categories()->sync($catIds);
                 }
                 return;                                        // done
+            }
+
+            // -----------------------------------------------------------------
+// 3b) Contact (many-to-many via contact_storage)
+// -----------------------------------------------------------------
+            if ($field === 'contact_id') {
+                // $value is the chosen contact id or null/'' to clear
+                $contactId = $value ?: null;
+
+                foreach ($rows as $s) {
+                    if ($contactId === null) {
+                        // Clear all contacts for this storage
+                        $s->contacts()->detach();
+                        continue;
+                    }
+
+                    // 1) Mark all existing contacts as non-primary
+                    if ($s->contacts->isNotEmpty()) {
+                        $s->contacts()->updateExistingPivot(
+                            $s->contacts->pluck('id')->all(),
+                            ['is_primary' => false]
+                        );
+                    }
+
+                    // 2) Attach or update the chosen contact as primary publisher
+                    $s->contacts()->syncWithoutDetaching([
+                        $contactId => [
+                            'is_primary' => true,
+                            'role'       => 'publisher',
+                        ],
+                    ]);
+                }
+
+                return; // done handling contact_id
             }
 
             // -----------------------------------------------------------------
@@ -338,26 +435,47 @@ class StorageController extends Controller
         $clients    = Client::all();
         $copies     = Copy::all();
         $categories = Category::all();
-        $websites   = Website::orderBy('domain_name')->get();
+
+        // Websites with their linked contact
+        $websites   = Website::with('contact')
+            ->orderBy('domain_name')
+            ->get();
+
+        // Contact options (deduplicated by name+email, like index)
+        $contacts = Contact::select(
+            DB::raw('MIN(id) as id'),
+            'name',
+            'email'
+        )
+            ->groupBy('name', 'email')
+            ->orderBy('name')
+            ->get();
+
         return view('storages.create', compact(
             'countries',
             'languages',
             'clients',
             'copies',
             'categories',
-            'websites'
+            'websites',
+            'contacts',
         ));
     }
+
 
     public function store(Request $request)
     {
         $validated = $this->validateForm($request);
 
+        // extract contact_id (used for pivot, not storage column)
+        $contactId = $validated['contact_id'] ?? null;
+        unset($validated['contact_id']);
+
         foreach (self::DATE_COLS as $c) {
             $validated[$c] = $this->euDate($validated[$c] ?? null);
         }
-        $this->convertUsdFieldsToEur($validated, $this->priceFields());
 
+        $this->convertUsdFieldsToEur($validated, $this->priceFields());
         $this->applyAutoCalculations($validated);
 
         $storage = Storage::create($validated);
@@ -366,10 +484,21 @@ class StorageController extends Controller
             $storage->categories()->sync($request->category_ids);
         }
 
+        // NEW: link primary publisher contact
+        if ($contactId) {
+            $storage->contacts()->sync([
+                $contactId => [
+                    'is_primary' => true,
+                    'role'       => 'publisher',
+                ],
+            ]);
+        }
+
         return redirect()
             ->route('storages.edit', $storage)
             ->with('status', 'Storage created.');
     }
+
 
     /*======================================================================
     | SHOW / EDIT / UPDATE
@@ -380,37 +509,19 @@ class StorageController extends Controller
         return view('storages.show', compact('storage'));
     }
 
-    public function edit(Storage $storage)
-    {
-        $storage->load(['site','country','language','client','copy','categories']);
-        $countries  = Country::all();
-        $languages  = Language::all();
-        $clients    = Client::all();
-        $copies     = Copy::all();
-        $categories = Category::all();
-        $websites   = Website::orderBy('domain_name')->get();
-
-        return view('storages.edit', compact(
-            'storage',
-            'countries',
-            'languages',
-            'clients',
-            'copies',
-            'categories'
-            ,'websites'
-        ));
-    }
-
     public function update(Request $request, Storage $storage)
     {
         $validated = $this->validateForm($request);
+
+        // extract contact_id (pivot-only)
+        $contactId = $validated['contact_id'] ?? null;
+        unset($validated['contact_id']);
 
         foreach (self::DATE_COLS as $c) {
             $validated[$c] = $this->euDate($validated[$c] ?? null);
         }
 
         $this->convertUsdFieldsToEur($validated, $this->priceFields());
-
         $this->applyAutoCalculations($validated);
 
         $storage->update($validated);
@@ -421,26 +532,106 @@ class StorageController extends Controller
             $storage->categories()->sync([]);
         }
 
+        // NEW: manage primary contact on pivot
+        if ($contactId) {
+            // mark all existing pivot rows as non-primary
+            if ($storage->contacts->isNotEmpty()) {
+                $storage->contacts()->updateExistingPivot(
+                    $storage->contacts->pluck('id')->all(),
+                    ['is_primary' => false]
+                );
+            }
+
+            // attach/update selected as primary publisher
+            $storage->contacts()->syncWithoutDetaching([
+                $contactId => [
+                    'is_primary' => true,
+                    'role'       => 'publisher',
+                ],
+            ]);
+        } else {
+            // nothing selected → clear all associated contacts
+            $storage->contacts()->detach();
+        }
+
         return redirect()
             ->route('storages.index')
             ->with('status', 'Storage updated.');
     }
+
+    public function edit(Storage $storage)
+    {
+        // Make sure relations are available
+        $storage->load([
+            'site.contact',    // website + its contact
+            'country',
+            'language',
+            'client',
+            'copy',
+            'categories',
+            'contacts',        // pivot contacts
+        ]);
+
+        $countries  = Country::all();
+        $languages  = Language::all();
+        $clients    = Client::all();
+        $copies     = Copy::all();
+        $categories = Category::all();
+
+        $websites   = Website::with('contact')
+            ->orderBy('domain_name')
+            ->get();
+
+        $contacts = Contact::select(
+            DB::raw('MIN(id) as id'),
+            'name',
+            'email'
+        )
+            ->groupBy('name', 'email')
+            ->orderBy('name')
+            ->get();
+
+        return view('storages.edit', compact(
+            'storage',
+            'countries',
+            'languages',
+            'clients',
+            'copies',
+            'categories',
+            'websites',
+            'contacts',
+        ));
+    }
+
 
     /*======================================================================
     | DESTROY / RESTORE
     ======================================================================*/
     public function destroy(Storage $storage)
     {
+        $storage->load(['categories', 'contacts']);  // ensure relations are loaded
+
         $token = Str::uuid();
         RollbackStorage::create([
             'token'      => $token,
             'storage_id' => $storage->id,
             'snapshot'   => [
-                'attributes'=>$storage->getAttributes(),
-                'categories'=>$storage->categories->pluck('id')->all()
-            ]
-        ]);
+                'attributes' => $storage->getAttributes(),
+                'categories' => $storage->categories->pluck('id')->all(),
 
+                // 🔹 NEW
+                'contacts'   => $storage->contacts
+                    ->mapWithKeys(function ($c) {
+                        return [
+                            $c->id => [
+                                'is_primary' => (bool) ($c->pivot->is_primary ?? false),
+                                'role'       => $c->pivot->role ?? null,
+                            ],
+                        ];
+                    })
+                    ->all(),
+            ],
+        ]);
 
         $storage->delete();
         return back()->with('status', 'Storage soft-deleted!');
@@ -458,16 +649,20 @@ class StorageController extends Controller
 
         DB::transaction(function() use ($items){
             foreach ($items as $snap) {
-                /* ---- restore attributes ---- */
                 $store = Storage::withTrashed()->find($snap->storage_id);
                 if(!$store){ continue; }
 
+                /* ---- restore attributes ---- */
                 $store->fill($snap->snapshot['attributes']);
                 $store->save();
 
                 /* ---- restore categories ---- */
-                $store->categories()->sync($snap->snapshot['categories']);
+                $store->categories()->sync($snap->snapshot['categories'] ?? []);
+
+                /* 🔹 NEW: restore contacts (pivot) ---- */
+                $store->contacts()->sync($snap->snapshot['contacts'] ?? []);
             }
+
             // remove snapshots so we don’t restore twice
             RollbackStorage::whereIn('id',$items->pluck('id'))->delete();
         });
@@ -488,31 +683,33 @@ class StorageController extends Controller
                 return response()->json(['message' => 'Nothing to undo (expired)'], 404);
             }
 
-            DB::transaction(function() use ($snaps) {
+            DB::transaction(function () use ($snaps) {
 
                 foreach ($snaps as $snap) {
-
-                    /** @var \App\Models\Storage $row */
-                    $row   = Storage::find($snap->storage_id);
-
-                    if (!$row) {                       // row could have been deleted
+                    /** @var \App\Models\Storage|null $row */
+                    $row = Storage::withTrashed()->find($snap->storage_id);
+                    if (!$row) {
                         continue;
                     }
 
-                    /* restore every column */
+                    // restore all attributes
                     $row->fill($snap->snapshot['attributes']);
                     $row->save();
 
-                    /* restore many-to-many categories */
-                    $row->categories()->sync($snap->snapshot['categories']);
+                    // restore many-to-many categories
+                    $row->categories()->sync($snap->snapshot['categories'] ?? []);
+
+                    // 🔹 restore many-to-many contacts (pivot)
+                    $row->contacts()->sync($snap->snapshot['contacts'] ?? []);
                 }
 
-                /* delete snapshots so the same token can’t be reused */
+                // remove all snapshots for this token
                 RollbackStorage::whereIn('id', $snaps->pluck('id'))->delete();
             });
 
             return response()->json(['message' => 'Undo complete']);
         }
+
 
         /* ── B) Manual “Rollback” button  → we get  ids[] ─────────────────── */
         $ids = $request->input('ids', []);
@@ -525,20 +722,29 @@ class StorageController extends Controller
             ->get()
             ->groupBy('storage_id');
 
-        DB::transaction(function() use ($snaps) {
+        DB::transaction(function () use ($snaps) {
 
             foreach ($snaps as $storageId => $rows) {
 
                 $snap = $rows->first();               // newest one
 
-                /** @var \App\Models\Storage $row */
-                $row = Storage::find($storageId);
-                if (!$row) { continue; }
+                /** @var \App\Models\Storage|null $row */
+                $row = Storage::withTrashed()->find($storageId);
+                if (!$row) {
+                    continue;
+                }
 
+                // restore attributes
                 $row->fill($snap->snapshot['attributes']);
                 $row->save();
-                $row->categories()->sync($snap->snapshot['categories']);
 
+                // restore many-to-many categories
+                $row->categories()->sync($snap->snapshot['categories'] ?? []);
+
+                // 🔹 restore many-to-many contacts
+                $row->contacts()->sync($snap->snapshot['contacts'] ?? []);
+
+                // delete only the snapshot we used
                 RollbackStorage::where('id', $snap->id)->delete();
             }
         });
@@ -546,6 +752,7 @@ class StorageController extends Controller
         return response()->json([
             'message' => 'Rollback successful'
         ]);
+
     }
 
     public function restore($id)
@@ -560,7 +767,16 @@ class StorageController extends Controller
     public function exportCsv(Request $request)
     {
         // 1) Filter + fetch
-        $query    = Storage::with(['site','country','language','client','copy','categories']);
+        $query    = Storage::with([
+            'site.contact',
+            'contacts',
+            'country',
+            'language',
+            'client',
+            'copy',
+            'categories',
+        ]);
+
         $this->applyFilters($request, $query);
         $storages = $query->get();
 
@@ -601,7 +817,16 @@ class StorageController extends Controller
     {
         try {
             // 1) fetch
-            $query    = Storage::with(['site','country','language','client','copy','categories']);
+            $query    = Storage::with([
+                'site.contact',
+                'contacts',
+                'country',
+                'language',
+                'client',
+                'copy',
+                'categories',
+            ]);
+
             $this->applyFilters($request, $query);
             $storages = $query->get();
 
@@ -653,6 +878,23 @@ class StorageController extends Controller
         if ($request->filled('language_id'))   $query->where('language_id',   $request->language_id);
         if ($request->filled('country_id'))    $query->where('country_id',    $request->country_id);
         if ($request->filled('client_id'))     $query->where('client_id',     $request->client_id);
+        // contact filter
+        if ($request->filled('contact_id')) {
+            $contactId = $request->contact_id;
+
+            $query->where(function ($q) use ($contactId) {
+                // via pivot contact_storage
+                $q->whereHas('contacts', function ($sub) use ($contactId) {
+                    $sub->where('contacts.id', $contactId);
+                })
+                    // OR via website.contact_id
+                    ->orWhereHas('site', function ($sub) use ($contactId) {
+                        $sub->where('contact_id', $contactId);
+                    });
+            });
+        }
+
+
         if ($request->filled('status'))        $query->where('status',        $request->status);
 
         // LIKE filters
@@ -716,14 +958,18 @@ class StorageController extends Controller
             'publisher_article'           => 'nullable|numeric',
             'bill_publisher_name'         => 'nullable|string|max:255',
             'bill_publisher_nr'           => 'nullable|string|max:255',
-            'bill_publisher_date'         => 'nullable|date_format:d/m/Y',        //  ←  added
+            'bill_publisher_date'         => 'nullable|date_format:d/m/Y',
             'payment_to_publisher_date'   => 'nullable|date_format:d/m/Y',
             'method_payment_to_publisher' => 'nullable|string|max:255',
             'files'                       => 'nullable|string',
             'category_ids'                => 'nullable|array',
-            'category_ids.*'              => 'integer'
+            'category_ids.*'              => 'integer',
+
+            // NEW: primary contact (via pivot, not a real column on storage)
+            'contact_id'                  => 'nullable|integer|exists:contacts,id',
         ]);
     }
+
 
     /** every column that stores a date (no timestamps) */
     private const DATE_COLS = [
@@ -796,6 +1042,18 @@ class StorageController extends Controller
                 : '';
         }
 
+        // --- Contacts list (pivot + fallback website contact) ---
+        $contacts = $s->contacts;
+        if ($contacts->isEmpty() && $s->site && $s->site->contact) {
+            $contacts = collect([$s->site->contact]);
+        }
+
+        $contactsList = $contacts->map(function (Contact $c) {
+            $name  = trim($c->name ?? '');
+            $email = $c->email ? ' <'.$c->email.'>' : '';
+            return $name.$email;
+        })->implode(' | ');
+
         // 2) Return one associative array in exactly the order of your <th> definitions
         return [
             'id'                          => $s->id,
@@ -805,6 +1063,7 @@ class StorageController extends Controller
             'client_name'                 => $s->client
                 ? trim($s->client->first_name . ' ' . $s->client->last_name)
                 : '',
+            'contacts_list'               => $contactsList,
             'copywriter_name'             => optional($s->copy)->copy_val ?? '',
             'copy_nr'                     => $s->copy_nr,
             'copywriter_commision_date'   => $raw['copywriter_commision_date'],

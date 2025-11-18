@@ -21,7 +21,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <h1 class="text-lg font-bold text-gray-700 py-6">Websites</h1>
+    <h1 class="text-lg font-bold text-gray-700 py-6">Domains</h1>
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
         <!-- Header: Title + Buttons -->
 
@@ -39,7 +39,7 @@
                 <a href="{{ route('websites.create') }}"
                    class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
-                    Create Website
+                    Create Domain
                 </a>
                 <a href="#" id="btnExportCsv"
                    class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
@@ -408,7 +408,7 @@
 
                     {{-- Orphan domains --}}
                     <div class="flex items-center space-x-1">
-                        <span class="text-gray-700">no contact</span>
+                        <span class="text-gray-700">no publisher</span>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="filterNoContact" class="sr-only peer">
                             <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-cyan-600
@@ -510,7 +510,7 @@
                     <th class="whitespace-nowrap px-4 py-2">Status</th>
                     <th class="whitespace-nowrap px-4 py-2">Country</th>
                     <th class="whitespace-nowrap px-4 py-2">Language</th>
-                    <th class="whitespace-nowrap px-4 py-2">Contact</th>
+                    <th class="whitespace-nowrap px-4 py-2">Publisher</th>
                     <th class="whitespace-nowrap px-4 py-2">Currency</th>
                     <th class="whitespace-nowrap px-4 py-2">Publisher Price</th>
                     <th class="whitespace-nowrap px-4 py-2">No Follow Price</th>
@@ -800,7 +800,7 @@
                         data: 'contact_name',
                         name: 'contact.name',
                         render: function(data, type, row) {
-                            if (!row.contact_id) return "No Contact";
+                            if (!row.contact_id) return "No Publisher";
                             return `
                         <a href="#"
                            class="contact-link text-blue-600 underline"

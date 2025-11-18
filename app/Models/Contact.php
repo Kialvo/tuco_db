@@ -24,5 +24,12 @@ class Contact extends Model
     {
         return $this->hasMany(Website::class);
     }
+
+    public function storages()
+    {
+        return $this->belongsToMany(Storage::class, 'contact_storage')
+            ->withPivot(['is_primary', 'role'])
+            ->withTimestamps();
+    }
 }
 

@@ -95,11 +95,40 @@ class Storage extends Model
     {
         return $this->belongsTo(Country::class);
     }
-
+    public function contacts()
+    {
+        return $this->belongsToMany(Contact::class, 'contact_storage')
+            ->withPivot(['is_primary', 'role'])
+            ->withTimestamps();
+    }
     public function categories()
     {
         // Many‑to‑many (pivot: category_storage)
         return $this->belongsToMany(Category::class, 'category_storage')
             ->using(CategoryStorage::class)->withTimestamps();
+    }
+
+    /**
+     * Handy accessor to always get "the" primary contact for this storage.
+     * Priority:
+     *  1. contact marked is_primary via pivot
+     *  2. if only 1 contact is attached, use that
+     *  3. fallback to the website->contact
+     */
+    public function getPrimaryContactAttribute(): ?Contact
+    {
+        // 1) Pivot primary
+        $primary = $this->contacts->firstWhere('pivot.is_primary', true);
+        if ($primary) {
+            return $primary;
+        }
+
+        // 2) Only one contact attached
+        if ($this->contacts->count() === 1) {
+            return $this->contacts->first();
+        }
+
+        // 3) Website default contact
+        return $this->website?->contact ?? null;
     }
 }
