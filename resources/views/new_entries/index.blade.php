@@ -319,7 +319,7 @@
                     {
                         data: 'contact_name',
                         render: function(data, type, row) {
-                            if (!row.contact_id) return "No Contact";
+                            if (!row.contact_id) return "No Publisher";
                             return `
                         <a href="#" class="contact-link text-blue-600 underline"
                            data-contact-id="${row.contact_id}">
