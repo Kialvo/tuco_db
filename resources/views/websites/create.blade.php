@@ -4,7 +4,7 @@
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
         <!-- Header: Title + Buttons -->
         <div class="flex flex-col gap-3 mb-4">
-    <h1 class="text-lg font-bold text-gray-700 mb-4">Create Website</h1>
+    <h1 class="text-lg font-bold text-gray-700 mb-4">Create Domain</h1>
 
     <form method="POST" action="{{ route('websites.store') }}" class="space-y-4 text-xs">
         @csrf
@@ -43,7 +43,7 @@
         <!-- Additional General Fields -->
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-gray-700 font-medium mb-1">Type of Website</label>
+                <label class="block text-gray-700 font-medium mb-1">Type of Domain</label>
                 <select
                     name="type_of_website"
                     class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"

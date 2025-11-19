@@ -5,7 +5,7 @@
     <div class="px-6 py-6 bg-gray-50 min-h-screen">
         <!-- Inner card to visually separate the form -->
         <div class="max-w-xl mx-auto bg-white border border-gray-200 p-6 rounded shadow-sm">
-            <h1 class="text-xl font-bold text-gray-800 mb-4">Add New Contact</h1>
+            <h1 class="text-xl font-bold text-gray-800 mb-4">Add New Publisher</h1>
 
             @if ($errors->any())
                 <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
@@ -100,7 +100,7 @@
                         class="bg-cyan-600 text-white px-5 py-2 rounded shadow-sm hover:bg-cyan-700
                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-sm"
                     >
-                        Save Contact
+                        Save Publisher
                     </button>
                 </div>
             </form>

@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="container">
-        <h1>Edit Contact</h1>
+        <h1>Edit Publisher</h1>
 
         @if($errors->any())
             <div class="alert alert-danger">
@@ -37,7 +37,7 @@
                 <label for="instagram" class="form-label">Instagram URL</label>
                 <input type="url" class="form-control" name="instagram" value="{{ old('instagram', $contact->instagram) }}">
             </div>
-            <button type="submit" class="btn btn-primary">Update Contact</button>
+            <button type="submit" class="btn btn-primary">Update Publisher</button>
         </form>
     </div>
 @endsection
