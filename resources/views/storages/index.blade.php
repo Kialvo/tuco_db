@@ -212,6 +212,15 @@
 
             {{-- ROW 2 --}}
             <div class="flex flex-wrap gap-2 mb-2">
+
+                {{-- Website Domain (publisher site) --}}
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Domain</label>
+                    <input type="text" id="filterWebsiteDomain"
+                           class="border border-gray-300 rounded px-2 py-2 w-40
+                                  focus:ring-cyan-500 focus:border-cyan-500"
+                           placeholder="publisher-site.com">
+                </div>
                 {{-- Target Domain --}}
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Target Domain</label>
@@ -220,6 +229,8 @@
                                   focus:ring-cyan-500 focus:border-cyan-500"
                            placeholder="domain.com">
                 </div>
+
+
                 {{-- Campaign Code --}}
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Campaign Code</label>
@@ -552,6 +563,11 @@
                         d.country_id       =$('#filterCountry').val();
                         d.client_id        =$('#filterClient').val();
                         d.contact_id = $('#filterContact').val();
+
+                        // NEW
+                        d.website_domain   =$('#filterWebsiteDomain').val();
+
+
                         d.campaign         =$('#filterCampaign').val();
                         d.campaign_code    =$('#filterCampaignCode').val();
                         d.invoice_menford_nr=$('#filterInvoiceMenfordNr').val();
@@ -741,7 +757,8 @@
                     country_id        : $('#filterCountry').val(),
                     client_id         : $('#filterClient').val(),
                     status            : $('#filterStatus').val(),
-
+// NEW
+                    website_domain    : $('#filterWebsiteDomain').val(),
                     campaign          : $('#filterCampaign').val(),
                     campaign_code     : $('#filterCampaignCode').val(),
                     invoice_menford_nr: $('#filterInvoiceMenfordNr').val(),
@@ -898,6 +915,7 @@
                     language_id     :$('#filterLanguage').val(),
                     country_id      :$('#filterCountry').val(),
                     client_id       :$('#filterClient').val(),
+                    website_domain  :$('#filterWebsiteDomain').val(),
                     campaign        :$('#filterCampaign').val(),
                     campaign_code   :$('#filterCampaignCode').val(),
                     invoice_menford_nr:$('#filterInvoiceMenfordNr').val(),

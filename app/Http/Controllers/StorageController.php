@@ -144,6 +144,14 @@ class StorageController extends Controller
         if ($request->filled('target_url'))         $query->where('target_url',         'like', '%'.$request->target_url.'%');
         if ($request->filled('article_url'))        $query->where('article_url',        'like', '%'.$request->article_url.'%');
 
+        // NEW: filter by website domain (publisher site)
+        if ($request->filled('website_domain')) {
+            $domain = $request->website_domain;
+
+            $query->whereHas('site', function ($q) use ($domain) {
+                $q->where('domain_name', 'like', '%'.$domain.'%');
+            });
+        }
         // categories (multi-select)
         if ($request->filled('category_ids') && is_array($request->category_ids)) {
             $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $request->category_ids));
@@ -904,7 +912,14 @@ class StorageController extends Controller
         if ($request->filled('bill_publisher_name'))$query->where('bill_publisher_name', 'like', '%'.$request->bill_publisher_name.'%');
         if ($request->filled('target_url'))         $query->where('target_url',         'like', '%'.$request->target_url.'%');
         if ($request->filled('article_url'))        $query->where('article_url',        'like', '%'.$request->article_url.'%');
+        // NEW: website domain filter
+        if ($request->filled('website_domain')) {
+            $domain = $request->website_domain;
 
+            $query->whereHas('site', function ($q) use ($domain) {
+                $q->where('domain_name', 'like', '%'.$domain.'%');
+            });
+        }
         // Categories multi‐select
         if ($request->filled('category_ids') && is_array($request->category_ids)) {
             $query->whereHas('categories', fn($q)=> $q->whereIn('categories.id', $request->category_ids));

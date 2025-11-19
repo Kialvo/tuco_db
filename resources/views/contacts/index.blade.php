@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <h1 class="text-lg font-bold text-gray-700  py-6">Contacts</h1>
+    <h1 class="text-lg font-bold text-gray-700  py-6">Publishers</h1>
     <div class="px-6 py-6 bg-gray-50 min-h-screen">
 
 
@@ -32,7 +32,7 @@
                     class="bg-cyan-600 text-white px-5 py-2 rounded shadow
                            hover:bg-cyan-700 focus:outline-none focus:ring-2
                            focus:ring-offset-2 focus:ring-cyan-500 transition">
-                Create Contact
+                Create Publisher
             </button>
         </div>
 
@@ -100,8 +100,8 @@
                     lengthMenu: "Show _MENU_ entries",
                     search: "Search:",
                     info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                    infoEmpty: "No contacts found",
-                    zeroRecords: "No matching contacts found"
+                    infoEmpty: "No publishers found",
+                    zeroRecords: "No matching publishers found"
                 }
             });
 
@@ -210,7 +210,7 @@
                         }
                     },
                     error: function() {
-                        alert("Error fetching contact data. Check network or console.");
+                        alert("Error fetching publisher data. Check network or console.");
                     }
                 });
             }

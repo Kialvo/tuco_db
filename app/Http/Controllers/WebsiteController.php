@@ -57,6 +57,7 @@ class WebsiteController extends Controller
         return view('websites.index', compact('countries','languages','contacts','categories'));
     }
 
+
     /**
      * Return JSON data for DataTables.
      */
@@ -306,7 +307,7 @@ class WebsiteController extends Controller
         /* ───── FK equality filters ───── */
         if ($v = $request->country_id)  $query->where('country_id',  $v);
         if ($v = $request->language_id) $query->where('language_id', $v);
-        if ($v = $request->contact_id)  $query->where('contact_id',  $v);
+
 
         /* ───── FK include / exclude lists ───── */
         if (!empty($request->country_ids_include)) {
@@ -365,9 +366,15 @@ class WebsiteController extends Controller
         }
 
         /* ───── special “no contact” flag ───── */
+        /* ───── Publisher / contact filters ───── */
         if ($request->boolean('no_contact')) {
+            // Only websites with no publisher
             $query->whereNull('contact_id');
+        } elseif ($v = $request->contact_id) {
+            // Websites belonging to a specific publisher
+            $query->where('contact_id', $v);
         }
+
 
         /* ───── many-to-many categories ───── */
 //        if ($ids = $request->category_ids) {

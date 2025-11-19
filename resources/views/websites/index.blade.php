@@ -116,6 +116,18 @@
                     </select>
                 </div>
 
+                <!-- Publisher -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Publisher</label>
+                    <select id="filterContact"
+                            class="border border-gray-300 rounded px-2 py-2 w-48
+                       focus:ring-cyan-500 focus:border-cyan-500">
+                        <option value="">-- Any --</option>
+                        @foreach($contacts as $c)
+                            <option value="{{ $c->id }}">{{ $c->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <!-- Country -->
                 <!-- Include Countries -->
                 <div class="flex flex-col">
@@ -679,7 +691,11 @@
                 dropdownCssClass: 'text-xs'
             });
 
-
+            $('#filterContact').select2({
+                placeholder: 'Select Publisher',
+                allowClear: true,
+                width: '12em' // tweak as you like
+            });
 
 
             $('#filterCountriesInclude').select2({
@@ -710,6 +726,7 @@
                         d.type_of_website = $('#filterWebsiteType').val();
                         d.language_id = $('#filterLanguage').val();
                         d.status = $('#filterStatus').val();
+                        d.contact_id       = $('#filterContact').val();              // ← NEW
                         d.no_contact = $('#filterNoContact').is(':checked');
 
                         d.country_ids_include = $('#filterCountriesInclude').val(); // Array
@@ -1187,6 +1204,8 @@
                 $('#filterCountriesInclude').val(null).trigger('change');
                 $('#filterCountriesExclude').val(null).trigger('change');
                 $('#filterNoContact').prop('checked', false);
+                // Clear the Publisher filter (select2)
+                $('#filterContact').val(null).trigger('change');             // ← NEW
                 $('#filterBannerMin,#filterBannerMax,#filterSWMin,#filterSWMax').val('');
 
                 $('#filterCategories').val(null).trigger('change');
