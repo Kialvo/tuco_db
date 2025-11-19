@@ -70,7 +70,7 @@
                     <a href="{{ route('contacts.index') }}"
                        class="block px-3 py-2 rounded transition hover:bg-slate-800
                               {{ request()->routeIs('contacts.*') ? 'bg-slate-800' : '' }}">
-                        <i class="fas fa-address-book w-4 inline-block me-2"></i> Contacts
+                        <i class="fas fa-address-book w-4 inline-block me-2"></i> Publishers
                     </a>
                 </div>
             </div>
