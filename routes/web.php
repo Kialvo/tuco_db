@@ -9,6 +9,7 @@ use App\Http\Controllers\Tool\WebScraperController;
 use App\Http\Controllers\WebsiteImportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\RestrictGuestToDomainsMiddleware;
 
 /* ─────────────────────────────────────────────────────────────
  |  Controllers
@@ -36,7 +37,7 @@ require __DIR__.'/auth.php';
 /*======================================================================
 |  AUTHENTICATED ROUTES
 =====================================================================*/
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(function () {
 
     /*--------------------------------------------------------------
     | Dashboard

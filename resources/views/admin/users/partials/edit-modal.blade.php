@@ -48,7 +48,7 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
                     <option value="admin">Admin</option>
                     <option value="editor">Editor</option>
-                    <option value="user">User</option>
+                    <option value="guest">Guest</option>
                 </select>
             </div>
 

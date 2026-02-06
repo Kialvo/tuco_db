@@ -43,6 +43,11 @@ class WebsiteController extends Controller
         'publisher_price','banner_price','sitewide_link_price',
         'kialvo_evaluation','ahrefs_keyword','ahrefs_traffic',
     ];
+
+    private function isGuestUser(): bool
+    {
+        return auth()->check() && auth()->user()->isGuest();
+    }
     /**
      * Display the index page with filters and DataTable.
      */
@@ -63,6 +68,8 @@ class WebsiteController extends Controller
      */
     public function getData(Request $request)
     {
+        $isGuestUser = $this->isGuestUser();
+
         // 1) base query + eager-loads
         $query = Website::with(['country', 'language', 'contact', 'categories']);
 
@@ -70,14 +77,26 @@ class WebsiteController extends Controller
         $this->applyFilters($request, $query);
 
         // 3) feed into Yajra
-        return DataTables::of($query)
+        $dataTable = DataTables::of($query)
             ->addColumn('banner_price',        fn($r)=>$r->banner_price)
             ->addColumn('sitewide_link_price', fn($r)=>$r->sitewide_link_price)
             ->addColumn('country_name',    fn ($r) => optional($r->country)->country_name)
             ->addColumn('language_name',   fn ($r) => optional($r->language)->name)
-            ->addColumn('contact_name',    fn ($r) => optional($r->contact)->name)
+            ->addColumn('contact_name',    fn ($r) => $isGuestUser ? null : optional($r->contact)->name)
             ->addColumn('categories_list', fn ($r) => $r->categories->pluck('name')->join(', '))
-            ->addColumn('action', function($row) {
+            ->addColumn('action', function($row) use ($isGuestUser) {
+                $viewUrl = route('websites.show', $row->id);
+
+                if ($isGuestUser) {
+                    return '
+            <a href="'.$viewUrl.'"
+               class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
+                      hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <i class="fas fa-eye mr-1"></i> View
+            </a>
+        ';
+                }
+
                 // Check if this website is soft-deleted (trashed)
                 if ($row->trashed()) {
                     $restoreUrl = route('websites.restore', $row->id);
@@ -95,7 +114,6 @@ class WebsiteController extends Controller
                 }
 
                 // Otherwise (not trashed), show View, Edit, Delete
-                $viewUrl   = route('websites.show', $row->id);
                 $editUrl   = route('websites.edit', $row->id);
                 $deleteUrl = route('websites.destroy', $row->id);
 
@@ -128,10 +146,29 @@ class WebsiteController extends Controller
         </div>
 
     ';
-            })
-            ->rawColumns(['action'])->make(true);
+            });
 
+        if ($isGuestUser) {
+            $dataTable
+                ->editColumn('id', fn() => null)
+                ->editColumn('status', fn() => null)
+                ->editColumn('currency_code', fn() => null)
+                ->editColumn('publisher_price', fn() => null)
+                ->editColumn('no_follow_price', fn() => null)
+                ->editColumn('special_topic_price', fn() => null)
+                ->editColumn('link_insertion_price', fn() => null)
+                ->editColumn('banner_price', fn() => null)
+                ->editColumn('sitewide_link_price', fn() => null)
+                ->editColumn('profit', fn() => null)
+                ->editColumn('date_publisher_price', fn() => null)
+                ->editColumn('linkbuilder', fn() => null)
+                ->editColumn('seo_metrics_date', fn() => null)
+                ->editColumn('copywriting', fn() => null)
+                ->editColumn('created_at', fn() => null)
+                ->removeColumn('contact_id');
+        }
 
+        return $dataTable->rawColumns(['action'])->make(true);
     }
 
 
@@ -299,6 +336,7 @@ class WebsiteController extends Controller
      */
     protected function applyFilters(Request $request, $query)
     {
+        $isGuestUser = $this->isGuestUser();
         /* ───── simple string / exact-match filters ───── */
         if ($v = $request->domain_name)     $query->where('domain_name', 'like', "%$v%");
         if ($v = $request->type_of_website) $query->where('type_of_website', $v);
@@ -332,11 +370,14 @@ class WebsiteController extends Controller
             elseif ($max !== null)              $query->where($col, '<=', $max);
         };
 
-        $rng($request->publisher_price_min,    $request->publisher_price_max,    'publisher_price');
+        if (! $isGuestUser) {
+            $rng($request->publisher_price_min,    $request->publisher_price_max,    'publisher_price');
+            $rng($request->profit_min,             $request->profit_max,             'profit');
+            $rng($request->banner_price_min,       $request->banner_price_max,       'banner_price');
+            $rng($request->sitewide_price_min,     $request->sitewide_price_max,     'sitewide_link_price');
+        }
+
         $rng($request->kialvo_min,             $request->kialvo_max,             'kialvo_evaluation');
-        $rng($request->profit_min,             $request->profit_max,             'profit');
-        $rng($request->banner_price_min,   $request->banner_price_max,   'banner_price');
-        $rng($request->sitewide_price_min, $request->sitewide_price_max, 'sitewide_link_price');
         $rng($request->DA_min,                 $request->DA_max,                 'DA');
         $rng($request->PA_min,                 $request->PA_max,                 'PA');
         $rng($request->TF_min,                 $request->TF_max,                 'TF');
@@ -367,12 +408,14 @@ class WebsiteController extends Controller
 
         /* ───── special “no contact” flag ───── */
         /* ───── Publisher / contact filters ───── */
-        if ($request->boolean('no_contact')) {
-            // Only websites with no publisher
-            $query->whereNull('contact_id');
-        } elseif ($v = $request->contact_id) {
-            // Websites belonging to a specific publisher
-            $query->where('contact_id', $v);
+        if (! $isGuestUser) {
+            if ($request->boolean('no_contact')) {
+                // Only websites with no publisher
+                $query->whereNull('contact_id');
+            } elseif ($v = $request->contact_id) {
+                // Websites belonging to a specific publisher
+                $query->where('contact_id', $v);
+            }
         }
 
 
@@ -388,7 +431,7 @@ class WebsiteController extends Controller
             $query->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $ids));
         }
         /* ───── soft-delete toggle ───── */
-        if ($request->boolean('show_deleted')) {
+        if (! $isGuestUser && $request->boolean('show_deleted')) {
             $query->onlyTrashed();
         }
 

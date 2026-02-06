@@ -17,13 +17,27 @@ class User extends Authenticatable
         'name', 'email', 'password', 'role',
     ];
 
-    public function isAdmin()
+    protected $attributes = [
+        'role' => 'editor',
+    ];
+
+    public function hasRole(string $role): bool
     {
-        return $this->role === 'admin';
+        return strtolower((string) $this->role) === strtolower($role);
     }
 
-    public function isEditor()
+    public function isAdmin(): bool
     {
-        return $this->role === 'editor';
+        return $this->hasRole('admin');
+    }
+
+    public function isEditor(): bool
+    {
+        return $this->hasRole('editor');
+    }
+
+    public function isGuest(): bool
+    {
+        return $this->hasRole('guest');
     }
 }

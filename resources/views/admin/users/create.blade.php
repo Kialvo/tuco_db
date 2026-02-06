@@ -51,6 +51,7 @@
             <select name="role" id="role" class="w-full border-gray-300 rounded px-2 py-1">
                 <option value="admin">Admin</option>
                 <option value="editor" selected>Editor</option>
+                <option value="guest">Guest</option>
             </select>
             @error('role')
             <p class="text-red-500 text-sm">{{ $message }}</p>

@@ -16,6 +16,7 @@
         'category_ids',              // m-m
         'recalculate_totals',        // pseudo
     ];
+    $isGuestUser = auth()->check() && auth()->user()->isGuest();
 @endphp
 
 @extends('layouts.dashboard')
@@ -36,27 +37,29 @@
                     Hide Filters
                 </button>
 
-                <a href="{{ route('websites.create') }}"
-                   class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
-                    Create Domain
-                </a>
-                <a href="#" id="btnExportCsv"
-                   class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
-                    Export CSV
-                </a>
-                <a href="#" id="btnExportPdf"
-                   class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
-                    Export PDF
-                </a>
-                <a href="{{ route('websites.import.index') }}"
-                   id="btnImportCsv"
-                   class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
-          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
-                    Import CSV
-                </a>
+                @unless($isGuestUser)
+                    <a href="{{ route('websites.create') }}"
+                       class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
+                        Create Domain
+                    </a>
+                    <a href="#" id="btnExportCsv"
+                       class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
+                        Export CSV
+                    </a>
+                    <a href="#" id="btnExportPdf"
+                       class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
+                        Export PDF
+                    </a>
+                    <a href="{{ route('websites.import.index') }}"
+                       id="btnImportCsv"
+                       class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
+                        Import CSV
+                    </a>
+                @endunless
 
 
             </div>
@@ -116,18 +119,20 @@
                     </select>
                 </div>
 
-                <!-- Publisher -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Publisher</label>
-                    <select id="filterContact"
-                            class="border border-gray-300 rounded px-2 py-2 w-48
-                       focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        @foreach($contacts as $c)
-                            <option value="{{ $c->id }}">{{ $c->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                @unless($isGuestUser)
+                    <!-- Publisher -->
+                    <div class="flex flex-col">
+                        <label class="text-gray-700 font-medium">Publisher</label>
+                        <select id="filterContact"
+                                class="border border-gray-300 rounded px-2 py-2 w-48
+                           focus:ring-cyan-500 focus:border-cyan-500">
+                            <option value="">-- Any --</option>
+                            @foreach($contacts as $c)
+                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endunless
                 <!-- Country -->
                 <!-- Include Countries -->
                 <div class="flex flex-col">
@@ -157,22 +162,24 @@
 
             <!-- ROW 2: Publisher, Kialvo, Profit -->
             <div class="flex flex-wrap gap-2 mb-2">
-                <!-- Publisher Price Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Publisher Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterPublisher_priceMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterPublisher_priceMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                @unless($isGuestUser)
+                    <!-- Publisher Price Min/Max -->
+                    <div class="flex flex-col">
+                        <label class="text-gray-700 font-medium">Publisher Min/Max</label>
+                        <div class="flex gap-1">
+                            <input type="number" id="filterPublisher_priceMin"
+                                   class="border border-gray-300 rounded w-16 px-2 py-2
+                                      focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                            <input type="number" id="filterPublisher_priceMax"
+                                   class="border border-gray-300 rounded w-16 px-2 py-2
+                                      focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                        </div>
                     </div>
-                </div>
+                @endunless
 
-                <!-- Kialvo Min/Max -->
+                <!-- Price Min/Max (renamed UI label, data key stays kialvo_evaluation) -->
                 <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Kialvo Min/Max</label>
+                    <label class="text-gray-700 font-medium">Price Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterKialvo_evaluationMin"
                                class="border border-gray-300 rounded w-16 px-2 py-2
@@ -183,6 +190,7 @@
                     </div>
                 </div>
 
+                @unless($isGuestUser)
                 <!-- Profit Min/Max -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Profit Min/Max</label>
@@ -223,6 +231,7 @@
                            class="border border-gray-300 rounded w-16 px-2 py-2
                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                 </div>
+                @endunless
 
             </div>
 
@@ -418,20 +427,22 @@
                     </div>
                 @endforeach
 
-                    {{-- Orphan domains --}}
-                    <div class="flex items-center space-x-1">
-                        <span class="text-gray-700">no publisher</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="filterNoContact" class="sr-only peer">
-                            <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-cyan-600
-            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-            after:bg-white after:border-gray-300 after:border after:rounded-full
-            after:h-4 after:w-4 after:transition-all
-            peer-checked:after:translate-x-full peer-focus:outline-none
-            peer-focus:ring-1 peer-focus:ring-cyan-500 peer-checked:after:border-white">
-                            </div>
-                        </label>
-                    </div>
+                    @unless($isGuestUser)
+                        {{-- Orphan domains --}}
+                        <div class="flex items-center space-x-1">
+                            <span class="text-gray-700">no publisher</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="filterNoContact" class="sr-only peer">
+                                <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-cyan-600
+                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                after:bg-white after:border-gray-300 after:border after:rounded-full
+                after:h-4 after:w-4 after:transition-all
+                peer-checked:after:translate-x-full peer-focus:outline-none
+                peer-focus:ring-1 peer-focus:ring-cyan-500 peer-checked:after:border-white">
+                                </div>
+                            </label>
+                        </div>
+                    @endunless
             </div>
 
 
@@ -451,26 +462,28 @@
             </div>
         </div><!-- END FILTER FORM -->
 
-        <!-- Show Deleted Toggle -->
-        <div class="flex items-center space-x-2 mb-4">
-            <!-- Enlarge text to "text-lg", keep "font-medium", etc. -->
-            <label for="filterShowDeleted" class="text-lg font-medium text-gray-700">Show Deleted</label>
+        @unless($isGuestUser)
+            <!-- Show Deleted Toggle -->
+            <div class="flex items-center space-x-2 mb-4">
+                <label for="filterShowDeleted" class="text-lg font-medium text-gray-700">Show Deleted</label>
 
-            <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="filterShowDeleted" class="sr-only peer">
-                <div class="w-11 h-6 bg-gray-200 rounded-full
-                    peer dark:bg-gray-700 peer-checked:bg-cyan-600
-                    peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500
-                    after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                    after:bg-white after:border-gray-300 after:border
-                    after:rounded-full after:h-5 after:w-5
-                    after:transition-all peer-checked:after:translate-x-full
-                    peer-checked:after:border-white">
-                </div>
-            </label>
-        </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="filterShowDeleted" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 rounded-full
+                        peer dark:bg-gray-700 peer-checked:bg-cyan-600
+                        peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500
+                        after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                        after:bg-white after:border-gray-300 after:border
+                        after:rounded-full after:h-5 after:w-5
+                        after:transition-all peer-checked:after:translate-x-full
+                        peer-checked:after:border-white">
+                    </div>
+                </label>
+            </div>
+        @endunless
 
         {{-- ───────────── TABLE ACTION BAR ───────────── --}}
+        @unless($isGuestUser)
         <div id="actionBar"
              class="flex items-center gap-3 mb-2
             sticky top-0 z-10 bg-gray-50 border-b border-gray-200 py-2">
@@ -503,6 +516,7 @@
         Selected:&nbsp;<span id="selCount">0</span>
     </span>
         </div>
+        @endunless
 
         <!-- TABLE WRAPPER for horizontal scrolling if needed -->
         <div class="bg-white border border-gray-200 rounded shadow p-2
@@ -530,33 +544,319 @@
                     <th class="whitespace-nowrap px-4 py-2">Link Insertion Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Banner €</th>
                     <th class="whitespace-nowrap px-4 py-2">Site-wide €</th>
-                    <th class="whitespace-nowrap px-4 py-2">Kialvo</th>
+                    {{-- UI label renamed: Kialvo -> Price (data key stays kialvo_evaluation) --}}
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Price
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="The price you pay for a guest post placement on this website. This is your final cost including our service fee."
+                                        aria-label="What is Price?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    The price you pay for a guest post placement on this website. This is your final cost including our service fee.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="whitespace-nowrap px-4 py-2">Profit</th>
                     <th class="whitespace-nowrap px-4 py-2">Date Publisher Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Linkbuilder</th>
-                    <th class="whitespace-nowrap px-4 py-2">Type of Website</th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Type of Website
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Vertical: focused on one topic. Local: focused on a city/area. Generalist: covers many topics."
+                                        aria-label="What is Type of Website?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Vertical: focused on one topic. Local: focused on a city/area. Generalist: covers many topics.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="whitespace-nowrap px-4 py-2">Categories</th>
-                    <th class="whitespace-nowrap px-4 py-2">DA</th>
-                    <th class="whitespace-nowrap px-4 py-2">PA</th>
-                    <th class="whitespace-nowrap px-4 py-2">TF</th>
-                    <th class="whitespace-nowrap px-4 py-2">CF</th>
-                    <th class="whitespace-nowrap px-4 py-2">DR</th>
-                    <th class="whitespace-nowrap px-4 py-2">UR</th>
-                    <th class="whitespace-nowrap px-4 py-2">ZA</th>
-                    <th class="whitespace-nowrap px-4 py-2">AS</th>
-                    <th class="whitespace-nowrap px-4 py-2">SEO Zoom</th>
-                    <th class="whitespace-nowrap px-4 py-2">TF vs CF</th>
-                    <th class="whitespace-nowrap px-4 py-2">Semrush Traffic</th>
-                    <th class="whitespace-nowrap px-4 py-2">Ahrefs Keyword</th>
-                    <th class="whitespace-nowrap px-4 py-2">Ahrefs Traffic</th>
-                    <th class="whitespace-nowrap px-4 py-2">Keyword vs Traffic</th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            DA
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium."
+                                        aria-label="What is DA?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            PA
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better."
+                                        aria-label="What is PA?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            TF
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Trust Flow (Majestic): backlink quality score on 0-100. Higher is better; TF 20+ is typically reliable."
+                                        aria-label="What is TF?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Trust Flow (Majestic): backlink quality score on 0-100. Higher is better; TF 20+ is typically reliable.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            CF
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Citation Flow (Majestic): backlink quantity influence score on 0-100. Higher is better, especially when TF is close to or above CF."
+                                        aria-label="What is CF?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Citation Flow (Majestic): backlink quantity influence score on 0-100. Higher is better, especially when TF is close to or above CF.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            DR
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Domain Rating (Ahrefs): backlink profile strength from 0 to 100. Higher DR means stronger authority; 40+ is solid."
+                                        aria-label="What is DR?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Domain Rating (Ahrefs): backlink profile strength from 0 to 100. Higher DR means stronger authority; 40+ is solid.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            UR
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="URL Rating (Ahrefs): strength of the target page backlink profile on a 0-100 scale. Higher is better."
+                                        aria-label="What is UR?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    URL Rating (Ahrefs): strength of the target page backlink profile on a 0-100 scale. Higher is better.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            ZA
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Zoom Authority (SEOZoom): domain authority metric focused on Italian SERPs, on a 0-100 scale."
+                                        aria-label="What is ZA?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Zoom Authority (SEOZoom): domain authority metric focused on Italian SERPs, on a 0-100 scale.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            AS
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals."
+                                        aria-label="What is AS?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            SEO Zoom
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="SEOZoom Traffic: estimated organic traffic from SEOZoom, especially useful for Italian-market visibility."
+                                        aria-label="What is SEO Zoom?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    SEOZoom Traffic: estimated organic traffic from SEOZoom, especially useful for Italian-market visibility.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            TF vs CF
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Ratio between Trust Flow and Citation Flow. Close to 1 is ideal; TF > CF suggests stronger quality, CF > TF may indicate spammy links."
+                                        aria-label="What is TF vs CF?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Ratio between Trust Flow and Citation Flow. Close to 1 is ideal; TF > CF suggests stronger quality, CF > TF may indicate spammy links.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Semrush Traffic
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent."
+                                        aria-label="What is Semrush Traffic?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Ahrefs Keyword
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Number of keywords the domain ranks for. More keywords usually mean stronger organic visibility; 1k+ is strong."
+                                        aria-label="What is Ahrefs Keyword?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Number of keywords the domain ranks for. More keywords usually mean stronger organic visibility; 1k+ is strong.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Ahrefs Traffic
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Estimated monthly organic visitors from Ahrefs. Higher traffic means more exposure; 5k+ good, 50k+ excellent."
+                                        aria-label="What is Ahrefs Traffic?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Estimated monthly organic visitors from Ahrefs. Higher traffic means more exposure; 5k+ good, 50k+ excellent.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Keywords vs Traffic
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings."
+                                        aria-label="What is Keywords vs Traffic?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="whitespace-nowrap px-4 py-2">SEO Metrics Date</th>
                     <th class="whitespace-nowrap px-4 py-2">Betting</th>
                     <th class="whitespace-nowrap px-4 py-2">Trading</th>
-                    <th class="whitespace-nowrap px-4 py-2">Permanent Link</th>
-                    <th class="whitespace-nowrap px-4 py-2">More than 1 link</th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Permanent Link
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration."
+                                        aria-label="What is Link Duration?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            More than 1 link
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Yes means the publisher accepts multiple backlinks in one guest post."
+                                        aria-label="What does More than 1 link mean?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Yes means the publisher accepts multiple backlinks in one guest post.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="whitespace-nowrap px-4 py-2">Copywriting</th>
-                    <th class="whitespace-nowrap px-4 py-2">Sponsored Tag</th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Sponsored Tag
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Indicates whether links are tagged sponsored/nofollow. No means full SEO value, yes means rel='sponsored' or rel='nofollow'."
+                                        aria-label="What is Sponsored Tag?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Indicates whether links are tagged sponsored/nofollow. No means full SEO value, yes means rel='sponsored' or rel='nofollow'.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="whitespace-nowrap px-4 py-2">Social Media Sharing</th>
                     <th class="whitespace-nowrap px-4 py-2">Post in Homepage</th>
                     <th class="whitespace-nowrap px-4 py-2">Date Added</th>
@@ -680,6 +980,53 @@
         }
 
         $(document).ready(function() {
+            const isGuestUser = @json($isGuestUser);
+            const showInfoPopup = (message) => {
+                if (!message) return;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Column Info',
+                        text: message,
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+                window.alert(message);
+            };
+
+            // Intercept in capture phase so DataTables sort handlers never receive the event.
+            const websitesThead = document.querySelector('#websitesTable thead');
+            if (websitesThead) {
+                const blockSortFromInfoButton = (event) => {
+                    if (!event.target.closest('.metric-info-btn')) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                };
+                ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach((eventName) => {
+                    websitesThead.addEventListener(eventName, blockSortFromInfoButton, true);
+                });
+                websitesThead.addEventListener('keydown', (event) => {
+                    const button = event.target.closest('.metric-info-btn');
+                    if (!button) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        event.stopImmediatePropagation();
+                        showInfoPopup(button.getAttribute('data-info'));
+                    }
+                }, true);
+                websitesThead.addEventListener('click', (event) => {
+                    const button = event.target.closest('.metric-info-btn');
+                    if (!button) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    showInfoPopup(button.getAttribute('data-info'));
+                }, true);
+            }
+
             // Initialize select2 with smaller text
             $('#filterCategories').select2({
                 placeholder: 'Select Categories',
@@ -726,22 +1073,22 @@
                         d.type_of_website = $('#filterWebsiteType').val();
                         d.language_id = $('#filterLanguage').val();
                         d.status = $('#filterStatus').val();
-                        d.contact_id       = $('#filterContact').val();              // ← NEW
-                        d.no_contact = $('#filterNoContact').is(':checked');
+                        d.contact_id = isGuestUser ? null : $('#filterContact').val();
+                        d.no_contact = isGuestUser ? false : $('#filterNoContact').is(':checked');
 
                         d.country_ids_include = $('#filterCountriesInclude').val(); // Array
                         d.country_ids_exclude = $('#filterCountriesExclude').val(); // Array
 
-                        d.publisher_price_min = $('#filterPublisher_priceMin').val();
-                        d.publisher_price_max = $('#filterPublisher_priceMax').val();
+                        d.publisher_price_min = isGuestUser ? null : $('#filterPublisher_priceMin').val();
+                        d.publisher_price_max = isGuestUser ? null : $('#filterPublisher_priceMax').val();
                         d.kialvo_min = $('#filterKialvo_evaluationMin').val();
                         d.kialvo_max = $('#filterKialvo_evaluationMax').val();
-                        d.profit_min = $('#filterProfitMin').val();
-                        d.profit_max = $('#filterProfitMax').val();
-                        d.banner_price_min   = $('#filterBannerMin').val();
-                        d.banner_price_max   = $('#filterBannerMax').val();
-                        d.sitewide_price_min = $('#filterSWMin').val();
-                        d.sitewide_price_max = $('#filterSWMax').val();
+                        d.profit_min = isGuestUser ? null : $('#filterProfitMin').val();
+                        d.profit_max = isGuestUser ? null : $('#filterProfitMax').val();
+                        d.banner_price_min   = isGuestUser ? null : $('#filterBannerMin').val();
+                        d.banner_price_max   = isGuestUser ? null : $('#filterBannerMax').val();
+                        d.sitewide_price_min = isGuestUser ? null : $('#filterSWMin').val();
+                        d.sitewide_price_max = isGuestUser ? null : $('#filterSWMax').val();
                         d.category_ids = $('#filterCategories').val();
 
                         d.DA_min = $('#filterDAMin').val();
@@ -779,7 +1126,7 @@
                         d.no_sponsored_tag = $('#filterNo_sponsored_tag').is(':checked');
                         d.social_media_sharing = $('#filterSocial_media_sharing').is(':checked');
                         d.post_in_homepage = $('#filterPost_in_homepage').is(':checked');
-                        d.show_deleted = $('#filterShowDeleted').is(':checked');
+                        d.show_deleted = isGuestUser ? false : $('#filterShowDeleted').is(':checked');
 
                     }
                 },
@@ -789,12 +1136,13 @@
                         orderable : false,
                         searchable: false,
                         className : 'text-center',
+                        visible   : !isGuestUser,
                         render    : id =>
                             `<input type="checkbox"
                 class="rowChk form-checkbox h-4 w-4 text-cyan-600"
                 value="${id}">`
                     },
-                    { data: 'id', name: 'id' },
+                    { data: 'id', name: 'id', visible: !isGuestUser },
                     { data: 'domain_name', name: 'domain_name' },
                     {
                         data: 'extra_notes',
@@ -810,13 +1158,15 @@
             </a>`;
                         }
                     },
-                    { data: 'status', name: 'status', className: 'text-center', },
+                    { data: 'status', name: 'status', className: 'text-center', visible: !isGuestUser },
                     { data: 'country_name', name: 'country.country_name', className: 'text-center', },
                     { data: 'language_name', name: 'language.name',  className: 'text-center', },
                     {
                         data: 'contact_name',
                         name: 'contact.name',
+                        visible: !isGuestUser,
                         render: function(data, type, row) {
+                            if (isGuestUser) return '';
                             if (!row.contact_id) return "No Publisher";
                             return `
                         <a href="#"
@@ -826,11 +1176,12 @@
                         </a>`;
                         }
                     },
-                    { data: 'currency_code', name: 'currency_code', className: 'text-center', },
+                    { data: 'currency_code', name: 'currency_code', className: 'text-center', visible: !isGuestUser },
                     {
                         data: 'publisher_price',
                         name: 'publisher_price',
                         className: 'text-center',
+                        visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
@@ -843,6 +1194,7 @@
                         data: 'no_follow_price',
                         name: 'no_follow_price',
                         className: 'text-center',
+                        visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
@@ -854,6 +1206,7 @@
                         data: 'special_topic_price',
                         name: 'special_topic_price',
                         className: 'text-center',
+                        visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
@@ -865,6 +1218,7 @@
                         data: 'link_insertion_price',
                         name: 'link_insertion_price',
                         className: 'text-center',
+                        visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
@@ -876,6 +1230,7 @@
                         data:'banner_price',
                         name:'banner_price',
                         className: 'text-center',
+                        visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
@@ -886,6 +1241,7 @@
                         data:'sitewide_link_price',
                         name:'sitewide_link_price',
                         className: 'text-center',
+                        visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
@@ -908,6 +1264,7 @@
                         data: 'profit',
                         name: 'profit',
                         className: 'text-center',
+                        visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
@@ -916,9 +1273,9 @@
                         }
                     },
                     { data:'date_publisher_price', name:'date_publisher_price',
-                       className:'text-center', render:dt },
+                       className:'text-center', render:dt, visible: !isGuestUser },
 
-                    { data: 'linkbuilder', name: 'linkbuilder', className: 'text-center', },
+                    { data: 'linkbuilder', name: 'linkbuilder', className: 'text-center', visible: !isGuestUser },
                     { data: 'type_of_website', name: 'type_of_website', className: 'text-center', },
                     { data: 'categories_list', name: 'categories_list', className: 'text-center', },
                     { data: 'DA', name: 'DA', className: 'text-center', },
@@ -936,7 +1293,7 @@
                     { data: 'ahrefs_traffic', name: 'ahrefs_traffic', className: 'text-center', },
                     { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic', className: 'text-center', },
                     { data:'seo_metrics_date', name:'seo_metrics_date',
-                      className:'text-center', render:dt },
+                      className:'text-center', render:dt, visible: !isGuestUser },
                     { data: 'betting', name: 'betting', className: 'text-center',
                         render: function (data, type, row) {
                             if (data === 1 )  {
@@ -973,20 +1330,24 @@
                                 return 'NO';
                         }
                     },
-                    { data: 'copywriting', name: 'copywriting', className: 'text-center',  render: function (data, type, row) {
-                            if (data === 1 )  {
+                    { data: 'copywriting', name: 'copywriting', className: 'text-center', visible: !isGuestUser, defaultContent: '',  render: function (data, type, row) {
+                            if (Number(data) === 1)  {
                                 return 'PROVIDED';
-                            }else if(data === 0)
-
+                            }
+                            if (Number(data) === 0) {
                                 return 'NOT PROVIDED';
+                            }
+                            return '';
                         }
                     },
                     { data: 'no_sponsored_tag', name: 'no_sponsored_tag', className: 'text-center',  render: function (data, type, row) {
-                            if (data === 1 )  {
-                                return 'YES';
-                            }else if(data === 0)
-
+                            if (Number(data) === 1)  {
                                 return 'NO';
+                            }
+                            if (Number(data) === 0) {
+                                return 'YES';
+                            }
+                            return '';
                         }
                     },
                     { data: 'social_media_sharing', name: 'social_media_sharing', className: 'text-center',  render: function (data, type, row) {
@@ -1006,7 +1367,7 @@
                         }
                     },
                     { data:'created_at', name:'date_added',
-                     className:'text-center', render:dt },
+                     className:'text-center', render:dt, visible: !isGuestUser },
 
 
                     { data: 'action', name: 'action', orderable: false, searchable: false }
@@ -1184,9 +1545,11 @@
             });
 
             // Toggle-based filter
-            $('#filterShowDeleted').on('change', function() {
-                table.ajax.reload();
-            });
+            if (!isGuestUser) {
+                $('#filterShowDeleted').on('change', function() {
+                    table.ajax.reload();
+                });
+            }
 
             // Search
             $('#btnSearch').on('click', function(e) {
@@ -1271,7 +1634,7 @@
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
                     social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
                     post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
-                    show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
+                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0)
                 });
 
                 // Change this route to match your CSV export route
@@ -1334,7 +1697,7 @@
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
                     social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
                     post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
-                    show_deleted: $('#filterShowDeleted').is(':checked') ? 1 : 0
+                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0)
                 });
 
                 // Change this route to match your PDF export route
@@ -1607,3 +1970,4 @@
     </script>
 
 @endpush
+

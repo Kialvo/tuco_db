@@ -55,6 +55,7 @@
             <select name="role" id="role" class="w-full border-gray-300 rounded px-2 py-1">
                 <option value="admin" @if($user->role === 'admin') selected @endif>Admin</option>
                 <option value="editor" @if($user->role === 'editor') selected @endif>Editor</option>
+                <option value="guest" @if($user->role === 'guest') selected @endif>Guest</option>
             </select>
             @error('role')
             <p class="text-red-500 text-sm">{{ $message }}</p>

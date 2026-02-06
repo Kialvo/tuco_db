@@ -33,111 +33,94 @@
 </head>
 <body class="antialiased bg-gray-100">
 <div class="flex min-h-screen">
-    {{-- ========== SIDEBAR ========== --}}
+    {{-- Sidebar --}}
     <aside class="w-64 flex-shrink-0 bg-slate-900 text-white flex flex-col">
-
-        {{-- Logo --}}
         <div class="h-16 flex items-center justify-center border-b border-slate-700">
             <img src="{{ asset('images/logo.png') }}" alt="MotherLink Logo" class="h-14 w-auto">
         </div>
 
-        {{-- Navigation --}}
         <nav class="flex-1 px-4 mt-4 space-y-2 text-sm">
+            @php($isGuestUser = Auth::check() && Auth::user()->isGuest())
 
-            {{-- Dashboard --}}
-            <a href="{{ route('dashboard') }}"
-               class="block px-3 py-2 rounded transition
-                      hover:bg-slate-800 {{ request()->routeIs('dashboard') ? 'bg-slate-800' : '' }}">
-                <i class="fas fa-tachometer-alt w-5 inline-block me-2"></i> Dashboard
-            </a>
+            @unless($isGuestUser)
+                <a href="{{ route('dashboard') }}"
+                   class="block px-3 py-2 rounded transition
+                          hover:bg-slate-800 {{ request()->routeIs('dashboard') ? 'bg-slate-800' : '' }}">
+                    <i class="fas fa-tachometer-alt w-5 inline-block me-2"></i> Dashboard
+                </a>
+            @endunless
 
-            {{-- ============ Websites ============ --}}
             <div x-data="{ open: {{ request()->routeIs('websites.*') || request()->routeIs('contacts.*') ? 'true' : 'false' }} }">
                 <div class="flex items-center justify-between px-3 py-2 rounded transition
                             hover:bg-slate-800 {{ request()->routeIs('websites.*') ? 'bg-slate-800' : '' }}">
-                    {{-- Main link --}}
                     <a href="{{ route('websites.index') }}" class="flex-1 inline-flex items-center">
                         <i class="fas fa-globe w-5 inline-block me-2"></i> Domains
                     </a>
-                    {{-- Toggle --}}
-                    <button @click="open = !open" class="focus:outline-none">
-                        <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
-                    </button>
+                    @unless($isGuestUser)
+                        <button @click="open = !open" class="focus:outline-none">
+                            <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
+                        </button>
+                    @endunless
                 </div>
 
-                {{-- Sub‑menu --}}
-                <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
-                    <a href="{{ route('contacts.index') }}"
-                       class="block px-3 py-2 rounded transition hover:bg-slate-800
-                              {{ request()->routeIs('contacts.*') ? 'bg-slate-800' : '' }}">
-                        <i class="fas fa-address-book w-4 inline-block me-2"></i> Publishers
-                    </a>
-                </div>
-            </div>
-            {{-- ============ New Entry ============ --}}
-            {{-- ============ New Entries ============ --}}
-            <div
-                x-data="{ open: {{ request()->routeIs('new_entries.*') || request()->routeIs('new_entries.historical*') ? 'true' : 'false' }} }"
-            >
-                <div class="flex items-center justify-between px-3 py-2 rounded transition
-                hover:bg-slate-800 {{ request()->routeIs('new_entries.*') || request()->routeIs('new_entries.historical*') ? 'bg-slate-800' : '' }}">
-                    {{-- Main link --}}
-                    {{-- Main link --}}
-                    <a href="{{ route('new_entries.index') }}" class="flex-1 inline-flex items-center">
-                        {{-- icon that exists in FA 6.0-beta3 --}}
-                        <i class="fas fa-folder-plus w-5 inline-block me-2"></i> New Entries
-                    </a>
-
-
-                    {{-- Toggle --}}
-                    <button @click="open = !open" class="focus:outline-none">
-                        <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
-                    </button>
-                </div>
-
-                {{-- Sub-menu --}}
-                <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
-                    <a href="{{ route('historical_view.index') }}"
-                       class="block px-3 py-2 rounded transition hover:bg-slate-800
-              {{ request()->routeIs('historical_view.*') ? 'bg-slate-800' : '' }}">
-                        <i class="fas fa-clock-rotate-left w-4 inline-block me-2"></i> Historical View
-                    </a>
-                </div>
-
+                @unless($isGuestUser)
+                    <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
+                        <a href="{{ route('contacts.index') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('contacts.*') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-address-book w-4 inline-block me-2"></i> Publishers
+                        </a>
+                    </div>
+                @endunless
             </div>
 
+            @unless($isGuestUser)
+                <div x-data="{ open: {{ request()->routeIs('new_entries.*') || request()->routeIs('new_entries.historical*') ? 'true' : 'false' }} }">
+                    <div class="flex items-center justify-between px-3 py-2 rounded transition
+                                hover:bg-slate-800 {{ request()->routeIs('new_entries.*') || request()->routeIs('new_entries.historical*') ? 'bg-slate-800' : '' }}">
+                        <a href="{{ route('new_entries.index') }}" class="flex-1 inline-flex items-center">
+                            <i class="fas fa-folder-plus w-5 inline-block me-2"></i> New Entries
+                        </a>
+                        <button @click="open = !open" class="focus:outline-none">
+                            <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
+                        </button>
+                    </div>
 
-
-            {{-- ============ Storages ============ --}}
-            <div x-data="{ open: {{ request()->routeIs('storages.*') || request()->routeIs('clients.*') || request()->routeIs('copy.*') ? 'true' : 'false' }} }">
-                <div class="flex items-center justify-between px-3 py-2 rounded transition
-                            hover:bg-slate-800 {{ request()->routeIs('storages.*') ? 'bg-slate-800' : '' }}">
-                    {{-- Main link --}}
-                    <a href="{{ route('storages.index') }}" class="flex-1 inline-flex items-center">
-                        <i class="fas fa-warehouse w-5 inline-block me-2"></i> Storages
-                    </a>
-                    {{-- Toggle --}}
-                    <button @click="open = !open" class="focus:outline-none">
-                        <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
-                    </button>
+                    <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
+                        <a href="{{ route('historical_view.index') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('historical_view.*') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-clock-rotate-left w-4 inline-block me-2"></i> Historical View
+                        </a>
+                    </div>
                 </div>
 
-                {{-- Sub‑menu --}}
-                <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
-                    <a href="{{ route('clients.index') }}"
-                       class="block px-3 py-2 rounded transition hover:bg-slate-800
-                              {{ request()->routeIs('clients.*') ? 'bg-slate-800' : '' }}">
-                        <i class="fas fa-user-friends w-4 inline-block me-2"></i> Clients
-                    </a>
-                    <a href="{{ route('copy.index') }}"
-                       class="block px-3 py-2 rounded transition hover:bg-slate-800
-                              {{ request()->routeIs('copy.*') ? 'bg-slate-800' : '' }}">
-                        <i class="fas fa-file-alt w-4 inline-block me-2"></i> Copy
-                    </a>
-                </div>
-            </div>
+                <div x-data="{ open: {{ request()->routeIs('storages.*') || request()->routeIs('clients.*') || request()->routeIs('copy.*') ? 'true' : 'false' }} }">
+                    <div class="flex items-center justify-between px-3 py-2 rounded transition
+                                hover:bg-slate-800 {{ request()->routeIs('storages.*') ? 'bg-slate-800' : '' }}">
+                        <a href="{{ route('storages.index') }}" class="flex-1 inline-flex items-center">
+                            <i class="fas fa-warehouse w-5 inline-block me-2"></i> Storages
+                        </a>
+                        <button @click="open = !open" class="focus:outline-none">
+                            <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
+                        </button>
+                    </div>
 
-            {{-- Admin --}}
+                    <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
+                        <a href="{{ route('clients.index') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('clients.*') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-user-friends w-4 inline-block me-2"></i> Clients
+                        </a>
+                        <a href="{{ route('copy.index') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('copy.*') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-file-alt w-4 inline-block me-2"></i> Copy
+                        </a>
+                    </div>
+                </div>
+            @endunless
+
             @if(Auth::check() && Auth::user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}"
                    class="block px-3 py-2 rounded transition hover:bg-slate-800
@@ -146,49 +129,38 @@
                 </a>
             @endif
 
-            {{-- resources/views/layouts/dashboard.blade.php --}}
-            {{-- ============ Tools ============ --}}
-            <div
-                x-data="{ open: {{ request()->routeIs('tools.*') ? 'true' : 'false' }} }"
-            >
-                {{-- Parent row (label + chevron) --}}
-                <div
-                    class="flex items-center justify-between px-3 py-2 rounded transition
-               hover:bg-slate-800 {{ request()->routeIs('tools.*') ? 'bg-slate-800' : '' }}"
-                >
-                    <a href="#"
-                       class="flex-1 inline-flex items-center select-none"
-                       @click.prevent="open = !open">
-                        <i class="fas fa-tools w-5 inline-block me-2"></i> Tools
-                    </a>
+            @unless($isGuestUser)
+                <div x-data="{ open: {{ request()->routeIs('tools.*') ? 'true' : 'false' }} }">
+                    <div class="flex items-center justify-between px-3 py-2 rounded transition
+                                hover:bg-slate-800 {{ request()->routeIs('tools.*') ? 'bg-slate-800' : '' }}">
+                        <a href="#"
+                           class="flex-1 inline-flex items-center select-none"
+                           @click.prevent="open = !open">
+                            <i class="fas fa-tools w-5 inline-block me-2"></i> Tools
+                        </a>
 
-                    <button @click="open = !open" class="focus:outline-none">
-                        <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
-                    </button>
+                        <button @click="open = !open" class="focus:outline-none">
+                            <i :class="open ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="w-4"></i>
+                        </button>
+                    </div>
+
+                    <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
+                        <a href="{{ route('tools.discover') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('tools.discover') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-search w-4 inline-block me-2"></i> Discover Domains
+                        </a>
+
+                        <a href="{{ route('tools.ahrefs.index') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('tools.ahrefs.index') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-broom w-4 inline-block me-2"></i> Clean Ahrefs CSV
+                        </a>
+                    </div>
                 </div>
-
-                {{-- Sub-menu --}}
-                <div x-show="open" x-cloak class="space-y-1 mt-1 ps-6">
-                    <a href="{{ route('tools.discover') }}"
-                       class="block px-3 py-2 rounded transition hover:bg-slate-800
-                  {{ request()->routeIs('tools.discover') ? 'bg-slate-800' : '' }}">
-                        <i class="fas fa-search w-4 inline-block me-2"></i> Discover Domains
-                    </a>
-
-                    <a href="{{ route('tools.ahrefs.index') }}"
-                       class="block px-3 py-2 rounded transition hover:bg-slate-800
-                  {{ request()->routeIs('tools.ahrefs.index') ? 'bg-slate-800' : '' }}">
-                        <i class="fas fa-broom w-4 inline-block me-2"></i> Clean Ahrefs CSV
-                    </a>
-
-                    {{-- Add future tool links here --}}
-                </div>
-            </div>
-
-
+            @endunless
         </nav>
 
-        {{-- Logout --}}
         <form method="POST" action="{{ route('logout') }}" class="p-4 border-t border-slate-700">
             @csrf
             <button type="submit"
@@ -197,15 +169,12 @@
             </button>
         </form>
     </aside>
-    {{-- ========== END SIDEBAR ========== --}}
 
-    {{-- ========== MAIN CONTENT ========== --}}
     <main class="flex-1 p-6">
         @yield('content')
     </main>
 </div>
 
-{{-- Optional: global DataTables init placeholder --}}
 <script>
 $.ajaxSetup({
     headers: {

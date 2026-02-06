@@ -121,7 +121,8 @@
                     <th class="px-4 py-2">Banner €</th>
                     <th class="px-4 py-2">Site-wide €</th>
 
-                    <th class="px-4 py-2">Kialvo</th>
+                    {{-- UI label renamed: Kialvo -> Price (data key stays kialvo_evaluation) --}}
+                    <th class="px-4 py-2">Price</th>
                     <th class="px-4 py-2">Profit</th>
 
                     <th class="px-4 py-2">Date Publisher Price</th>
@@ -135,19 +136,79 @@
                     <th class="px-4 py-2">ZA</th><th class="px-4 py-2">AS</th>
 
                     <th class="px-4 py-2">SEO Zoom</th>
-                    <th class="px-4 py-2">TF vs CF</th>
+                    <th class="px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            TF vs CF
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Majestic Trust Flow divided by Citation Flow. It compares link quality vs quantity; usually, higher is better."
+                                        aria-label="What is TF vs CF?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Majestic Trust Flow divided by Citation Flow. It compares link quality vs quantity; usually, higher is better.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="px-4 py-2">Semrush Traffic</th>
                     <th class="px-4 py-2">Ahrefs Keyword</th>
                     <th class="px-4 py-2">Ahrefs Traffic</th>
-                    <th class="px-4 py-2">Keyword vs Traffic</th>
+                    <th class="px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Keywords vs Traffic
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Compares ranking keywords with estimated visits. Higher generally means keyword visibility turns into stronger traffic."
+                                        aria-label="What is Keywords vs Traffic?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Compares ranking keywords with estimated visits. Higher generally means keyword visibility turns into stronger traffic.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="px-4 py-2">SEO Metrics Date</th>
 
                     <th class="px-4 py-2">Betting</th>
                     <th class="px-4 py-2">Trading</th>
                     <th class="px-4 py-2">Permanent Link</th>
-                    <th class="px-4 py-2">More than 1 link</th>
+                    <th class="px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            More than 1 link
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="YES means the publisher can place multiple links in one article/page, not only one link."
+                                        aria-label="What does More than 1 link mean?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    YES means the publisher can place multiple links in one article/page, not only one link.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="px-4 py-2">Copywriting</th>
-                    <th class="px-4 py-2">Sponsored Tag</th>
+                    <th class="px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Sponsored Tag
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Shows whether links are marked rel=&quot;sponsored&quot;. YES means sponsored-tagged links, often with lower SEO impact."
+                                        aria-label="What is Sponsored Tag?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Shows whether links are marked rel="sponsored". YES means sponsored-tagged links, often with lower SEO impact.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="px-4 py-2">Social Sharing</th>
                     <th class="px-4 py-2">Post in Homepage</th>
 
@@ -186,6 +247,51 @@
             const money   = v=> v==null ? '' : `<strong>€ ${v}</strong>`;
             const yesNo   = v=> v ? 'YES' : 'NO';
             const dateFmt = v=> v ? new Date(v).toLocaleDateString('en-GB') : '';
+            const showInfoPopup = (message) => {
+                if (!message) return;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Column Info',
+                        text: message,
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+                window.alert(message);
+            };
+
+            // Intercept in capture phase so DataTables sort handlers never receive the event.
+            const historicalThead = document.querySelector('#newEntriesTable thead');
+            if (historicalThead) {
+                const blockSortFromInfoButton = (event) => {
+                    if (!event.target.closest('.metric-info-btn')) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                };
+                ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach((eventName) => {
+                    historicalThead.addEventListener(eventName, blockSortFromInfoButton, true);
+                });
+                historicalThead.addEventListener('keydown', (event) => {
+                    const button = event.target.closest('.metric-info-btn');
+                    if (!button) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        event.stopImmediatePropagation();
+                        showInfoPopup(button.getAttribute('data-info'));
+                    }
+                }, true);
+                historicalThead.addEventListener('click', (event) => {
+                    const button = event.target.closest('.metric-info-btn');
+                    if (!button) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    event.stopImmediatePropagation();
+                    showInfoPopup(button.getAttribute('data-info'));
+                }, true);
+            }
 
             /* widgets */
 
