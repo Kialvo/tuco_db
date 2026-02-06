@@ -340,7 +340,14 @@ class WebsiteController extends Controller
         /* ───── simple string / exact-match filters ───── */
         if ($v = $request->domain_name)     $query->where('domain_name', 'like', "%$v%");
         if ($v = $request->type_of_website) $query->where('type_of_website', $v);
-        if ($v = $request->status)          $query->where('status',          $v);
+        if ($isGuestUser) {
+            $query->where(function ($q) {
+                $q->whereNull('status')
+                  ->orWhereRaw('LOWER(status) <> ?', ['past']);
+            });
+        } elseif ($v = $request->status) {
+            $query->where('status', $v);
+        }
 
         /* ───── FK equality filters ───── */
         if ($v = $request->country_id)  $query->where('country_id',  $v);
@@ -561,6 +568,15 @@ class WebsiteController extends Controller
      */
     public function show(Website $website)
     {
+        if ($this->isGuestUser()) {
+            $status = strtolower(trim((string) $website->status));
+            if ($status === 'past') {
+                if (request()->expectsJson() || request()->ajax()) {
+                    return response()->json(['message' => 'Not found'], 404);
+                }
+                return redirect()->route('websites.index');
+            }
+        }
         $website->load(['country', 'language', 'contact', 'categories']);
         return view('websites.show', compact('website'));
     }

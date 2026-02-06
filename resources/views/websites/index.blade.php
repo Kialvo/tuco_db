@@ -107,17 +107,19 @@
                     </select>
                 </div>
 
-                <!-- Status -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Status</label>
-                    <select id="filterStatus"
-                            class="border border-gray-300 rounded px-2 py-2 w-28
-                               focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        <option value="active">Active</option>
-                        <option value="past">Past</option>
-                    </select>
-                </div>
+                @unless($isGuestUser)
+                    <!-- Status -->
+                    <div class="flex flex-col">
+                        <label class="text-gray-700 font-medium">Status</label>
+                        <select id="filterStatus"
+                                class="border border-gray-300 rounded px-2 py-2 w-28
+                                   focus:ring-cyan-500 focus:border-cyan-500">
+                            <option value="">-- Any --</option>
+                            <option value="active">Active</option>
+                            <option value="past">Past</option>
+                        </select>
+                    </div>
+                @endunless
 
                 @unless($isGuestUser)
                     <!-- Publisher -->
@@ -1072,7 +1074,7 @@
                         d.domain_name = $('#filterDomainName').val();
                         d.type_of_website = $('#filterWebsiteType').val();
                         d.language_id = $('#filterLanguage').val();
-                        d.status = $('#filterStatus').val();
+                        d.status = isGuestUser ? null : $('#filterStatus').val();
                         d.contact_id = isGuestUser ? null : $('#filterContact').val();
                         d.no_contact = isGuestUser ? false : $('#filterNoContact').is(':checked');
 
