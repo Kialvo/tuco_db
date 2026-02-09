@@ -36,6 +36,18 @@
             </button>
         </div>
 
+        <div id="contactsTableSearchWrap" class="table-search-wrap">
+            <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
+                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                <span class="px-3 text-gray-400 text-base leading-none">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input id="contactsTableSearch" type="text"
+                       class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
+                       placeholder="Search publishers...">
+            </div>
+        </div>
+
         <!-- DataTable Container -->
         <div class="bg-white border border-gray-200 rounded shadow-sm p-4">
             <table id="contactsTable" class="w-full text-sm text-gray-700">
@@ -93,7 +105,7 @@
                 order: [[0, 'desc']],
                 responsive: true,
                 autoWidth: false,
-                dom: "<'flex items-center justify-between mb-2'<'dt-length'l><'dt-filter'f>>" +
+                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
                     "tr" +
                     "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
                 language: {
@@ -102,6 +114,25 @@
                     info: "Showing _START_ to _END_ of _TOTAL_ entries",
                     infoEmpty: "No publishers found",
                     zeroRecords: "No matching publishers found"
+                }
+            });
+
+            // Move search box into the DataTable header (next to "Show entries")
+            $(table.table().container()).find('.dt-search').append($('#contactsTableSearchWrap'));
+
+            // Table search (debounced to avoid slow typing)
+            let contactsSearchTimer;
+            $('#contactsTableSearch').on('input', function() {
+                const value = this.value;
+                clearTimeout(contactsSearchTimer);
+                contactsSearchTimer = setTimeout(() => {
+                    table.search(value).draw();
+                }, 300);
+            });
+            $('#contactsTableSearch').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    clearTimeout(contactsSearchTimer);
+                    table.search(this.value).draw();
                 }
             });
 
@@ -124,23 +155,14 @@
                 );
                 lengthLabel.addClass("text-gray-600 flex items-center space-x-2");
 
-                // 2) SEARCH FILTER
-                let filterLabel = $('div.dt-filter label');
-                let filterInput = filterLabel.find('input');
-                filterLabel.addClass("flex items-center space-x-2 text-gray-600");
-                filterInput.addClass(
-                    "border border-gray-300 bg-white rounded-md px-3 py-1 " +
-                    "focus:ring-cyan-500 focus:border-cyan-500 text-gray-700"
-                );
-
-                // 3) PAGINATION
+                // 2) PAGINATION
                 let paginationDiv = $('div.dt-pagination');
                 paginationDiv.addClass("space-x-2");
                 paginationDiv.find('a').addClass(
                     "inline-block px-3 py-1 rounded hover:bg-gray-200 text-gray-700"
                 );
 
-                // 4) INFO TEXT
+                // 3) INFO TEXT
                 let infoDiv = $('div.dt-info');
                 infoDiv.addClass("text-gray-600");
             });

@@ -329,6 +329,18 @@
 
 
         {{-- ───────────────────── DATA TABLE ───────────────────── --}}
+        <div id="storagesTableSearchWrap" class="table-search-wrap">
+            <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
+                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                <span class="px-3 text-gray-400 text-base leading-none">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input id="storagesTableSearch" type="text"
+                       class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
+                       placeholder="Search storages...">
+            </div>
+        </div>
+
         <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto max-w-[2400px]">
 
             <table id="storagesTable" class="text-xs text-gray-700 w-full min-w-[2400px]">
@@ -550,6 +562,9 @@
             /* DataTable */
             const table = $('#storagesTable').DataTable({
                 processing:true, serverSide:true,
+                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
+                    "tr" +
+                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
                 ajax:{
                     url:"{{ route('storages.data') }}",
                     type:"POST",
@@ -658,6 +673,25 @@
                 scrollX:true,
                 lengthMenu: [[10, 25, 50, 100, 200, 500, -1],
                     [10, 25, 50, 100, 200, 500, "All"]],
+            });
+
+            // Move search box into the DataTable header (next to "Show entries")
+            $(table.table().container()).find('.dt-search').append($('#storagesTableSearchWrap'));
+
+            // Table search (debounced to avoid slow typing)
+            let storagesSearchTimer;
+            $('#storagesTableSearch').on('input', function() {
+                const value = this.value;
+                clearTimeout(storagesSearchTimer);
+                storagesSearchTimer = setTimeout(() => {
+                    table.search(value).draw();
+                }, 300);
+            });
+            $('#storagesTableSearch').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    clearTimeout(storagesSearchTimer);
+                    table.search(this.value).draw();
+                }
             });
 
             let filtersApplied = false;
@@ -900,6 +934,8 @@
                 $('#filterForm').find('input[type="text"],input[type="date"]').val('');
                 $('#filterForm').find('select').val('').trigger('change');
                 $('#filterShowDeleted').prop('checked',false);
+                $('#storagesTableSearch').val('');
+                table.search('');
                 filtersApplied = false;                    // back to “no filters”
                 table.ajax.reload();                       // redraw table
                 $('#summaryRow .sum-val').text('—');

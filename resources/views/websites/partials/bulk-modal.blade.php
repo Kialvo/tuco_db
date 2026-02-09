@@ -42,7 +42,7 @@
         // BOOLEAN FLAGS
         'betting'              => 'Betting',
         'trading'              => 'Trading',
-        'permanent_link'       => 'Permanent Link',
+        'permanent_link'       => 'LINK LIFETIME',
         'more_than_one_link'   => 'More than one link',
         'copywriting'          => 'Copywriting',
         'no_sponsored_tag'     => 'No Sponsored Tag',

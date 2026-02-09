@@ -33,7 +33,7 @@ class Website extends Model
         // flags & notes
         'betting','trading','permanent_link','more_than_one_link',
         'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
-        'extra_notes',
+        'notes','extra_notes',
 
         'banner_price','sitewide_link_price',
         'original_banner_price','original_sitewide_link_price',

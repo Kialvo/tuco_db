@@ -395,7 +395,7 @@
             <div>
                 <label class="flex items-center">
                     <input type="checkbox" name="permanent_link" value="1" {{ old('permanent_link', $website->permanent_link) ? 'checked' : '' }} class="mr-2">
-                    Permanent Link
+                    LINK LIFETIME
                 </label>
                 @error('permanent_link')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
@@ -467,7 +467,14 @@
                 @enderror
             </div>
             <div>
-                <label class="block">Extra Notes</label>
+                <label class="block">Notes</label>
+                <textarea name="notes" class="w-full border-gray-300 rounded" rows="3">{{ old('notes', $website->notes) }}</textarea>
+                @error('notes')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+                @enderror
+            </div>
+            <div class="col-span-2">
+                <label class="block">Internal Notes</label>
                 <textarea name="extra_notes" class="w-full border-gray-300 rounded" rows="3">{{ old('extra_notes', $website->extra_notes) }}</textarea>
                 @error('extra_notes')
                 <p class="text-red-500 text-sm">{{ $message }}</p>

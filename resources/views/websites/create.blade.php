@@ -529,7 +529,7 @@
                     <input type="checkbox" name="permanent_link" value="1"
                            {{ old('permanent_link') ? 'checked' : '' }}
                            class="mr-2 focus:ring-cyan-500">
-                    Permanent Link
+                    LINK LIFETIME
                 </label>
                 @error('permanent_link')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -601,7 +601,18 @@
         <!-- Additional Details -->
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <label class="block text-gray-700 font-medium mb-1">Extra Notes</label>
+                <label class="block text-gray-700 font-medium mb-1">Notes</label>
+                <textarea
+                    name="notes"
+                    rows="3"
+                    class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                >{{ old('notes') }}</textarea>
+                @error('notes')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Internal Notes</label>
                 <textarea
                     name="extra_notes"
                     rows="3"
@@ -666,5 +677,4 @@
 
     </script>
 @endpush
-
 

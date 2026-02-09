@@ -6,7 +6,7 @@
         <button type="button" id="closeNoteModal"
                 class="absolute top-3 right-3 text-2xl text-gray-600 hover:text-gray-800">&times;</button>
 
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">Extra Note</h2>
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Note</h2>
 
         <p id="modalNoteBody" class="text-gray-700 whitespace-pre-line"></p>
 

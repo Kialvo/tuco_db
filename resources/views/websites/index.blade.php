@@ -520,6 +520,18 @@
         </div>
         @endunless
 
+        <div id="websitesTableSearchWrap" class="table-search-wrap">
+            <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
+                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                <span class="px-3 text-gray-400 text-base leading-none">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input id="websitesTableSearch" type="text"
+                       class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
+                       placeholder="Search domains...">
+            </div>
+        </div>
+
         <!-- TABLE WRAPPER for horizontal scrolling if needed -->
         <div class="bg-white border border-gray-200 rounded shadow p-2
             overflow-x-auto
@@ -534,7 +546,10 @@
 
                     <th class="whitespace-nowrap px-4 py-2">ID</th>
                     <th class="whitespace-nowrap px-4 py-2">Domain</th>
-                    <th class="whitespace-nowrap px-4 py-2">Extra Notes</th>
+                    <th class="whitespace-nowrap px-4 py-2">Notes</th>
+                    @unless($isGuestUser)
+                        <th class="whitespace-nowrap px-4 py-2">Internal Notes</th>
+                    @endunless
                     <th class="whitespace-nowrap px-4 py-2">Status</th>
                     <th class="whitespace-nowrap px-4 py-2">Country</th>
                     <th class="whitespace-nowrap px-4 py-2">Language</th>
@@ -812,12 +827,12 @@
                     <th class="whitespace-nowrap px-4 py-2">Trading</th>
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
-                            Permanent Link
+                            LINK LIFETIME
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
                                         class="metric-info-btn text-cyan-600 text-[11px]"
                                         data-info="Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration."
-                                        aria-label="What is Link Duration?">
+                                        aria-label="What is Link Lifetime?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
@@ -1058,11 +1073,24 @@
                 allowClear: true,
                 width: '10em',
             });
+            const renderNote = function (data) {
+                if (!data) return '';
+                // escape any "<" & ">" so the note can safely live in a data-attribute
+                const safe = $('<div>').text(data).html();
+                return `
+            <a href="#" class="note-link text-cyan-700" data-note="${safe}">
+                <i class="fas fa-comment-dots"></i>
+            </a>`;
+            };
+            const decodeHtml = (value) => $('<textarea/>').html(value ?? '').text();
             // Initialize the DataTable
             window.table =$('#websitesTable').DataTable({
 
                 processing: true,
                 serverSide: true,
+                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
+                    "tr" +
+                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
                 ajax: {
                     url: "{{ route('websites.data') }}",
                     type: "POST",
@@ -1147,19 +1175,19 @@
                     { data: 'id', name: 'id', visible: !isGuestUser },
                     { data: 'domain_name', name: 'domain_name' },
                     {
+                        data: 'notes',
+                        name: 'notes',
+                        className: 'text-center',
+                        render: renderNote
+                    },
+                    @unless($isGuestUser)
+                    {
                         data: 'extra_notes',
                         name: 'extra_notes',
                         className: 'text-center',
-                        render: function (data) {
-                            if (!data) return '';
-                            // escape any "<" & ">" so the note can safely live in a data-attribute
-                            const safe = $('<div>').text(data).html();
-                            return `
-            <a href="#" class="note-link text-cyan-700" data-note="${safe}">
-                <i class="fas fa-comment-dots"></i>
-            </a>`;
-                        }
+                        render: renderNote
                     },
+                    @endunless
                     { data: 'status', name: 'status', className: 'text-center', visible: !isGuestUser },
                     { data: 'country_name', name: 'country.country_name', className: 'text-center', },
                     { data: 'language_name', name: 'language.name',  className: 'text-center', },
@@ -1378,6 +1406,9 @@
                 responsive: false,
                 autoWidth: false
             });
+
+            // Move search box into the DataTable header (next to "Show entries")
+            $(table.table().container()).find('.dt-search').append($('#websitesTableSearchWrap'));
             function dt(v){ return v ? new Date(v).toLocaleDateString('en-GB') : ''; }
 
             /* ---------- live “Selected: N” badge ---------- */
@@ -1553,6 +1584,22 @@
                 });
             }
 
+            // Table search (debounced to avoid slow typing)
+            let websiteSearchTimer;
+            $('#websitesTableSearch').on('input', function() {
+                const value = this.value;
+                clearTimeout(websiteSearchTimer);
+                websiteSearchTimer = setTimeout(() => {
+                    table.search(value).draw();
+                }, 300);
+            });
+            $('#websitesTableSearch').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    clearTimeout(websiteSearchTimer);
+                    table.search(this.value).draw();
+                }
+            });
+
             // Search
             $('#btnSearch').on('click', function(e) {
                 e.preventDefault();
@@ -1574,6 +1621,8 @@
                 $('#filterBannerMin,#filterBannerMax,#filterSWMin,#filterSWMax').val('');
 
                 $('#filterCategories').val(null).trigger('change');
+                $('#websitesTableSearch').val('');
+                table.search('');
                 table.ajax.reload();
             });
 
@@ -1713,7 +1762,7 @@
             $(document).on('click', '.note-link', function (e) {
                 e.preventDefault();
                 const note = $(this).data('note');
-                $('#modalNoteBody').text(note);
+                $('#modalNoteBody').text(decodeHtml(note));
                 $('#noteModal').removeClass('hidden');
             });
             $('#closeNoteModal, #closeNoteModalBottom').on('click', function () {

@@ -51,14 +51,15 @@
         <th>SEO Metrics Date</th>
         <th>Betting</th>
         <th>Trading</th>
-        <th>Permanent Link</th>
+        <th>LINK LIFETIME</th>
         <th>More than 1 link</th>
         <th>Copywriting</th>
         <th>No Sponsored Tag</th>
         <th>Social Media Sharing</th>
         <th>Post in Homepage</th>
         <th>Date Added</th>
-        <th>Extra Notes</th>
+        <th>Notes</th>
+        <th>Internal Notes</th>
     </tr>
     </thead>
     <tbody>
@@ -107,6 +108,7 @@
             <td>{{ $web->social_media_sharing ? 'Yes' : 'No' }}</td>
             <td>{{ $web->post_in_homepage ? 'Yes' : 'No' }}</td>
             <td>{{ $web->created_at }}</td>
+            <td>{{ $web->notes }}</td>
             <td>{{ $web->extra_notes }}</td>
         </tr>
     @endforeach

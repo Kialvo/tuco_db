@@ -165,6 +165,7 @@ class WebsiteController extends Controller
                 ->editColumn('seo_metrics_date', fn() => null)
                 ->editColumn('copywriting', fn() => null)
                 ->editColumn('created_at', fn() => null)
+                ->editColumn('extra_notes', fn() => null)
                 ->removeColumn('contact_id');
         }
 
@@ -228,14 +229,15 @@ class WebsiteController extends Controller
             'SEO Metrics Date',
             'Betting',
             'Trading',
-            'Permanent Link',
+            'LINK LIFETIME',
             'More than 1 link',
             'Copywriting',
             'No Sponsored Tag',
             'Social Media Sharing',
             'Post in Homepage',
             'Date Added',
-            'Extra Notes',
+            'Notes',
+            'Internal Notes',
         ];
 
         // 5) Loop to fill each row
@@ -290,6 +292,7 @@ class WebsiteController extends Controller
                 $web->post_in_homepage ? 'Yes' : 'No',
                 // 'created_at' as "Date Added"
                 $web->created_at,
+                $web->notes,
                 $web->extra_notes,
             ];
         }
@@ -985,6 +988,7 @@ class WebsiteController extends Controller
             'no_sponsored_tag'       => 'nullable|boolean',
             'social_media_sharing'   => 'nullable|boolean',
             'post_in_homepage'       => 'nullable|boolean',
+            'notes'                  => 'nullable|string',
             'extra_notes'            => 'nullable|string',
             'original_publisher_price'        => 'nullable|numeric',
             'original_no_follow_price'        => 'nullable|numeric',

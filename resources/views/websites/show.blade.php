@@ -27,12 +27,12 @@
         <div class="mb-2"><strong>Keyword vs Traffic:</strong> {{ $website->keyword_vs_traffic }}</div>
         <div class="mb-2"><strong>Betting:</strong> {{ $website->betting ? 'Yes' : 'No' }}</div>
         <div class="mb-2"><strong>Trading:</strong> {{ $website->trading ? 'Yes' : 'No' }}</div>
-        <div class="mb-2"><strong>Permanent Link:</strong> {{ $website->permanent_link ? 'Yes' : 'No' }}</div>
+        <div class="mb-2"><strong>LINK LIFETIME:</strong> {{ $website->permanent_link ? 'Yes' : 'No' }}</div>
         <div class="mb-2"><strong>More than 1 Link:</strong> {{ $website->more_than_one_link ? 'Yes' : 'No' }}</div>
         <div class="mb-2"><strong>Sponsored Tag:</strong> {{ $website->no_sponsored_tag ? 'No' : 'Yes' }}</div>
         <div class="mb-2"><strong>Social Media Sharing:</strong> {{ $website->social_media_sharing ? 'Yes' : 'No' }}</div>
         <div class="mb-2"><strong>Post in Homepage:</strong> {{ $website->post_in_homepage ? 'Yes' : 'No' }}</div>
-        <div class="mb-2"><strong>Extra Notes:</strong> {{ $website->extra_notes }}</div>
+        <div class="mb-2"><strong>Notes:</strong> {{ $website->notes }}</div>
         <div class="mb-2"><strong>Country:</strong> {{ optional($website->country)->country_name ?? 'N/A' }}</div>
         <div class="mb-2"><strong>Language:</strong> {{ optional($website->language)->name ?? 'N/A' }}</div>
         <div class="mb-2">
@@ -46,6 +46,7 @@
 
         @unless($isGuestUser)
             <hr class="my-4">
+            <div class="mb-2"><strong>Internal Notes:</strong> {{ $website->extra_notes }}</div>
             <div class="mb-2"><strong>Status:</strong> {{ $website->status }}</div>
             <div class="mb-2"><strong>Publisher Price:</strong> {{ $website->publisher_price }}</div>
             <div class="mb-2"><strong>Original Publisher Price:</strong> {{ $website->original_publisher_price }}</div>

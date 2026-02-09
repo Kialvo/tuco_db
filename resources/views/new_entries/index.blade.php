@@ -147,6 +147,18 @@
             </span>
         </div>
 
+        <div id="newEntriesTableSearchWrap" class="table-search-wrap">
+            <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
+                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                <span class="px-3 text-gray-400 text-base leading-none">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input id="newEntriesTableSearch" type="text"
+                       class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
+                       placeholder="Search new entries...">
+            </div>
+        </div>
+
         {{-- TABLE --}}
         <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto">
             <table id="newEntriesTable" class="text-xs text-gray-700 w-full min-w-[1550px]">
@@ -310,6 +322,7 @@
             const money = v => (v==null? '' : `<strong>€ ${v}</strong>`);
             const yesNo = v => (v ? 'YES' : 'NO');
             const dateFmt = v => (v ? new Date(v).toLocaleDateString('en-GB') : '');
+            const decodeHtml = (value) => $('<textarea/>').html(value ?? '').text();
             const showInfoPopup = (message) => {
                 if (!message) return;
                 if (typeof Swal !== 'undefined') {
@@ -389,6 +402,9 @@
             /* ========== DataTable (same renderers/order as Websites) ========== */
             window.tbl = $('#newEntriesTable').DataTable({
                 processing:true, serverSide:true,
+                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
+                    "tr" +
+                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
                 ajax:{
                     url:"{{ route('new_entries.data') }}",
                     type:"POST",
@@ -482,6 +498,25 @@
                 autoWidth:false
             });
 
+            // Move search box into the DataTable header (next to "Show entries")
+            $(tbl.table().container()).find('.dt-search').append($('#newEntriesTableSearchWrap'));
+
+            // Table search (debounced to avoid slow typing)
+            let newEntriesSearchTimer;
+            $('#newEntriesTableSearch').on('input', function() {
+                const value = this.value;
+                clearTimeout(newEntriesSearchTimer);
+                newEntriesSearchTimer = setTimeout(() => {
+                    tbl.search(value).draw();
+                }, 300);
+            });
+            $('#newEntriesTableSearch').on('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    clearTimeout(newEntriesSearchTimer);
+                    tbl.search(this.value).draw();
+                }
+            });
+
             // status inline change (same pattern as you had)
             $(document).on('change', '.status-dd', function () {
                 const $sel = $(this), newVal = $sel.val();
@@ -524,13 +559,15 @@
                 $('#filterStatus').val('');
                 $('#filterLanguage').val('');
                 $('#filterCountries').val('');
+                $('#newEntriesTableSearch').val('');
+                tbl.search('');
                 tbl.ajax.reload();
             });
 
             // NOTE modal
             $(document).on('click', '.note-link', function (e) {
                 e.preventDefault();
-                $('#modalNoteBody').text($(this).data('note'));
+                $('#modalNoteBody').text(decodeHtml($(this).data('note')));
                 $('#noteModal').removeClass('hidden');
             });
             $(document).on('click', '#closeNoteModal, #closeNoteModalBottom', function () {
