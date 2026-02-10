@@ -34,7 +34,7 @@
 <body class="antialiased bg-gray-100">
 <div class="flex min-h-screen">
     {{-- Sidebar --}}
-    <aside class="w-64 flex-shrink-0 bg-slate-900 text-white flex flex-col h-screen overflow-hidden">
+    <aside class="w-64 flex-shrink-0 bg-slate-900 text-white flex flex-col h-screen h-[100dvh] overflow-hidden sticky top-0">
         <div class="h-16 flex items-center justify-center border-b border-slate-700">
             <img src="{{ asset('images/logo.png') }}" alt="MotherLink Logo" class="h-14 w-auto">
         </div>
