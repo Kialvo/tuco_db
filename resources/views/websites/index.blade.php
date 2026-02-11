@@ -37,6 +37,14 @@
                     Hide Filters
                 </button>
 
+                @if($isGuestUser)
+                    <button id="btnFavoritesToggle"
+                            class="bg-amber-500 text-white px-4 py-2 rounded shadow hover:bg-amber-600
+                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400 text-xs">
+                        <i class="fas fa-star mr-1"></i> My Favorites
+                    </button>
+                @endif
+
                 @unless($isGuestUser)
                     <a href="{{ route('websites.create') }}"
                        class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
@@ -545,6 +553,9 @@
                     </th>
 
                     <th class="whitespace-nowrap px-4 py-2">ID</th>
+                    @if($isGuestUser)
+                        <th class="whitespace-nowrap px-4 py-2 text-center">Fav</th>
+                    @endif
                     <th class="whitespace-nowrap px-4 py-2">Domain</th>
                     <th class="whitespace-nowrap px-4 py-2">Notes</th>
                     @unless($isGuestUser)
@@ -998,6 +1009,7 @@
 
         $(document).ready(function() {
             const isGuestUser = @json($isGuestUser);
+            let favoritesOnly = false;
             const showInfoPopup = (message) => {
                 if (!message) return;
                 if (typeof Swal !== 'undefined') {
@@ -1157,6 +1169,7 @@
                         d.social_media_sharing = $('#filterSocial_media_sharing').is(':checked');
                         d.post_in_homepage = $('#filterPost_in_homepage').is(':checked');
                         d.show_deleted = isGuestUser ? false : $('#filterShowDeleted').is(':checked');
+                        d.favorites_only = isGuestUser && favoritesOnly ? 1 : 0;
 
                     }
                 },
@@ -1173,6 +1186,23 @@
                 value="${id}">`
                     },
                     { data: 'id', name: 'id', visible: !isGuestUser },
+                    @if($isGuestUser)
+                    {
+                        data: 'is_favorite',
+                        name: 'is_favorite',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            const active = data ? 'text-yellow-400' : 'text-gray-400 opacity-60';
+                            const title = data ? 'Remove from favorites' : 'Add to favorites';
+                            return `
+            <button class="fav-toggle ${active}" data-id="${row.id}" data-fav="${data ? 1 : 0}" title="${title}">
+                <i class="fas fa-star"></i>
+            </button>`;
+                        }
+                    },
+                    @endif
                     { data: 'domain_name', name: 'domain_name' },
                     {
                         data: 'notes',
@@ -1600,6 +1630,48 @@
                 }
             });
 
+            // Favorites toggle (guest only)
+            const favBaseUrl = "{{ url('/websites') }}";
+            $(document).on('click', '.fav-toggle', function(e) {
+                e.preventDefault();
+                if (!isGuestUser) return;
+                const $btn = $(this);
+                const id = $btn.data('id');
+                $btn.prop('disabled', true);
+                $.ajax({
+                    url: `${favBaseUrl}/${id}/favorite`,
+                    type: 'POST',
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    success: function(res) {
+                        const isFav = !!res.favorite;
+                        $btn.data('fav', isFav ? 1 : 0);
+                        $btn.toggleClass('text-yellow-400', isFav);
+                        $btn.toggleClass('text-gray-400 opacity-60', !isFav);
+                        if (favoritesOnly && !isFav) {
+                            table.ajax.reload(null, false);
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Could not update favorite.' });
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Favorites filter toggle (guest only)
+            $('#btnFavoritesToggle').on('click', function() {
+                if (!isGuestUser) return;
+                favoritesOnly = !favoritesOnly;
+                $(this)
+                    .toggleClass('bg-amber-600', favoritesOnly)
+                    .toggleClass('bg-amber-500', !favoritesOnly)
+                    .text(favoritesOnly ? 'Show All' : 'My Favorites')
+                    .prepend('<i class="fas fa-star mr-1"></i> ');
+                table.ajax.reload();
+            });
+
             // Search
             $('#btnSearch').on('click', function(e) {
                 e.preventDefault();
@@ -1623,6 +1695,14 @@
                 $('#filterCategories').val(null).trigger('change');
                 $('#websitesTableSearch').val('');
                 table.search('');
+                if (isGuestUser) {
+                    favoritesOnly = false;
+                    $('#btnFavoritesToggle')
+                        .removeClass('bg-amber-600')
+                        .addClass('bg-amber-500')
+                        .text('My Favorites')
+                        .prepend('<i class="fas fa-star mr-1"></i> ');
+                }
                 table.ajax.reload();
             });
 

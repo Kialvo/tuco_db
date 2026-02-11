@@ -40,4 +40,10 @@ class User extends Authenticatable
     {
         return $this->hasRole('guest');
     }
+
+    public function favoriteWebsites()
+    {
+        return $this->belongsToMany(Website::class, 'user_favorite_domains')
+            ->withTimestamps();
+    }
 }

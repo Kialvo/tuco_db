@@ -3,7 +3,7 @@
 @section('content')
     <div class="px-6 py-6 bg-gray-50 min-h-screen">
         <!-- Page Header -->
-        <div class="mb-6 flex justify-between items-center">
+        <div class="mb-6 flex flex-wrap justify-between items-center gap-3">
             <h1 class="text-2xl font-bold text-gray-700">Manage Users</h1>
 
             <!-- Create User Button (Opens Modal) -->
@@ -17,14 +17,36 @@
 
         <!-- User Table Wrapper -->
         <div class="bg-white border border-gray-200 rounded shadow-sm p-6">
-            <table class="w-full text-sm text-left text-gray-700 border-collapse">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
+                            focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                    <span class="px-3 text-gray-400 text-base leading-none">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input id="usersTableSearch" type="text"
+                           class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
+                           placeholder="Search users...">
+                </div>
+
+                <select id="roleFilter"
+                        class="border border-gray-300 rounded px-4 py-2 text-sm w-56 focus:ring-cyan-500 focus:border-cyan-500">
+                    <option value="">All Roles</option>
+                    <option value="admin" {{ ($role ?? '') === 'admin' ? 'selected' : '' }}>Admin</option>
+                    <option value="editor" {{ ($role ?? '') === 'editor' ? 'selected' : '' }}>Editor</option>
+                    <option value="guest" {{ ($role ?? '') === 'guest' ? 'selected' : '' }}>Guest</option>
+                </select>
+            </div>
+
+            <table id="usersTable" class="w-full text-sm text-left text-gray-700 border-collapse">
                 <thead class="bg-gray-100 text-xs uppercase text-gray-600 tracking-wider border-b">
                 <tr>
                     <th class="px-4 py-3">ID</th>
                     <th class="px-4 py-3">Name</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Role</th>
-                    <th class="px-4 py-3 text-right">Actions</th>
+                    <th class="px-4 py-3 text-right">
+                        <div class="flex justify-end">Actions</div>
+                    </th>
                 </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -35,29 +57,40 @@
                         <td class="px-4 py-3">{{ $user->email }}</td>
                         <td class="px-4 py-3">{{ ucfirst($user->role) }}</td>
                         <td class="px-4 py-3 text-right flex justify-end space-x-3">
-                            <!-- Edit Button -->
-                            <button type="button"
-                                    class="editBtn bg-blue-500 text-white px-3 py-2 rounded-md shadow flex items-center space-x-2
+                            @if($user->isGuest())
+                                <!-- Favorites Button -->
+                                <a href="{{ route('admin.users.favorites', $user->id) }}"
+                                   class="bg-amber-500 text-white px-3 py-2 rounded-md shadow flex items-center space-x-2
+                      hover:bg-amber-600 transition focus:outline-none focus:ring-2 focus:ring-amber-400">
+                                    <i class="fas fa-star"></i>
+                                    <span>Favorites</span>
+                                </a>
+                            @endif
+
+                            <div class="flex items-center space-x-3">
+                                <!-- Edit Button -->
+                                <button type="button"
+                                        class="editBtn bg-blue-500 text-white px-3 py-2 rounded-md shadow flex items-center space-x-2
                hover:bg-blue-600 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    data-user-id="{{ $user->id }}">
-                                <i class="fas fa-edit"></i>
-                                <span>Edit</span>
-                            </button>
-
-
-                            <!-- Delete Button -->
-                            <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
-                                  class="inline-block">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                        class="bg-red-500 text-white px-3 py-2 rounded-md shadow flex items-center space-x-2
-                       hover:bg-red-600 transition focus:outline-none focus:ring-2 focus:ring-red-400"
-                                        onclick="return confirm('Are you sure you want to delete this user?')">
-                                    <i class="fas fa-trash"></i>
-                                    <span>Delete</span>
+                                        data-user-id="{{ $user->id }}">
+                                    <i class="fas fa-edit"></i>
+                                    <span>Edit</span>
                                 </button>
-                            </form>
+
+                                <!-- Delete Button -->
+                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
+                                      class="inline-block">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                            class="bg-red-500 text-white px-3 py-2 rounded-md shadow flex items-center space-x-2
+                       hover:bg-red-600 transition focus:outline-none focus:ring-2 focus:ring-red-400"
+                                            onclick="return confirm('Are you sure you want to delete this user?')">
+                                        <i class="fas fa-trash"></i>
+                                        <span>Delete</span>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
 
                     </tr>
@@ -81,6 +114,44 @@
 @push('scripts')
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const usersTable = $('#usersTable').DataTable({
+                paging: true,
+                pageLength: 10,
+                lengthChange: false,
+                searching: true,
+                dom: "t<'flex items-center justify-between mt-4'<'dt-info'i><'dt-pagination'p>>"
+            });
+
+            // Custom search
+            const searchInput = document.getElementById('usersTableSearch');
+            if (searchInput) {
+                let searchTimer;
+                searchInput.addEventListener('input', function () {
+                    clearTimeout(searchTimer);
+                    searchTimer = setTimeout(() => {
+                        usersTable.search(this.value).draw();
+                    }, 200);
+                });
+                searchInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        clearTimeout(searchTimer);
+                        usersTable.search(this.value).draw();
+                    }
+                });
+            }
+
+            // Role filter (client-side)
+            const roleFilter = document.getElementById('roleFilter');
+            if (roleFilter) {
+                roleFilter.addEventListener('change', function () {
+                    const val = this.value;
+                    usersTable.column(3).search(val).draw();
+                });
+                if (roleFilter.value) {
+                    usersTable.column(3).search(roleFilter.value).draw();
+                }
+            }
+
             // ========================
             // CREATE USER MODAL LOGIC
             // ========================
@@ -303,5 +374,3 @@
 
     </script>
 @endpush
-
-

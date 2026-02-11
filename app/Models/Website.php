@@ -72,4 +72,10 @@ class Website extends Model
         return $this->belongsToMany(Category::class, 'category_website')
         ->using(CategoryWebsite::class)->withTimestamps();
     }
+
+    public function favoritedBy()
+    {
+        return $this->belongsToMany(User::class, 'user_favorite_domains')
+            ->withTimestamps();
+    }
 }

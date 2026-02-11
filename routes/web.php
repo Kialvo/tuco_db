@@ -16,12 +16,14 @@ use App\Http\Middleware\RestrictGuestToDomainsMiddleware;
  *───────────────────────────────────────────────────────────*/
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserFavoritesController;
 
 use App\Http\Controllers\ContactsController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\CopyController;
 
 use App\Http\Controllers\WebsiteController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\StorageController;
 
 /*======================================================================
@@ -113,6 +115,7 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
 
     Route::get('/websites/export/csv',              [WebsiteController::class, 'exportCsv'])->name('websites.export.csv');
     Route::get('/websites/export/pdf',              [WebsiteController::class, 'exportPdf'])->name('websites.export.pdf');
+    Route::post('/websites/{website}/favorite',     [FavoriteController::class, 'toggle'])->name('websites.favorites.toggle');
 
     Route::post('/websites/outreach/preview', [OutreachController::class, 'preview'])
         ->middleware(['auth', 'verified'])->name('websites.outreach.preview');
@@ -281,6 +284,15 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
 
     Route::get('/admin/users/{id}/edit-ajax', [UserController::class, 'editAjax'])
         ->name('admin.users.editAjax');
+
+    Route::get('/admin/users/{user}/favorites', [UserFavoritesController::class, 'index'])
+        ->name('admin.users.favorites');
+    Route::match(['get','post'], '/admin/users/{user}/favorites/data', [UserFavoritesController::class, 'data'])
+        ->name('admin.users.favorites.data');
+    Route::get('/admin/users/{user}/favorites/export/csv', [UserFavoritesController::class, 'exportCsv'])
+        ->name('admin.users.favorites.export.csv');
+    Route::get('/admin/users/{user}/favorites/export/pdf', [UserFavoritesController::class, 'exportPdf'])
+        ->name('admin.users.favorites.export.pdf');
 
     Route::resource('admin/users', UserController::class)->names([
         'index'   => 'admin.users.index',

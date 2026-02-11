@@ -12,6 +12,7 @@ class RestrictGuestToDomainsMiddleware
         'websites.index',
         'websites.data',
         'websites.show',
+        'websites.favorites.toggle',
         'logout',
     ];
 

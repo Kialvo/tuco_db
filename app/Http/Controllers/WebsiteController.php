@@ -69,6 +69,14 @@ class WebsiteController extends Controller
     public function getData(Request $request)
     {
         $isGuestUser = $this->isGuestUser();
+        $favoriteIds = [];
+        if ($isGuestUser) {
+            $favoriteIds = DB::table('user_favorite_domains')
+                ->where('user_id', auth()->id())
+                ->pluck('website_id')
+                ->all();
+            $favoriteIds = array_fill_keys($favoriteIds, true);
+        }
 
         // 1) base query + eager-loads
         $query = Website::with(['country', 'language', 'contact', 'categories']);
@@ -76,8 +84,19 @@ class WebsiteController extends Controller
         // 2) one single call applies *all* filters
         $this->applyFilters($request, $query);
 
+        // 2b) guest-only favorites filter
+        if ($isGuestUser && $request->boolean('favorites_only')) {
+            $favKeys = array_keys($favoriteIds);
+            if (empty($favKeys)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn('websites.id', $favKeys);
+            }
+        }
+
         // 3) feed into Yajra
         $dataTable = DataTables::of($query)
+            ->addColumn('is_favorite', fn ($r) => $isGuestUser && isset($favoriteIds[$r->id]))
             ->addColumn('banner_price',        fn($r)=>$r->banner_price)
             ->addColumn('sitewide_link_price', fn($r)=>$r->sitewide_link_price)
             ->addColumn('country_name',    fn ($r) => optional($r->country)->country_name)
@@ -150,7 +169,6 @@ class WebsiteController extends Controller
 
         if ($isGuestUser) {
             $dataTable
-                ->editColumn('id', fn() => null)
                 ->editColumn('status', fn() => null)
                 ->editColumn('currency_code', fn() => null)
                 ->editColumn('publisher_price', fn() => null)
