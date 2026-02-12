@@ -540,6 +540,19 @@
             </div>
         </div>
 
+        @if($isGuestUser)
+            <div class="flex flex-wrap items-center gap-2 mb-2 max-w-[1400px]">
+                <a href="{{ route('websites.favorites.export.csv') }}"
+                   class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
+                    Export CSV
+                </a>
+                <a href="{{ route('websites.favorites.export.pdf') }}"
+                   class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">
+                    Export PDF
+                </a>
+            </div>
+        @endif
+
         <!-- TABLE WRAPPER for horizontal scrolling if needed -->
         <div class="bg-white border border-gray-200 rounded shadow p-2
             overflow-x-auto
