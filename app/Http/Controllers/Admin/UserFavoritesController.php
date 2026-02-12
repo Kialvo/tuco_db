@@ -149,15 +149,17 @@ class UserFavoritesController extends Controller
 
         $filename = 'user_'.$user->id.'_favorites_'.date('Y-m-d_His').'.csv';
         $handle   = fopen('php://temp', 'r+');
+        // UTF-8 BOM for Excel/Numbers compatibility
+        fwrite($handle, "\xEF\xBB\xBF");
         foreach ($csvData as $row) {
-            fputcsv($handle, $row);
+            fputcsv($handle, $row, ';');
         }
         rewind($handle);
         $csvOutput = stream_get_contents($handle);
         fclose($handle);
 
         return response($csvOutput, 200, [
-            'Content-Type'        => 'text/csv',
+            'Content-Type'        => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ]);
     }

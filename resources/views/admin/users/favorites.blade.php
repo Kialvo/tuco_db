@@ -3,20 +3,8 @@
 @section('content')
     <div class="px-6 py-6 bg-gray-50 min-h-screen text-sm">
         <div class="max-w-[1400px]">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-700">Favorites for {{ $user->name }}</h1>
-                </div>
-                <div class="space-x-2">
-                    <a href="{{ route('admin.users.favorites.export.csv', $user) }}"
-                       class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
-                        Export CSV
-                    </a>
-                    <a href="{{ route('admin.users.favorites.export.pdf', $user) }}"
-                       class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">
-                        Export PDF
-                    </a>
-                </div>
+            <div class="mb-4">
+                <h1 class="text-2xl font-bold text-gray-700">Favorites for {{ $user->name }}</h1>
             </div>
         </div>
 
@@ -30,6 +18,17 @@
                        class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
                        placeholder="Search favorites...">
             </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 mb-2 max-w-[1400px]">
+            <a href="{{ route('admin.users.favorites.export.csv', $user) }}"
+               class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
+                Export CSV
+            </a>
+            <a href="{{ route('admin.users.favorites.export.pdf', $user) }}"
+               class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">
+                Export PDF
+            </a>
         </div>
 
         <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto max-w-[1400px]">
