@@ -115,8 +115,6 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
 
     Route::get('/websites/export/csv',              [WebsiteController::class, 'exportCsv'])->name('websites.export.csv');
     Route::get('/websites/export/pdf',              [WebsiteController::class, 'exportPdf'])->name('websites.export.pdf');
-    Route::get('/websites/favorites/export/csv',    [FavoriteController::class, 'exportCsv'])->name('websites.favorites.export.csv');
-    Route::get('/websites/favorites/export/pdf',    [FavoriteController::class, 'exportPdf'])->name('websites.favorites.export.pdf');
     Route::post('/websites/{website}/favorite',     [FavoriteController::class, 'toggle'])->name('websites.favorites.toggle');
 
     Route::post('/websites/outreach/preview', [OutreachController::class, 'preview'])

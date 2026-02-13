@@ -45,21 +45,21 @@
                     </button>
                 @endif
 
+                <a href="#" id="btnExportCsv"
+                   class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
+                    Export CSV
+                </a>
+                <a href="#" id="btnExportPdf"
+                   class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
+                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
+                    Export PDF
+                </a>
                 @unless($isGuestUser)
                     <a href="{{ route('websites.create') }}"
                        class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
                         Create Domain
-                    </a>
-                    <a href="#" id="btnExportCsv"
-                       class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
-                        Export CSV
-                    </a>
-                    <a href="#" id="btnExportPdf"
-                       class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
-                        Export PDF
                     </a>
                     <a href="{{ route('websites.import.index') }}"
                        id="btnImportCsv"
@@ -539,19 +539,6 @@
                        placeholder="Search domains...">
             </div>
         </div>
-
-        @if($isGuestUser)
-            <div class="flex flex-wrap items-center gap-2 mb-2 max-w-[1400px]">
-                <a href="{{ route('websites.favorites.export.csv') }}"
-                   class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
-                    Export CSV
-                </a>
-                <a href="{{ route('websites.favorites.export.pdf') }}"
-                   class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">
-                    Export PDF
-                </a>
-            </div>
-        @endif
 
         <!-- TABLE WRAPPER for horizontal scrolling if needed -->
         <div class="bg-white border border-gray-200 rounded shadow p-2
@@ -1778,7 +1765,8 @@
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
                     social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
                     post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
-                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0)
+                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0),
+                    favorites_only: isGuestUser && favoritesOnly ? 1 : 0
                 });
 
                 // Change this route to match your CSV export route
@@ -1841,7 +1829,8 @@
                     no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
                     social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
                     post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
-                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0)
+                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0),
+                    favorites_only: isGuestUser && favoritesOnly ? 1 : 0
                 });
 
                 // Change this route to match your PDF export route

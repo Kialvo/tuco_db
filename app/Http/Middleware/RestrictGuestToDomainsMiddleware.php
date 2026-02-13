@@ -12,9 +12,9 @@ class RestrictGuestToDomainsMiddleware
         'websites.index',
         'websites.data',
         'websites.show',
+        'websites.export.csv',
+        'websites.export.pdf',
         'websites.favorites.toggle',
-        'websites.favorites.export.csv',
-        'websites.favorites.export.pdf',
         'logout',
     ];
 

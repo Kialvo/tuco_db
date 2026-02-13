@@ -196,6 +196,10 @@ class WebsiteController extends Controller
 // ===============================
     public function exportCsv(Request $request)
     {
+        if ($this->isGuestUser()) {
+            return $this->exportGuestCsv($request);
+        }
+
         // 1) Build query with eager loads
         $query = Website::with(['country','language','contact','categories']);
 
@@ -330,6 +334,143 @@ class WebsiteController extends Controller
             'Content-Type'        => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ]);
+    }
+
+    private function exportGuestCsv(Request $request)
+    {
+        $favoriteIds = $this->guestFavoriteIds();
+
+        $query = Website::with(['country','language','contact','categories']);
+        $this->applyFilters($request, $query);
+        $this->applyGuestFavoritesFilter($request, $query, $favoriteIds);
+
+        $websites = $query->get();
+
+        $csvData = [];
+        $csvData[] = [
+            'Fav',
+            'Domain',
+            'Notes',
+            'Country',
+            'Language',
+            'Price',
+            'Type of Website',
+            'Categories',
+            'DA',
+            'PA',
+            'TF',
+            'CF',
+            'DR',
+            'UR',
+            'ZA',
+            'AS',
+            'SEO Zoom',
+            'TF vs CF',
+            'Semrush Traffic',
+            'Ahrefs Keyword',
+            'Ahrefs Traffic',
+            'Keyword vs Traffic',
+            'Betting',
+            'Trading',
+            'LINK LIFETIME',
+            'More than 1 link',
+            'Sponsored Tag',
+            'Social Media Sharing',
+            'Post in Homepage',
+        ];
+
+        $yn = fn($value) => $value === null ? '' : ($value ? 'YES' : 'NO');
+        $sponsored = fn($value) => $value === null ? '' : ($value ? 'NO' : 'YES');
+
+        foreach ($websites as $web) {
+            $csvData[] = [
+                $yn($favoriteIds[$web->id] ?? false),
+                $web->domain_name,
+                $web->notes,
+                optional($web->country)->country_name,
+                optional($web->language)->name,
+                $web->kialvo_evaluation,
+                $web->type_of_website,
+                $web->categories->pluck('name')->join(', '),
+                $web->DA,
+                $web->PA,
+                $web->TF,
+                $web->CF,
+                $web->DR,
+                $web->UR,
+                $web->ZA,
+                $web->as_metric,
+                $web->seozoom,
+                $web->TF_vs_CF,
+                $web->semrush_traffic,
+                $web->ahrefs_keyword,
+                $web->ahrefs_traffic,
+                $web->keyword_vs_traffic,
+                $yn($web->betting),
+                $yn($web->trading),
+                $yn($web->permanent_link),
+                $yn($web->more_than_one_link),
+                $sponsored($web->no_sponsored_tag),
+                $yn($web->social_media_sharing),
+                $yn($web->post_in_homepage),
+            ];
+        }
+
+        $filename = 'websites_export_'.date('Y-m-d_His').'.csv';
+        $handle   = fopen('php://temp', 'r+');
+        foreach ($csvData as $row) {
+            fputcsv($handle, $row);
+        }
+        rewind($handle);
+        $csvOutput = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($csvOutput, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ]);
+    }
+
+    private function exportGuestPdf(Request $request)
+    {
+        $favoriteIds = $this->guestFavoriteIds();
+
+        $query = Website::with(['country','language','contact','categories']);
+        $this->applyFilters($request, $query);
+        $this->applyGuestFavoritesFilter($request, $query, $favoriteIds);
+
+        $websites = $query->get();
+        $user = $request->user();
+
+        $html = view('websites.favorites_pdf', compact('user', 'websites', 'favoriteIds'))->render();
+        $pdf = \PDF::loadHTML($html)->setPaper('a1', 'landscape');
+
+        return $pdf->download('websites_export_'.date('Y-m-d_His').'.pdf');
+    }
+
+    private function guestFavoriteIds(): array
+    {
+        $ids = DB::table('user_favorite_domains')
+            ->where('user_id', auth()->id())
+            ->pluck('website_id')
+            ->all();
+
+        return array_fill_keys($ids, true);
+    }
+
+    private function applyGuestFavoritesFilter(Request $request, $query, array $favoriteIds): void
+    {
+        if (! $request->boolean('favorites_only')) {
+            return;
+        }
+
+        $ids = array_keys($favoriteIds);
+        if (empty($ids)) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereIn('websites.id', $ids);
     }
 
 
@@ -468,6 +609,10 @@ class WebsiteController extends Controller
 
     public function exportPdf(Request $request)
     {
+        if ($this->isGuestUser()) {
+            return $this->exportGuestPdf($request);
+        }
+
         try {
             // First verify the view exists
             if (!view()->exists('websites.pdf')) {
