@@ -187,9 +187,9 @@
                     </div>
                 @endunless
 
-                <!-- Price Min/Max (renamed UI label, data key stays kialvo_evaluation) -->
+                <!-- Kialvo Evaluation Min/Max -->
                 <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Price Min/Max</label>
+                    <label class="text-gray-700 font-medium">Kialvo Evaluation Min/Max</label>
                     <div class="flex gap-1">
                         <input type="number" id="filterKialvo_evaluationMin"
                                class="border border-gray-300 rounded w-16 px-2 py-2
@@ -569,22 +569,24 @@
                     <th class="whitespace-nowrap px-4 py-2">Publisher Price</th>
                     <th class="whitespace-nowrap px-4 py-2">No Follow Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Special Topic Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Sensitive Topic Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Link Insertion Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Banner €</th>
                     <th class="whitespace-nowrap px-4 py-2">Site-wide €</th>
-                    {{-- UI label renamed: Kialvo -> Price (data key stays kialvo_evaluation) --}}
+                    <th class="whitespace-nowrap px-4 py-2">Price</th>
+                    {{-- Kialvo Evaluation (data key stays kialvo_evaluation) --}}
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
-                            Price
+                            Kialvo Evaluation
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
                                         class="metric-info-btn text-cyan-600 text-[11px]"
-                                        data-info="The price you pay for a guest post placement on this website. This is your final cost including our service fee."
-                                        aria-label="What is Price?">
+                                        data-info="Kialvo Evaluation is the final amount you pay for placement on this website, including our service fee."
+                                        aria-label="What is Kialvo Evaluation?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
-                                    The price you pay for a guest post placement on this website. This is your final cost including our service fee.
+                                    Kialvo Evaluation is the final amount you pay for placement on this website, including our service fee.
                                 </span>
                             </span>
                         </span>
@@ -1275,6 +1277,18 @@
                         }
                     },
                     {
+                        data: 'sensitive_topic_price',
+                        name: 'sensitive_topic_price',
+                        className: 'text-center',
+                        visible: !isGuestUser,
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
+                    {
                         data: 'link_insertion_price',
                         name: 'link_insertion_price',
                         className: 'text-center',
@@ -1308,6 +1322,17 @@
                             }
                             return '<strong> € ' + data + '</strong>';
                         }},
+                    {
+                        data: 'price',
+                        name: 'price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> € ' + data + '</strong>';
+                        }
+                    },
 
                     {
                         data: 'kialvo_evaluation',

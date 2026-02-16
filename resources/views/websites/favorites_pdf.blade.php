@@ -26,7 +26,7 @@
         <th>Notes</th>
         <th>Country</th>
         <th>Language</th>
-        <th>Price</th>
+        <th>Kialvo Evaluation</th>
         <th>Type of Website</th>
         <th>Categories</th>
         <th>DA</th>

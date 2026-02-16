@@ -9,7 +9,7 @@
         <h1 class="text-2xl font-bold mb-4">Website Details</h1>
 
         <div class="mb-2"><strong>Domain Name:</strong> {{ $website->domain_name }}</div>
-        <div class="mb-2"><strong>Price:</strong> {{ $website->kialvo_evaluation }}</div>
+        <div class="mb-2"><strong>Kialvo Evaluation:</strong> {{ $website->kialvo_evaluation }}</div>
         <div class="mb-2"><strong>Type of Website:</strong> {{ $website->type_of_website }}</div>
         <div class="mb-2"><strong>DA:</strong> {{ $website->DA }}</div>
         <div class="mb-2"><strong>PA:</strong> {{ $website->PA }}</div>

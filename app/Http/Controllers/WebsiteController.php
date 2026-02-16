@@ -9,6 +9,7 @@ use App\Models\Country;
 use App\Models\Language;
 use App\Models\Contact;
 use App\Models\Category;
+use App\Support\MenfordPriceCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,7 @@ class WebsiteController extends Controller
     /* ------------------------------------------------------------------ */
     private const DRIVER_COLS = [
         'publisher_price','banner_price','sitewide_link_price',
-        'kialvo_evaluation','ahrefs_keyword','ahrefs_traffic',
+        'special_topic_price','kialvo_evaluation','ahrefs_keyword','ahrefs_traffic','language_id',
     ];
 
     private function isGuestUser(): bool
@@ -174,6 +175,7 @@ class WebsiteController extends Controller
                 ->editColumn('publisher_price', fn() => null)
                 ->editColumn('no_follow_price', fn() => null)
                 ->editColumn('special_topic_price', fn() => null)
+                ->editColumn('sensitive_topic_price', fn() => null)
                 ->editColumn('link_insertion_price', fn() => null)
                 ->editColumn('banner_price', fn() => null)
                 ->editColumn('sitewide_link_price', fn() => null)
@@ -216,7 +218,7 @@ class WebsiteController extends Controller
             'ID',
             'Domain',
             'Publisher Price',
-            'Kialvo',
+            'Kialvo Evaluation',
             'Profit',
             'Banner Price',        // ← new
             'Site-wide Link Price',// ← new
@@ -353,7 +355,7 @@ class WebsiteController extends Controller
             'Notes',
             'Country',
             'Language',
-            'Price',
+            'Kialvo Evaluation',
             'Type of Website',
             'Categories',
             'DA',
@@ -694,6 +696,14 @@ class WebsiteController extends Controller
         $publisherPrice  = $validated['publisher_price'] ?? 0;
         $profit          = $kialvoVal - $publisherPrice;
         $validated['profit'] = $profit;
+        $validated['price'] = MenfordPriceCalculator::calculate(
+            $this->publisherPriceForPriceFormula($validated),
+            isset($validated['language_id']) ? (int) $validated['language_id'] : null
+        );
+        $validated['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
+            $this->specialTopicPriceForSensitiveFormula($validated),
+            isset($validated['language_id']) ? (int) $validated['language_id'] : null
+        );
 
         // 3) Compute 'TF_vs_CF' =>
         $TF   = $validated['TF'] ?? 0;
@@ -797,6 +807,14 @@ class WebsiteController extends Controller
         $publisherPrice  = $validated['publisher_price'] ?? 0;
         $profit          = $kialvoVal - $publisherPrice;
         $validated['profit'] = $profit;
+        $validated['price'] = MenfordPriceCalculator::calculate(
+            $this->publisherPriceForPriceFormula($validated),
+            isset($validated['language_id']) ? (int) $validated['language_id'] : null
+        );
+        $validated['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
+            $this->specialTopicPriceForSensitiveFormula($validated),
+            isset($validated['language_id']) ? (int) $validated['language_id'] : null
+        );
 
         // 3) Compute 'TF_vs_CF' =>
         $TF   = $validated['TF'] ?? 0;
@@ -878,6 +896,8 @@ class WebsiteController extends Controller
                     $this->applyAutoCalculations($payload);
 
                     $w->fill([
+                        'price'               => $payload['price'],
+                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'              => $payload['profit'],
                         'total_cost'          => $payload['total_cost'],
                         'total_revenues'      => $payload['total_revenues'],
@@ -950,10 +970,12 @@ class WebsiteController extends Controller
 
                 /* re-run auto KPIs when a driver field changes */
                 if (in_array($field, self::DRIVER_COLS, true)) {
-                    $payload = array_merge($w->getAttributes(), [$field=>$value]);
+                    $payload = $w->getAttributes();
                     $this->applyAutoCalculations($payload);
 
                     $w->fill([
+                        'price'              => $payload['price'],
+                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'             => $payload['profit'],
                         'total_cost'         => $payload['total_cost'],
                         'total_revenues'     => $payload['total_revenues'],
@@ -979,6 +1001,15 @@ class WebsiteController extends Controller
     private function applyAutoCalculations(array &$d): void
     {
         $cost  = (float) ($d['publisher_price'] ?? 0);
+        $d['price'] = MenfordPriceCalculator::calculate(
+            $this->publisherPriceForPriceFormula($d),
+            isset($d['language_id']) ? (int) $d['language_id'] : null
+        );
+        $d['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
+            $this->specialTopicPriceForSensitiveFormula($d),
+            isset($d['language_id']) ? (int) $d['language_id'] : null
+        );
+
         $rev   = (float) ($d['kialvo_evaluation'] ?? 0)
             + (float) ($d['banner_price'] ?? 0)
             + (float) ($d['sitewide_link_price'] ?? 0);
@@ -1054,6 +1085,66 @@ class WebsiteController extends Controller
             // DO NOT change $validated['currency_code'];
             // We keep it as 'USD' per your request.
         }
+    }
+
+    /**
+     * Price formula must use the final EUR publisher_price value.
+     * For USD rows, triggers derive publisher_price from original_publisher_price * rate.
+     */
+    private function publisherPriceForPriceFormula(array $data): ?float
+    {
+        if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
+            return null;
+        }
+
+        $publisher = (float) $data['publisher_price'];
+        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
+            return $publisher;
+        }
+
+        $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
+        if ($baseUsd === null || $baseUsd === '') {
+            return null;
+        }
+
+        return (float) $baseUsd * $this->usdEurRate();
+    }
+
+    /**
+     * Sensitive Topic Price formula uses Special Topic Price as base.
+     * For USD rows, use original_special_topic_price * usd_eur_rate.
+     */
+    private function specialTopicPriceForSensitiveFormula(array $data): ?float
+    {
+        if (!array_key_exists('special_topic_price', $data) || $data['special_topic_price'] === null || $data['special_topic_price'] === '') {
+            return null;
+        }
+
+        $special = (float) $data['special_topic_price'];
+        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
+            return $special;
+        }
+
+        $baseUsd = $data['original_special_topic_price'] ?? $data['special_topic_price'];
+        if ($baseUsd === null || $baseUsd === '') {
+            return null;
+        }
+
+        return (float) $baseUsd * $this->usdEurRate();
+    }
+
+    private function usdEurRate(): float
+    {
+        static $rate = null;
+        if ($rate !== null) {
+            return $rate;
+        }
+
+        $rate = (float) DB::table('app_settings')
+            ->where('setting_name', 'usd_eur_rate')
+            ->value('setting_value');
+
+        return $rate > 0 ? $rate : 1.0;
     }
 
     public function rollback(Request $request)

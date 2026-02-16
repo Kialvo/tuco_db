@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Country;
 use App\Models\Language;
 use App\Models\Contact;
+use App\Support\MenfordPriceCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
@@ -43,7 +44,7 @@ class NewEntryController extends Controller
     /** Recalc drivers */
     private const DRIVER_COLS = [
         'publisher_price','banner_price','sitewide_link_price',
-        'kialvo_evaluation','ahrefs_keyword','ahrefs_traffic',
+        'special_topic_price','kialvo_evaluation','ahrefs_keyword','ahrefs_traffic','language_id',
     ];
 
     /* =========================================================
@@ -294,6 +295,8 @@ class NewEntryController extends Controller
                     $payload = $w->getAttributes();
                     $this->applyAutoCalculations($payload);
                     $w->fill([
+                        'price'               => $payload['price'],
+                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'              => $payload['profit'],
                         'total_cost'          => $payload['total_cost'],
                         'total_revenues'      => $payload['total_revenues'],
@@ -360,9 +363,11 @@ class NewEntryController extends Controller
 
                 // Recalc when driver changes
                 if (in_array($field, self::DRIVER_COLS, true)) {
-                    $payload = array_merge($w->getAttributes(), [$field=>$value]);
+                    $payload = $w->getAttributes();
                     $this->applyAutoCalculations($payload);
                     $w->fill([
+                        'price'              => $payload['price'],
+                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'             => $payload['profit'],
                         'total_cost'         => $payload['total_cost'],
                         'total_revenues'     => $payload['total_revenues'],
@@ -539,6 +544,15 @@ class NewEntryController extends Controller
     private function applyAutoCalculations(array &$d): void
     {
         $cost  = (float) ($d['publisher_price'] ?? 0);
+        $d['price'] = MenfordPriceCalculator::calculate(
+            $this->publisherPriceForPriceFormula($d),
+            isset($d['language_id']) ? (int) $d['language_id'] : null
+        );
+        $d['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
+            $this->specialTopicPriceForSensitiveFormula($d),
+            isset($d['language_id']) ? (int) $d['language_id'] : null
+        );
+
         $rev   = (float) ($d['kialvo_evaluation'] ?? 0)
             + (float) ($d['banner_price'] ?? 0)
             + (float) ($d['sitewide_link_price'] ?? 0);
@@ -626,6 +640,14 @@ class NewEntryController extends Controller
         $auto = ($da*2.4)+($tf*1.45)+($dr*0.5);
         if($sr>=9700) $auto+=($sr/15000)*1.35;
         $e->automatic_evaluation=$auto;
+        $e->price = MenfordPriceCalculator::calculate(
+            $e->publisher_price !== null ? (float) $e->publisher_price : null,
+            $e->language_id ? (int) $e->language_id : null
+        );
+        $e->sensitive_topic_price = MenfordPriceCalculator::calculate(
+            $e->special_topic_price !== null ? (float) $e->special_topic_price : null,
+            $e->language_id ? (int) $e->language_id : null
+        );
         $e->profit=($e->kialvo_evaluation??0)-($e->publisher_price??0);
         $e->TF_vs_CF=($e->CF??0)?($e->TF/$e->CF):0;
         $e->keyword_vs_traffic=($e->ahrefs_traffic??0)
@@ -646,6 +668,14 @@ class NewEntryController extends Controller
             $auto += ($sr / 15000) * 1.35;
         }
         $d['automatic_evaluation'] = $auto;
+        $d['price'] = MenfordPriceCalculator::calculate(
+            $this->publisherPriceForPriceFormula($d),
+            isset($d['language_id']) ? (int) $d['language_id'] : null
+        );
+        $d['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
+            $this->specialTopicPriceForSensitiveFormula($d),
+            isset($d['language_id']) ? (int) $d['language_id'] : null
+        );
 
         // Profit (basic form)
         $d['profit'] = (float) ($d['kialvo_evaluation'] ?? 0) - (float) ($d['publisher_price'] ?? 0);
@@ -668,5 +698,65 @@ class NewEntryController extends Controller
         if (!$v) return null;
         try   { return Carbon::createFromFormat('d/m/Y', $v)->format('Y-m-d'); }
         catch (\Exception $e) { return $v; }
+    }
+
+    /**
+     * Price formula must use the final EUR publisher_price value.
+     * For USD rows, triggers derive publisher_price from original_publisher_price * rate.
+     */
+    private function publisherPriceForPriceFormula(array $data): ?float
+    {
+        if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
+            return null;
+        }
+
+        $publisher = (float) $data['publisher_price'];
+        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
+            return $publisher;
+        }
+
+        $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
+        if ($baseUsd === null || $baseUsd === '') {
+            return null;
+        }
+
+        return (float) $baseUsd * $this->usdEurRate();
+    }
+
+    /**
+     * Sensitive Topic Price formula uses Special Topic Price as base.
+     * For USD rows, use original_special_topic_price * usd_eur_rate.
+     */
+    private function specialTopicPriceForSensitiveFormula(array $data): ?float
+    {
+        if (!array_key_exists('special_topic_price', $data) || $data['special_topic_price'] === null || $data['special_topic_price'] === '') {
+            return null;
+        }
+
+        $special = (float) $data['special_topic_price'];
+        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
+            return $special;
+        }
+
+        $baseUsd = $data['original_special_topic_price'] ?? $data['special_topic_price'];
+        if ($baseUsd === null || $baseUsd === '') {
+            return null;
+        }
+
+        return (float) $baseUsd * $this->usdEurRate();
+    }
+
+    private function usdEurRate(): float
+    {
+        static $rate = null;
+        if ($rate !== null) {
+            return $rate;
+        }
+
+        $rate = (float) DB::table('app_settings')
+            ->where('setting_name', 'usd_eur_rate')
+            ->value('setting_value');
+
+        return $rate > 0 ? $rate : 1.0;
     }
 }

@@ -21,7 +21,7 @@ class NewEntry extends Model
         'original_no_follow_price','original_special_topic_price',
 
         // calculated
-        'profit','automatic_evaluation','kialvo_evaluation','TF_vs_CF','keyword_vs_traffic',
+        'price','sensitive_topic_price','profit','automatic_evaluation','kialvo_evaluation','TF_vs_CF','keyword_vs_traffic',
 
         // seo numbers
         'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',

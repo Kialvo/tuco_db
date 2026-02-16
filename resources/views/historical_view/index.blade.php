@@ -129,12 +129,14 @@
                     <th class="px-4 py-2">Publisher Price</th>
                     <th class="px-4 py-2">No Follow Price</th>
                     <th class="px-4 py-2">Special Topic Price</th>
+                    <th class="px-4 py-2">Sensitive Topic Price</th>
                     <th class="px-4 py-2">Link Insertion Price</th>
                     <th class="px-4 py-2">Banner €</th>
                     <th class="px-4 py-2">Site-wide €</th>
-
-                    {{-- UI label renamed: Kialvo -> Price (data key stays kialvo_evaluation) --}}
                     <th class="px-4 py-2">Price</th>
+
+                    {{-- Kialvo Evaluation (data key stays kialvo_evaluation) --}}
+                    <th class="px-4 py-2">Kialvo Evaluation</th>
                     <th class="px-4 py-2">Profit</th>
 
                     <th class="px-4 py-2">Date Publisher Price</th>
@@ -344,9 +346,11 @@
                     {data:'publisher_price',      render:money},
                     {data:'no_follow_price',      render:money},
                     {data:'special_topic_price',  render:money},
+                    {data:'sensitive_topic_price',render:money},
                     {data:'link_insertion_price', render:money},
                     {data:'banner_price',         render:money},
                     {data:'sitewide_link_price',  render:money},
+                    {data:'price',                render:money},
                     {data:'kialvo_evaluation',    render:money},
                     {data:'profit',               render:money},
                     {data:'date_publisher_price', render:dateFmt},

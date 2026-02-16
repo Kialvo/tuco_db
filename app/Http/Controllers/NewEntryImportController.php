@@ -10,6 +10,7 @@ use App\Models\Country;
 use App\Models\Language;
 use App\Models\NewEntry;
 use App\Models\NewEntry1;
+use App\Support\MenfordPriceCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -93,7 +94,7 @@ class NewEntryImportController extends Controller
         'domain_name','status','country_id','language_id','contact_id',
         'currency_code','type_of_website','linkbuilder',
         'publisher_price','no_follow_price','special_topic_price','date_publisher_price',
-        'kialvo_evaluation','automatic_evaluation','profit','date_kialvo_evaluation',
+        'kialvo_evaluation','automatic_evaluation','price','sensitive_topic_price','profit','date_kialvo_evaluation',
         'DA','PA','TF','CF','DR','UR','ZA','semrush_traffic','seozoom',
         'ahrefs_keyword','ahrefs_traffic','seo_metrics_date',
         'more_than_one_link','copywriting','no_sponsored_tag',
@@ -213,6 +214,14 @@ class NewEntryImportController extends Controller
             $auto += ($sr / 15000) * 1.35;
         }
         $d['automatic_evaluation'] = $auto;
+        $d['price'] = MenfordPriceCalculator::calculate(
+            $this->publisherPriceForPriceFormula($d),
+            isset($d['language_id']) ? (int) $d['language_id'] : null
+        );
+        $d['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
+            $this->specialTopicPriceForSensitiveFormula($d),
+            isset($d['language_id']) ? (int) $d['language_id'] : null
+        );
 
         // profit
         $d['profit'] = ($d['kialvo_evaluation'] ?? 0) - ($d['publisher_price'] ?? 0);
@@ -235,6 +244,66 @@ class NewEntryImportController extends Controller
     {
         $b = $this->bool($v);
         return $b === null ? false : $b;
+    }
+
+    /**
+     * Price formula must use the final EUR publisher_price value.
+     * For USD rows, triggers derive publisher_price from original_publisher_price * rate.
+     */
+    private function publisherPriceForPriceFormula(array $data): ?float
+    {
+        if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
+            return null;
+        }
+
+        $publisher = (float) $data['publisher_price'];
+        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
+            return $publisher;
+        }
+
+        $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
+        if ($baseUsd === null || $baseUsd === '') {
+            return null;
+        }
+
+        return (float) $baseUsd * $this->usdEurRate();
+    }
+
+    /**
+     * Sensitive Topic Price formula uses Special Topic Price as base.
+     * For USD rows, use original_special_topic_price * usd_eur_rate.
+     */
+    private function specialTopicPriceForSensitiveFormula(array $data): ?float
+    {
+        if (!array_key_exists('special_topic_price', $data) || $data['special_topic_price'] === null || $data['special_topic_price'] === '') {
+            return null;
+        }
+
+        $special = (float) $data['special_topic_price'];
+        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
+            return $special;
+        }
+
+        $baseUsd = $data['original_special_topic_price'] ?? $data['special_topic_price'];
+        if ($baseUsd === null || $baseUsd === '') {
+            return null;
+        }
+
+        return (float) $baseUsd * $this->usdEurRate();
+    }
+
+    private function usdEurRate(): float
+    {
+        static $rate = null;
+        if ($rate !== null) {
+            return $rate;
+        }
+
+        $rate = (float) DB::table('app_settings')
+            ->where('setting_name', 'usd_eur_rate')
+            ->value('setting_value');
+
+        return $rate > 0 ? $rate : 1.0;
     }
 
 
@@ -270,7 +339,7 @@ class NewEntryImportController extends Controller
             'domain_name','status','country_id','language_id','contact_id',
             'currency_code','type_of_website','linkbuilder',
             'publisher_price','no_follow_price','special_topic_price','date_publisher_price',
-            'kialvo_evaluation','automatic_evaluation','profit','date_kialvo_evaluation',
+            'kialvo_evaluation','automatic_evaluation','price','sensitive_topic_price','profit','date_kialvo_evaluation',
             'DA','PA','TF','CF','DR','UR','ZA','semrush_traffic','seozoom',
             'ahrefs_keyword','ahrefs_traffic','seo_metrics_date',
             'more_than_one_link','copywriting','no_sponsored_tag',

@@ -21,7 +21,21 @@ class HistoricalEntryController extends Controller
     /* ───── DataTable feed ───── */
     public function getData(Request $r)
     {
-        $q = HistoricalEntry::with(['country','language','contact','categories']);
+        $q = HistoricalEntry::query()
+            ->select('v_new_entries_filtered.*')
+            ->selectSub(function ($sub) {
+                $sub->from('new_entries')
+                    ->select('price')
+                    ->whereColumn('new_entries.id', 'v_new_entries_filtered.id')
+                    ->limit(1);
+            }, 'price')
+            ->selectSub(function ($sub) {
+                $sub->from('new_entries')
+                    ->select('sensitive_topic_price')
+                    ->whereColumn('new_entries.id', 'v_new_entries_filtered.id')
+                    ->limit(1);
+            }, 'sensitive_topic_price')
+            ->with(['country','language','contact','categories']);
 
         /* same filters you already use in NewEntryController ---------------- */
         if ($v = $r->domain_name) $q->where('domain_name','like',"%$v%");
