@@ -569,11 +569,42 @@
                     <th class="whitespace-nowrap px-4 py-2">Publisher Price</th>
                     <th class="whitespace-nowrap px-4 py-2">No Follow Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Special Topic Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">Sensitive Topic Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Sensitive Topic Price
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Sensitive Topic Price is the final amount you pay for placement on this website, including our service fee for sensitive topics."
+                                        aria-label="What is Sensitive Topic Price?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Sensitive Topic Price is the final amount you pay for placement on this website, including our service fee for sensitive topics.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="whitespace-nowrap px-4 py-2">Link Insertion Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Banner €</th>
                     <th class="whitespace-nowrap px-4 py-2">Site-wide €</th>
-                    <th class="whitespace-nowrap px-4 py-2">Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Price
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="This is the final amount you pay for placement on this website, including our service fee."
+                                        aria-label="What is Price?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    This is the final amount you pay for placement on this website, including our service fee.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    @unless($isGuestUser)
                     {{-- Kialvo Evaluation (data key stays kialvo_evaluation) --}}
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
@@ -591,6 +622,7 @@
                             </span>
                         </span>
                     </th>
+                    @endunless
                     <th class="whitespace-nowrap px-4 py-2">Profit</th>
                     <th class="whitespace-nowrap px-4 py-2">Date Publisher Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Linkbuilder</th>
@@ -1280,7 +1312,7 @@
                         data: 'sensitive_topic_price',
                         name: 'sensitive_topic_price',
                         className: 'text-center',
-                        visible: !isGuestUser,
+                        visible: true,
                         render: function (data, type, row) {
                             if (data === null || data === undefined) {
                                 return '';
@@ -1334,6 +1366,7 @@
                         }
                     },
 
+                    @unless($isGuestUser)
                     {
                         data: 'kialvo_evaluation',
                         name: 'kialvo_evaluation',
@@ -1345,6 +1378,7 @@
                             return '<strong> € ' + data + '</strong>';
                         }
                     },
+                    @endunless
                     {
                         data: 'profit',
                         name: 'profit',

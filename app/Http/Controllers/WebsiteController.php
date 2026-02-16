@@ -175,10 +175,10 @@ class WebsiteController extends Controller
                 ->editColumn('publisher_price', fn() => null)
                 ->editColumn('no_follow_price', fn() => null)
                 ->editColumn('special_topic_price', fn() => null)
-                ->editColumn('sensitive_topic_price', fn() => null)
                 ->editColumn('link_insertion_price', fn() => null)
                 ->editColumn('banner_price', fn() => null)
                 ->editColumn('sitewide_link_price', fn() => null)
+                ->editColumn('kialvo_evaluation', fn() => null)
                 ->editColumn('profit', fn() => null)
                 ->editColumn('date_publisher_price', fn() => null)
                 ->editColumn('linkbuilder', fn() => null)
@@ -355,7 +355,8 @@ class WebsiteController extends Controller
             'Notes',
             'Country',
             'Language',
-            'Kialvo Evaluation',
+            'Sensitive Topic Price',
+            'Price',
             'Type of Website',
             'Categories',
             'DA',
@@ -391,7 +392,8 @@ class WebsiteController extends Controller
                 $web->notes,
                 optional($web->country)->country_name,
                 optional($web->language)->name,
-                $web->kialvo_evaluation,
+                $web->sensitive_topic_price,
+                $web->price,
                 $web->type_of_website,
                 $web->categories->pluck('name')->join(', '),
                 $web->DA,

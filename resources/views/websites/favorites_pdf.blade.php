@@ -26,7 +26,8 @@
         <th>Notes</th>
         <th>Country</th>
         <th>Language</th>
-        <th>Kialvo Evaluation</th>
+        <th>Sensitive Topic Price</th>
+        <th>Price</th>
         <th>Type of Website</th>
         <th>Categories</th>
         <th>DA</th>
@@ -60,7 +61,8 @@
             <td>{{ $web->notes }}</td>
             <td>{{ optional($web->country)->country_name }}</td>
             <td>{{ optional($web->language)->name }}</td>
-            <td>{{ $web->kialvo_evaluation }}</td>
+            <td>{{ $web->sensitive_topic_price }}</td>
+            <td>{{ $web->price }}</td>
             <td>{{ $web->type_of_website }}</td>
             <td>{{ $web->categories->pluck('name')->join(', ') }}</td>
             <td>{{ $web->DA }}</td>
