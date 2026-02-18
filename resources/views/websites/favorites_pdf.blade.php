@@ -3,25 +3,25 @@
 <head>
     <title>Websites PDF Export</title>
     <style>
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
+        th, td { border: 1px solid #ccc; padding: 6px; font-size: 12px; word-wrap: break-word; }
         th { background: #eee; }
         body { font-family: sans-serif; }
         h2 { margin: 0; padding: 0; }
+        .page-break { page-break-after: always; }
     </style>
 </head>
 <body>
 @php
     $yn = fn ($value) => $value === null ? '' : ($value ? 'YES' : 'NO');
     $sponsored = fn ($value) => $value === null ? '' : ($value ? 'NO' : 'YES');
-    $favoriteIds = $favoriteIds ?? [];
-    $fav = fn ($id) => isset($favoriteIds[$id]) ? 'YES' : 'NO';
+    $chunks = collect($websites ?? [])->chunk(250);
 @endphp
 <h2>Domains for {{ $user->name }}</h2>
+@foreach($chunks as $chunk)
 <table>
     <thead>
     <tr>
-        <th>Fav</th>
         <th>Domain</th>
         <th>Notes</th>
         <th>Country</th>
@@ -54,9 +54,8 @@
     </tr>
     </thead>
     <tbody>
-    @foreach($websites as $web)
+    @foreach($chunk as $web)
         <tr>
-            <td>{{ $fav($web->id) }}</td>
             <td>{{ $web->domain_name }}</td>
             <td>{{ $web->notes }}</td>
             <td>{{ optional($web->country)->country_name }}</td>
@@ -90,5 +89,9 @@
     @endforeach
     </tbody>
 </table>
+@if(! $loop->last)
+    <div class="page-break"></div>
+@endif
+@endforeach
 </body>
 </html>

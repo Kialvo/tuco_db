@@ -350,7 +350,6 @@ class WebsiteController extends Controller
 
         $csvData = [];
         $csvData[] = [
-            'Fav',
             'Domain',
             'Notes',
             'Country',
@@ -387,7 +386,6 @@ class WebsiteController extends Controller
 
         foreach ($websites as $web) {
             $csvData[] = [
-                $yn($favoriteIds[$web->id] ?? false),
                 $web->domain_name,
                 $web->notes,
                 optional($web->country)->country_name,
@@ -437,19 +435,129 @@ class WebsiteController extends Controller
 
     private function exportGuestPdf(Request $request)
     {
+        // Large unfiltered exports are heavy for DOMPDF; raise limits for this request only.
+        @set_time_limit(1200);
+        @ini_set('memory_limit', '1024M');
+
         $favoriteIds = $this->guestFavoriteIds();
 
-        $query = Website::with(['country','language','contact','categories']);
+        $query = Website::select([
+            'id',
+            'domain_name',
+            'notes',
+            'country_id',
+            'language_id',
+            'sensitive_topic_price',
+            'price',
+            'type_of_website',
+            'DA',
+            'PA',
+            'TF',
+            'CF',
+            'DR',
+            'UR',
+            'ZA',
+            'as_metric',
+            'seozoom',
+            'TF_vs_CF',
+            'semrush_traffic',
+            'ahrefs_keyword',
+            'ahrefs_traffic',
+            'keyword_vs_traffic',
+            'betting',
+            'trading',
+            'permanent_link',
+            'more_than_one_link',
+            'no_sponsored_tag',
+            'social_media_sharing',
+            'post_in_homepage',
+        ])->with([
+            'country:id,country_name',
+            'language:id,name',
+            'categories:id,name',
+        ]);
         $this->applyFilters($request, $query);
         $this->applyGuestFavoritesFilter($request, $query, $favoriteIds);
 
-        $websites = $query->get();
         $user = $request->user();
+        $filenameBase = 'websites_export_'.date('Y-m-d_His');
+        $singlePdfMaxRows = 450;
+        $rowsPerPart = 400;
+        $total = (clone $query)->count();
 
-        $html = view('websites.favorites_pdf', compact('user', 'websites', 'favoriteIds'))->render();
-        $pdf = \PDF::loadHTML($html)->setPaper('a1', 'landscape');
+        if ($total <= $singlePdfMaxRows) {
+            $websites = (clone $query)->orderBy('id')->get();
+            $pdf = \PDF::setOptions([
+                'dpi' => 72,
+                'isRemoteEnabled' => false,
+            ])->loadView('websites.favorites_pdf', compact('user', 'websites', 'favoriteIds'))
+                ->setPaper('a1', 'landscape');
 
-        return $pdf->download('websites_export_'.date('Y-m-d_His').'.pdf');
+            return $pdf->download($filenameBase.'.pdf');
+        }
+
+        $tempDir = storage_path('app/tmp_guest_pdf_'.Str::random(10));
+        $finalPath = storage_path('app/'.$filenameBase.'_'.Str::random(8).'.pdf');
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0775, true);
+        }
+
+        $part = 1;
+        $partFiles = [];
+
+        try {
+            (clone $query)->orderBy('id')->chunkById($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir, $user, $favoriteIds) {
+                $websites = $chunk->values();
+                $pdfBinary = \PDF::setOptions([
+                    'dpi' => 72,
+                    'isRemoteEnabled' => false,
+                ])->loadView('websites.favorites_pdf', compact('user', 'websites', 'favoriteIds'))
+                    ->setPaper('a1', 'landscape')
+                    ->output();
+
+                $partPath = $tempDir.'/part_'.str_pad((string)$part++, 4, '0', STR_PAD_LEFT).'.pdf';
+                file_put_contents($partPath, $pdfBinary);
+                $partFiles[] = $partPath;
+
+                unset($pdfBinary, $websites);
+            }, 'id');
+
+            $merged = new \setasign\Fpdi\Fpdi();
+            foreach ($partFiles as $file) {
+                $pageCount = $merged->setSourceFile($file);
+                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                    $tpl = $merged->importPage($pageNo);
+                    $size = $merged->getTemplateSize($tpl);
+                    $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                    $merged->AddPage($orientation, [$size['width'], $size['height']]);
+                    $merged->useTemplate($tpl);
+                }
+            }
+
+            $merged->Output('F', $finalPath);
+        } catch (\Throwable $e) {
+            foreach ($partFiles as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+            if (is_dir($tempDir)) {
+                @rmdir($tempDir);
+            }
+
+            return response()->json(['error' => 'Could not generate PDF export.'], 500);
+        }
+
+        foreach ($partFiles as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+        if (is_dir($tempDir)) {
+            @rmdir($tempDir);
+        }
+
+        return response()->download($finalPath, $filenameBase.'.pdf')->deleteFileAfterSend(true);
     }
 
     private function guestFavoriteIds(): array
@@ -617,28 +725,144 @@ class WebsiteController extends Controller
             return $this->exportGuestPdf($request);
         }
 
+        @set_time_limit(1200);
+        @ini_set('memory_limit', '1024M');
+
         try {
-            // First verify the view exists
             if (!view()->exists('websites.pdf')) {
                 throw new \Exception('PDF template not found');
             }
 
-            $query = Website::with(['country','language','contact','categories']);
+            $query = Website::select([
+                'id',
+                'domain_name',
+                'publisher_price',
+                'kialvo_evaluation',
+                'profit',
+                'DA',
+                'country_id',
+                'language_id',
+                'contact_id',
+                'status',
+                'currency_code',
+                'date_publisher_price',
+                'link_insertion_price',
+                'no_follow_price',
+                'special_topic_price',
+                'linkbuilder',
+                'automatic_evaluation',
+                'date_kialvo_evaluation',
+                'type_of_website',
+                'PA',
+                'TF',
+                'CF',
+                'DR',
+                'UR',
+                'ZA',
+                'as_metric',
+                'seozoom',
+                'TF_vs_CF',
+                'semrush_traffic',
+                'ahrefs_keyword',
+                'ahrefs_traffic',
+                'keyword_vs_traffic',
+                'seo_metrics_date',
+                'betting',
+                'trading',
+                'permanent_link',
+                'more_than_one_link',
+                'copywriting',
+                'no_sponsored_tag',
+                'social_media_sharing',
+                'post_in_homepage',
+                'created_at',
+                'notes',
+                'extra_notes',
+            ])->with([
+                'country:id,country_name',
+                'language:id,name',
+                'contact:id,name',
+                'categories:id,name',
+            ]);
             $this->applyFilters($request, $query);
 
-            // Test with limited results first
-            $websites = $query->get();
+            $filenameBase = 'websites_export_'.date('Y-m-d_His');
+            $singlePdfMaxRows = 450;
+            $rowsPerPart = 400;
+            $total = (clone $query)->count();
 
-            // Test view rendering first
-            $html = view('websites.pdf', compact('websites'))->render();
-            \Log::info('HTML generated successfully');
+            if ($total <= $singlePdfMaxRows) {
+                $websites = (clone $query)->orderBy('id')->get();
+                $pdf = \PDF::setOptions([
+                    'dpi' => 72,
+                    'isRemoteEnabled' => false,
+                ])->loadView('websites.pdf', compact('websites'))
+                    ->setPaper('a1', 'landscape');
 
-            // Try smaller paper size
-            $pdf = \PDF::loadHTML($html)
-                ->setPaper('a1', 'landscape');
+                return $pdf->download($filenameBase.'.pdf');
+            }
 
-            return $pdf->download('test.pdf');
-        } catch (\Exception $e) {
+            $tempDir = storage_path('app/tmp_websites_pdf_'.Str::random(10));
+            $finalPath = storage_path('app/'.$filenameBase.'_'.Str::random(8).'.pdf');
+            if (!is_dir($tempDir)) {
+                @mkdir($tempDir, 0775, true);
+            }
+
+            $part = 1;
+            $partFiles = [];
+
+            try {
+                (clone $query)->orderBy('id')->chunkById($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir) {
+                    $websites = $chunk->values();
+                    $pdfBinary = \PDF::setOptions([
+                        'dpi' => 72,
+                        'isRemoteEnabled' => false,
+                    ])->loadView('websites.pdf', compact('websites'))
+                        ->setPaper('a1', 'landscape')
+                        ->output();
+
+                    $partPath = $tempDir.'/part_'.str_pad((string) $part++, 4, '0', STR_PAD_LEFT).'.pdf';
+                    file_put_contents($partPath, $pdfBinary);
+                    $partFiles[] = $partPath;
+
+                    unset($pdfBinary, $websites);
+                }, 'id');
+
+                $merged = new \setasign\Fpdi\Fpdi();
+                foreach ($partFiles as $file) {
+                    $pageCount = $merged->setSourceFile($file);
+                    for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                        $tpl = $merged->importPage($pageNo);
+                        $size = $merged->getTemplateSize($tpl);
+                        $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                        $merged->AddPage($orientation, [$size['width'], $size['height']]);
+                        $merged->useTemplate($tpl);
+                    }
+                }
+                $merged->Output('F', $finalPath);
+            } catch (\Throwable $e) {
+                foreach ($partFiles as $file) {
+                    if (is_file($file)) {
+                        @unlink($file);
+                    }
+                }
+                if (is_dir($tempDir)) {
+                    @rmdir($tempDir);
+                }
+                throw $e;
+            }
+
+            foreach ($partFiles as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+            if (is_dir($tempDir)) {
+                @rmdir($tempDir);
+            }
+
+            return response()->download($finalPath, $filenameBase.'.pdf')->deleteFileAfterSend(true);
+        } catch (\Throwable $e) {
             \Log::error('PDF Generation Error: '.$e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }

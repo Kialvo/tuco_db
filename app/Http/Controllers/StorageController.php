@@ -823,8 +823,10 @@ class StorageController extends Controller
     ======================================================================*/
     public function exportPdf(Request $request)
     {
+        @set_time_limit(1200);
+        @ini_set('memory_limit', '1024M');
+
         try {
-            // 1) fetch
             $query    = Storage::with([
                 'site.contact',
                 'contacts',
@@ -836,25 +838,105 @@ class StorageController extends Controller
             ]);
 
             $this->applyFilters($request, $query);
-            $storages = $query->get();
 
-            // 2) fields
-            $allKeys = array_keys($this->csvRow($storages->first() ?? new Storage()));
+            $allKeys = array_keys($this->csvRow(new Storage()));
             $fields  = $request->input('fields', $allKeys);
-
-            // 3) header + rows for the Blade view
-            $header = collect($fields)->map(fn ($f) => Str::headline($f))->all();
-            $rows   = [];
-            foreach ($storages as $s) {
-                $assoc = $this->csvRow($s);
-                $rows[] = collect($fields)->map(fn ($f) => $assoc[$f] ?? '')->all();
+            if (!is_array($fields) || empty($fields)) {
+                $fields = $allKeys;
+            }
+            $fields = array_values(array_intersect($fields, $allKeys));
+            if (empty($fields)) {
+                $fields = $allKeys;
             }
 
-            // 4) generate PDF – create /resources/views/storages/pdf.blade.php
-            $pdf = PDF::loadView('storages.pdf', compact('header', 'rows'))
-                ->setPaper('a1', 'landscape');
+            $header = collect($fields)->map(fn ($f) => Str::headline($f))->all();
+            $filenameBase = 'storages_'.now()->format('Y-m-d_His');
+            $singlePdfMaxRows = 500;
+            $rowsPerPart = 350;
+            $total = (clone $query)->count();
 
-            return $pdf->download('storages_'.now()->format('Y-m-d_His').'.pdf');
+            if ($total <= $singlePdfMaxRows) {
+                $storages = (clone $query)->orderBy('id')->get();
+                $rows = [];
+                foreach ($storages as $s) {
+                    $assoc = $this->csvRow($s);
+                    $rows[] = collect($fields)->map(fn ($f) => $assoc[$f] ?? '')->all();
+                }
+
+                $pdf = \PDF::setOptions([
+                    'dpi' => 72,
+                    'isRemoteEnabled' => false,
+                ])->loadView('storages.pdf', compact('header', 'rows'))
+                    ->setPaper('a1', 'landscape');
+
+                return $pdf->download($filenameBase.'.pdf');
+            }
+
+            $tempDir = storage_path('app/tmp_storages_pdf_'.Str::random(10));
+            $finalPath = storage_path('app/'.$filenameBase.'_'.Str::random(8).'.pdf');
+            if (!is_dir($tempDir)) {
+                @mkdir($tempDir, 0775, true);
+            }
+
+            $part = 1;
+            $partFiles = [];
+
+            try {
+                (clone $query)->orderBy('id')->chunkById($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir, $fields, $header) {
+                    $rows = [];
+                    foreach ($chunk as $s) {
+                        $assoc = $this->csvRow($s);
+                        $rows[] = collect($fields)->map(fn ($f) => $assoc[$f] ?? '')->all();
+                    }
+
+                    $pdfBinary = \PDF::setOptions([
+                        'dpi' => 72,
+                        'isRemoteEnabled' => false,
+                    ])->loadView('storages.pdf', compact('header', 'rows'))
+                        ->setPaper('a1', 'landscape')
+                        ->output();
+
+                    $partPath = $tempDir.'/part_'.str_pad((string) $part++, 4, '0', STR_PAD_LEFT).'.pdf';
+                    file_put_contents($partPath, $pdfBinary);
+                    $partFiles[] = $partPath;
+
+                    unset($pdfBinary, $rows);
+                }, 'id');
+
+                $merged = new \setasign\Fpdi\Fpdi();
+                foreach ($partFiles as $file) {
+                    $pageCount = $merged->setSourceFile($file);
+                    for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                        $tpl = $merged->importPage($pageNo);
+                        $size = $merged->getTemplateSize($tpl);
+                        $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                        $merged->AddPage($orientation, [$size['width'], $size['height']]);
+                        $merged->useTemplate($tpl);
+                    }
+                }
+                $merged->Output('F', $finalPath);
+            } catch (\Throwable $e) {
+                foreach ($partFiles as $file) {
+                    if (is_file($file)) {
+                        @unlink($file);
+                    }
+                }
+                if (is_dir($tempDir)) {
+                    @rmdir($tempDir);
+                }
+                throw $e;
+            }
+
+            foreach ($partFiles as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+            if (is_dir($tempDir)) {
+                @rmdir($tempDir);
+            }
+
+            return response()->download($finalPath, $filenameBase.'.pdf')->deleteFileAfterSend(true);
         } catch (\Throwable $e) {
             Log::error('[storages.exportPdf] '.$e->getMessage());
             abort(500, 'PDF generation failed – check logs.');

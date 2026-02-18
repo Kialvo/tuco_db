@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Website;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Yajra\DataTables\DataTables;
 
 class UserFavoritesController extends Controller
@@ -166,18 +167,98 @@ class UserFavoritesController extends Controller
 
     public function exportPdf(User $user)
     {
-        $websites = Website::withTrashed()
+        @set_time_limit(1200);
+        @ini_set('memory_limit', '1024M');
+
+        $query = Website::withTrashed()
             ->select('websites.*', 'ufd.website_snapshot')
             ->join('user_favorite_domains as ufd', function ($join) use ($user) {
                 $join->on('ufd.website_id', '=', 'websites.id')
                     ->where('ufd.user_id', '=', $user->id);
             })
-            ->with(['country', 'language', 'contact', 'categories'])
-            ->get();
+            ->with([
+                'country:id,country_name',
+                'language:id,name',
+                'contact:id,name',
+                'categories:id,name',
+            ]);
 
-        $html = view('admin.users.favorites_pdf', compact('user', 'websites'))->render();
-        $pdf = \PDF::loadHTML($html)->setPaper('a1', 'landscape');
+        $filenameBase = 'user_'.$user->id.'_favorites_'.date('Y-m-d_His');
+        $singlePdfMaxRows = 450;
+        $rowsPerPart = 400;
+        $total = (clone $query)->count();
 
-        return $pdf->download('user_'.$user->id.'_favorites_'.date('Y-m-d_His').'.pdf');
+        if ($total <= $singlePdfMaxRows) {
+            $websites = (clone $query)->orderBy('websites.id')->get();
+            $pdf = \PDF::setOptions([
+                'dpi' => 72,
+                'isRemoteEnabled' => false,
+            ])->loadView('admin.users.favorites_pdf', compact('user', 'websites'))
+                ->setPaper('a1', 'landscape');
+
+            return $pdf->download($filenameBase.'.pdf');
+        }
+
+        $tempDir = storage_path('app/tmp_user_favorites_pdf_'.Str::random(10));
+        $finalPath = storage_path('app/'.$filenameBase.'_'.Str::random(8).'.pdf');
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0775, true);
+        }
+
+        $part = 1;
+        $partFiles = [];
+
+        try {
+            (clone $query)->orderBy('websites.id')->chunkById($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir, $user) {
+                $websites = $chunk->values();
+                $pdfBinary = \PDF::setOptions([
+                    'dpi' => 72,
+                    'isRemoteEnabled' => false,
+                ])->loadView('admin.users.favorites_pdf', compact('user', 'websites'))
+                    ->setPaper('a1', 'landscape')
+                    ->output();
+
+                $partPath = $tempDir.'/part_'.str_pad((string) $part++, 4, '0', STR_PAD_LEFT).'.pdf';
+                file_put_contents($partPath, $pdfBinary);
+                $partFiles[] = $partPath;
+
+                unset($pdfBinary, $websites);
+            }, 'websites.id', 'id');
+
+            $merged = new \setasign\Fpdi\Fpdi();
+            foreach ($partFiles as $file) {
+                $pageCount = $merged->setSourceFile($file);
+                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                    $tpl = $merged->importPage($pageNo);
+                    $size = $merged->getTemplateSize($tpl);
+                    $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                    $merged->AddPage($orientation, [$size['width'], $size['height']]);
+                    $merged->useTemplate($tpl);
+                }
+            }
+            $merged->Output('F', $finalPath);
+        } catch (\Throwable $e) {
+            foreach ($partFiles as $file) {
+                if (is_file($file)) {
+                    @unlink($file);
+                }
+            }
+            if (is_dir($tempDir)) {
+                @rmdir($tempDir);
+            }
+
+            return response()->json(['error' => 'Could not generate PDF export.'], 500);
+        }
+
+        foreach ($partFiles as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+        if (is_dir($tempDir)) {
+            @rmdir($tempDir);
+        }
+
+        return response()->download($finalPath, $filenameBase.'.pdf')->deleteFileAfterSend(true);
     }
 }
