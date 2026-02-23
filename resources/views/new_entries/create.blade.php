@@ -291,16 +291,9 @@
                     </div>
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Sensitive Topic Price</label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            name="sensitive_topic_price"
-                            value="{{ old('sensitive_topic_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
-                        >
-                        @error('sensitive_topic_price')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                        <div class="w-full border border-gray-200 rounded px-2 py-1 bg-gray-100 text-gray-500">
+                            Auto-filled from calculated Price on create.
+                        </div>
                     </div>
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Original Special Topic Price</label>
@@ -732,4 +725,3 @@
 
     </script>
 @endpush
-

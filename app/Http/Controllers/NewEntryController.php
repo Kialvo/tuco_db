@@ -188,6 +188,7 @@ class NewEntryController extends Controller
         }
 
         $this->recalcArray($data);
+        $data['sensitive_topic_price'] = $data['price'] ?? null;
 
         DB::transaction(function () use ($data, $r, &$entry) {
             $entry = NewEntry::create($data);

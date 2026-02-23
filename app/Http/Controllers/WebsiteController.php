@@ -924,6 +924,7 @@ class WebsiteController extends Controller
             $this->publisherPriceForPriceFormula($validated),
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
         );
+        $validated['sensitive_topic_price'] = $validated['price'] ?? null;
 
         // 3) Compute 'TF_vs_CF' =>
         $TF   = $validated['TF'] ?? 0;
