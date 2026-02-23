@@ -1,5 +1,5 @@
 @php
-    // ① Just list EVERY real db column once.
+    // â‘  Just list EVERY real db column once.
     //    If tomorrow you add a new column, drop its name here and
     //    (optionally) extend bulkMeta below with a prettier <select>.
     $bulkEditable = [
@@ -17,6 +17,55 @@
         'recalculate_totals',        // pseudo
     ];
     $isGuestUser = auth()->check() && auth()->user()->isGuest();
+    $adminExportColumns = [
+        'id' => 'ID',
+        'domain_name' => 'Domain',
+        'notes' => 'Notes',
+        'extra_notes' => 'Internal Notes',
+        'status' => 'Status',
+        'country_name' => 'Country',
+        'language_name' => 'Language',
+        'contact_name' => 'Publisher',
+        'currency_code' => 'Currency',
+        'publisher_price' => 'Publisher Price',
+        'no_follow_price' => 'No Follow Price',
+        'special_topic_price' => 'Special Topic Price',
+        'price' => 'Price',
+        'sensitive_topic_price' => 'Sensitive Topic Price',
+        'link_insertion_price' => 'Link Insertion Price',
+        'banner_price' => 'Banner EUR',
+        'sitewide_link_price' => 'Site-wide EUR',
+        'kialvo_evaluation' => 'Kialvo Evaluation',
+        'profit' => 'Profit',
+        'date_publisher_price' => 'Date Publisher Price',
+        'linkbuilder' => 'Linkbuilder',
+        'type_of_website' => 'Type of Website',
+        'categories_list' => 'Categories',
+        'DA' => 'DA',
+        'PA' => 'PA',
+        'TF' => 'TF',
+        'CF' => 'CF',
+        'DR' => 'DR',
+        'UR' => 'UR',
+        'ZA' => 'ZA',
+        'as_metric' => 'AS',
+        'seozoom' => 'SEO Zoom',
+        'TF_vs_CF' => 'TF vs CF',
+        'semrush_traffic' => 'Semrush Traffic',
+        'ahrefs_keyword' => 'Ahrefs Keyword',
+        'ahrefs_traffic' => 'Ahrefs Traffic',
+        'keyword_vs_traffic' => 'Keywords vs Traffic',
+        'seo_metrics_date' => 'SEO Metrics Date',
+        'betting' => 'Betting',
+        'trading' => 'Trading',
+        'permanent_link' => 'LINK LIFETIME',
+        'more_than_one_link' => 'More than 1 link',
+        'copywriting' => 'Copywriting',
+        'no_sponsored_tag' => 'Sponsored Tag',
+        'social_media_sharing' => 'Social Media Sharing',
+        'post_in_homepage' => 'Post in Homepage',
+        'created_at' => 'Date Added',
+    ];
 @endphp
 
 @extends('layouts.dashboard')
@@ -26,7 +75,7 @@
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
         <!-- Header: Title + Buttons -->
 
-        <div class="flex flex-col gap-3 mb-4">
+        <div class="relative flex flex-col gap-3 mb-4">
 
 
             <div class="space-x-2">
@@ -71,6 +120,48 @@
 
 
             </div>
+            @unless($isGuestUser)
+            <div id="websiteExportPicker"
+                 class="hidden absolute left-0 top-full z-40 mt-2 w-full max-w-3xl">
+                <div class="w-full rounded border border-gray-200 bg-white shadow-xl">
+                    <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                        <p id="websiteExportPickerTitle" class="text-sm font-semibold text-gray-700">
+                            Choose columns to export
+                        </p>
+                        <button type="button" id="websiteExportClose"
+                                class="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+                            Close
+                        </button>
+                    </div>
+                    <div class="border-b border-gray-200 px-4 py-2">
+                        <label class="inline-flex items-center gap-2 text-xs text-gray-700">
+                            <input type="checkbox" id="websiteExportSelectAll" checked
+                                   class="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
+                            Select all columns
+                        </label>
+                    </div>
+                    <div class="grid max-h-[55vh] grid-cols-1 gap-2 overflow-y-auto p-4 sm:grid-cols-2 md:grid-cols-3">
+                        @foreach($adminExportColumns as $key => $label)
+                            <label class="inline-flex items-center gap-2 text-xs text-gray-700">
+                                <input type="checkbox" class="website-export-field rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                                       value="{{ $key }}" checked>
+                                <span>{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <div class="flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-3">
+                        <button type="button" id="websiteExportCancel"
+                                class="rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100">
+                            Cancel
+                        </button>
+                        <button type="button" id="websiteExportConfirm"
+                                class="rounded bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-700">
+                            Continue Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+            @endunless
         </div>
 
         <!-- FILTERS WRAPPER -->
@@ -172,6 +263,32 @@
 
             <!-- ROW 2: Publisher, Kialvo, Profit -->
             <div class="flex flex-wrap gap-2 mb-2">
+                <!-- Price Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Price Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" step="0.01" id="filterPriceMin"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                        <input type="number" step="0.01" id="filterPriceMax"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                    </div>
+                </div>
+
+                <!-- Sensitive Topic Price Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Sensitive Topic Price Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" step="0.01" id="filterSensitiveTopicPriceMin"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                        <input type="number" step="0.01" id="filterSensitiveTopicPriceMax"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                    </div>
+                </div>
+
                 @unless($isGuestUser)
                     <!-- Publisher Price Min/Max -->
                     <div class="flex flex-col">
@@ -187,6 +304,7 @@
                     </div>
                 @endunless
 
+                @unless($isGuestUser)
                 <!-- Kialvo Evaluation Min/Max -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Kialvo Evaluation Min/Max</label>
@@ -199,6 +317,7 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+                @endunless
 
                 @unless($isGuestUser)
                 <!-- Profit Min/Max -->
@@ -216,13 +335,13 @@
 
                 {{--  Banner Price Min / Max  --}}
                 <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Banner € Min</label>
+                    <label class="text-gray-700 font-medium">Banner &euro; Min</label>
                     <input type="number" step="0.01" id="filterBannerMin"
                            class="border border-gray-300 w-16 rounded px-2 py-2
                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                 </div>
                 <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Banner € Max</label>
+                    <label class="text-gray-700 font-medium">Banner &euro; Max</label>
                     <input type="number" step="0.01" id="filterBannerMax"
                            class="border border-gray-300 rounded w-16 px-2 py-2
                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
@@ -230,13 +349,13 @@
 
                 {{--  Site-wide Price Min / Max  --}}
                 <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Site-wide € Min</label>
+                    <label class="text-gray-700 font-medium">Site-wide &euro; Min</label>
                     <input type="number" step="0.01" id="filterSWMin"
                            class="border border-gray-300 rounded w-16 px-2 py-2
                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
                 </div>
                 <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Site-wide € Max</label>
+                    <label class="text-gray-700 font-medium">Site-wide &euro; Max</label>
                     <input type="number" step="0.01" id="filterSWMax"
                            class="border border-gray-300 rounded w-16 px-2 py-2
                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
@@ -492,7 +611,7 @@
             </div>
         @endunless
 
-        {{-- ───────────── TABLE ACTION BAR ───────────── --}}
+        {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ TABLE ACTION BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
         @unless($isGuestUser)
         <div id="actionBar"
              class="flex items-center gap-3 mb-2
@@ -571,25 +690,6 @@
                     <th class="whitespace-nowrap px-4 py-2">Special Topic Price</th>
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
-                            Sensitive Topic Price
-                            <span class="relative inline-flex group cursor-help">
-                                <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
-                                        data-info="Sensitive Topic Price is the final amount you pay for placement on this website, including our service fee for sensitive topics."
-                                        aria-label="What is Sensitive Topic Price?">
-                                    <i class="fas fa-info-circle"></i>
-                                </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
-                                    Sensitive Topic Price is the final amount you pay for placement on this website, including our service fee for sensitive topics.
-                                </span>
-                            </span>
-                        </span>
-                    </th>
-                    <th class="whitespace-nowrap px-4 py-2">Link Insertion Price</th>
-                    <th class="whitespace-nowrap px-4 py-2">Banner €</th>
-                    <th class="whitespace-nowrap px-4 py-2">Site-wide €</th>
-                    <th class="whitespace-nowrap px-4 py-2">
-                        <span class="inline-flex items-center gap-1">
                             Price
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
@@ -598,12 +698,31 @@
                                         aria-label="What is Price?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     This is the final amount you pay for placement on this website, including our service fee.
                                 </span>
                             </span>
                         </span>
                     </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Sensitive Topic Price
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Sensitive Topic Price is the final amount you pay for placement on this website, including our service fee for sensitive topics."
+                                        aria-label="What is Sensitive Topic Price?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Sensitive Topic Price is the final amount you pay for placement on this website, including our service fee for sensitive topics.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">Link Insertion Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Banner &euro;</th>
+                    <th class="whitespace-nowrap px-4 py-2">Site-wide &euro;</th>
                     @unless($isGuestUser)
                     {{-- Kialvo Evaluation (data key stays kialvo_evaluation) --}}
                     <th class="whitespace-nowrap px-4 py-2">
@@ -616,7 +735,7 @@
                                         aria-label="What is Kialvo Evaluation?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Kialvo Evaluation is the final amount you pay for placement on this website, including our service fee.
                                 </span>
                             </span>
@@ -636,7 +755,7 @@
                                         aria-label="What is Type of Website?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Vertical: focused on one topic. Local: focused on a city/area. Generalist: covers many topics.
                                 </span>
                             </span>
@@ -653,7 +772,7 @@
                                         aria-label="What is DA?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium.
                                 </span>
                             </span>
@@ -669,7 +788,7 @@
                                         aria-label="What is PA?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better.
                                 </span>
                             </span>
@@ -685,7 +804,7 @@
                                         aria-label="What is TF?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Trust Flow (Majestic): backlink quality score on 0-100. Higher is better; TF 20+ is typically reliable.
                                 </span>
                             </span>
@@ -701,7 +820,7 @@
                                         aria-label="What is CF?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Citation Flow (Majestic): backlink quantity influence score on 0-100. Higher is better, especially when TF is close to or above CF.
                                 </span>
                             </span>
@@ -717,7 +836,7 @@
                                         aria-label="What is DR?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Domain Rating (Ahrefs): backlink profile strength from 0 to 100. Higher DR means stronger authority; 40+ is solid.
                                 </span>
                             </span>
@@ -733,7 +852,7 @@
                                         aria-label="What is UR?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     URL Rating (Ahrefs): strength of the target page backlink profile on a 0-100 scale. Higher is better.
                                 </span>
                             </span>
@@ -749,7 +868,7 @@
                                         aria-label="What is ZA?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Zoom Authority (SEOZoom): domain authority metric focused on Italian SERPs, on a 0-100 scale.
                                 </span>
                             </span>
@@ -765,7 +884,7 @@
                                         aria-label="What is AS?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals.
                                 </span>
                             </span>
@@ -781,7 +900,7 @@
                                         aria-label="What is SEO Zoom?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     SEOZoom Traffic: estimated organic traffic from SEOZoom, especially useful for Italian-market visibility.
                                 </span>
                             </span>
@@ -797,7 +916,7 @@
                                         aria-label="What is TF vs CF?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Ratio between Trust Flow and Citation Flow. Close to 1 is ideal; TF > CF suggests stronger quality, CF > TF may indicate spammy links.
                                 </span>
                             </span>
@@ -813,7 +932,7 @@
                                         aria-label="What is Semrush Traffic?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent.
                                 </span>
                             </span>
@@ -829,7 +948,7 @@
                                         aria-label="What is Ahrefs Keyword?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Number of keywords the domain ranks for. More keywords usually mean stronger organic visibility; 1k+ is strong.
                                 </span>
                             </span>
@@ -845,7 +964,7 @@
                                         aria-label="What is Ahrefs Traffic?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Estimated monthly organic visitors from Ahrefs. Higher traffic means more exposure; 5k+ good, 50k+ excellent.
                                 </span>
                             </span>
@@ -861,7 +980,7 @@
                                         aria-label="What is Keywords vs Traffic?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings.
                                 </span>
                             </span>
@@ -880,7 +999,7 @@
                                         aria-label="What is Link Lifetime?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration.
                                 </span>
                             </span>
@@ -896,7 +1015,7 @@
                                         aria-label="What does More than 1 link mean?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Yes means the publisher accepts multiple backlinks in one guest post.
                                 </span>
                             </span>
@@ -913,7 +1032,7 @@
                                         aria-label="What is Sponsored Tag?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Indicates whether links are tagged sponsored/nofollow. No means full SEO value, yes means rel='sponsored' or rel='nofollow'.
                                 </span>
                             </span>
@@ -940,7 +1059,7 @@
 
 @push('scripts')
     {{-- ###############################################
-     Bulk-edit metadata – MUST load before buildBulkInput()
+     Bulk-edit metadata â€“ MUST load before buildBulkInput()
 ############################################### --}}
     <script>
         window.bulkMeta = {
@@ -990,7 +1109,7 @@
             category_ids:{type:'multiselect',options:@json($categories->pluck('name','id'))},
 
             /* ========= PSEUDO FIELD ========= */
-            recalculate_totals:{type:'noop'}   // shows the grey “Nothing to fill in” text
+            recalculate_totals:{type:'noop'}   // shows the grey â€œNothing to fill inâ€ text
         };
     </script>
 
@@ -1157,8 +1276,12 @@
 
                         d.publisher_price_min = isGuestUser ? null : $('#filterPublisher_priceMin').val();
                         d.publisher_price_max = isGuestUser ? null : $('#filterPublisher_priceMax').val();
-                        d.kialvo_min = $('#filterKialvo_evaluationMin').val();
-                        d.kialvo_max = $('#filterKialvo_evaluationMax').val();
+                        d.price_min = $('#filterPriceMin').val();
+                        d.price_max = $('#filterPriceMax').val();
+                        d.sensitive_topic_price_min = $('#filterSensitiveTopicPriceMin').val();
+                        d.sensitive_topic_price_max = $('#filterSensitiveTopicPriceMax').val();
+                        d.kialvo_min = isGuestUser ? null : $('#filterKialvo_evaluationMin').val();
+                        d.kialvo_max = isGuestUser ? null : $('#filterKialvo_evaluationMax').val();
                         d.profit_min = isGuestUser ? null : $('#filterProfitMin').val();
                         d.profit_max = isGuestUser ? null : $('#filterProfitMax').val();
                         d.banner_price_min   = isGuestUser ? null : $('#filterBannerMin').val();
@@ -1209,7 +1332,7 @@
                 },
                 columns: [
                     {
-                        data      : 'id',                     // re-use the row’s id
+                        data      : 'id',                     // re-use the rowâ€™s id
                         orderable : false,
                         searchable: false,
                         className : 'text-center',
@@ -1281,7 +1404,7 @@
                                 return '';
                             }
                             // Wrap the numeric value in <strong>
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
                         }
                     },
                     {
@@ -1293,7 +1416,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
                         }
                     },
                     {
@@ -1305,7 +1428,18 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
+                        }
+                    },
+                    {
+                        data: 'price',
+                        name: 'price',
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === null || data === undefined) {
+                                return '';
+                            }
+                            return '<strong> &euro; ' + data + '</strong>';
                         }
                     },
                     {
@@ -1317,7 +1451,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
                         }
                     },
                     {
@@ -1329,7 +1463,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
                         }
                     },
                     {
@@ -1341,7 +1475,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
                         }},
                     {
                         data:'sitewide_link_price',
@@ -1352,19 +1486,8 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
                         }},
-                    {
-                        data: 'price',
-                        name: 'price',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> € ' + data + '</strong>';
-                        }
-                    },
 
                     @unless($isGuestUser)
                     {
@@ -1375,7 +1498,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
                         }
                     },
                     @endunless
@@ -1388,7 +1511,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> &euro; ' + data + '</strong>';
                         }
                     },
                     { data:'date_publisher_price', name:'date_publisher_price',
@@ -1500,7 +1623,7 @@
             $(table.table().container()).find('.dt-search').append($('#websitesTableSearchWrap'));
             function dt(v){ return v ? new Date(v).toLocaleDateString('en-GB') : ''; }
 
-            /* ---------- live “Selected: N” badge ---------- */
+            /* ---------- live â€œSelected: Nâ€ badge ---------- */
             function updateSelCount () {
                 $('#selCount').text($('.rowChk:checked').length);
             }
@@ -1524,9 +1647,9 @@
                 toggleActionButtons();
             });
 
-            /*──────────────────────────────────────────────────────────────────*/
+            /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
             /* BULK-EDIT  (identical to Storages, just hits the Websites route) */
-            /*──────────────────────────────────────────────────────────────────*/
+            /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
             function buildBulkInput () {
                 const field = $('#bulkField').val();
                 const meta  = window.bulkMeta[field] || { type: 'text' };
@@ -1535,7 +1658,7 @@
                 wrap.empty();
 
                 if (field === 'recalculate_totals') {
-                    wrap.append('<p class="text-gray-500 text-xs">Nothing to fill in – just click “Save”.</p>');
+                    wrap.append('<p class="text-gray-500 text-xs">Nothing to fill in â€“ just click â€œSaveâ€.</p>');
                     return;
                 }
 
@@ -1748,7 +1871,7 @@
                 $('#filterCountriesExclude').val(null).trigger('change');
                 $('#filterNoContact').prop('checked', false);
                 // Clear the Publisher filter (select2)
-                $('#filterContact').val(null).trigger('change');             // ← NEW
+                $('#filterContact').val(null).trigger('change');             // â† NEW
                 $('#filterBannerMin,#filterBannerMax,#filterSWMin,#filterSWMax').val('');
 
                 $('#filterCategories').val(null).trigger('change');
@@ -1769,137 +1892,150 @@
                 const v = $(selector).val();
                 return Array.isArray(v) ? v.join(',') : '';
             }
-            // =====================
-            // CSV Export
-            // =====================
+
+            const buildWebsiteExportParams = function(selectedFields = null) {
+                const params = {
+                    domain_name: $('#filterDomainName').val(),
+                    type_of_website: $('#filterWebsiteType').val(),
+                    language_id: $('#filterLanguage').val(),
+                    status: $('#filterStatus').val(),
+                    country_id: $('#filterCountry').val(),
+                    publisher_price_min: $('#filterPublisher_priceMin').val(),
+                    publisher_price_max: $('#filterPublisher_priceMax').val(),
+                    price_min: $('#filterPriceMin').val(),
+                    price_max: $('#filterPriceMax').val(),
+                    sensitive_topic_price_min: $('#filterSensitiveTopicPriceMin').val(),
+                    sensitive_topic_price_max: $('#filterSensitiveTopicPriceMax').val(),
+                    kialvo_min: isGuestUser ? null : $('#filterKialvo_evaluationMin').val(),
+                    kialvo_max: isGuestUser ? null : $('#filterKialvo_evaluationMax').val(),
+                    profit_min: $('#filterProfitMin').val(),
+                    profit_max: $('#filterProfitMax').val(),
+                    category_ids: csvList('#filterCategories'),
+                    country_ids_include: csvList('#filterCountriesInclude'),
+                    country_ids_exclude: csvList('#filterCountriesExclude'),
+                    DA_min: $('#filterDAMin').val(),
+                    DA_max: $('#filterDAMax').val(),
+                    PA_min: $('#filterPAMin').val(),
+                    PA_max: $('#filterPAMax').val(),
+                    TF_min: $('#filterTFMin').val(),
+                    TF_max: $('#filterTFMax').val(),
+                    CF_min: $('#filterCFMin').val(),
+                    CF_max: $('#filterCFMax').val(),
+                    DR_min: $('#filterDRMin').val(),
+                    DR_max: $('#filterDRMax').val(),
+                    UR_min: $('#filterURMin').val(),
+                    UR_max: $('#filterURMax').val(),
+                    ZA_min: $('#filterZAMin').val(),
+                    ZA_max: $('#filterZAMax').val(),
+                    SR_min: $('#filterASMin').val(),
+                    SR_max: $('#filterASMax').val(),
+                    TF_VS_CF_min: $('#filterTF_vS_cfMin').val(),
+                    TF_VS_CF_max: $('#filterTF_vS_cfMax').val(),
+                    semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
+                    semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
+                    ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
+                    ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
+                    ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
+                    ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
+                    keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
+                    keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
+                    betting: $('#filterBetting').is(':checked') ? 1 : 0,
+                    trading: $('#filterTrading').is(':checked') ? 1 : 0,
+                    permanent_link: $('#filterPermanent_link').is(':checked') ? 1 : 0,
+                    more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
+                    copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
+                    no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
+                    social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
+                    post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
+                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0),
+                    favorites_only: isGuestUser && favoritesOnly ? 1 : 0
+                };
+
+                if (!isGuestUser && Array.isArray(selectedFields) && selectedFields.length) {
+                    params.fields = selectedFields;
+                }
+
+                return $.param(params);
+            };
+
+            const runWebsiteExport = function(type, selectedFields = null) {
+                const route = type === 'pdf'
+                    ? "{{ route('websites.export.pdf') }}"
+                    : "{{ route('websites.export.csv') }}";
+                window.location = route + "?" + buildWebsiteExportParams(selectedFields);
+            };
+
+            let websitePendingExportType = null;
+            const getWebsiteSelectedFields = () =>
+                $('.website-export-field:checked').map((_, el) => el.value).get();
+
+            const syncWebsiteSelectAll = function() {
+                const total = $('.website-export-field').length;
+                const checked = $('.website-export-field:checked').length;
+                $('#websiteExportSelectAll').prop('checked', total > 0 && checked === total);
+            };
+
+            const openWebsiteExportPicker = function(type) {
+                websitePendingExportType = type;
+                $('#websiteExportPickerTitle').text(
+                    type === 'pdf' ? 'Choose columns for PDF export' : 'Choose columns for CSV export'
+                );
+                $('#websiteExportPicker').removeClass('hidden');
+                syncWebsiteSelectAll();
+            };
+
+            const closeWebsiteExportPicker = function() {
+                $('#websiteExportPicker').addClass('hidden');
+                websitePendingExportType = null;
+            };
+
+            $('#websiteExportSelectAll').on('change', function() {
+                $('.website-export-field').prop('checked', this.checked);
+            });
+            $(document).on('change', '.website-export-field', syncWebsiteSelectAll);
+            $('#websiteExportClose, #websiteExportCancel').on('click', closeWebsiteExportPicker);
+            $(document).on('mousedown', function(e) {
+                if ($('#websiteExportPicker').hasClass('hidden')) {
+                    return;
+                }
+                if ($(e.target).closest('#websiteExportPicker, #btnExportCsv, #btnExportPdf').length) {
+                    return;
+                }
+                closeWebsiteExportPicker();
+            });
+
+            $('#websiteExportConfirm').on('click', function() {
+                const selected = getWebsiteSelectedFields();
+                if (!selected.length) {
+                    Swal.fire({ icon: 'warning', title: 'Select at least one column' });
+                    return;
+                }
+                runWebsiteExport(websitePendingExportType || 'csv', selected);
+                closeWebsiteExportPicker();
+            });
+
             $('#btnExportCsv').click(function(e) {
                 e.preventDefault();
-                let params = $.param({
-                    domain_name: $('#filterDomainName').val(),
-                    type_of_website: $('#filterWebsiteType').val(),
-                    language_id: $('#filterLanguage').val(),
-                    status: $('#filterStatus').val(),
-                    country_id: $('#filterCountry').val(),
-                    publisher_price_min: $('#filterPublisher_priceMin').val(),
-                    publisher_price_max: $('#filterPublisher_priceMax').val(),
-                    kialvo_min: $('#filterKialvo_evaluationMin').val(),
-                    kialvo_max: $('#filterKialvo_evaluationMax').val(),
-                    profit_min: $('#filterProfitMin').val(),
-                    profit_max: $('#filterProfitMax').val(),
-                    category_ids        : csvList('#filterCategories'),        // ← NEW
-                    country_ids_include : csvList('#filterCountriesInclude'),  // ← NEW
-                    country_ids_exclude : csvList('#filterCountriesExclude'),  // ← NEW
-                    DA_min: $('#filterDAMin').val(),
-                    DA_max: $('#filterDAMax').val(),
-                    PA_min: $('#filterPAMin').val(),
-                    PA_max: $('#filterPAMax').val(),
-                    TF_min: $('#filterTFMin').val(),
-                    TF_max: $('#filterTFMax').val(),
-                    CF_min: $('#filterCFMin').val(),
-                    CF_max: $('#filterCFMax').val(),
-                    DR_min: $('#filterDRMin').val(),
-                    DR_max: $('#filterDRMax').val(),
-                    UR_min: $('#filterURMin').val(),
-                    UR_max: $('#filterURMax').val(),
-                    ZA_min: $('#filterZAMin').val(),
-                    ZA_max: $('#filterZAMax').val(),
-                    SR_min: $('#filterASMin').val(),
-                    SR_max: $('#filterASMax').val(),
-                    TF_VS_CF_min: $('#filterTF_vS_cfMin').val(),
-                    TF_VS_CF_max: $('#filterTF_vS_cfMax').val(),
-                    semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
-                    semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
-                    ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
-                    ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
-                    ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
-                    ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
-                    keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
-                    keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
-
-                    betting: $('#filterBetting').is(':checked') ? 1 : 0,
-                    trading: $('#filterTrading').is(':checked') ? 1 : 0,
-                    permanent_link: $('#filterPermanent_link').is(':checked') ? 1 : 0,
-                    more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
-                    copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
-                    no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
-                    social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
-                    post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
-                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0),
-                    favorites_only: isGuestUser && favoritesOnly ? 1 : 0
-                });
-
-                // Change this route to match your CSV export route
-                window.location = "{{ route('websites.export.csv') }}?" + params;
+                if (isGuestUser) {
+                    runWebsiteExport('csv');
+                    return;
+                }
+                openWebsiteExportPicker('csv');
             });
 
-            // =====================
-            // PDF Export
-            // =====================
             $('#btnExportPdf').click(function(e) {
                 e.preventDefault();
-                let params = $.param({
-                    domain_name: $('#filterDomainName').val(),
-                    type_of_website: $('#filterWebsiteType').val(),
-                    language_id: $('#filterLanguage').val(),
-                    status: $('#filterStatus').val(),
-                    country_id: $('#filterCountry').val(),
-                    publisher_price_min: $('#filterPublisher_priceMin').val(),
-                    publisher_price_max: $('#filterPublisher_priceMax').val(),
-                    kialvo_min: $('#filterKialvo_evaluationMin').val(),
-                    kialvo_max: $('#filterKialvo_evaluationMax').val(),
-                    profit_min: $('#filterProfitMin').val(),
-                    profit_max: $('#filterProfitMax').val(),
-                    category_ids        : csvList('#filterCategories'),        // ← NEW
-                    country_ids_include : csvList('#filterCountriesInclude'),  // ← NEW
-                    country_ids_exclude : csvList('#filterCountriesExclude'),  // ← NEW
-
-                    DA_min: $('#filterDAMin').val(),
-                    DA_max: $('#filterDAMax').val(),
-                    PA_min: $('#filterPAMin').val(),
-                    PA_max: $('#filterPAMax').val(),
-                    TF_min: $('#filterTFMin').val(),
-                    TF_max: $('#filterTFMax').val(),
-                    CF_min: $('#filterCFMin').val(),
-                    CF_max: $('#filterCFMax').val(),
-                    DR_min: $('#filterDRMin').val(),
-                    DR_max: $('#filterDRMax').val(),
-                    UR_min: $('#filterURMin').val(),
-                    UR_max: $('#filterURMax').val(),
-                    ZA_min: $('#filterZAMin').val(),
-                    ZA_max: $('#filterZAMax').val(),
-                    SR_min: $('#filterASMin').val(),
-                    SR_max: $('#filterASMax').val(),
-                    TF_VS_CF_min: $('#filterTF_vS_cfMin').val(),
-                    TF_VS_CF_max: $('#filterTF_vS_cfMax').val(),
-                    semrush_traffic_min: $('#filterSemrush_trafficMin').val(),
-                    semrush_traffic_max: $('#filterSemrush_trafficMax').val(),
-                    ahrefs_keyword_min: $('#filterAhrefs_keywordMin').val(),
-                    ahrefs_keyword_max: $('#filterAhrefs_keywordMax').val(),
-                    ahrefs_traffic_min: $('#filterAhrefs_trafficMin').val(),
-                    ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
-                    keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
-                    keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
-
-                    betting: $('#filterBetting').is(':checked') ? 1 : 0,
-                    trading: $('#filterTrading').is(':checked') ? 1 : 0,
-                    permanent_link: $('#filterPermanent_link').is(':checked') ? 1 : 0,
-                    more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
-                    copywriting: $('#filterCopywriting').is(':checked') ? 1 : 0,
-                    no_sponsored_tag: $('#filterNo_sponsored_tag').is(':checked') ? 1 : 0,
-                    social_media_sharing: $('#filterSocial_media_sharing').is(':checked') ? 1 : 0,
-                    post_in_homepage: $('#filterPost_in_homepage').is(':checked') ? 1 : 0,
-                    show_deleted: isGuestUser ? 0 : ($('#filterShowDeleted').is(':checked') ? 1 : 0),
-                    favorites_only: isGuestUser && favoritesOnly ? 1 : 0
-                });
-
-                // Change this route to match your PDF export route
-                window.location = "{{ route('websites.export.pdf') }}?" + params;
+                if (isGuestUser) {
+                    runWebsiteExport('pdf');
+                    return;
+                }
+                openWebsiteExportPicker('pdf');
             });
 
 
-            // ───────────────────────────────────────────────
+            // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             //  NOTE  MODAL
-            // ───────────────────────────────────────────────
+            // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             $(document).on('click', '.note-link', function (e) {
                 e.preventDefault();
                 const note = $(this).data('note');
@@ -2058,7 +2194,7 @@
                     $('#boNoSpecialCount').text(r.data.no_special_count || 0);
 
                     if (r.data.skipped.length) {
-                        var lines = r.data.skipped.map(function(s){ return '<div>• #'+s.id+' '+s.domain+' — '+s.reason+'</div>'; });
+                        var lines = r.data.skipped.map(function(s){ return '<div>â€¢ #'+s.id+' '+s.domain+' â€” '+s.reason+'</div>'; });
                         $('#boSkippedList').html(lines.join(''));
                     } else {
                         $('#boSkippedList').html('<div class="text-green-700">All selected are eligible.</div>');
@@ -2093,7 +2229,7 @@
                 body: JSON.stringify({
                     ids: ids,
                     template_key: tplKey,
-                    language: lang,          // <— send language
+                    language: lang,          // <â€” send language
                     target_url: target_url,
                     brand: brand,
                     subject: subject,
@@ -2108,7 +2244,7 @@
 
                     var msg = 'Sent ' + r.data.sent + ' email(s)';
                     if (r.data.failed) msg += ', ' + r.data.failed + ' failed';
-                    toast(msg);                          // ✅ same toast style
+                    toast(msg);                          // âœ… same toast style
                     if (r.data.failed_details?.length) {
                         var lines = r.data.failed_details.map(s => '#'+s.id+' '+s.domain+': '+s.error).join('\n');
                         Swal.fire('Some emails failed', lines.substring(0, 1800), 'warning');
@@ -2116,7 +2252,7 @@
 
                     $('#chkAll').prop('checked', false);
                     if (window.table) window.table.ajax.reload(null, false);
-                    boCloseModal();                      // ✅ close modal
+                    boCloseModal();                      // âœ… close modal
                 })
                 .catch(err => oops(err.message || 'Send error'))
                 .finally(() => $('#boSend').prop('disabled', false).text('Send'));
@@ -2162,4 +2298,6 @@
     </script>
 
 @endpush
+
+
 

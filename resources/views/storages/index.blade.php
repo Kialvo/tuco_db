@@ -67,7 +67,7 @@
 
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
         {{-- ───────────────────── HEADER BUTTONS ───────────────────── --}}
-        <div class="flex flex-col gap-3 mb-4">
+        <div class="relative flex flex-col gap-3 mb-4">
             <div class="space-x-2 flex flex-wrap items-center">
                 <button id="toggleFiltersBtn"
                         class="bg-gray-300 text-gray-700 px-4 py-2 rounded shadow text-xs hover:bg-gray-400
@@ -94,17 +94,45 @@
                 </a>
             </div>
 
-            {{-- choose columns to export --}}
-            <div class="mt-2 flex items-center gap-2">
-                <label class="text-gray-700 font-medium text-xs">Choose Columns to export:</label>
-                <select id="exportFields" multiple
-                        class="border border-gray-300 rounded px-2 py-1 text-xs w-64
-                               focus:ring-cyan-500 focus:border-cyan-500">
-                    @foreach($exportColumns as $key=>$label)
-                        <option value="{{ $key }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-                <span class="text-gray-500 text-xs">(leave blank for all)</span>
+            <div id="storageExportPicker"
+                 class="hidden absolute left-0 top-full z-40 mt-2 w-full max-w-3xl">
+                <div class="w-full rounded border border-gray-200 bg-white shadow-xl">
+                    <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                        <p id="storageExportPickerTitle" class="text-sm font-semibold text-gray-700">
+                            Choose columns to export
+                        </p>
+                        <button type="button" id="storageExportClose"
+                                class="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+                            Close
+                        </button>
+                    </div>
+                    <div class="border-b border-gray-200 px-4 py-2">
+                        <label class="inline-flex items-center gap-2 text-xs text-gray-700">
+                            <input type="checkbox" id="storageExportSelectAll" checked
+                                   class="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
+                            Select all columns
+                        </label>
+                    </div>
+                    <div class="grid max-h-[55vh] grid-cols-1 gap-2 overflow-y-auto p-4 sm:grid-cols-2 md:grid-cols-3">
+                        @foreach($exportColumns as $key=>$label)
+                            <label class="inline-flex items-center gap-2 text-xs text-gray-700">
+                                <input type="checkbox" class="storage-export-field rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                                       value="{{ $key }}" checked>
+                                <span>{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <div class="flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-3">
+                        <button type="button" id="storageExportCancel"
+                                class="rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100">
+                            Cancel
+                        </button>
+                        <button type="button" id="storageExportConfirm"
+                                class="rounded bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-700">
+                            Continue Export
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -555,7 +583,7 @@
         $(function(){
 
             /* Select2 */
-            $('#filterLanguage,#filterCountry,#filterClient,#filterContact,#filterCopy,#filterCategories,#exportFields')
+            $('#filterLanguage,#filterCountry,#filterClient,#filterContact,#filterCopy,#filterCategories')
                 .select2({width:'resolve',dropdownAutoWidth:true,placeholder:'Select',allowClear:true,
                     containerCssClass:'text-xs',dropdownCssClass:'text-xs'});
 
@@ -917,7 +945,7 @@
             window.stTable = table;
             /* cell formatters */
             function dt(v){return v?new Date(v).toLocaleDateString('en-GB'):'';}
-            function eu(v){return v!==null?'<strong>€ '+v+'</strong>':'';}
+            function eu(v){return v!==null?'<strong>&euro; '+v+'</strong>':'';}
 
             /* master checkbox */
             $('#chkAll').on('change',function(){ $('.rowChk').prop('checked',this.checked); });
@@ -942,8 +970,8 @@
             });
             $('#filterShowDeleted').on('change',()=>table.ajax.reload());
 
-            /* build export params (unchanged) */
-            const buildParams=()=>{
+            /* build export params */
+            const buildParams=(selectedFields = null)=>{
                 let p={
                     publication_from:$('#filterPublicationFrom').val(),
                     publication_to  :$('#filterPublicationTo').val(),
@@ -962,14 +990,72 @@
                     category_ids    :$('#filterCategories').val(),
                     show_deleted    :$('#filterShowDeleted').is(':checked')?1:0
                 };
-                const sel=$('#exportFields').val(); if(sel&&sel.length) p.fields=sel;
+                if (Array.isArray(selectedFields) && selectedFields.length) p.fields=selectedFields;
                 return $.param(p);
             };
 
-            $('#btnExportCsv').on('click',e=>{e.preventDefault();
-                window.location="{{ route('storages.export.csv') }}?"+buildParams();});
-            $('#btnExportPdf').on('click',e=>{e.preventDefault();
-                window.location="{{ route('storages.export.pdf') }}?"+buildParams();});
+            let storagePendingExportType = null;
+            const getStorageSelectedFields = () =>
+                $('.storage-export-field:checked').map((_, el) => el.value).get();
+
+            const syncStorageSelectAll = function () {
+                const total = $('.storage-export-field').length;
+                const checked = $('.storage-export-field:checked').length;
+                $('#storageExportSelectAll').prop('checked', total > 0 && checked === total);
+            };
+
+            const openStorageExportPicker = function(type) {
+                storagePendingExportType = type;
+                $('#storageExportPickerTitle').text(
+                    type === 'pdf' ? 'Choose columns for PDF export' : 'Choose columns for CSV export'
+                );
+                $('#storageExportPicker').removeClass('hidden');
+                syncStorageSelectAll();
+            };
+
+            const closeStorageExportPicker = function() {
+                $('#storageExportPicker').addClass('hidden');
+                storagePendingExportType = null;
+            };
+
+            $('#storageExportSelectAll').on('change', function() {
+                $('.storage-export-field').prop('checked', this.checked);
+            });
+            $(document).on('change', '.storage-export-field', syncStorageSelectAll);
+            $('#storageExportClose, #storageExportCancel').on('click', closeStorageExportPicker);
+            $(document).on('mousedown', function(e) {
+                if ($('#storageExportPicker').hasClass('hidden')) {
+                    return;
+                }
+                if ($(e.target).closest('#storageExportPicker, #btnExportCsv, #btnExportPdf').length) {
+                    return;
+                }
+                closeStorageExportPicker();
+            });
+
+            $('#storageExportConfirm').on('click', function() {
+                const selected = getStorageSelectedFields();
+                if (!selected.length) {
+                    Swal.fire({ icon: 'warning', title: 'Select at least one column' });
+                    return;
+                }
+
+                const route = storagePendingExportType === 'pdf'
+                    ? "{{ route('storages.export.pdf') }}"
+                    : "{{ route('storages.export.csv') }}";
+
+                window.location = route + "?" + buildParams(selected);
+                closeStorageExportPicker();
+            });
+
+            $('#btnExportCsv').on('click',e=>{
+                e.preventDefault();
+                openStorageExportPicker('csv');
+            });
+            $('#btnExportPdf').on('click',e=>{
+                e.preventDefault();
+                openStorageExportPicker('pdf');
+            });
 
             /* toggle filter visibility */
             let filtersVisible=true;

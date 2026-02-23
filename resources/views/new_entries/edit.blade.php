@@ -213,6 +213,13 @@
                 @error('special_topic_price') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
             </div>
             <div>
+                <label class="block">Sensitive Topic Price</label>
+                <input type="number" step="0.01" name="sensitive_topic_price"
+                       value="{{ old('sensitive_topic_price', $entry->sensitive_topic_price) }}"
+                       class="w-full border-gray-300 rounded">
+                @error('sensitive_topic_price') <p class="text-red-500 text-sm">{{ $message }}</p> @enderror
+            </div>
+            <div>
                 <label class="block">Original Special Topic Price</label>
                 <input type="number" step="0.01" name="original_special_topic_price"
                        value="{{ old('original_special_topic_price', $entry->original_special_topic_price) }}"

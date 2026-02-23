@@ -218,10 +218,6 @@ class NewEntryImportController extends Controller
             $this->publisherPriceForPriceFormula($d),
             isset($d['language_id']) ? (int) $d['language_id'] : null
         );
-        $d['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
-            $this->specialTopicPriceForSensitiveFormula($d),
-            isset($d['language_id']) ? (int) $d['language_id'] : null
-        );
 
         // profit
         $d['profit'] = ($d['kialvo_evaluation'] ?? 0) - ($d['publisher_price'] ?? 0);
@@ -262,29 +258,6 @@ class NewEntryImportController extends Controller
         }
 
         $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
-        if ($baseUsd === null || $baseUsd === '') {
-            return null;
-        }
-
-        return (float) $baseUsd * $this->usdEurRate();
-    }
-
-    /**
-     * Sensitive Topic Price formula uses Special Topic Price as base.
-     * For USD rows, use original_special_topic_price * usd_eur_rate.
-     */
-    private function specialTopicPriceForSensitiveFormula(array $data): ?float
-    {
-        if (!array_key_exists('special_topic_price', $data) || $data['special_topic_price'] === null || $data['special_topic_price'] === '') {
-            return null;
-        }
-
-        $special = (float) $data['special_topic_price'];
-        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return $special;
-        }
-
-        $baseUsd = $data['original_special_topic_price'] ?? $data['special_topic_price'];
         if ($baseUsd === null || $baseUsd === '') {
             return null;
         }

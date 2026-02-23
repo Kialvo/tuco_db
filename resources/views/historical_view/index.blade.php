@@ -5,7 +5,7 @@
 
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
 
-        {{-- ───── HEADER ───── --}}
+        {{-- â”€â”€â”€â”€â”€ HEADER â”€â”€â”€â”€â”€ --}}
         <div class="flex items-center gap-2 mb-4">
             <button id="toggleFiltersBtn"
                     class="inline-flex items-center gap-1
@@ -18,7 +18,7 @@
         </div>
 
 
-        {{-- ───── FILTERS (4) ───── --}}
+        {{-- â”€â”€â”€â”€â”€ FILTERS (4) â”€â”€â”€â”€â”€ --}}
         <div id="filterForm"
              class="bg-white border border-gray-200 rounded shadow p-2 mb-8 inline-block">
             <div class="flex flex-wrap gap-2">
@@ -98,7 +98,7 @@
             </div>
         </div>
 
-        {{-- ───── TABLE ───── --}}
+        {{-- â”€â”€â”€â”€â”€ TABLE â”€â”€â”€â”€â”€ --}}
         <div id="historicalTableSearchWrap" class="table-search-wrap">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
                         focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
@@ -129,12 +129,11 @@
                     <th class="px-4 py-2">Publisher Price</th>
                     <th class="px-4 py-2">No Follow Price</th>
                     <th class="px-4 py-2">Special Topic Price</th>
+                    <th class="px-4 py-2">Price</th>
                     <th class="px-4 py-2">Sensitive Topic Price</th>
                     <th class="px-4 py-2">Link Insertion Price</th>
-                    <th class="px-4 py-2">Banner €</th>
-                    <th class="px-4 py-2">Site-wide €</th>
-                    <th class="px-4 py-2">Price</th>
-
+                    <th class="px-4 py-2">Banner &euro;</th>
+                    <th class="px-4 py-2">Site-wide &euro;</th>
                     {{-- Kialvo Evaluation (data key stays kialvo_evaluation) --}}
                     <th class="px-4 py-2">Kialvo Evaluation</th>
                     <th class="px-4 py-2">Profit</th>
@@ -160,7 +159,7 @@
                                         aria-label="What is TF vs CF?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Majestic Trust Flow divided by Citation Flow. It compares link quality vs quantity; usually, higher is better.
                                 </span>
                             </span>
@@ -179,7 +178,7 @@
                                         aria-label="What is Keywords vs Traffic?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Compares ranking keywords with estimated visits. Higher generally means keyword visibility turns into stronger traffic.
                                 </span>
                             </span>
@@ -200,7 +199,7 @@
                                         aria-label="What does More than 1 link mean?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     YES means the publisher can place multiple links in one article/page, not only one link.
                                 </span>
                             </span>
@@ -217,7 +216,7 @@
                                         aria-label="What is Sponsored Tag?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Shows whether links are marked rel="sponsored". YES means sponsored-tagged links, often with lower SEO impact.
                                 </span>
                             </span>
@@ -246,7 +245,7 @@
     <script>
         $(function () {
 
-            /* ═══ helpers ═══ */
+            /* â•â•â• helpers â•â•â• */
             const statusMap = [
                 {value:'never_opened',            label:'Never Opened'},
                 {value:'read_but_never_answered', label:'Read but never answered'},
@@ -258,7 +257,7 @@
             ];
             const statusLabel = v => (statusMap.find(x => x.value === String(v))||{}).label || v;
 
-            const money   = v=> v==null ? '' : `<strong>€ ${v}</strong>`;
+            const money   = v=> v==null ? '' : `<strong>&euro; ${v}</strong>`;
             const yesNo   = v=> v ? 'YES' : 'NO';
             const dateFmt = v=> v ? new Date(v).toLocaleDateString('en-GB') : '';
             const decodeHtml = (value) => $('<textarea/>').html(value ?? '').text();
@@ -320,7 +319,7 @@
                     "tr" +
                     "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
                 ajax:{
-                    url:"{{ route('historical_view.data') }}",       // ← route changed
+                    url:"{{ route('historical_view.data') }}",       // â† route changed
                     type:"POST",
                     headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')},
                     data:d=>{
@@ -340,17 +339,17 @@
                             return `<a href="#" class="note-link text-cyan-700" data-note="${safe}">
                             <i class="fas fa-comment-dots"></i></a>`;
                         }},
-                    {data:'status', render:statusLabel},        // ← plain text
+                    {data:'status', render:statusLabel},        // â† plain text
                     {data:'country_name'}, {data:'language_name'}, {data:'contact_name'},
                     {data:'currency_code'},
                     {data:'publisher_price',      render:money},
                     {data:'no_follow_price',      render:money},
                     {data:'special_topic_price',  render:money},
+                    {data:'price',                render:money},
                     {data:'sensitive_topic_price',render:money},
                     {data:'link_insertion_price', render:money},
                     {data:'banner_price',         render:money},
                     {data:'sitewide_link_price',  render:money},
-                    {data:'price',                render:money},
                     {data:'kialvo_evaluation',    render:money},
                     {data:'profit',               render:money},
                     {data:'date_publisher_price', render:dateFmt},
@@ -404,7 +403,7 @@
             $('#btnClear').click(function(){
                 $('#filterForm input').val('');
                 $('#filterStatus').val('');
-                $('#filterLanguage').val('');            // <— add
+                $('#filterLanguage').val('');            // <â€” add
                 $('#filterCountries').val('');
                 $('#historicalTableSearch').val('');
                 tbl.search('');
@@ -433,3 +432,4 @@
         });
     </script>
 @endpush
+

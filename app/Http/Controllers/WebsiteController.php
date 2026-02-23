@@ -42,7 +42,7 @@ class WebsiteController extends Controller
     /* ------------------------------------------------------------------ */
     private const DRIVER_COLS = [
         'publisher_price','banner_price','sitewide_link_price',
-        'special_topic_price','kialvo_evaluation','ahrefs_keyword','ahrefs_traffic','language_id',
+        'kialvo_evaluation','ahrefs_keyword','ahrefs_traffic','language_id',
     ];
 
     private function isGuestUser(): bool
@@ -202,126 +202,24 @@ class WebsiteController extends Controller
             return $this->exportGuestCsv($request);
         }
 
-        // 1) Build query with eager loads
-        $query = Website::with(['country','language','contact','categories']);
+        $columns = $this->adminWebsiteExportColumns();
+        $fields = $this->normalizeExportFields(
+            $request->input('fields'),
+            array_keys($columns)
+        );
 
-        // 2) Apply the same filters (assuming you have applyFilters(...) method)
+        $query = Website::with(['country', 'language', 'contact', 'categories']);
         $this->applyFilters($request, $query);
-
-        // 3) Get the collection
         $websites = $query->get();
 
-        // 4) Prepare CSV data
-        //    The header row (all columns you want to export):
         $csvData = [];
-        $csvData[] = [
-            'ID',
-            'Domain',
-            'Publisher Price',
-            'Kialvo Evaluation',
-            'Profit',
-            'Banner Price',        // ← new
-            'Site-wide Link Price',// ← new
-            'DA',
-            'Country',
-            'Language',
-            'Contact',
-            'Categories',
-            'Status',
-            'Currency',
-            'Date Publisher Price',
-            'Link Insertion Price',
-            'No Follow Price',
-            'Special Topic Price',
-            'Linkbuilder',
-            'Automatic Evaluation',
-            'Date Kialvo Evaluation',
-            'Type of Website',
-            'PA',
-            'TF',
-            'CF',
-            'DR',
-            'UR',
-            'ZA',
-            'AS', // as_metric
-            'SEO Zoom',
-            'TF vs CF',
-            'Semrush Traffic',
-            'Ahrefs Keyword',
-            'Ahrefs Traffic',
-            'Keyword vs Traffic',
-            'SEO Metrics Date',
-            'Betting',
-            'Trading',
-            'LINK LIFETIME',
-            'More than 1 link',
-            'Copywriting',
-            'No Sponsored Tag',
-            'Social Media Sharing',
-            'Post in Homepage',
-            'Date Added',
-            'Notes',
-            'Internal Notes',
-        ];
+        $csvData[] = collect($fields)->map(fn (string $f) => $columns[$f])->all();
 
-        // 5) Loop to fill each row
         foreach ($websites as $web) {
-            $csvData[] = [
-                $web->id,
-                $web->domain_name,
-                $web->publisher_price,
-                $web->kialvo_evaluation,
-                $web->profit,
-                $web->banner_price,         // ← new
-                $web->sitewide_link_price,  // ← new
-                $web->DA,
-                optional($web->country)->country_name,  // Safely handle null
-                optional($web->language)->name,
-                optional($web->contact)->name,
-                // Categories as comma-separated list
-                $web->categories->pluck('name')->join(', '),
-
-                $web->status,
-                $web->currency_code,
-                $web->date_publisher_price,
-                $web->link_insertion_price,
-                $web->no_follow_price,
-                $web->special_topic_price,
-                $web->linkbuilder,
-                $web->automatic_evaluation,
-                $web->date_kialvo_evaluation,
-                $web->type_of_website,
-                $web->PA,
-                $web->TF,
-                $web->CF,
-                $web->DR,
-                $web->UR,
-                $web->ZA,
-                $web->as_metric,
-                $web->seozoom,
-                $web->TF_vs_CF,
-                $web->semrush_traffic,
-                $web->ahrefs_keyword,
-                $web->ahrefs_traffic,
-                $web->keyword_vs_traffic,
-                $web->seo_metrics_date,
-                // Convert booleans to yes/no or just keep 0/1
-                $web->betting ? 'Yes' : 'No',
-                $web->trading ? 'Yes' : 'No',
-                $web->permanent_link ? 'Yes' : 'No',
-                $web->more_than_one_link ? 'Yes' : 'No',
-                $web->copywriting ? 'Yes' : 'No',
-                $web->no_sponsored_tag ? 'Yes' : 'No',
-                $web->social_media_sharing ? 'Yes' : 'No',
-                $web->post_in_homepage ? 'Yes' : 'No',
-                // 'created_at' as "Date Added"
-                $web->created_at,
-                $web->notes,
-                $web->extra_notes,
-            ];
+            $rowAssoc = $this->adminWebsiteExportRow($web);
+            $csvData[] = collect($fields)->map(fn (string $f) => $rowAssoc[$f] ?? '')->all();
         }
 
-        // 6) Convert array -> CSV string
         $filename = 'websites_export_'.date('Y-m-d_His').'.csv';
         $handle   = fopen('php://temp', 'r+');
         foreach ($csvData as $row) {
@@ -331,7 +229,6 @@ class WebsiteController extends Controller
         $csvOutput = stream_get_contents($handle);
         fclose($handle);
 
-        // 7) Return as CSV download
         return response($csvOutput, 200, [
             'Content-Type'        => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
@@ -585,6 +482,128 @@ class WebsiteController extends Controller
         $query->whereIn('websites.id', $ids);
     }
 
+    private function adminWebsiteExportColumns(): array
+    {
+        return [
+            'id' => 'ID',
+            'domain_name' => 'Domain',
+            'notes' => 'Notes',
+            'extra_notes' => 'Internal Notes',
+            'status' => 'Status',
+            'country_name' => 'Country',
+            'language_name' => 'Language',
+            'contact_name' => 'Publisher',
+            'currency_code' => 'Currency',
+            'publisher_price' => 'Publisher Price',
+            'no_follow_price' => 'No Follow Price',
+            'special_topic_price' => 'Special Topic Price',
+            'price' => 'Price',
+            'sensitive_topic_price' => 'Sensitive Topic Price',
+            'link_insertion_price' => 'Link Insertion Price',
+            'banner_price' => 'Banner €',
+            'sitewide_link_price' => 'Site-wide €',
+            'kialvo_evaluation' => 'Kialvo Evaluation',
+            'profit' => 'Profit',
+            'date_publisher_price' => 'Date Publisher Price',
+            'linkbuilder' => 'Linkbuilder',
+            'type_of_website' => 'Type of Website',
+            'categories_list' => 'Categories',
+            'DA' => 'DA',
+            'PA' => 'PA',
+            'TF' => 'TF',
+            'CF' => 'CF',
+            'DR' => 'DR',
+            'UR' => 'UR',
+            'ZA' => 'ZA',
+            'as_metric' => 'AS',
+            'seozoom' => 'SEO Zoom',
+            'TF_vs_CF' => 'TF vs CF',
+            'semrush_traffic' => 'Semrush Traffic',
+            'ahrefs_keyword' => 'Ahrefs Keyword',
+            'ahrefs_traffic' => 'Ahrefs Traffic',
+            'keyword_vs_traffic' => 'Keywords vs Traffic',
+            'seo_metrics_date' => 'SEO Metrics Date',
+            'betting' => 'Betting',
+            'trading' => 'Trading',
+            'permanent_link' => 'LINK LIFETIME',
+            'more_than_one_link' => 'More than 1 link',
+            'copywriting' => 'Copywriting',
+            'no_sponsored_tag' => 'Sponsored Tag',
+            'social_media_sharing' => 'Social Media Sharing',
+            'post_in_homepage' => 'Post in Homepage',
+            'created_at' => 'Date Added',
+        ];
+    }
+
+    private function adminWebsiteExportRow(Website $web): array
+    {
+        $yesNo = static fn($value) => $value === null ? '' : ($value ? 'YES' : 'NO');
+
+        return [
+            'id' => $web->id,
+            'domain_name' => $web->domain_name,
+            'notes' => $web->notes,
+            'extra_notes' => $web->extra_notes,
+            'status' => $web->status,
+            'country_name' => optional($web->country)->country_name,
+            'language_name' => optional($web->language)->name,
+            'contact_name' => $web->contact_id ? optional($web->contact)->name : 'No Publisher',
+            'currency_code' => $web->currency_code,
+            'publisher_price' => $web->publisher_price,
+            'no_follow_price' => $web->no_follow_price,
+            'special_topic_price' => $web->special_topic_price,
+            'price' => $web->price,
+            'sensitive_topic_price' => $web->sensitive_topic_price,
+            'link_insertion_price' => $web->link_insertion_price,
+            'banner_price' => $web->banner_price,
+            'sitewide_link_price' => $web->sitewide_link_price,
+            'kialvo_evaluation' => $web->kialvo_evaluation,
+            'profit' => $web->profit,
+            'date_publisher_price' => $web->date_publisher_price,
+            'linkbuilder' => $web->linkbuilder,
+            'type_of_website' => $web->type_of_website,
+            'categories_list' => $web->categories->pluck('name')->join(', '),
+            'DA' => $web->DA,
+            'PA' => $web->PA,
+            'TF' => $web->TF,
+            'CF' => $web->CF,
+            'DR' => $web->DR,
+            'UR' => $web->UR,
+            'ZA' => $web->ZA,
+            'as_metric' => $web->as_metric,
+            'seozoom' => $web->seozoom,
+            'TF_vs_CF' => $web->TF_vs_CF,
+            'semrush_traffic' => $web->semrush_traffic,
+            'ahrefs_keyword' => $web->ahrefs_keyword,
+            'ahrefs_traffic' => $web->ahrefs_traffic,
+            'keyword_vs_traffic' => $web->keyword_vs_traffic,
+            'seo_metrics_date' => $web->seo_metrics_date,
+            'betting' => $yesNo($web->betting),
+            'trading' => $yesNo($web->trading),
+            'permanent_link' => $yesNo($web->permanent_link),
+            'more_than_one_link' => $yesNo($web->more_than_one_link),
+            'copywriting' => $web->copywriting === null ? '' : ($web->copywriting ? 'PROVIDED' : 'NOT PROVIDED'),
+            'no_sponsored_tag' => $web->no_sponsored_tag === null ? '' : ($web->no_sponsored_tag ? 'NO' : 'YES'),
+            'social_media_sharing' => $yesNo($web->social_media_sharing),
+            'post_in_homepage' => $yesNo($web->post_in_homepage),
+            'created_at' => $web->created_at?->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    private function normalizeExportFields($requestedFields, array $allFields): array
+    {
+        if (is_string($requestedFields)) {
+            $requestedFields = array_filter(array_map('trim', explode(',', $requestedFields)));
+        }
+
+        if (!is_array($requestedFields) || empty($requestedFields)) {
+            return $allFields;
+        }
+
+        $fields = array_values(array_intersect($requestedFields, $allFields));
+        return empty($fields) ? $allFields : $fields;
+    }
+
 
     private function mirrorOriginals(array &$v): void
     {
@@ -658,7 +677,12 @@ class WebsiteController extends Controller
             $rng($request->sitewide_price_min,     $request->sitewide_price_max,     'sitewide_link_price');
         }
 
-        $rng($request->kialvo_min,             $request->kialvo_max,             'kialvo_evaluation');
+        $rng($request->price_min,                  $request->price_max,              'price');
+        $rng($request->sensitive_topic_price_min,  $request->sensitive_topic_price_max, 'sensitive_topic_price');
+
+        if (! $isGuestUser) {
+            $rng($request->kialvo_min,         $request->kialvo_max,             'kialvo_evaluation');
+        }
         $rng($request->DA_min,                 $request->DA_max,                 'DA');
         $rng($request->PA_min,                 $request->PA_max,                 'PA');
         $rng($request->TF_min,                 $request->TF_max,                 'TF');
@@ -729,56 +753,19 @@ class WebsiteController extends Controller
         @ini_set('memory_limit', '1024M');
 
         try {
-            if (!view()->exists('websites.pdf')) {
+            if (!view()->exists('exports.table_pdf')) {
                 throw new \Exception('PDF template not found');
             }
 
-            $query = Website::select([
-                'id',
-                'domain_name',
-                'publisher_price',
-                'kialvo_evaluation',
-                'profit',
-                'DA',
-                'country_id',
-                'language_id',
-                'contact_id',
-                'status',
-                'currency_code',
-                'date_publisher_price',
-                'link_insertion_price',
-                'no_follow_price',
-                'special_topic_price',
-                'linkbuilder',
-                'automatic_evaluation',
-                'date_kialvo_evaluation',
-                'type_of_website',
-                'PA',
-                'TF',
-                'CF',
-                'DR',
-                'UR',
-                'ZA',
-                'as_metric',
-                'seozoom',
-                'TF_vs_CF',
-                'semrush_traffic',
-                'ahrefs_keyword',
-                'ahrefs_traffic',
-                'keyword_vs_traffic',
-                'seo_metrics_date',
-                'betting',
-                'trading',
-                'permanent_link',
-                'more_than_one_link',
-                'copywriting',
-                'no_sponsored_tag',
-                'social_media_sharing',
-                'post_in_homepage',
-                'created_at',
-                'notes',
-                'extra_notes',
-            ])->with([
+            $columns = $this->adminWebsiteExportColumns();
+            $fields = $this->normalizeExportFields(
+                $request->input('fields'),
+                array_keys($columns)
+            );
+            $header = collect($fields)->map(fn (string $f) => $columns[$f])->all();
+            $title = 'Websites PDF Export';
+
+            $query = Website::with([
                 'country:id,country_name',
                 'language:id,name',
                 'contact:id,name',
@@ -793,10 +780,16 @@ class WebsiteController extends Controller
 
             if ($total <= $singlePdfMaxRows) {
                 $websites = (clone $query)->orderBy('id')->get();
+                $rows = [];
+                foreach ($websites as $web) {
+                    $assoc = $this->adminWebsiteExportRow($web);
+                    $rows[] = collect($fields)->map(fn (string $f) => $assoc[$f] ?? '')->all();
+                }
+
                 $pdf = \PDF::setOptions([
                     'dpi' => 72,
                     'isRemoteEnabled' => false,
-                ])->loadView('websites.pdf', compact('websites'))
+                ])->loadView('exports.table_pdf', compact('title', 'header', 'rows'))
                     ->setPaper('a1', 'landscape');
 
                 return $pdf->download($filenameBase.'.pdf');
@@ -812,12 +805,17 @@ class WebsiteController extends Controller
             $partFiles = [];
 
             try {
-                (clone $query)->orderBy('id')->chunkById($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir) {
-                    $websites = $chunk->values();
+                (clone $query)->orderBy('id')->chunkById($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir, $title, $header, $fields) {
+                    $rows = [];
+                    foreach ($chunk as $web) {
+                        $assoc = $this->adminWebsiteExportRow($web);
+                        $rows[] = collect($fields)->map(fn (string $f) => $assoc[$f] ?? '')->all();
+                    }
+
                     $pdfBinary = \PDF::setOptions([
                         'dpi' => 72,
                         'isRemoteEnabled' => false,
-                    ])->loadView('websites.pdf', compact('websites'))
+                    ])->loadView('exports.table_pdf', compact('title', 'header', 'rows'))
                         ->setPaper('a1', 'landscape')
                         ->output();
 
@@ -825,7 +823,7 @@ class WebsiteController extends Controller
                     file_put_contents($partPath, $pdfBinary);
                     $partFiles[] = $partPath;
 
-                    unset($pdfBinary, $websites);
+                    unset($pdfBinary, $rows);
                 }, 'id');
 
                 $merged = new \setasign\Fpdi\Fpdi();
@@ -924,10 +922,6 @@ class WebsiteController extends Controller
         $validated['profit'] = $profit;
         $validated['price'] = MenfordPriceCalculator::calculate(
             $this->publisherPriceForPriceFormula($validated),
-            isset($validated['language_id']) ? (int) $validated['language_id'] : null
-        );
-        $validated['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
-            $this->specialTopicPriceForSensitiveFormula($validated),
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
         );
 
@@ -1037,10 +1031,6 @@ class WebsiteController extends Controller
             $this->publisherPriceForPriceFormula($validated),
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
         );
-        $validated['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
-            $this->specialTopicPriceForSensitiveFormula($validated),
-            isset($validated['language_id']) ? (int) $validated['language_id'] : null
-        );
 
         // 3) Compute 'TF_vs_CF' =>
         $TF   = $validated['TF'] ?? 0;
@@ -1123,7 +1113,6 @@ class WebsiteController extends Controller
 
                     $w->fill([
                         'price'               => $payload['price'],
-                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'              => $payload['profit'],
                         'total_cost'          => $payload['total_cost'],
                         'total_revenues'      => $payload['total_revenues'],
@@ -1201,7 +1190,6 @@ class WebsiteController extends Controller
 
                     $w->fill([
                         'price'              => $payload['price'],
-                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'             => $payload['profit'],
                         'total_cost'         => $payload['total_cost'],
                         'total_revenues'     => $payload['total_revenues'],
@@ -1229,10 +1217,6 @@ class WebsiteController extends Controller
         $cost  = (float) ($d['publisher_price'] ?? 0);
         $d['price'] = MenfordPriceCalculator::calculate(
             $this->publisherPriceForPriceFormula($d),
-            isset($d['language_id']) ? (int) $d['language_id'] : null
-        );
-        $d['sensitive_topic_price'] = MenfordPriceCalculator::calculate(
-            $this->specialTopicPriceForSensitiveFormula($d),
             isset($d['language_id']) ? (int) $d['language_id'] : null
         );
 
@@ -1336,29 +1320,6 @@ class WebsiteController extends Controller
         return (float) $baseUsd * $this->usdEurRate();
     }
 
-    /**
-     * Sensitive Topic Price formula uses Special Topic Price as base.
-     * For USD rows, use original_special_topic_price * usd_eur_rate.
-     */
-    private function specialTopicPriceForSensitiveFormula(array $data): ?float
-    {
-        if (!array_key_exists('special_topic_price', $data) || $data['special_topic_price'] === null || $data['special_topic_price'] === '') {
-            return null;
-        }
-
-        $special = (float) $data['special_topic_price'];
-        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return $special;
-        }
-
-        $baseUsd = $data['original_special_topic_price'] ?? $data['special_topic_price'];
-        if ($baseUsd === null || $baseUsd === '') {
-            return null;
-        }
-
-        return (float) $baseUsd * $this->usdEurRate();
-    }
-
     private function usdEurRate(): float
     {
         static $rate = null;
@@ -1439,6 +1400,7 @@ class WebsiteController extends Controller
             'link_insertion_price'   => 'nullable|numeric',
             'no_follow_price'        => 'nullable|numeric',
             'special_topic_price'    => 'nullable|numeric',
+            'sensitive_topic_price'  => 'nullable|numeric',
            // 'profit'                 => 'nullable|numeric',
             'linkbuilder'            => 'nullable|string|max:255',
             //'automatic_evaluation'   => 'nullable|numeric',

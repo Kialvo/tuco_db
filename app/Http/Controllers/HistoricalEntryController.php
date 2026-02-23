@@ -28,13 +28,13 @@ class HistoricalEntryController extends Controller
                     ->select('price')
                     ->whereColumn('new_entries.id', 'v_new_entries_filtered.id')
                     ->limit(1);
-            }, 'price')
+            }, 'manual_price')
             ->selectSub(function ($sub) {
                 $sub->from('new_entries')
                     ->select('sensitive_topic_price')
                     ->whereColumn('new_entries.id', 'v_new_entries_filtered.id')
                     ->limit(1);
-            }, 'sensitive_topic_price')
+            }, 'manual_sensitive_topic_price')
             ->with(['country','language','contact','categories']);
 
         /* same filters you already use in NewEntryController ---------------- */
@@ -47,6 +47,8 @@ class HistoricalEntryController extends Controller
 
         /* no inline-editing in the historical view */
         return DataTables::of($q)
+            ->editColumn('price', fn($r) => $r->manual_price)
+            ->editColumn('sensitive_topic_price', fn($r) => $r->manual_sensitive_topic_price)
             ->addColumn('country_name',    fn($r)=>optional($r->country )->country_name)
             ->addColumn('language_name',   fn($r)=>optional($r->language)->name)
             ->addColumn('contact_name',    fn($r)=>optional($r->contact )->name)

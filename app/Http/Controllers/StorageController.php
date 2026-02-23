@@ -789,10 +789,17 @@ class StorageController extends Controller
         $storages = $query->get();
 
         // 2) Determine fields
-        $allKeys = array_merge(['id'], array_keys($this->csvRow($storages->first() ?? new Storage())));
-        $fields  = $request->input('fields', $allKeys);
-        if (! in_array('id', $fields, true)) {
-            array_unshift($fields, 'id');
+        $allKeys = array_keys($this->csvRow($storages->first() ?? new Storage()));
+        $fields = $request->input('fields');
+        if (is_string($fields)) {
+            $fields = array_filter(array_map('trim', explode(',', $fields)));
+        }
+        if (!is_array($fields) || empty($fields)) {
+            $fields = $allKeys;
+        }
+        $fields = array_values(array_intersect($fields, $allKeys));
+        if (empty($fields)) {
+            $fields = $allKeys;
         }
 
         // 3) Build CSV
@@ -803,7 +810,7 @@ class StorageController extends Controller
             $assoc = $this->csvRow($s);
             $row   = [];
             foreach ($fields as $f) {
-                $row[] = $f==='id' ? $s->id : ($assoc[$f] ?? '');
+                $row[] = $assoc[$f] ?? '';
             }
             fputcsv($handle, $row);
         }
@@ -1160,7 +1167,7 @@ class StorageController extends Controller
             'client_name'                 => $s->client
                 ? trim($s->client->first_name . ' ' . $s->client->last_name)
                 : '',
-            'contacts_list'               => $contactsList,
+            'contact_name'                => $contactsList,
             'copywriter_name'             => optional($s->copy)->copy_val ?? '',
             'copy_nr'                     => $s->copy_nr,
             'copywriter_commision_date'   => $raw['copywriter_commision_date'],
@@ -1196,6 +1203,7 @@ class StorageController extends Controller
             'payment_to_publisher_date'   => $raw['payment_to_publisher_date'],
             'method_payment_to_publisher' => $s->method_payment_to_publisher,
             'categories_list'             => $s->categories->pluck('name')->join(', '),
+            'created_at'                  => $s->created_at ? Carbon::parse($s->created_at)->format('d-m-Y') : '',
             'files'                       => $s->files,
         ];
     }

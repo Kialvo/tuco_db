@@ -1,3 +1,53 @@
+@php
+    $adminExportColumns = [
+        'id' => 'ID',
+        'domain_name' => 'Domain',
+        'notes' => 'Notes',
+        'extra_notes' => 'Internal Notes',
+        'status' => 'Status',
+        'country_name' => 'Country',
+        'language_name' => 'Language',
+        'contact_name' => 'Publisher',
+        'currency_code' => 'Currency',
+        'publisher_price' => 'Publisher Price',
+        'no_follow_price' => 'No Follow Price',
+        'special_topic_price' => 'Special Topic Price',
+        'link_insertion_price' => 'Link Insertion Price',
+        'banner_price' => 'Banner EUR',
+        'sitewide_link_price' => 'Site-wide EUR',
+        'kialvo_evaluation' => 'Price',
+        'profit' => 'Profit',
+        'date_publisher_price' => 'Date Publisher Price',
+        'linkbuilder' => 'Linkbuilder',
+        'type_of_website' => 'Type of Website',
+        'categories_list' => 'Categories',
+        'DA' => 'DA',
+        'PA' => 'PA',
+        'TF' => 'TF',
+        'CF' => 'CF',
+        'DR' => 'DR',
+        'UR' => 'UR',
+        'ZA' => 'ZA',
+        'as_metric' => 'AS',
+        'seozoom' => 'SEO Zoom',
+        'TF_vs_CF' => 'TF vs CF',
+        'semrush_traffic' => 'Semrush Traffic',
+        'ahrefs_keyword' => 'Ahrefs Keyword',
+        'ahrefs_traffic' => 'Ahrefs Traffic',
+        'keyword_vs_traffic' => 'Keywords vs Traffic',
+        'seo_metrics_date' => 'SEO Metrics Date',
+        'betting' => 'Betting',
+        'trading' => 'Trading',
+        'permanent_link' => 'LINK LIFETIME',
+        'more_than_one_link' => 'More than 1 link',
+        'copywriting' => 'Copywriting',
+        'no_sponsored_tag' => 'Sponsored Tag',
+        'social_media_sharing' => 'Social Media Sharing',
+        'post_in_homepage' => 'Post in Homepage',
+        'created_at' => 'Date Added',
+    ];
+@endphp
+
 @extends('layouts.dashboard')
 
 @section('content')
@@ -20,15 +70,57 @@
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 mb-2 max-w-[1400px]">
-            <a href="{{ route('admin.users.favorites.export.csv', $user) }}"
-               class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
-                Export CSV
-            </a>
-            <a href="{{ route('admin.users.favorites.export.pdf', $user) }}"
-               class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">
-                Export PDF
-            </a>
+        <div class="relative mb-2 max-w-[1400px]">
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="#" id="btnExportCsv"
+                   class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
+                    Export CSV
+                </a>
+                <a href="#" id="btnExportPdf"
+                   class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">
+                    Export PDF
+                </a>
+            </div>
+        <div id="favoritesExportPicker"
+             class="hidden absolute left-0 top-full z-40 mt-2 w-full max-w-3xl">
+            <div class="w-full rounded border border-gray-200 bg-white shadow-xl">
+                <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                    <p id="favoritesExportPickerTitle" class="text-sm font-semibold text-gray-700">
+                        Choose columns to export
+                    </p>
+                    <button type="button" id="favoritesExportClose"
+                            class="rounded px-2 py-1 text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+                        Close
+                    </button>
+                </div>
+                <div class="border-b border-gray-200 px-4 py-2">
+                    <label class="inline-flex items-center gap-2 text-xs text-gray-700">
+                        <input type="checkbox" id="favoritesExportSelectAll" checked
+                               class="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
+                        Select all columns
+                    </label>
+                </div>
+                <div class="grid max-h-[55vh] grid-cols-1 gap-2 overflow-y-auto p-4 sm:grid-cols-2 md:grid-cols-3">
+                    @foreach($adminExportColumns as $key => $label)
+                        <label class="inline-flex items-center gap-2 text-xs text-gray-700">
+                            <input type="checkbox" class="favorites-export-field rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                                   value="{{ $key }}" checked>
+                            <span>{{ $label }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <div class="flex items-center justify-end gap-2 border-t border-gray-200 px-4 py-3">
+                    <button type="button" id="favoritesExportCancel"
+                            class="rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100">
+                        Cancel
+                    </button>
+                    <button type="button" id="favoritesExportConfirm"
+                            class="rounded bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-700">
+                        Continue Export
+                    </button>
+                </div>
+            </div>
+        </div>
         </div>
 
         <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto max-w-[1400px]">
@@ -59,7 +151,7 @@
                                         aria-label="What is Price?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     The price you pay for a guest post placement on this website. This is your final cost including our service fee.
                                 </span>
                             </span>
@@ -78,7 +170,7 @@
                                         aria-label="What is Type of Website?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Vertical: focused on one topic. Local: focused on a city/area. Generalist: covers many topics.
                                 </span>
                             </span>
@@ -95,7 +187,7 @@
                                         aria-label="What is DA?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium.
                                 </span>
                             </span>
@@ -111,7 +203,7 @@
                                         aria-label="What is PA?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better.
                                 </span>
                             </span>
@@ -127,7 +219,7 @@
                                         aria-label="What is TF?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Trust Flow (Majestic): backlink quality score on 0-100. Higher is better; TF 20+ is typically reliable.
                                 </span>
                             </span>
@@ -143,7 +235,7 @@
                                         aria-label="What is CF?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Citation Flow (Majestic): backlink quantity influence score on 0-100. Higher is better, especially when TF is close to or above CF.
                                 </span>
                             </span>
@@ -159,7 +251,7 @@
                                         aria-label="What is DR?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Domain Rating (Ahrefs): backlink profile strength from 0 to 100. Higher DR means stronger authority; 40+ is solid.
                                 </span>
                             </span>
@@ -175,7 +267,7 @@
                                         aria-label="What is UR?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     URL Rating (Ahrefs): strength of the target page backlink profile on a 0-100 scale. Higher is better.
                                 </span>
                             </span>
@@ -191,7 +283,7 @@
                                         aria-label="What is ZA?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Zoom Authority (SEOZoom): domain authority metric focused on Italian SERPs, on a 0-100 scale.
                                 </span>
                             </span>
@@ -207,7 +299,7 @@
                                         aria-label="What is AS?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals.
                                 </span>
                             </span>
@@ -223,7 +315,7 @@
                                         aria-label="What is SEO Zoom?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     SEOZoom Traffic: estimated organic traffic from SEOZoom, especially useful for Italian-market visibility.
                                 </span>
                             </span>
@@ -239,7 +331,7 @@
                                         aria-label="What is TF vs CF?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Ratio between Trust Flow and Citation Flow. Close to 1 is ideal; TF > CF suggests stronger quality, CF > TF may indicate spammy links.
                                 </span>
                             </span>
@@ -255,7 +347,7 @@
                                         aria-label="What is Semrush Traffic?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent.
                                 </span>
                             </span>
@@ -271,7 +363,7 @@
                                         aria-label="What is Ahrefs Keyword?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Number of keywords the domain ranks for. More keywords usually mean stronger organic visibility; 1k+ is strong.
                                 </span>
                             </span>
@@ -287,7 +379,7 @@
                                         aria-label="What is Ahrefs Traffic?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Estimated monthly organic visitors from Ahrefs. Higher traffic means more exposure; 5k+ good, 50k+ excellent.
                                 </span>
                             </span>
@@ -303,7 +395,7 @@
                                         aria-label="What is Keywords vs Traffic?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings.
                                 </span>
                             </span>
@@ -322,7 +414,7 @@
                                         aria-label="What is Link Lifetime?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration.
                                 </span>
                             </span>
@@ -338,7 +430,7 @@
                                         aria-label="What does More than 1 link mean?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Yes means the publisher accepts multiple backlinks in one guest post.
                                 </span>
                             </span>
@@ -355,7 +447,7 @@
                                         aria-label="What is Sponsored Tag?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
-                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Indicates whether links are tagged sponsored/nofollow. No means full SEO value, yes means rel='sponsored' or rel='nofollow'.
                                 </span>
                             </span>
@@ -442,7 +534,7 @@
                                 return '';
                             }
                             // Wrap the numeric value in <strong>
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> EUR ' + data + '</strong>';
                         }
                     },
                     {
@@ -453,7 +545,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> EUR ' + data + '</strong>';
                         }
                     },
                     {
@@ -464,7 +556,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> EUR ' + data + '</strong>';
                         }
                     },
                     {
@@ -475,7 +567,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> EUR ' + data + '</strong>';
                         }
                     },
                     {
@@ -486,7 +578,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> EUR ' + data + '</strong>';
                         }},
                     {
                         data:'sitewide_link_price',
@@ -496,7 +588,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> EUR ' + data + '</strong>';
                         }},
 
                     {
@@ -507,7 +599,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> EUR ' + data + '</strong>';
                         }
                     },
                     {
@@ -518,7 +610,7 @@
                             if (data === null || data === undefined) {
                                 return '';
                             }
-                            return '<strong> € ' + data + '</strong>';
+                            return '<strong> EUR ' + data + '</strong>';
                         }
                     },
                     { data:'date_publisher_price', name:'date_publisher_price',
@@ -696,6 +788,71 @@
 
             $('#closeContactModal, #closeContactModalBottom').on('click', function() {
                 $('#contactModal').addClass('hidden');
+            });
+
+            let favoritesPendingExportType = null;
+            const getFavoritesSelectedFields = () =>
+                $('.favorites-export-field:checked').map((_, el) => el.value).get();
+
+            const syncFavoritesSelectAll = function () {
+                const total = $('.favorites-export-field').length;
+                const checked = $('.favorites-export-field:checked').length;
+                $('#favoritesExportSelectAll').prop('checked', total > 0 && checked === total);
+            };
+
+            const openFavoritesExportPicker = function(type) {
+                favoritesPendingExportType = type;
+                $('#favoritesExportPickerTitle').text(
+                    type === 'pdf' ? 'Choose columns for PDF export' : 'Choose columns for CSV export'
+                );
+                $('#favoritesExportPicker').removeClass('hidden');
+                syncFavoritesSelectAll();
+            };
+
+            const closeFavoritesExportPicker = function() {
+                $('#favoritesExportPicker').addClass('hidden');
+                favoritesPendingExportType = null;
+            };
+
+            $('#favoritesExportSelectAll').on('change', function() {
+                $('.favorites-export-field').prop('checked', this.checked);
+            });
+            $(document).on('change', '.favorites-export-field', syncFavoritesSelectAll);
+            $('#favoritesExportClose, #favoritesExportCancel').on('click', closeFavoritesExportPicker);
+            $(document).on('mousedown', function(e) {
+                if ($('#favoritesExportPicker').hasClass('hidden')) {
+                    return;
+                }
+                if ($(e.target).closest('#favoritesExportPicker, #btnExportCsv, #btnExportPdf').length) {
+                    return;
+                }
+                closeFavoritesExportPicker();
+            });
+
+            $('#favoritesExportConfirm').on('click', function () {
+                const selected = getFavoritesSelectedFields();
+                if (!selected.length) {
+                    Swal.fire({ icon: 'warning', title: 'Select at least one column' });
+                    return;
+                }
+
+                const params = $.param({ fields: selected });
+                const base = favoritesPendingExportType === 'pdf'
+                    ? "{{ route('admin.users.favorites.export.pdf', $user) }}"
+                    : "{{ route('admin.users.favorites.export.csv', $user) }}";
+
+                window.location = `${base}?${params}`;
+                closeFavoritesExportPicker();
+            });
+
+            $('#btnExportCsv').on('click', function (e) {
+                e.preventDefault();
+                openFavoritesExportPicker('csv');
+            });
+
+            $('#btnExportPdf').on('click', function (e) {
+                e.preventDefault();
+                openFavoritesExportPicker('pdf');
             });
         });
     </script>
