@@ -710,12 +710,12 @@
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
                                         class="metric-info-btn text-cyan-600 text-[11px]"
-                                        data-info="Publishing price for content in sensitive niches (e.g. gambling, crypto, adult, dating, CBD, etc.)."
+                                        data-info="This is the final amount you pay for publishing content in sensitive niches (e.g. gambling, crypto, adult, dating, CBD, etc.), including our service fee."
                                         aria-label="What is Sensitive Topic Price?">
                                     <i class="fas fa-info-circle"></i>
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
-                                    Publishing price for content in sensitive niches (e.g. gambling, crypto, adult, dating, CBD, etc.).
+                                    This is the final amount you pay for publishing content in sensitive niches (e.g. gambling, crypto, adult, dating, CBD, etc.), including our service fee.
                                 </span>
                             </span>
                         </span>
