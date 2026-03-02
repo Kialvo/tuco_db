@@ -14,7 +14,6 @@
 <body>
 @php
     $yn = fn ($value) => $value === null ? '' : ($value ? 'YES' : 'NO');
-    $sponsored = fn ($value) => $value === null ? '' : ($value ? 'NO' : 'YES');
     $chunks = collect($websites ?? [])->chunk(250);
 @endphp
 <h2>Domains for {{ $user->name }}</h2>
@@ -46,11 +45,6 @@
         <th>Keyword vs Traffic</th>
         <th>Betting</th>
         <th>Trading</th>
-        <th>LINK LIFETIME</th>
-        <th>More than 1 link</th>
-        <th>Sponsored Tag</th>
-        <th>Social Media Sharing</th>
-        <th>Post in Homepage</th>
     </tr>
     </thead>
     <tbody>
@@ -80,11 +74,6 @@
             <td>{{ $web->keyword_vs_traffic }}</td>
             <td>{{ $yn($web->betting) }}</td>
             <td>{{ $yn($web->trading) }}</td>
-            <td>{{ $yn($web->permanent_link) }}</td>
-            <td>{{ $yn($web->more_than_one_link) }}</td>
-            <td>{{ $sponsored($web->no_sponsored_tag) }}</td>
-            <td>{{ $yn($web->social_media_sharing) }}</td>
-            <td>{{ $yn($web->post_in_homepage) }}</td>
         </tr>
     @endforeach
     </tbody>

@@ -540,7 +540,12 @@
 
             <!-- ROW 5: Toggles in one row -->
             <div class="flex flex-wrap items-center gap-3 mb-2">
-                @foreach(['betting','trading','permanent_link','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'] as $chk)
+                @php
+                    $toggleFilters = $isGuestUser
+                        ? ['betting', 'trading']
+                        : ['betting','trading','permanent_link','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'];
+                @endphp
+                @foreach($toggleFilters as $chk)
                     <div class="flex items-center space-x-1">
                         <span class="text-gray-700">{{ str_replace('_',' ', $chk) }}</span>
                         <label class="relative inline-flex items-center cursor-pointer">

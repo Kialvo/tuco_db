@@ -271,15 +271,9 @@ class WebsiteController extends Controller
             'Keyword vs Traffic',
             'Betting',
             'Trading',
-            'LINK LIFETIME',
-            'More than 1 link',
-            'Sponsored Tag',
-            'Social Media Sharing',
-            'Post in Homepage',
         ];
 
         $yn = fn($value) => $value === null ? '' : ($value ? 'YES' : 'NO');
-        $sponsored = fn($value) => $value === null ? '' : ($value ? 'NO' : 'YES');
 
         foreach ($websites as $web) {
             $csvData[] = [
@@ -307,11 +301,6 @@ class WebsiteController extends Controller
                 $web->keyword_vs_traffic,
                 $yn($web->betting),
                 $yn($web->trading),
-                $yn($web->permanent_link),
-                $yn($web->more_than_one_link),
-                $sponsored($web->no_sponsored_tag),
-                $yn($web->social_media_sharing),
-                $yn($web->post_in_homepage),
             ];
         }
 
@@ -363,11 +352,6 @@ class WebsiteController extends Controller
             'keyword_vs_traffic',
             'betting',
             'trading',
-            'permanent_link',
-            'more_than_one_link',
-            'no_sponsored_tag',
-            'social_media_sharing',
-            'post_in_homepage',
         ])->with([
             'country:id,country_name',
             'language:id,name',
