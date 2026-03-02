@@ -1554,7 +1554,7 @@
                                 return 'NO';
                         }
                     },
-                    { data: 'permanent_link', name: 'permanent_link', className: 'text-center',
+                    { data: 'permanent_link', name: 'permanent_link', className: 'text-center', visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === 1 )  {
                                 return 'YES';
@@ -1563,7 +1563,7 @@
                                 return 'NO';
                         }
                     },
-                    { data: 'more_than_one_link', name: 'more_than_one_link', className: 'text-center',
+                    { data: 'more_than_one_link', name: 'more_than_one_link', className: 'text-center', visible: !isGuestUser,
                         render: function (data, type, row) {
                             if (data === 1 )  {
                                 return 'YES';
@@ -1582,7 +1582,7 @@
                             return '';
                         }
                     },
-                    { data: 'no_sponsored_tag', name: 'no_sponsored_tag', className: 'text-center',  render: function (data, type, row) {
+                    { data: 'no_sponsored_tag', name: 'no_sponsored_tag', className: 'text-center', visible: !isGuestUser,  render: function (data, type, row) {
                             if (Number(data) === 1)  {
                                 return 'NO';
                             }
@@ -1592,7 +1592,7 @@
                             return '';
                         }
                     },
-                    { data: 'social_media_sharing', name: 'social_media_sharing', className: 'text-center',  render: function (data, type, row) {
+                    { data: 'social_media_sharing', name: 'social_media_sharing', className: 'text-center', visible: !isGuestUser,  render: function (data, type, row) {
                             if (data === 1 )  {
                                 return 'YES';
                             }else if(data === 0)
@@ -1600,7 +1600,7 @@
                                 return 'NO';
                         }
                     },
-                    { data: 'post_in_homepage', name: 'post_in_homepage', className: 'text-center',  render: function (data, type, row) {
+                    { data: 'post_in_homepage', name: 'post_in_homepage', className: 'text-center', visible: !isGuestUser,  render: function (data, type, row) {
                             if (data === 1 )  {
                                 return 'YES';
                             }else if(data === 0)
