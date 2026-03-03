@@ -7,58 +7,52 @@
         </div>
 
         <!-- Form -->
-        <form action="{{ route('admin.users.store') }}" method="POST">
+        <form id="createUserForm" action="{{ route('admin.users.store') }}" method="POST" novalidate>
             @csrf
 
             <!-- Name -->
             <div class="mb-4">
-                <label class="block text-gray-600 font-medium">Name</label>
-                <input type="text" name="name" required
+                <label for="create_name" class="block text-gray-600 font-medium">Name</label>
+                <input type="text" name="name" id="create_name" required
                        class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
-                @error('name')
-                <p class="text-red-500 text-sm">{{ $message }}</p>
-                @enderror
+                <p class="text-red-500 text-sm hidden" id="error_create_name"></p>
             </div>
 
             <!-- Email -->
             <div class="mb-4">
-                <label class="block text-gray-600 font-medium">Email</label>
-                <input type="email" name="email" required
+                <label for="create_email" class="block text-gray-600 font-medium">Email</label>
+                <input type="email" name="email" id="create_email" required
                        class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
-                @error('email')
-                <p class="text-red-500 text-sm">{{ $message }}</p>
-                @enderror
+                <p class="text-red-500 text-sm hidden" id="error_create_email"></p>
             </div>
 
             <!-- Password -->
             <div class="mb-4">
-                <label class="block text-gray-600 font-medium">Password</label>
-                <input type="password" name="password" required
+                <label for="create_password" class="block text-gray-600 font-medium">Password</label>
+                <input type="password" name="password" id="create_password" required minlength="8"
+                       placeholder="Minimum 8 characters"
                        class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
-                @error('password')
-                <p class="text-red-500 text-sm">{{ $message }}</p>
-                @enderror
+                <p class="text-red-500 text-sm hidden" id="error_create_password"></p>
             </div>
 
             <!-- Confirm Password -->
             <div class="mb-4">
-                <label class="block text-gray-600 font-medium">Confirm Password</label>
-                <input type="password" name="password_confirmation" required
+                <label for="create_password_confirmation" class="block text-gray-600 font-medium">Confirm Password</label>
+                <input type="password" name="password_confirmation" id="create_password_confirmation" required minlength="8"
                        class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                <p class="text-red-500 text-sm hidden" id="error_create_password_confirmation"></p>
             </div>
 
             <!-- Role -->
             <div class="mb-6">
-                <label class="block text-gray-600 font-medium">Role</label>
-                <select name="role"
+                <label for="create_role" class="block text-gray-600 font-medium">Role</label>
+                <select name="role" id="create_role"
                         class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
                     <option value="admin">Admin</option>
                     <option value="editor" selected>Editor</option>
                     <option value="guest">Guest</option>
                 </select>
-                @error('role')
-                <p class="text-red-500 text-sm">{{ $message }}</p>
-                @enderror
+                <p class="text-red-500 text-sm hidden" id="error_create_role"></p>
             </div>
 
             <!-- Submit Button -->

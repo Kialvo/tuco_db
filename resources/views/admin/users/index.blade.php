@@ -152,6 +152,36 @@
                 }
             }
 
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+
+            const setInlineError = (id, message) => {
+                const node = document.getElementById(id);
+                if (!node) return;
+                if (!message) {
+                    node.textContent = '';
+                    node.classList.add('hidden');
+                    return;
+                }
+                node.textContent = message;
+                node.classList.remove('hidden');
+            };
+
+            const clearInlineErrors = (ids) => {
+                ids.forEach((id) => {
+                    const node = document.getElementById(id);
+                    if (!node) return;
+                    node.textContent = '';
+                    node.classList.add('hidden');
+                });
+            };
+
+            const getFirstMessage = (errors, key) => {
+                if (errors && errors[key] && errors[key][0]) {
+                    return errors[key][0];
+                }
+                return null;
+            };
+
             // ========================
             // CREATE USER MODAL LOGIC
             // ========================
@@ -159,9 +189,51 @@
             let btnOpenModal = document.getElementById("btnOpenModal");
             let btnCloseModal = document.getElementById("closeModal");
             let createForm = document.getElementById("createUserForm");
+            const createErrorIds = [
+                'error_create_name',
+                'error_create_email',
+                'error_create_password',
+                'error_create_password_confirmation',
+                'error_create_role',
+            ];
+
+            const validateCreateForm = () => {
+                clearInlineErrors(createErrorIds);
+
+                const name = document.getElementById('create_name');
+                const email = document.getElementById('create_email');
+                const password = document.getElementById('create_password');
+                const confirmation = document.getElementById('create_password_confirmation');
+                const role = document.getElementById('create_role');
+
+                let valid = true;
+                [
+                    [name, 'error_create_name'],
+                    [email, 'error_create_email'],
+                    [password, 'error_create_password'],
+                    [confirmation, 'error_create_password_confirmation'],
+                    [role, 'error_create_role'],
+                ].forEach(([field, errId]) => {
+                    if (field && !field.checkValidity()) {
+                        setInlineError(errId, field.validationMessage || 'Invalid value.');
+                        valid = false;
+                    }
+                });
+
+                if (password && confirmation && password.value !== confirmation.value) {
+                    setInlineError('error_create_password_confirmation', 'Password confirmation does not match.');
+                    valid = false;
+                }
+
+                return valid;
+            };
 
             if (btnOpenModal && createModal) {
                 btnOpenModal.addEventListener("click", function () {
+                    clearInlineErrors(createErrorIds);
+                    if (createForm) {
+                        createForm.reset();
+                    }
                     createModal.classList.remove("hidden");
                     createModal.classList.add("flex");
                 });
@@ -169,12 +241,14 @@
 
             if (btnCloseModal && createModal) {
                 btnCloseModal.addEventListener("click", function () {
+                    clearInlineErrors(createErrorIds);
                     createModal.classList.add("hidden");
                     createModal.classList.remove("flex");
                 });
 
                 createModal.addEventListener("click", function (e) {
                     if (e.target === createModal) {
+                        clearInlineErrors(createErrorIds);
                         createModal.classList.add("hidden");
                         createModal.classList.remove("flex");
                     }
@@ -183,55 +257,67 @@
 
             // Handle Create Form Submission via AJAX
             if (createForm) {
-                createForm.addEventListener("submit", function (event) {
+                createForm.addEventListener("submit", async function (event) {
                     event.preventDefault(); // Prevent default form submission
+                    if (!validateCreateForm()) {
+                        return;
+                    }
 
                     let formData = new FormData(createForm);
                     let actionUrl = createForm.getAttribute("action");
 
-                    fetch(actionUrl, {
-                        method: "POST",
-                        headers: {
-                            "X-Requested-With": "XMLHttpRequest",
-                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
-                        },
-                        body: formData,
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === "success") {
-                                Swal.fire({
-                                    icon: "success",
-                                    title: "Success",
-                                    text: "User created successfully!",
-                                    timer: 3000,
-                                    timerProgressBar: true,
-                                    showConfirmButton: false,
-                                });
-
-                                // Hide modal and reload page to show the new user
-                                createModal.classList.add("hidden");
-                                createModal.classList.remove("flex");
-
-                                setTimeout(() => {
-                                    location.reload();
-                                }, 1000);
-                            } else {
-                                Swal.fire({
-                                    icon: "error",
-                                    title: "Error",
-                                    text: data.message || "User creation failed.",
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Error creating user:", error);
-                            Swal.fire({
-                                icon: "error",
-                                title: "Error",
-                                text: "User creation failed.",
-                            });
+                    try {
+                        const response = await fetch(actionUrl, {
+                            method: "POST",
+                            headers: {
+                                "Accept": "application/json",
+                                "X-Requested-With": "XMLHttpRequest",
+                                "X-CSRF-TOKEN": csrfToken,
+                            },
+                            body: formData,
                         });
+
+                        const isJson = (response.headers.get('content-type') || '').includes('application/json');
+                        const data = isJson ? await response.json() : null;
+
+                        if (response.ok && data && data.status === "success") {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Success",
+                                text: "User created successfully!",
+                                timer: 3000,
+                                timerProgressBar: true,
+                                showConfirmButton: false,
+                            });
+
+                            createModal.classList.add("hidden");
+                            createModal.classList.remove("flex");
+
+                            setTimeout(() => {
+                                location.reload();
+                            }, 700);
+                            return;
+                        }
+
+                        if (response.status === 422 && data && data.errors) {
+                            setInlineError('error_create_name', getFirstMessage(data.errors, 'name'));
+                            setInlineError('error_create_email', getFirstMessage(data.errors, 'email'));
+                            setInlineError('error_create_password', getFirstMessage(data.errors, 'password'));
+                            setInlineError(
+                                'error_create_password_confirmation',
+                                getFirstMessage(data.errors, 'password_confirmation')
+                            );
+                            setInlineError('error_create_role', getFirstMessage(data.errors, 'role'));
+                            return;
+                        }
+                        setInlineError(
+                            'error_create_email',
+                            (data && data.message) ? data.message : 'User creation failed. Please try again.'
+                        );
+                    } catch (error) {
+                        console.error("Error creating user:", error);
+                        setInlineError('error_create_email', 'User creation failed. Please try again.');
+                    }
                 });
             }
 
@@ -241,6 +327,54 @@
             let editModal = document.getElementById("editUserModal");
             let btnCloseEditModal = document.getElementById("closeEditModal");
             let editForm = document.getElementById("editUserForm");
+            const editErrorIds = [
+                'error_edit_name',
+                'error_edit_email',
+                'error_edit_password',
+                'error_edit_password_confirmation',
+                'error_edit_role',
+            ];
+
+            const validateEditForm = () => {
+                clearInlineErrors(editErrorIds);
+
+                const name = document.getElementById('edit_name');
+                const email = document.getElementById('edit_email');
+                const password = document.getElementById('edit_password');
+                const confirmation = document.getElementById('edit_password_confirmation');
+                const role = document.getElementById('edit_role');
+                let valid = true;
+
+                [
+                    [name, 'error_edit_name'],
+                    [email, 'error_edit_email'],
+                    [role, 'error_edit_role'],
+                ].forEach(([field, errId]) => {
+                    if (field && !field.checkValidity()) {
+                        setInlineError(errId, field.validationMessage || 'Invalid value.');
+                        valid = false;
+                    }
+                });
+
+                const passwordValue = password ? password.value.trim() : '';
+                const confirmationValue = confirmation ? confirmation.value.trim() : '';
+                if (passwordValue !== '' || confirmationValue !== '') {
+                    if (passwordValue.length < 6) {
+                        setInlineError('error_edit_password', 'Password must be at least 6 characters.');
+                        valid = false;
+                    }
+                    if (confirmationValue.length < 6) {
+                        setInlineError('error_edit_password_confirmation', 'Confirmation must be at least 6 characters.');
+                        valid = false;
+                    }
+                    if (passwordValue !== confirmationValue) {
+                        setInlineError('error_edit_password_confirmation', 'Password confirmation does not match.');
+                        valid = false;
+                    }
+                }
+
+                return valid;
+            };
 
             document.body.addEventListener("click", function (event) {
                 let button = event.target.closest(".editBtn");
@@ -268,35 +402,31 @@
                             document.getElementById("edit_name").value = user.name;
                             document.getElementById("edit_email").value = user.email;
                             document.getElementById("edit_role").value = user.role;
+                            document.getElementById("edit_password").value = '';
+                            document.getElementById("edit_password_confirmation").value = '';
+                            clearInlineErrors(editErrorIds);
 
                             editModal.classList.remove("hidden");
                             editModal.classList.add("flex");
                         } else {
-                            Swal.fire({
-                                icon: "error",
-                                title: "Error",
-                                text: "User data could not be loaded.",
-                            });
+                            console.error("User data could not be loaded.");
                         }
                     })
                     .catch(error => {
                         console.error("Error fetching user:", error);
-                        Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text: "User data could not be loaded.",
-                        });
                     });
             });
 
             if (btnCloseEditModal && editModal) {
                 btnCloseEditModal.addEventListener("click", function () {
+                    clearInlineErrors(editErrorIds);
                     editModal.classList.add("hidden");
                     editModal.classList.remove("flex");
                 });
 
                 editModal.addEventListener("click", function (e) {
                     if (e.target === editModal) {
+                        clearInlineErrors(editErrorIds);
                         editModal.classList.add("hidden");
                         editModal.classList.remove("flex");
                     }
@@ -305,55 +435,58 @@
 
             // Handle Edit Form Submission via AJAX
             if (editForm) {
-                editForm.addEventListener("submit", function (event) {
+                editForm.addEventListener("submit", async function (event) {
                     event.preventDefault(); // Prevent default form submission
+                    if (!validateEditForm()) {
+                        return;
+                    }
 
                     let formData = new FormData(editForm);
                     let actionUrl = editForm.getAttribute("action");
 
-                    fetch(actionUrl, {
-                        method: "POST",
-                        headers: {
-                            "X-Requested-With": "XMLHttpRequest",
-                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
-                        },
-                        body: formData,
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === "success") {
-                                Swal.fire({
-                                    icon: "success",
-                                    title: "Success",
-                                    text: "User updated successfully!",
-                                    timer: 3000,
-                                    timerProgressBar: true,
-                                    showConfirmButton: false,
-                                });
-
-                                // Hide modal and reload page
-                                editModal.classList.add("hidden");
-                                editModal.classList.remove("flex");
-
-                                setTimeout(() => {
-                                    location.reload();
-                                }, 1000);
-                            } else {
-                                Swal.fire({
-                                    icon: "error",
-                                    title: "Update Failed",
-                                    text: data.message || "Something went wrong!",
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Error updating user:", error);
-                            Swal.fire({
-                                icon: "error",
-                                title: "Error",
-                                text: "User update failed.",
-                            });
+                    try {
+                        const response = await fetch(actionUrl, {
+                            method: "POST",
+                            headers: {
+                                "Accept": "application/json",
+                                "X-Requested-With": "XMLHttpRequest",
+                                "X-CSRF-TOKEN": csrfToken,
+                            },
+                            body: formData,
                         });
+
+                        const isJson = (response.headers.get('content-type') || '').includes('application/json');
+                        const data = isJson ? await response.json() : null;
+
+                        if (response.ok && data && data.status === "success") {
+                            editModal.classList.add("hidden");
+                            editModal.classList.remove("flex");
+
+                            setTimeout(() => {
+                                location.reload();
+                            }, 700);
+                            return;
+                        }
+
+                        if (response.status === 422 && data && data.errors) {
+                            setInlineError('error_edit_name', getFirstMessage(data.errors, 'name'));
+                            setInlineError('error_edit_email', getFirstMessage(data.errors, 'email'));
+                            setInlineError('error_edit_password', getFirstMessage(data.errors, 'password'));
+                            setInlineError(
+                                'error_edit_password_confirmation',
+                                getFirstMessage(data.errors, 'password_confirmation')
+                            );
+                            setInlineError('error_edit_role', getFirstMessage(data.errors, 'role'));
+                            return;
+                        }
+                        setInlineError(
+                            'error_edit_email',
+                            (data && data.message) ? data.message : "Update failed. Please try again."
+                        );
+                    } catch (error) {
+                        console.error("Error updating user:", error);
+                        setInlineError('error_edit_email', 'User update failed. Please try again.');
+                    }
                 });
             }
 

@@ -38,6 +38,13 @@ class UserController extends Controller
 
         User::create($validated);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User created successfully.',
+            ]);
+        }
+
         return redirect()->route('admin.users.index')->with('status', 'User created successfully.');
     }
 

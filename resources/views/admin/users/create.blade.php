@@ -34,7 +34,8 @@
         <div>
             <label for="password" class="block mb-1">Password</label>
             <input type="password" name="password" id="password"
-                   class="w-full border-gray-300 rounded px-2 py-1" required>
+                   class="w-full border-gray-300 rounded px-2 py-1"
+                   placeholder="Minimum 8 characters" required>
             @error('password')
             <p class="text-red-500 text-sm">{{ $message }}</p>
             @enderror
