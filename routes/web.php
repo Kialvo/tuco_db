@@ -25,6 +25,7 @@ use App\Http\Controllers\CopyController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\StorageController;
+use App\Http\Controllers\StorageStatsController;
 
 /*======================================================================
 |  ROOT  →  login
@@ -243,6 +244,9 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
     /* ───── STORAGE summary row ───── */
     Route::post('/storages/summary', [StorageController::class,'summary'])
         ->name('storages.summary');
+
+    Route::get('/storages/stats', [StorageStatsController::class, 'index'])
+        ->name('storages.stats');
 
 
     Route::resource('storages', StorageController::class)->names([

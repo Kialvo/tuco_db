@@ -117,6 +117,11 @@
                                   {{ request()->routeIs('copy.*') ? 'bg-slate-800' : '' }}">
                             <i class="fas fa-file-alt w-4 inline-block me-2"></i> Copy
                         </a>
+                        <a href="{{ route('storages.stats') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('storages.stats') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-chart-line w-4 inline-block me-2"></i> Publication Stats
+                        </a>
                     </div>
                 </div>
             @endunless
