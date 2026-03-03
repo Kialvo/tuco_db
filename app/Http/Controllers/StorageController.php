@@ -475,6 +475,41 @@ class StorageController extends Controller
     {
         $validated = $this->validateForm($request);
 
+        // Prevent duplicate storage rows by Article URL.
+        $articleUrl = isset($validated['article_url'])
+            ? trim((string) $validated['article_url'])
+            : '';
+
+        if ($articleUrl !== '') {
+            $duplicate = Storage::withTrashed()
+                ->whereNotNull('article_url')
+                ->whereRaw('LOWER(TRIM(article_url)) = ?', [mb_strtolower($articleUrl)])
+                ->first(['id', 'deleted_at']);
+
+            if ($duplicate) {
+                $message = $duplicate->deleted_at
+                    ? 'Article URL already exists in a deleted storage entry. Restore the existing row instead.'
+                    : 'Article URL already exists in storage.';
+
+                return redirect()
+                    ->route('storages.create')
+                    ->withInput()
+                    ->with('error', $message)
+                    ->withErrors(['article_url' => 'This Article URL already exists.']);
+            }
+
+            $validated['article_url'] = $articleUrl;
+        }
+
+        $copywriterAmount = isset($validated['copy_nr']) ? (float) $validated['copy_nr'] : null;
+        if ($copywriterAmount !== null && $copywriterAmount > 30) {
+            return redirect()
+                ->route('storages.create')
+                ->withInput()
+                ->with('error', 'Copywriter Amount € must be less than or equal to 30€.')
+                ->withErrors(['copy_nr' => 'Copywriter Amount € cannot be higher than 30€.']);
+        }
+
         // extract contact_id (used for pivot, not storage column)
         $contactId = $validated['contact_id'] ?? null;
         unset($validated['contact_id']);

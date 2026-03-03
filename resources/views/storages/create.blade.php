@@ -206,6 +206,7 @@
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">{{ $label }}</label>
                         <input type="number" step="0.01" name="{{ $field }}" value="{{ old($field) }}"
+                               @if($field === 'copy_nr') placeholder="Price < 30€" @endif
                                class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
                         @error($field) <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
@@ -405,7 +406,28 @@
                         .trigger('change');
                 }
             });
+
+            @if(session('status'))
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: @json(session('status')),
+                showConfirmButton: false,
+                timer: 1800
+            });
+            @endif
+
+            @if(session('error'))
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: @json(session('error')),
+                showConfirmButton: false,
+                timer: 2600
+            });
+            @endif
         });
     </script>
 @endpush
-
