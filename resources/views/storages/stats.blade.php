@@ -17,7 +17,7 @@
                 </div>
 
                 <form id="statsFiltersForm" method="GET" action="{{ route('storages.stats') }}"
-                      class="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-[220px_180px_auto_auto]">
+                      class="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:w-auto xl:grid-cols-[220px_180px_170px_170px_auto_auto]">
                     <label class="flex flex-col gap-1">
                         <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Time Window</span>
                         <select name="window"
@@ -38,15 +38,44 @@
                         </select>
                     </label>
 
+                    <label class="flex flex-col gap-1">
+                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">From</span>
+                        <input type="text"
+                               name="date_from"
+                               value="{{ $dateFrom }}"
+                               placeholder="YYYY-MM-DD"
+                               autocomplete="off"
+                               class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200">
+                    </label>
+
+                    <label class="flex flex-col gap-1">
+                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">To</span>
+                        <input type="text"
+                               name="date_to"
+                               value="{{ $dateTo }}"
+                               placeholder="YYYY-MM-DD"
+                               autocomplete="off"
+                               class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200">
+                    </label>
+
                     <button type="submit"
-                            class="inline-flex items-center justify-center rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-300">
+                            class="inline-flex h-[42px] items-center justify-center self-end rounded-xl bg-cyan-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-300">
                         Apply
                     </button>
 
                     <a href="{{ route('storages.stats') }}"
-                       class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300">
+                       class="inline-flex h-[42px] items-center justify-center gap-2 self-end rounded-xl border border-pink-200 bg-pink-50 px-4 text-sm font-semibold text-pink-700 transition hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-200">
+                        <i class="fas fa-rotate-left text-xs"></i>
                         Reset
                     </a>
+
+                    <p class="text-xs text-slate-500 sm:col-span-2 lg:col-span-3 xl:col-span-6">
+                        @if($hasCustomRange)
+                            Custom dates are active. The preset window is ignored until you switch the window or reset the filters.
+                        @else
+                            Pick a custom date range for the charts or keep using the preset window.
+                        @endif
+                    </p>
                 </form>
             </div>
         </div>
@@ -249,12 +278,51 @@
 
             const form = document.getElementById('statsFiltersForm');
             if (form) {
-                const selects = form.querySelectorAll('select[name="window"], select[name="granularity"]');
-                selects.forEach(function (select) {
-                    select.addEventListener('change', function () {
+                const windowSelect = form.querySelector('select[name="window"]');
+                const granularitySelect = form.querySelector('select[name="granularity"]');
+                const dateInputs = form.querySelectorAll('input[name="date_from"], input[name="date_to"]');
+
+                dateInputs.forEach(function (input) {
+                    if (typeof flatpickr === 'function') {
+                        flatpickr(input, {
+                            dateFormat: 'Y-m-d',
+                            allowInput: true
+                        });
+                    }
+                });
+
+                if (windowSelect) {
+                    windowSelect.addEventListener('change', function () {
+                        dateInputs.forEach(function (input) {
+                            if (input._flatpickr) {
+                                input._flatpickr.clear();
+                            } else {
+                                input.value = '';
+                            }
+                        });
+
                         form.submit();
                     });
-                });
+                }
+
+                if (granularitySelect) {
+                    granularitySelect.addEventListener('change', function () {
+                        form.submit();
+                    });
+                }
+
+                const dateFromInput = form.querySelector('input[name="date_from"]');
+                const dateToInput = form.querySelector('input[name="date_to"]');
+
+                if (dateFromInput && dateToInput) {
+                    [dateFromInput, dateToInput].forEach(function (input) {
+                        input.addEventListener('keydown', function (event) {
+                            if (event.key === 'Enter') {
+                                form.submit();
+                            }
+                        });
+                    });
+                }
             }
         });
     </script>

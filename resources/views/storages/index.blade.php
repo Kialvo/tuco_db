@@ -1093,6 +1093,35 @@
             $(document).on('click','#closeCopyModal,#closeCopyModalBottom',()=>$('#copyModal').addClass('hidden').removeClass('flex'));
 
             /* ---------- URL modal ---------- */
+            async function copyUrlToClipboard(value) {
+                const text = String(value ?? '').trim();
+                if (!text) {
+                    throw new Error('No URL to copy.');
+                }
+
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return;
+                }
+
+                const input = document.getElementById('urlModalInput');
+                if (!input) {
+                    throw new Error('Copy input not found.');
+                }
+
+                input.focus();
+                input.select();
+                input.setSelectionRange(0, input.value.length);
+
+                if (!document.execCommand('copy')) {
+                    throw new Error('Clipboard copy failed.');
+                }
+
+                if (window.getSelection) {
+                    window.getSelection().removeAllRanges();
+                }
+            }
+
             $(document).on('click','.url-link',function(e){
                 e.preventDefault();
                 const url=$(this).data('url');
@@ -1103,7 +1132,7 @@
             $('#urlModalClose').on('click',()=>$('#urlModal').addClass('hidden').removeClass('flex'));
 
             $('#urlModalCopy').on('click',function(){
-                copyToClipboard($('#urlModalInput').val())
+                copyUrlToClipboard($('#urlModalInput').val())
                     .then(()=>toast('Copied to clipboard!'))
                     .catch(()=>Swal.fire({icon:'error',title:'Copy failed'}));
             });

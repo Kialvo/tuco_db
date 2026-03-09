@@ -12,18 +12,21 @@
             <a id="urlModalOpen"
                href="#"
                target="_blank"
+               rel="noopener noreferrer"
                class="text-white px-3 py-1 rounded text-xs"
                style="background-color: #35aa3e;">
                 Open
             </a>
 
             <button id="urlModalCopy"
+                    type="button"
                     class="text-white px-3 py-1 rounded text-xs"
                     style="background-color: #000000;">
                 Copy
             </button>
 
             <button id="urlModalClose"
+                    type="button"
                     class="text-white px-3 py-1 rounded text-xs"
                     style="background-color: #aa35a1;">
                 Close
@@ -32,5 +35,4 @@
 
     </div>
 </div>
-
 
