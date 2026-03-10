@@ -9,6 +9,7 @@ use App\Models\Country;
 use App\Models\Language;
 use App\Models\Contact;
 use App\Models\Category;
+use App\Support\GuestWebsiteExport;
 use App\Support\MenfordPriceCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -239,69 +240,19 @@ class WebsiteController extends Controller
     {
         $favoriteIds = $this->guestFavoriteIds();
 
-        $query = Website::with(['country','language','contact','categories']);
+        $query = Website::with([
+            'country:id,country_name',
+            'language:id,name',
+            'categories:id,name',
+        ]);
         $this->applyFilters($request, $query);
         $this->applyGuestFavoritesFilter($request, $query, $favoriteIds);
+        $websites = $query->orderByDesc('id')->get();
 
-        $websites = $query->get();
-
-        $csvData = [];
-        $csvData[] = [
-            'Domain',
-            'Notes',
-            'Country',
-            'Language',
-            'Sensitive Topic Price',
-            'Price',
-            'Type of Website',
-            'Categories',
-            'DA',
-            'PA',
-            'TF',
-            'CF',
-            'DR',
-            'UR',
-            'ZA',
-            'AS',
-            'SEO Zoom',
-            'TF vs CF',
-            'Semrush Traffic',
-            'Ahrefs Keyword',
-            'Ahrefs Traffic',
-            'Keyword vs Traffic',
-            'Betting',
-            'Trading',
-        ];
-
-        $yn = fn($value) => $value === null ? '' : ($value ? 'YES' : 'NO');
+        $csvData = [GuestWebsiteExport::headers()];
 
         foreach ($websites as $web) {
-            $csvData[] = [
-                $web->domain_name,
-                $web->notes,
-                optional($web->country)->country_name,
-                optional($web->language)->name,
-                $web->sensitive_topic_price,
-                $web->price,
-                $web->type_of_website,
-                $web->categories->pluck('name')->join(', '),
-                $web->DA,
-                $web->PA,
-                $web->TF,
-                $web->CF,
-                $web->DR,
-                $web->UR,
-                $web->ZA,
-                $web->as_metric,
-                $web->seozoom,
-                $web->TF_vs_CF,
-                $web->semrush_traffic,
-                $web->ahrefs_keyword,
-                $web->ahrefs_traffic,
-                $web->keyword_vs_traffic,
-                $yn($web->betting),
-                $yn($web->trading),
-            ];
+            $csvData[] = GuestWebsiteExport::values($web);
         }
 
         $filename = 'websites_export_'.date('Y-m-d_His').'.csv';
@@ -327,32 +278,7 @@ class WebsiteController extends Controller
 
         $favoriteIds = $this->guestFavoriteIds();
 
-        $query = Website::select([
-            'id',
-            'domain_name',
-            'notes',
-            'country_id',
-            'language_id',
-            'sensitive_topic_price',
-            'price',
-            'type_of_website',
-            'DA',
-            'PA',
-            'TF',
-            'CF',
-            'DR',
-            'UR',
-            'ZA',
-            'as_metric',
-            'seozoom',
-            'TF_vs_CF',
-            'semrush_traffic',
-            'ahrefs_keyword',
-            'ahrefs_traffic',
-            'keyword_vs_traffic',
-            'betting',
-            'trading',
-        ])->with([
+        $query = Website::select(GuestWebsiteExport::queryColumns())->with([
             'country:id,country_name',
             'language:id,name',
             'categories:id,name',
@@ -360,18 +286,20 @@ class WebsiteController extends Controller
         $this->applyFilters($request, $query);
         $this->applyGuestFavoritesFilter($request, $query, $favoriteIds);
 
-        $user = $request->user();
+        $title = 'Domains for '.$request->user()->name;
+        $header = GuestWebsiteExport::headers();
         $filenameBase = 'websites_export_'.date('Y-m-d_His');
         $singlePdfMaxRows = 450;
         $rowsPerPart = 400;
         $total = (clone $query)->count();
 
         if ($total <= $singlePdfMaxRows) {
-            $websites = (clone $query)->orderBy('id')->get();
+            $websites = (clone $query)->orderByDesc('id')->get();
+            $rows = GuestWebsiteExport::rows($websites);
             $pdf = \PDF::setOptions([
                 'dpi' => 72,
                 'isRemoteEnabled' => false,
-            ])->loadView('websites.favorites_pdf', compact('user', 'websites', 'favoriteIds'))
+            ])->loadView('exports.table_pdf', compact('title', 'header', 'rows'))
                 ->setPaper('a1', 'landscape');
 
             return $pdf->download($filenameBase.'.pdf');
@@ -387,12 +315,12 @@ class WebsiteController extends Controller
         $partFiles = [];
 
         try {
-            (clone $query)->orderBy('id')->chunkById($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir, $user, $favoriteIds) {
-                $websites = $chunk->values();
+            (clone $query)->orderByDesc('id')->chunkByIdDesc($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir, $title, $header) {
+                $rows = GuestWebsiteExport::rows($chunk->values());
                 $pdfBinary = \PDF::setOptions([
                     'dpi' => 72,
                     'isRemoteEnabled' => false,
-                ])->loadView('websites.favorites_pdf', compact('user', 'websites', 'favoriteIds'))
+                ])->loadView('exports.table_pdf', compact('title', 'header', 'rows'))
                     ->setPaper('a1', 'landscape')
                     ->output();
 
@@ -400,7 +328,7 @@ class WebsiteController extends Controller
                 file_put_contents($partPath, $pdfBinary);
                 $partFiles[] = $partPath;
 
-                unset($pdfBinary, $websites);
+                unset($pdfBinary, $rows);
             }, 'id');
 
             $merged = new \setasign\Fpdi\Fpdi();
