@@ -705,6 +705,22 @@
             </form>
         </div>
     </div>
+
+    @if(session('duplicate_error'))
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: @json(session('duplicate_error')),
+                showConfirmButton: false,
+                timer: 5000,
+                timerProgressBar: true
+            });
+        });
+    </script>
+    @endif
 @endsection
 @push('scripts')
     <script>

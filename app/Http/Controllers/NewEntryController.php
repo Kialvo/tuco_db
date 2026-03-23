@@ -188,16 +188,28 @@ class NewEntryController extends Controller
         }
 
         $this->recalcArray($data);
-        $data['sensitive_topic_price'] = $data['price'] ?? null;
+        $spTopic = $data['special_topic_price'] ?? null;
+        $data['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
+            ? MenfordPriceCalculator::calculate((float) $spTopic,
+                  isset($data['language_id']) ? (int) $data['language_id'] : null)
+            : ($data['price'] ?? null);
 
-        DB::transaction(function () use ($data, $r, &$entry) {
-            $entry = NewEntry::create($data);
-            $entry->categories()->sync($r->category_ids ?? []);
+        try {
+            DB::transaction(function () use ($data, $r, &$entry) {
+                $entry = NewEntry::create($data);
+                $entry->categories()->sync($r->category_ids ?? []);
 
-            if (strtolower((string) $entry->status) === 'active') {
-                $this->moveToWebsites($entry);
+                if (strtolower((string) $entry->status) === 'active') {
+                    $this->moveToWebsites($entry);
+                }
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] === 1062) {
+                return back()->withInput()
+                    ->with('duplicate_error', 'This domain already exists. Please use a different domain name.');
             }
-        });
+            throw $e;
+        }
 
         return redirect()->route('new_entries.edit', $entry->id)
             ->with('status', 'Entry created – you can now complete / review it!');
@@ -218,18 +230,31 @@ class NewEntryController extends Controller
         }
 
         $this->recalcArray($data);
+        $spTopic = $data['special_topic_price'] ?? null;
+        $data['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
+            ? MenfordPriceCalculator::calculate((float) $spTopic,
+                  isset($data['language_id']) ? (int) $data['language_id'] : null)
+            : ($data['price'] ?? null);
 
         $wasActive = strtolower((string) $new_entry->status) === 'active';
 
-        DB::transaction(function () use ($data, $r, $new_entry, $wasActive) {
-            $new_entry->fill($data)->save();
-            $new_entry->categories()->sync($r->category_ids ?? []);
+        try {
+            DB::transaction(function () use ($data, $r, $new_entry, $wasActive) {
+                $new_entry->fill($data)->save();
+                $new_entry->categories()->sync($r->category_ids ?? []);
 
-            $nowActive = strtolower((string) $new_entry->status) === 'active';
-            if (!$wasActive && $nowActive) {
-                $this->moveToWebsites($new_entry);
+                $nowActive = strtolower((string) $new_entry->status) === 'active';
+                if (!$wasActive && $nowActive) {
+                    $this->moveToWebsites($new_entry);
+                }
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] === 1062) {
+                return back()->withInput()
+                    ->with('duplicate_error', 'This domain already exists. Please use a different domain name.');
             }
-        });
+            throw $e;
+        }
 
         return redirect()->route('new_entries.index')
             ->with('status', 'Entry updated!');
@@ -296,12 +321,13 @@ class NewEntryController extends Controller
                     $payload = $w->getAttributes();
                     $this->applyAutoCalculations($payload);
                     $w->fill([
-                        'price'               => $payload['price'],
-                        'profit'              => $payload['profit'],
-                        'total_cost'          => $payload['total_cost'],
-                        'total_revenues'      => $payload['total_revenues'],
-                        'keyword_vs_traffic'  => $payload['keyword_vs_traffic'],
-                        'TF_vs_CF'            => $payload['TF_vs_CF'],
+                        'price'                 => $payload['price'],
+                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
+                        'profit'                => $payload['profit'],
+                        'total_cost'            => $payload['total_cost'],
+                        'total_revenues'        => $payload['total_revenues'],
+                        'keyword_vs_traffic'    => $payload['keyword_vs_traffic'],
+                        'TF_vs_CF'              => $payload['TF_vs_CF'],
                     ])->save();
                 }
                 return;
@@ -366,12 +392,13 @@ class NewEntryController extends Controller
                     $payload = $w->getAttributes();
                     $this->applyAutoCalculations($payload);
                     $w->fill([
-                        'price'              => $payload['price'],
-                        'profit'             => $payload['profit'],
-                        'total_cost'         => $payload['total_cost'],
-                        'total_revenues'     => $payload['total_revenues'],
-                        'keyword_vs_traffic' => $payload['keyword_vs_traffic'],
-                        'TF_vs_CF'           => $payload['TF_vs_CF'],
+                        'price'                 => $payload['price'],
+                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
+                        'profit'                => $payload['profit'],
+                        'total_cost'            => $payload['total_cost'],
+                        'total_revenues'        => $payload['total_revenues'],
+                        'keyword_vs_traffic'    => $payload['keyword_vs_traffic'],
+                        'TF_vs_CF'              => $payload['TF_vs_CF'],
                     ]);
                 }
 
@@ -548,6 +575,12 @@ class NewEntryController extends Controller
             isset($d['language_id']) ? (int) $d['language_id'] : null
         );
 
+        $spTopic = $d['special_topic_price'] ?? null;
+        $d['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
+            ? MenfordPriceCalculator::calculate((float) $spTopic,
+                  isset($d['language_id']) ? (int) $d['language_id'] : null)
+            : ($d['price'] ?? null);
+
         $rev   = (float) ($d['kialvo_evaluation'] ?? 0)
             + (float) ($d['banner_price'] ?? 0)
             + (float) ($d['sitewide_link_price'] ?? 0);
@@ -664,6 +697,12 @@ class NewEntryController extends Controller
             $this->publisherPriceForPriceFormula($d),
             isset($d['language_id']) ? (int) $d['language_id'] : null
         );
+
+        $spTopic = $d['special_topic_price'] ?? null;
+        $d['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
+            ? MenfordPriceCalculator::calculate((float) $spTopic,
+                  isset($d['language_id']) ? (int) $d['language_id'] : null)
+            : ($d['price'] ?? null);
 
         // Profit (basic form)
         $d['profit'] = (float) ($d['kialvo_evaluation'] ?? 0) - (float) ($d['publisher_price'] ?? 0);

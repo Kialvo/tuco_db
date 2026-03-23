@@ -836,7 +836,11 @@ class WebsiteController extends Controller
             $this->publisherPriceForPriceFormula($validated),
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
         );
-        $validated['sensitive_topic_price'] = $validated['price'] ?? null;
+        $spTopic = $validated['special_topic_price'] ?? null;
+        $validated['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
+            ? MenfordPriceCalculator::calculate((float) $spTopic,
+                  isset($validated['language_id']) ? (int) $validated['language_id'] : null)
+            : ($validated['price'] ?? null);
 
         // 3) Compute 'TF_vs_CF' =>
         $TF   = $validated['TF'] ?? 0;
@@ -860,7 +864,15 @@ class WebsiteController extends Controller
 
 
         // 4) Create the new Website using the final data
-        $website = Website::create($validated);
+        try {
+            $website = Website::create($validated);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] === 1062) {
+                return back()->withInput()
+                    ->with('duplicate_error', 'This domain already exists. Please use a different domain name.');
+            }
+            throw $e;
+        }
 
         // If you have categories
         if ($request->has('category_ids')) {
@@ -945,6 +957,12 @@ class WebsiteController extends Controller
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
         );
 
+        $spTopic = $validated['special_topic_price'] ?? null;
+        $validated['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
+            ? MenfordPriceCalculator::calculate((float) $spTopic,
+                  isset($validated['language_id']) ? (int) $validated['language_id'] : null)
+            : ($validated['price'] ?? null);
+
         // 3) Compute 'TF_vs_CF' =>
         $TF   = $validated['TF'] ?? 0;
         $CF  = $validated['CF'] ?? 0;
@@ -966,7 +984,15 @@ class WebsiteController extends Controller
             $validated['keyword_vs_traffic'] = 0;
         }
 
-        $website->update($validated);
+        try {
+            $website->update($validated);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] === 1062) {
+                return back()->withInput()
+                    ->with('duplicate_error', 'This domain already exists. Please use a different domain name.');
+            }
+            throw $e;
+        }
 
         // Sync categories
         if ($request->has('category_ids')) {
@@ -1025,12 +1051,13 @@ class WebsiteController extends Controller
                     $this->applyAutoCalculations($payload);
 
                     $w->fill([
-                        'price'               => $payload['price'],
-                        'profit'              => $payload['profit'],
-                        'total_cost'          => $payload['total_cost'],
-                        'total_revenues'      => $payload['total_revenues'],
-                        'keyword_vs_traffic'  => $payload['keyword_vs_traffic'],
-                        'TF_vs_CF'            => $payload['TF_vs_CF'],
+                        'price'                 => $payload['price'],
+                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
+                        'profit'                => $payload['profit'],
+                        'total_cost'            => $payload['total_cost'],
+                        'total_revenues'        => $payload['total_revenues'],
+                        'keyword_vs_traffic'    => $payload['keyword_vs_traffic'],
+                        'TF_vs_CF'              => $payload['TF_vs_CF'],
                     ])->save();
                 }
                 return;                                     // done
@@ -1102,12 +1129,13 @@ class WebsiteController extends Controller
                     $this->applyAutoCalculations($payload);
 
                     $w->fill([
-                        'price'              => $payload['price'],
-                        'profit'             => $payload['profit'],
-                        'total_cost'         => $payload['total_cost'],
-                        'total_revenues'     => $payload['total_revenues'],
-                        'keyword_vs_traffic' => $payload['keyword_vs_traffic'],
-                        'TF_vs_CF'           => $payload['TF_vs_CF'],
+                        'price'                 => $payload['price'],
+                        'sensitive_topic_price' => $payload['sensitive_topic_price'],
+                        'profit'                => $payload['profit'],
+                        'total_cost'            => $payload['total_cost'],
+                        'total_revenues'        => $payload['total_revenues'],
+                        'keyword_vs_traffic'    => $payload['keyword_vs_traffic'],
+                        'TF_vs_CF'              => $payload['TF_vs_CF'],
                     ]);
                 }
 
@@ -1132,6 +1160,12 @@ class WebsiteController extends Controller
             $this->publisherPriceForPriceFormula($d),
             isset($d['language_id']) ? (int) $d['language_id'] : null
         );
+
+        $spTopic = $d['special_topic_price'] ?? null;
+        $d['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
+            ? MenfordPriceCalculator::calculate((float) $spTopic,
+                  isset($d['language_id']) ? (int) $d['language_id'] : null)
+            : ($d['price'] ?? null);
 
         $rev   = (float) ($d['kialvo_evaluation'] ?? 0)
             + (float) ($d['banner_price'] ?? 0)
