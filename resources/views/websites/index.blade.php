@@ -864,7 +864,6 @@
                             </span>
                         </span>
                     </th>
-                    @unless($isGuestUser)
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             TF
@@ -913,7 +912,6 @@
                             </span>
                         </span>
                     </th>
-                    @endunless
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             UR
@@ -978,7 +976,6 @@
                             </span>
                         </span>
                     </th>
-                    @unless($isGuestUser)
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             TF vs CF
@@ -995,7 +992,6 @@
                             </span>
                         </span>
                     </th>
-                    @endunless
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             Semrush Traffic
@@ -1012,7 +1008,6 @@
                             </span>
                         </span>
                     </th>
-                    @unless($isGuestUser)
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             Ahrefs Keyword
@@ -1061,7 +1056,6 @@
                             </span>
                         </span>
                     </th>
-                    @endunless
                     <th class="whitespace-nowrap px-4 py-2">MS</th>
                     <th class="whitespace-nowrap px-4 py-2">Organic Keywords</th>
                     <th class="whitespace-nowrap px-4 py-2">Organic Traffic</th>
