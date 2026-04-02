@@ -66,9 +66,55 @@ class GuestWebsiteExport
             'ahrefs_keyword',
             'ahrefs_traffic',
             'keyword_vs_traffic',
+            'ms',
+            'organic_keywords',
+            'organic_traffic',
+            'kw_traffic_ratio',
             'betting',
             'trading',
         ];
+    }
+
+    public static function guestColumns(): array
+    {
+        return [
+            'domain_name'           => 'Domain',
+            'notes'                 => 'Notes',
+            'country_name'          => 'Country',
+            'language_name'         => 'Language',
+            'price'                 => 'Price',
+            'sensitive_topic_price' => 'Sensitive Topic Price',
+            'type_of_website'       => 'Type of Website',
+            'categories_list'       => 'Categories',
+            'DA'                    => 'DA',
+            'PA'                    => 'PA',
+            'UR'                    => 'UR',
+            'ZA'                    => 'ZA',
+            'as_metric'             => 'AS',
+            'seozoom'               => 'SEO Zoom',
+            'semrush_traffic'       => 'Semrush Traffic',
+            'ms'                    => 'MS',
+            'organic_keywords'      => 'Organic Keywords',
+            'organic_traffic'       => 'Organic Traffic',
+            'kw_traffic_ratio'      => 'KW/Traffic Ratio',
+            'betting'               => 'Betting',
+            'trading'               => 'Trading',
+        ];
+    }
+
+    public static function guestHeaders(): array
+    {
+        return array_values(self::guestColumns());
+    }
+
+    public static function guestValues(Website $website): array
+    {
+        $row = self::row($website);
+
+        return array_map(
+            static fn (string $field) => $row[$field] ?? '',
+            array_keys(self::guestColumns())
+        );
     }
 
     public static function row(Website $website): array
@@ -101,6 +147,10 @@ class GuestWebsiteExport
             'ahrefs_keyword' => $website->ahrefs_keyword,
             'ahrefs_traffic' => $website->ahrefs_traffic,
             'keyword_vs_traffic' => $website->keyword_vs_traffic,
+            'ms'               => $website->ms,
+            'organic_keywords' => $website->organic_keywords,
+            'organic_traffic'  => $website->organic_traffic,
+            'kw_traffic_ratio' => $website->kw_traffic_ratio,
             'betting' => $yesNo($website->betting),
             'trading' => $yesNo($website->trading),
         ];
@@ -122,6 +172,17 @@ class GuestWebsiteExport
 
         foreach ($websites as $website) {
             $rows[] = self::values($website);
+        }
+
+        return $rows;
+    }
+
+    public static function guestRows(iterable $websites): array
+    {
+        $rows = [];
+
+        foreach ($websites as $website) {
+            $rows[] = self::guestValues($website);
         }
 
         return $rows;

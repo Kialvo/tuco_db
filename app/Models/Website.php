@@ -37,6 +37,9 @@ class Website extends Model
 
         'banner_price','sitewide_link_price',
         'original_banner_price','original_sitewide_link_price',
+
+        // dataforseo
+        'ms','organic_keywords','organic_traffic','kw_traffic_ratio',
     ];
 
     // RELATIONSHIPS:

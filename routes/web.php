@@ -138,6 +138,10 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
 
 
     // routes/web.php
+    Route::post('/websites/dataforseo/sync-selected',
+        [WebsiteController::class, 'syncDataForSeoSelected'])
+        ->name('websites.dataforseo.sync-selected');
+
     Route::post('/websites/bulk-convert-eur',
         [WebsiteController::class, 'bulkConvertToEur']
     )->name('websites.bulkConvertToEur');

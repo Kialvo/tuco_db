@@ -53,6 +53,10 @@
         <th>Ahrefs Keyword</th>
         <th>Ahrefs Traffic</th>
         <th>Keyword vs Traffic</th>
+        <th>MS</th>
+        <th>Organic Keywords</th>
+        <th>Organic Traffic</th>
+        <th>KW/Traffic Ratio</th>
         <th>SEO Metrics Date</th>
         <th>Betting</th>
         <th>Trading</th>
@@ -103,6 +107,10 @@
             <td>{{ $web->ahrefs_keyword }}</td>
             <td>{{ $web->ahrefs_traffic }}</td>
             <td>{{ $web->keyword_vs_traffic }}</td>
+            <td>{{ $web->ms }}</td>
+            <td>{{ $web->organic_keywords }}</td>
+            <td>{{ $web->organic_traffic }}</td>
+            <td>{{ $web->kw_traffic_ratio }}</td>
             <td>{{ $web->seo_metrics_date }}</td>
             <td>{{ $web->betting ? 'Yes' : 'No' }}</td>
             <td>{{ $web->trading ? 'Yes' : 'No' }}</td>

@@ -55,6 +55,10 @@
         'ahrefs_keyword' => 'Ahrefs Keyword',
         'ahrefs_traffic' => 'Ahrefs Traffic',
         'keyword_vs_traffic' => 'Keywords vs Traffic',
+        'ms'               => 'MS',
+        'organic_keywords' => 'Organic Keywords',
+        'organic_traffic'  => 'Organic Traffic',
+        'kw_traffic_ratio' => 'KW/Traffic Ratio',
         'seo_metrics_date' => 'SEO Metrics Date',
         'betting' => 'Betting',
         'trading' => 'Trading',
@@ -523,6 +527,54 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+                <!-- MS Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">MS Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterMSMin"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                        <input type="number" id="filterMSMax"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                    </div>
+                </div>
+                <!-- Organic KW Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Organic KW Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterOrganicKWMin"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                        <input type="number" id="filterOrganicKWMax"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                    </div>
+                </div>
+                <!-- Organic TR Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Organic TR Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="filterOrganicTRMin"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                        <input type="number" id="filterOrganicTRMax"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                    </div>
+                </div>
+                <!-- KW/TR Ratio Min/Max -->
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">KW/TR Ratio Min/Max</label>
+                    <div class="flex gap-1">
+                        <input type="number" step="0.01" id="filterKWTRRatioMin"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
+                        <input type="number" step="0.01" id="filterKWTRRatioMax"
+                               class="border border-gray-300 rounded w-16 px-2 py-2
+                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
+                    </div>
+                </div>
             </div><!-- END ROW 3 -->
 
             <!-- ROW 4: Categories -->
@@ -643,6 +695,19 @@
            bg-cyan-700 hover:bg-cyan-800 text-white shadow disabled:opacity-50
            disabled:cursor-not-allowed">
                 <i class="fas fa-paper-plane"></i> Bulk Outreach
+            </button>
+
+            {{-- Divider --}}
+            <span class="h-5 w-px bg-gray-300 mx-1"></span>
+
+            {{-- Sync DataforSEO --}}
+            <button id="btnSyncDataForSeo"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs shadow transition-colors duration-150"
+                    style="background-color:#4f46e5; color:#fff; border: 1px solid #6366f1;"
+                    onmouseover="this.style.backgroundColor='#4338ca'"
+                    onmouseout="this.style.backgroundColor='#4f46e5'">
+                <i class="fas fa-satellite-dish" style="color:#c7d2fe;"></i>
+                Sync DataforSEO
             </button>
 
             {{-- live counter --}}
@@ -799,6 +864,7 @@
                             </span>
                         </span>
                     </th>
+                    @unless($isGuestUser)
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             TF
@@ -847,6 +913,7 @@
                             </span>
                         </span>
                     </th>
+                    @endunless
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             UR
@@ -911,6 +978,7 @@
                             </span>
                         </span>
                     </th>
+                    @unless($isGuestUser)
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             TF vs CF
@@ -927,6 +995,7 @@
                             </span>
                         </span>
                     </th>
+                    @endunless
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             Semrush Traffic
@@ -943,6 +1012,7 @@
                             </span>
                         </span>
                     </th>
+                    @unless($isGuestUser)
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
                             Ahrefs Keyword
@@ -991,6 +1061,11 @@
                             </span>
                         </span>
                     </th>
+                    @endunless
+                    <th class="whitespace-nowrap px-4 py-2">MS</th>
+                    <th class="whitespace-nowrap px-4 py-2">Organic Keywords</th>
+                    <th class="whitespace-nowrap px-4 py-2">Organic Traffic</th>
+                    <th class="whitespace-nowrap px-4 py-2">KW/Traffic Ratio</th>
                     <th class="whitespace-nowrap px-4 py-2">SEO Metrics Date</th>
                     <th class="whitespace-nowrap px-4 py-2">Betting</th>
                     <th class="whitespace-nowrap px-4 py-2">Trading</th>
@@ -1321,6 +1396,14 @@
                         d.ahrefs_traffic_max = $('#filterAhrefs_trafficMax').val();
                         d.keyword_vs_traffic_min = $('#filterKeyword_vs_trafficMin').val();
                         d.keyword_vs_traffic_max = $('#filterKeyword_vs_trafficMax').val();
+                        d.ms_min               = $('#filterMSMin').val();
+                        d.ms_max               = $('#filterMSMax').val();
+                        d.organic_keywords_min = $('#filterOrganicKWMin').val();
+                        d.organic_keywords_max = $('#filterOrganicKWMax').val();
+                        d.organic_traffic_min  = $('#filterOrganicTRMin').val();
+                        d.organic_traffic_max  = $('#filterOrganicTRMax').val();
+                        d.kw_traffic_ratio_min = $('#filterKWTRRatioMin').val();
+                        d.kw_traffic_ratio_max = $('#filterKWTRRatioMax').val();
 
                         d.betting = $('#filterBetting').is(':checked');
                         d.trading = $('#filterTrading').is(':checked');
@@ -1527,18 +1610,22 @@
                     { data: 'categories_list', name: 'categories_list', className: 'text-center', },
                     { data: 'DA', name: 'DA', className: 'text-center', },
                     { data: 'PA', name: 'PA', className: 'text-center', },
-                    { data: 'TF', name: 'TF', className: 'text-center', },
-                    { data: 'CF', name: 'CF', className: 'text-center', },
-                    { data: 'DR', name: 'DR', className: 'text-center', },
+                    { data: 'TF', name: 'TF', className: 'text-center', visible: !isGuestUser },
+                    { data: 'CF', name: 'CF', className: 'text-center', visible: !isGuestUser },
+                    { data: 'DR', name: 'DR', className: 'text-center', visible: !isGuestUser },
                     { data: 'UR', name: 'UR', className: 'text-center', },
                     { data: 'ZA', name: 'ZA', className: 'text-center', },
                     { data: 'as_metric', name: 'as_metric', className: 'text-center', },
                     { data: 'seozoom', name: 'seozoom', className: 'text-center', },
-                    { data: 'TF_vs_CF', name: 'TF_vs_CF', className: 'text-center', },
+                    { data: 'TF_vs_CF', name: 'TF_vs_CF', className: 'text-center', visible: !isGuestUser },
                     { data: 'semrush_traffic', name: 'semrush_traffic', className: 'text-center', },
-                    { data: 'ahrefs_keyword', name: 'ahrefs_keyword', className: 'text-center', },
-                    { data: 'ahrefs_traffic', name: 'ahrefs_traffic', className: 'text-center', },
-                    { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic', className: 'text-center', },
+                    { data: 'ahrefs_keyword', name: 'ahrefs_keyword', className: 'text-center', visible: !isGuestUser },
+                    { data: 'ahrefs_traffic', name: 'ahrefs_traffic', className: 'text-center', visible: !isGuestUser },
+                    { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic', className: 'text-center', visible: !isGuestUser },
+                    { data: 'ms',               name: 'ms',               type: 'number', className: 'text-center' },
+                    { data: 'organic_keywords', name: 'organic_keywords', type: 'number', className: 'text-center' },
+                    { data: 'organic_traffic',  name: 'organic_traffic',  type: 'number', className: 'text-center' },
+                    { data: 'kw_traffic_ratio', name: 'kw_traffic_ratio', type: 'number', className: 'text-center' },
                     { data:'seo_metrics_date', name:'seo_metrics_date',
                       className:'text-center', render:dt, visible: !isGuestUser },
                     { data: 'betting', name: 'betting', className: 'text-center',
@@ -1944,6 +2031,14 @@
                     ahrefs_traffic_max: $('#filterAhrefs_trafficMax').val(),
                     keyword_vs_traffic_min: $('#filterKeyword_vs_trafficMin').val(),
                     keyword_vs_traffic_max: $('#filterKeyword_vs_trafficMax').val(),
+                    ms_min:               $('#filterMSMin').val(),
+                    ms_max:               $('#filterMSMax').val(),
+                    organic_keywords_min: $('#filterOrganicKWMin').val(),
+                    organic_keywords_max: $('#filterOrganicKWMax').val(),
+                    organic_traffic_min:  $('#filterOrganicTRMin').val(),
+                    organic_traffic_max:  $('#filterOrganicTRMax').val(),
+                    kw_traffic_ratio_min: $('#filterKWTRRatioMin').val(),
+                    kw_traffic_ratio_max: $('#filterKWTRRatioMax').val(),
                     betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
                     permanent_link: $('#filterPermanent_link').is(':checked') ? 1 : 0,
@@ -2108,6 +2203,121 @@
             $('#closeContactModal, #closeContactModalBottom').on('click', function() {
                 $('#contactModal').addClass('hidden');
             });
+
+            // ─────────────────────────────────────────────────
+            //  Sync DataforSEO button (admin only)
+            // ─────────────────────────────────────────────────
+            if (!isGuestUser) {
+                $('#btnSyncDataForSeo').on('click', function () {
+                    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+                    let ids      = $('.rowChk:checked').map((_, c) => parseInt(c.value, 10)).get();
+                    let syncAll  = ids.length === 0;
+                    let syncLabel = syncAll ? 'all domains' : ids.length + ' selected domain(s)';
+
+                    // Steps shown in sequence while waiting for the response
+                    const steps = [
+                        { icon: '🛰️', text: 'Connecting to DataforSEO API...' },
+                        { icon: '📡', text: 'Fetching Domain Rank (MS)...' },
+                        { icon: '📊', text: 'Fetching Organic Keywords &amp; Traffic...' },
+                        { icon: '💾', text: 'Writing data to database...' },
+                        { icon: '⏳', text: 'Almost done, finishing up...' },
+                    ];
+
+                    let stepIndex = 0;
+                    let elapsed   = 0;
+
+                    const updateStep = () => {
+                        const s = steps[Math.min(stepIndex, steps.length - 1)];
+                        const mins  = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                        const secs  = String(elapsed % 60).padStart(2, '0');
+                        $('#swal-sync-step').html(s.icon + ' ' + s.text);
+                        $('#swal-sync-timer').text(mins + ':' + secs);
+                        stepIndex++;
+                        elapsed++;
+                    };
+
+                    Swal.fire({
+                        title: '<span style="font-size:1.1rem;font-weight:700;">Syncing DataforSEO</span>',
+                        html: `
+                            <div style="font-size:0.85rem;color:#6b7280;margin-bottom:6px;">
+                                Target: <strong>${syncLabel}</strong>
+                            </div>
+                            <div id="swal-sync-step" style="font-size:0.9rem;color:#4f46e5;margin:10px 0;min-height:22px;">
+                                🛰️ Connecting to DataforSEO API...
+                            </div>
+                            <div style="background:#e5e7eb;border-radius:9999px;height:6px;overflow:hidden;margin:10px 0;">
+                                <div id="swal-sync-bar"
+                                     style="height:6px;border-radius:9999px;background:linear-gradient(90deg,#4f46e5,#818cf8);
+                                            width:0%;transition:width 1s linear;">
+                                </div>
+                            </div>
+                            <div style="font-size:0.75rem;color:#9ca3af;margin-top:4px;">
+                                Elapsed: <span id="swal-sync-timer">00:00</span>
+                            </div>`,
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                            updateStep();
+
+                            // Advance step text every 3 seconds
+                            window._syncStepInterval = setInterval(updateStep, 1000);
+
+                            // Animate progress bar — grows slowly, stops at 90% until done
+                            let pct = 0;
+                            window._syncBarInterval = setInterval(() => {
+                                pct = Math.min(pct + (pct < 60 ? 2 : 0.3), 90);
+                                const bar = document.getElementById('swal-sync-bar');
+                                if (bar) bar.style.width = pct + '%';
+                            }, 500);
+                        },
+                        willClose: () => {
+                            clearInterval(window._syncStepInterval);
+                            clearInterval(window._syncBarInterval);
+                        }
+                    });
+
+                    fetch("{{ route('websites.dataforseo.sync-selected') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify(syncAll ? { sync_all: true } : { ids: ids })
+                    })
+                        .then(r => r.json())
+                        .then(data => {
+                            // Fill bar to 100% before closing
+                            const bar = document.getElementById('swal-sync-bar');
+                            if (bar) bar.style.width = '100%';
+
+                            setTimeout(() => {
+                                Swal.close();
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Sync Complete!',
+                                    html: `<p style="color:#374151;">${data.message || 'All domains synced.'}</p>`,
+                                    confirmButtonText: 'Great!',
+                                    confirmButtonColor: '#4f46e5',
+                                    timer: 6000,
+                                    timerProgressBar: true,
+                                });
+                                table.ajax.reload(null, false);
+                            }, 400);
+                        })
+                        .catch(() => {
+                            Swal.close();
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Sync Failed',
+                                text: 'Something went wrong. Please try again.',
+                                confirmButtonColor: '#dc2626',
+                            });
+                        });
+                });
+            }
 
         }); // <-- END of $(document).ready()
 

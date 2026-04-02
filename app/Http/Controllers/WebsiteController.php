@@ -9,6 +9,7 @@ use App\Models\Country;
 use App\Models\Language;
 use App\Models\Contact;
 use App\Models\Category;
+use App\Services\DataForSeoService;
 use App\Support\GuestWebsiteExport;
 use App\Support\MenfordPriceCalculator;
 use Carbon\Carbon;
@@ -249,10 +250,10 @@ class WebsiteController extends Controller
         $this->applyGuestFavoritesFilter($request, $query, $favoriteIds);
         $websites = $query->orderByDesc('id')->get();
 
-        $csvData = [GuestWebsiteExport::headers()];
+        $csvData = [GuestWebsiteExport::guestHeaders()];
 
         foreach ($websites as $web) {
-            $csvData[] = GuestWebsiteExport::values($web);
+            $csvData[] = GuestWebsiteExport::guestValues($web);
         }
 
         $filename = 'websites_export_'.date('Y-m-d_His').'.csv';
@@ -287,7 +288,7 @@ class WebsiteController extends Controller
         $this->applyGuestFavoritesFilter($request, $query, $favoriteIds);
 
         $title = 'Domains for '.$request->user()->name;
-        $header = GuestWebsiteExport::headers();
+        $header = GuestWebsiteExport::guestHeaders();
         $filenameBase = 'websites_export_'.date('Y-m-d_His');
         $singlePdfMaxRows = 450;
         $rowsPerPart = 400;
@@ -295,7 +296,7 @@ class WebsiteController extends Controller
 
         if ($total <= $singlePdfMaxRows) {
             $websites = (clone $query)->orderByDesc('id')->get();
-            $rows = GuestWebsiteExport::rows($websites);
+            $rows = GuestWebsiteExport::guestRows($websites);
             $pdf = \PDF::setOptions([
                 'dpi' => 72,
                 'isRemoteEnabled' => false,
@@ -316,7 +317,7 @@ class WebsiteController extends Controller
 
         try {
             (clone $query)->orderByDesc('id')->chunkByIdDesc($rowsPerPart, function ($chunk) use (&$part, &$partFiles, $tempDir, $title, $header) {
-                $rows = GuestWebsiteExport::rows($chunk->values());
+                $rows = GuestWebsiteExport::guestRows($chunk->values());
                 $pdfBinary = \PDF::setOptions([
                     'dpi' => 72,
                     'isRemoteEnabled' => false,
@@ -434,6 +435,10 @@ class WebsiteController extends Controller
             'ahrefs_keyword' => 'Ahrefs Keyword',
             'ahrefs_traffic' => 'Ahrefs Traffic',
             'keyword_vs_traffic' => 'Keywords vs Traffic',
+            'ms'               => 'MS',
+            'organic_keywords' => 'Organic Keywords',
+            'organic_traffic'  => 'Organic Traffic',
+            'kw_traffic_ratio' => 'KW/Traffic Ratio',
             'seo_metrics_date' => 'SEO Metrics Date',
             'betting' => 'Betting',
             'trading' => 'Trading',
@@ -489,6 +494,10 @@ class WebsiteController extends Controller
             'ahrefs_keyword' => $web->ahrefs_keyword,
             'ahrefs_traffic' => $web->ahrefs_traffic,
             'keyword_vs_traffic' => $web->keyword_vs_traffic,
+            'ms'               => $web->ms,
+            'organic_keywords' => $web->organic_keywords,
+            'organic_traffic'  => $web->organic_traffic,
+            'kw_traffic_ratio' => $web->kw_traffic_ratio,
             'seo_metrics_date' => $web->seo_metrics_date,
             'betting' => $yesNo($web->betting),
             'trading' => $yesNo($web->trading),
@@ -608,6 +617,10 @@ class WebsiteController extends Controller
         $rng($request->ahrefs_keyword_min,     $request->ahrefs_keyword_max,     'ahrefs_keyword');
         $rng($request->ahrefs_traffic_min,     $request->ahrefs_traffic_max,     'ahrefs_traffic');
         $rng($request->keyword_vs_traffic_min, $request->keyword_vs_traffic_max, 'keyword_vs_traffic');
+        $rng($request->ms_min,               $request->ms_max,               'ms');
+        $rng($request->organic_keywords_min, $request->organic_keywords_max, 'organic_keywords');
+        $rng($request->organic_traffic_min,  $request->organic_traffic_max,  'organic_traffic');
+        $rng($request->kw_traffic_ratio_min, $request->kw_traffic_ratio_max, 'kw_traffic_ratio');
 
         /* ───── booleans coming from check-boxes ───── */
         foreach ([
@@ -1388,5 +1401,66 @@ class WebsiteController extends Controller
             'banner_price'                 => 'nullable|numeric',
             'sitewide_link_price'          => 'nullable|numeric',
         ]);
+    }
+
+    public function syncDataForSeoSelected(Request $request)
+    {
+        if (! auth()->check() || $this->isGuestUser()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        // sync_all — now safe thanks to bulk endpoints (just ~10 API calls for thousands of domains)
+        if ($request->boolean('sync_all')) {
+            $websites = Website::query()->select(['id', 'domain_name'])->get();
+            $domains  = $websites->pluck('domain_name')->all();
+            $results  = $service->fetchBatch($domains);
+
+            $updated = $this->upsertDataForSeo($websites->all(), $results);
+
+            return response()->json([
+                'updated' => $updated,
+                'message' => "Synced {$updated} domain(s).",
+            ]);
+        }
+
+        // Selected rows only
+        $ids = $request->input('ids');
+        if (is_string($ids)) {
+            $ids = array_filter(array_map('trim', explode(',', $ids)));
+        }
+        if (empty($ids)) {
+            return response()->json(['message' => 'No IDs provided'], 422);
+        }
+
+        $websites = Website::whereIn('id', $ids)->select(['id', 'domain_name'])->get();
+        $results  = $service->fetchBatch($websites->pluck('domain_name')->all());
+        $updated  = $this->upsertDataForSeo($websites->all(), $results);
+
+        return response()->json([
+            'updated' => $updated,
+            'message' => "Synced {$updated} domain(s).",
+        ]);
+    }
+
+    private function upsertDataForSeo(array $websites, array $results): int
+    {
+        $rows = [];
+        foreach ($websites as $website) {
+            $data = $results[$website->domain_name] ?? null;
+            if (! $data) continue;
+            $rows[] = [
+                'id'               => $website->id,
+                'ms'               => $data['ms'],
+                'organic_keywords' => $data['organic_keywords'],
+                'organic_traffic'  => $data['organic_traffic'],
+                'kw_traffic_ratio' => $data['kw_traffic_ratio'],
+            ];
+        }
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            Website::upsert($chunk, ['id'], ['ms', 'organic_keywords', 'organic_traffic', 'kw_traffic_ratio']);
+        }
+
+        return count($rows);
     }
 }
