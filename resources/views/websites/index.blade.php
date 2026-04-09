@@ -395,6 +395,7 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+                @unless($isGuestUser)
                 <!-- TF Min/Max -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">TF Min/Max</label>
@@ -431,6 +432,7 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+                @endunless
                 <!-- UR Min/Max -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">UR Min/Max</label>
@@ -467,6 +469,7 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+                @unless($isGuestUser)
                 <!-- TF vs CF Min/Max -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">TF vs CF</label>
@@ -479,6 +482,7 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+                @endunless
                 <!-- Semrush Traffic Min/Max -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Semrush Traffic</label>
@@ -491,6 +495,7 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+                @unless($isGuestUser)
                 <!-- Ahrefs KW Min/Max -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Ahrefs KW</label>
@@ -527,6 +532,7 @@
                                   focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
                     </div>
                 </div>
+                @endunless
                 <!-- MS Min/Max -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">MS Min/Max</label>
