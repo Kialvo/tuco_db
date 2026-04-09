@@ -276,6 +276,85 @@ class NewEntryController extends Controller
             ->with('status', 'Entry updated!');
     }
 
+    public function syncDataForSeoSelected(Request $r)
+    {
+        $service = app(\App\Services\DataForSeoService::class);
+
+        if ($r->boolean('sync_all')) {
+            $entries = NewEntry::query()->select(['id', 'domain_name'])->get();
+            $results = $service->fetchBatch($entries->pluck('domain_name')->all());
+            $updated = $this->upsertDataForSeo($entries->all(), $results);
+
+            return response()->json([
+                'updated' => $updated,
+                'message' => "Synced {$updated} domain(s).",
+            ]);
+        }
+
+        $ids = $r->input('ids');
+        if (is_string($ids)) {
+            $ids = array_filter(array_map('trim', explode(',', $ids)));
+        }
+        if (empty($ids)) {
+            return response()->json(['message' => 'No IDs provided'], 422);
+        }
+
+        $entries = NewEntry::whereIn('id', array_values($ids))->select(['id', 'domain_name'])->get();
+        $results = $service->fetchBatch($entries->pluck('domain_name')->all());
+        $updated = $this->upsertDataForSeo($entries->all(), $results);
+
+        return response()->json([
+            'updated' => $updated,
+            'message' => "Synced {$updated} domain(s).",
+        ]);
+    }
+
+    private function upsertDataForSeo(array $entries, array $results): int
+    {
+        $rows = [];
+        foreach ($entries as $entry) {
+            $data = $results[$entry->domain_name] ?? null;
+            if (! $data) continue;
+            $rows[] = [
+                'id'               => $entry->id,
+                'ms'               => $data['ms'],
+                'organic_keywords' => $data['organic_keywords'],
+                'organic_traffic'  => $data['organic_traffic'],
+                'kw_traffic_ratio' => $data['kw_traffic_ratio'],
+            ];
+        }
+
+        foreach (array_chunk($rows, 500) as $chunk) {
+            $this->bulkUpdateDataForSeo('new_entries', $chunk);
+        }
+
+        return count($rows);
+    }
+
+    private function bulkUpdateDataForSeo(string $table, array $rows): void
+    {
+        if (empty($rows)) return;
+
+        $cols   = ['ms', 'organic_keywords', 'organic_traffic', 'kw_traffic_ratio'];
+        $idList = implode(',', array_map(fn($r) => (int) $r['id'], $rows));
+
+        $setClauses = [];
+        foreach ($cols as $col) {
+            $cases = implode(' ', array_map(
+                fn($r) => 'WHEN ' . (int)$r['id'] . ' THEN ' .
+                    (is_null($r[$col]) ? 'NULL' : (float) $r[$col]),
+                $rows
+            ));
+            $setClauses[] = "`$col` = CASE `id` $cases END";
+        }
+        $setClauses[] = '`updated_at` = NOW()';
+
+        \Illuminate\Support\Facades\DB::statement(
+            'UPDATE `' . $table . '` SET ' . implode(', ', $setClauses) .
+            ' WHERE `id` IN (' . $idList . ')'
+        );
+    }
+
     public function show(NewEntry $new_entry)
     {
         $new_entry->load(['country', 'language', 'contact', 'categories']);

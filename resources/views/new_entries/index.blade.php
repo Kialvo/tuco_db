@@ -141,6 +141,16 @@
                 <i class="fas fa-history"></i> Restore
             </button>
 
+            {{-- Sync DataforSEO --}}
+            <button id="btnSyncDataForSeo"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs shadow transition-colors duration-150"
+                    style="background-color:#4f46e5; color:#fff; border: 1px solid #6366f1;"
+                    onmouseover="this.style.backgroundColor='#4338ca'"
+                    onmouseout="this.style.backgroundColor='#4f46e5'">
+                <i class="fas fa-satellite-dish" style="color:#c7d2fe;"></i>
+                Sync DataforSEO
+            </button>
+
             {{-- live counter --}}
             <span class="ml-2 text-sm text-gray-600">
                 Selected:&nbsp;<span id="selCount">0</span>
@@ -780,6 +790,101 @@
                 visible = !visible;
                 btn.textContent = visible ? 'Hide Filters' : 'Show Filters';
             });
+
+            // ─────────────────────────────────────────────────
+            //  Sync DataforSEO button
+            // ─────────────────────────────────────────────────
+            $('#btnSyncDataForSeo').on('click', function () {
+                const csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+                let ids     = $('.rowChk:checked').map((_, c) => parseInt(c.value, 10)).get();
+                let syncAll = ids.length === 0;
+                let syncLabel = syncAll ? 'all domains' : ids.length + ' selected domain(s)';
+
+                const steps = [
+                    { icon: '🛰️', text: 'Connecting to DataforSEO API...' },
+                    { icon: '📡', text: 'Fetching Domain Rank (MS)...' },
+                    { icon: '📊', text: 'Fetching Organic Keywords &amp; Traffic...' },
+                    { icon: '💾', text: 'Writing data to database...' },
+                ];
+                let stepIndex = 0, elapsed = 0;
+                const updateStep = () => {
+                    const s = steps[Math.min(stepIndex, steps.length - 1)];
+                    const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                    const secs = String(elapsed % 60).padStart(2, '0');
+                    $('#swal-sync-step').html(s.icon + ' ' + s.text);
+                    $('#swal-sync-timer').text(mins + ':' + secs);
+                    stepIndex++;
+                    elapsed++;
+                };
+
+                Swal.fire({
+                    title: '<span style="font-size:1.1rem;font-weight:700;">Syncing DataforSEO</span>',
+                    html: `
+                        <div style="font-size:0.85rem;color:#6b7280;margin-bottom:6px;">
+                            Target: <strong>${syncLabel}</strong>
+                        </div>
+                        <div id="swal-sync-step" style="font-size:0.9rem;color:#4f46e5;margin:10px 0;min-height:22px;">
+                            🛰️ Connecting to DataforSEO API...
+                        </div>
+                        <div style="background:#e5e7eb;border-radius:9999px;height:6px;overflow:hidden;margin:10px 0;">
+                            <div id="swal-sync-bar"
+                                 style="height:6px;border-radius:9999px;background:linear-gradient(90deg,#4f46e5,#818cf8);
+                                        width:0%;transition:width 1s linear;">
+                            </div>
+                        </div>
+                        <div style="font-size:0.75rem;color:#9ca3af;margin-top:4px;">
+                            Elapsed: <span id="swal-sync-timer">00:00</span>
+                        </div>`,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        window._syncStepInterval = setInterval(updateStep, 1000);
+                        let pct = 0;
+                        window._syncBarInterval = setInterval(() => {
+                            pct = Math.min(pct + (pct < 60 ? 2 : 0.3), 90);
+                            const bar = document.getElementById('swal-sync-bar');
+                            if (bar) bar.style.width = pct + '%';
+                        }, 500);
+                    },
+                    willClose: () => {
+                        clearInterval(window._syncStepInterval);
+                        clearInterval(window._syncBarInterval);
+                    }
+                });
+
+                fetch("{{ route('new_entries.dataforseo.sync-selected') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    body: JSON.stringify(syncAll ? { sync_all: true } : { ids: ids })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    const bar = document.getElementById('swal-sync-bar');
+                    if (bar) bar.style.width = '100%';
+                    setTimeout(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sync Complete!',
+                            html: `<p style="color:#374151;">${data.message || 'All domains synced.'}</p>`,
+                            confirmButtonText: 'Great!',
+                            confirmButtonColor: '#4f46e5',
+                        });
+                    }, 600);
+                })
+                .catch(() => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Sync Failed',
+                        text: 'Something went wrong. Please try again.',
+                        confirmButtonColor: '#dc2626',
+                    });
+                });
+            });
+
         });
     </script>
 @endpush

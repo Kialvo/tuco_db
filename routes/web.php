@@ -206,6 +206,7 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
     Route::post('/new-entries/data', [NewEntryController::class,'getData'])->name('new_entries.data');
     Route::post('/new-entries/bulk', [NewEntryController::class,'bulkUpdate'])->name('new_entries.bulkUpdate');
     Route::post('/new-entries/rollback', [NewEntryController::class,'rollback'])->name('new_entries.rollback');
+    Route::post('/new-entries/dataforseo/sync-selected', [NewEntryController::class,'syncDataForSeoSelected'])->name('new_entries.dataforseo.sync-selected');
     Route::put('/new-entries/{new_entry}/status', [NewEntryController::class,'updateStatus']);
 
     /* ----------  FULL CRUD (resource) ----------

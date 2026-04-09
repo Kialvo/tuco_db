@@ -1417,6 +1417,8 @@ class WebsiteController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
+        $service = app(\App\Services\DataForSeoService::class);
+
         // sync_all — now safe thanks to bulk endpoints (just ~10 API calls for thousands of domains)
         if ($request->boolean('sync_all')) {
             $websites = Website::query()->select(['id', 'domain_name'])->get();
@@ -1440,7 +1442,7 @@ class WebsiteController extends Controller
             return response()->json(['message' => 'No IDs provided'], 422);
         }
 
-        $websites = Website::whereIn('id', $ids)->select(['id', 'domain_name'])->get();
+        $websites = Website::whereIn('id', array_values($ids))->select(['id', 'domain_name'])->get();
         $results  = $service->fetchBatch($websites->pluck('domain_name')->all());
         $updated  = $this->upsertDataForSeo($websites->all(), $results);
 
