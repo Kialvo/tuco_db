@@ -26,6 +26,7 @@ class NewEntry extends Model
         // seo numbers
         'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
         'semrush_traffic','ahrefs_keyword','ahrefs_traffic',
+        'ms','organic_keywords','organic_traffic','kw_traffic_ratio',
 
         // dates
         'date_publisher_price','date_kialvo_evaluation','seo_metrics_date','first_contact_date',

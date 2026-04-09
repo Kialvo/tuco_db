@@ -211,6 +211,22 @@ class NewEntryController extends Controller
             throw $e;
         }
 
+        try {
+            $service = app(\App\Services\DataForSeoService::class);
+            $results = $service->fetchBatch([$entry->domain_name]);
+            if (! empty($results[$entry->domain_name])) {
+                $d = $results[$entry->domain_name];
+                $entry->update([
+                    'ms'               => $d['ms'],
+                    'organic_keywords' => $d['organic_keywords'],
+                    'organic_traffic'  => $d['organic_traffic'],
+                    'kw_traffic_ratio' => $d['kw_traffic_ratio'],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // silent — entry is saved regardless
+        }
+
         return redirect()->route('new_entries.edit', $entry->id)
             ->with('status', 'Entry created – you can now complete / review it!');
     }

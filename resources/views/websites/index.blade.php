@@ -1056,9 +1056,54 @@
                             </span>
                         </span>
                     </th>
-                    <th class="whitespace-nowrap px-4 py-2">MS</th>
-                    <th class="whitespace-nowrap px-4 py-2">Organic Keywords</th>
-                    <th class="whitespace-nowrap px-4 py-2">Organic Traffic</th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            MS
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Menford Score: proprietary authority score (0–1,000) based on a weighted average of backlink profile strength across multiple competitive intelligence sources. Higher is better; 100–200 entry level, 200–400 good, 400+ strong."
+                                        aria-label="What is MS?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Menford Score: proprietary authority score (0–1,000) based on a weighted average of backlink profile strength across multiple competitive intelligence sources. Higher is better; 100–200 entry level, 200–400 good, 400+ strong.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Organic Keywords
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Organic Keywords: estimated number of keywords a domain ranks for in organic search results globally, aggregated across multiple competitive intelligence sources. Higher values indicate broader topical relevance and search visibility; 1,000–5,000 entry level, 5,000–30,000 good, 30,000+ strong."
+                                        aria-label="What is Organic Keywords?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Organic Keywords: estimated number of keywords a domain ranks for in organic search results globally, aggregated across multiple competitive intelligence sources. Higher values indicate broader topical relevance and search visibility; 1,000–5,000 entry level, 5,000–30,000 good, 30,000+ strong.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Organic Traffic
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        data-info="Organic Traffic: estimated monthly organic search visits, aggregated across multiple competitive intelligence sources. Values are best used for comparative analysis across domains rather than as standalone figures; 5,000–20,000 entry level, 20,000–200,000 good, 200,000+ strong."
+                                        aria-label="What is Organic Traffic?">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Organic Traffic: estimated monthly organic search visits, aggregated across multiple competitive intelligence sources. Values are best used for comparative analysis across domains rather than as standalone figures; 5,000–20,000 entry level, 20,000–200,000 good, 200,000+ strong.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="whitespace-nowrap px-4 py-2">KW/Traffic Ratio</th>
                     <th class="whitespace-nowrap px-4 py-2">SEO Metrics Date</th>
                     <th class="whitespace-nowrap px-4 py-2">Betting</th>

@@ -892,6 +892,14 @@ class WebsiteController extends Controller
             $website->categories()->sync($request->category_ids);
         }
 
+        try {
+            $service = app(\App\Services\DataForSeoService::class);
+            $results = $service->fetchBatch([$website->domain_name]);
+            $this->upsertDataForSeo([$website], $results);
+        } catch (\Throwable $e) {
+            // silent — website is saved regardless
+        }
+
         return redirect()->route('websites.edit', $website)
             ->with('status', 'Website created successfully and ready to edit!');
     }
@@ -1458,9 +1466,33 @@ class WebsiteController extends Controller
         }
 
         foreach (array_chunk($rows, 500) as $chunk) {
-            Website::upsert($chunk, ['id'], ['ms', 'organic_keywords', 'organic_traffic', 'kw_traffic_ratio']);
+            $this->bulkUpdateDataForSeo('websites', $chunk);
         }
 
         return count($rows);
+    }
+
+    private function bulkUpdateDataForSeo(string $table, array $rows): void
+    {
+        if (empty($rows)) return;
+
+        $cols   = ['ms', 'organic_keywords', 'organic_traffic', 'kw_traffic_ratio'];
+        $idList = implode(',', array_map(fn($r) => (int) $r['id'], $rows));
+
+        $setClauses = [];
+        foreach ($cols as $col) {
+            $cases = implode(' ', array_map(
+                fn($r) => 'WHEN ' . (int)$r['id'] . ' THEN ' .
+                    (is_null($r[$col]) ? 'NULL' : (float) $r[$col]),
+                $rows
+            ));
+            $setClauses[] = "`$col` = CASE `id` $cases END";
+        }
+        $setClauses[] = '`updated_at` = NOW()';
+
+        DB::statement(
+            'UPDATE `' . $table . '` SET ' . implode(', ', $setClauses) .
+            ' WHERE `id` IN (' . $idList . ')'
+        );
     }
 }
