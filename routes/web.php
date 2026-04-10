@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\UserFavoritesController;
 
 use App\Http\Controllers\ContactsController;
 use App\Http\Controllers\ClientsController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CopyController;
 
 use App\Http\Controllers\WebsiteController;
@@ -73,6 +74,18 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
         'update'  => 'contacts.update',
         'destroy' => 'contacts.destroy',
     ]);
+
+    /*--------------------------------------------------------------
+    | Companies
+    --------------------------------------------------------------*/
+    Route::match(['get','post'], 'companies/data',  [CompanyController::class, 'getData'])->name('companies.data');
+    Route::get('/companies/search',                 [CompanyController::class, 'search'])->name('companies.search');
+    Route::resource('companies', CompanyController::class)->names([
+        'index'   => 'companies.index',
+        'store'   => 'companies.store',
+        'update'  => 'companies.update',
+        'destroy' => 'companies.destroy',
+    ])->only(['index', 'store', 'update', 'destroy']);
 
     /*--------------------------------------------------------------
     | Clients

@@ -95,7 +95,7 @@
                     </div>
                 </div>
 
-                <div x-data="{ open: {{ request()->routeIs('storages.*') || request()->routeIs('clients.*') || request()->routeIs('copy.*') ? 'true' : 'false' }} }">
+                <div x-data="{ open: {{ request()->routeIs('storages.*') || request()->routeIs('clients.*') || request()->routeIs('companies.*') || request()->routeIs('copy.*') ? 'true' : 'false' }} }">
                     <div class="flex items-center justify-between px-3 py-2 rounded transition
                                 hover:bg-slate-800 {{ request()->routeIs('storages.*') ? 'bg-slate-800' : '' }}">
                         <a href="{{ route('storages.index') }}" class="flex-1 inline-flex items-center">
@@ -111,6 +111,11 @@
                            class="block px-3 py-2 rounded transition hover:bg-slate-800
                                   {{ request()->routeIs('clients.*') ? 'bg-slate-800' : '' }}">
                             <i class="fas fa-user-friends w-4 inline-block me-2"></i> Clients
+                        </a>
+                        <a href="{{ route('companies.index') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('companies.*') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-building w-4 inline-block me-2"></i> Companies
                         </a>
                         <a href="{{ route('copy.index') }}"
                            class="block px-3 py-2 rounded transition hover:bg-slate-800

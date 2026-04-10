@@ -122,11 +122,37 @@
                 $('div.dt-info').addClass('text-gray-600');
             });
 
+            /* ───── Select2 for company fields ───── */
+            const companySearchUrl = "{{ route('companies.search') }}";
+
+            function initSelect2(selector) {
+                $(selector).select2({
+                    placeholder: 'Search company…',
+                    allowClear: true,
+                    minimumInputLength: 0,
+                    ajax: {
+                        url: companySearchUrl,
+                        dataType: 'json',
+                        delay: 250,
+                        data: params => ({ q: params.term }),
+                        processResults: data => ({ results: data.results }),
+                        cache: true
+                    },
+                    dropdownParent: $(selector).closest('.relative, .fixed, body').first()
+                });
+            }
+
+            initSelect2('#create_company_id');
+            initSelect2('#edit_company_id');
+
             /* ───── modal logic ───── */
             const createModal = $('#createModal');
             const editModal   = $('#editModal');
 
-            $('#btnOpenModal').on('click', () => createModal.removeClass('hidden').addClass('flex'));
+            $('#btnOpenModal').on('click', () => {
+                $('#create_company_id').val(null).trigger('change');
+                createModal.removeClass('hidden').addClass('flex');
+            });
             $('#modalCloseBtn').on('click', () => createModal.addClass('hidden').removeClass('flex'));
             createModal.on('click', e => { if (e.target === createModal[0]) createModal.addClass('hidden').removeClass('flex'); });
 
@@ -147,7 +173,17 @@
                         $('#edit_first_name').val(c.first_name);
                         $('#edit_last_name').val(c.last_name);
                         $('#edit_email').val(c.email);
-                        $('#edit_company').val(c.company);
+
+                        // Populate company Select2
+                        let sel = $('#edit_company_id');
+                        sel.empty();
+                        if (c.company_id && c.company_name) {
+                            sel.append(new Option(c.company_name, c.company_id, true, true));
+                        } else {
+                            sel.val(null);
+                        }
+                        sel.trigger('change');
+
                         $('#editClientForm').attr('action', `/clients/${id}`);
                         editModal.removeClass('hidden').addClass('flex');
                     }else{

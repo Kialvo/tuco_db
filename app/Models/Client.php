@@ -14,10 +14,15 @@ class Client extends Model
         'first_name',
         'last_name',
         'email',
-        'company',
+        'company_id',
     ];
 
     /* -------------------------------- Relationships ---------------------*/
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     public function storages()
     {
         return $this->hasMany(Storage::class);
