@@ -1457,7 +1457,10 @@ class WebsiteController extends Controller
         $rows = [];
         foreach ($websites as $website) {
             $data = $results[$website->domain_name] ?? null;
-            if (! $data) continue;
+            // Skip if API returned nothing useful (all 4 values still null)
+            if (! $data || ($data['ms'] === null && $data['organic_keywords'] === null && $data['organic_traffic'] === null && $data['kw_traffic_ratio'] === null)) {
+                continue;
+            }
             $rows[] = [
                 'id'               => $website->id,
                 'ms'               => $data['ms'],

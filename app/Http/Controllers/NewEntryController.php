@@ -314,7 +314,10 @@ class NewEntryController extends Controller
         $rows = [];
         foreach ($entries as $entry) {
             $data = $results[$entry->domain_name] ?? null;
-            if (! $data) continue;
+            // Skip if API returned nothing useful (all 4 values still null)
+            if (! $data || ($data['ms'] === null && $data['organic_keywords'] === null && $data['organic_traffic'] === null && $data['kw_traffic_ratio'] === null)) {
+                continue;
+            }
             $rows[] = [
                 'id'               => $entry->id,
                 'ms'               => $data['ms'],
