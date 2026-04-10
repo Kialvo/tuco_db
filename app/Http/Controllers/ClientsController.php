@@ -22,7 +22,8 @@ class ClientsController extends Controller
     ======================================================================*/
     public function getData(Request $request)
     {
-        $clients = Client::select(['id', 'first_name', 'last_name', 'email', 'company', 'deleted_at']);
+        $clients = Client::select(['id', 'first_name', 'last_name', 'email', 'company_id', 'deleted_at'])
+            ->with('company:id,name');
 
         if ($request->boolean('show_deleted')) {
             $clients->onlyTrashed();
@@ -33,7 +34,8 @@ class ClientsController extends Controller
                 return $c->first_name . ' ' . $c->last_name;
             })
             ->addColumn('client_email', fn($c) => $c->email)
-            ->addColumn('client_company', fn($c) => $c->company)
+            ->addColumn('client_company', fn($c) => optional($c->company)->name)
+            ->addColumn('company', fn($c) => optional($c->company)->name)
             ->addColumn('action', function ($c) {
                 // If soft‑deleted –> RESTORE
                 if ($c->deleted_at) {
@@ -77,7 +79,7 @@ class ClientsController extends Controller
             'first_name' => 'required|max:255',
             'last_name'  => 'required|max:255',
             'email'      => 'required|email|max:255',
-            'company'    => 'nullable|max:255',
+            'company_id' => 'nullable|exists:companies,id',
         ]);
 
         Client::create($validated);
@@ -99,7 +101,7 @@ class ClientsController extends Controller
             'first_name' => 'required|max:255',
             'last_name'  => 'required|max:255',
             'email'      => 'required|email|max:255',
-            'company'    => 'nullable|max:255',
+            'company_id' => 'nullable|exists:companies,id',
         ]);
 
         $client->update($validated);
@@ -112,32 +114,35 @@ class ClientsController extends Controller
     ======================================================================*/
     public function editAjax($id)
     {
-        $client = Client::findOrFail($id);
-        return response()->json(['status' => 'success', 'data' => $client]);
+        $client = Client::with('company:id,name')->findOrFail($id);
+        return response()->json(['status' => 'success', 'data' => [
+            'id'           => $client->id,
+            'first_name'   => $client->first_name,
+            'last_name'    => $client->last_name,
+            'email'        => $client->email,
+            'company_id'   => $client->company_id,
+            'company_name' => optional($client->company)->name,
+        ]]);
     }
 
     public function showAjax($id)
     {
-        // eager‑load related storages & websites (ids + basic fields)
-        $client = Client::with(['storages:id,client_id,status' ])
-//            'websites:id,client_id,domain_name',
+        $client = Client::with(['company:id,name', 'storages:id,client_id,status'])
             ->findOrFail($id);
 
         $data = [
-            'id'        => $client->id,
-            'first_name'=> $client->first_name,
-            'last_name' => $client->last_name,
-            'email'     => $client->email,
-            'company'   => $client->company,
-            'storages'  => $client->storages->map(fn ($s) => [
+            'id'           => $client->id,
+            'first_name'   => $client->first_name,
+            'last_name'    => $client->last_name,
+            'email'        => $client->email,
+            'company'      => optional($client->company)->name,
+            'company_id'   => $client->company_id,
+            'company_name' => optional($client->company)->name,
+            'storages'     => $client->storages->map(fn ($s) => [
                 'id'          => $s->id,
                 'domain_name' => $s->site?->domain_name ?? '',
                 'status'      => $s->status ?? '',
             ]),
-//            'websites'  => $client->websites->map(fn($w) => [
-//                'id'          => $w->id,
-//                'domain_name' => $w->domain_name,
-//            ]),
         ];
 
         return response()->json(['status' => 'success', 'data' => $data]);

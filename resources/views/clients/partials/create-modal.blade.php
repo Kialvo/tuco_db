@@ -74,18 +74,17 @@
                 />
             </div>
 
-            {{-- Company --}}
+            {{-- Company (Select2 AJAX) --}}
             <div>
-                <label for="company" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="company_id" class="block text-sm font-medium text-gray-700 mb-1">
                     Company
                 </label>
-                <input
-                    type="text"
-                    name="company"
-                    value="{{ old('company') }}"
-                    class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
-                           focus:ring-cyan-500 focus:border-cyan-500"
-                />
+                <select name="company_id" id="create_company_id"
+                        class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
+                               focus:ring-cyan-500 focus:border-cyan-500"
+                        style="width:100%">
+                    <option value=""></option>
+                </select>
             </div>
 
             {{-- Submit --}}

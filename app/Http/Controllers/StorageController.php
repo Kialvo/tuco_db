@@ -100,7 +100,8 @@ class StorageController extends Controller
             // Existing stuff
             'country:id,country_name',
             'language:id,name',
-            'client:id,first_name,last_name',
+            'client:id,first_name,last_name,company_id',
+            'client.company:id,name',
             'copy:id,copy_val',
             'categories:id,name',
         ]);
@@ -121,6 +122,7 @@ class StorageController extends Controller
         if ($request->filled('language_id'))        $query->where('language_id',        $request->language_id);
         if ($request->filled('country_id'))         $query->where('country_id',         $request->country_id);
         if ($request->filled('client_id'))          $query->where('client_id',          $request->client_id);
+        if ($request->filled('company'))            $query->whereHas('client.company', fn ($q) => $q->where('name', 'like', '%'.$request->company.'%'));
 
         if ($request->filled('contact_id')) {
             $contactId = $request->contact_id;
@@ -168,6 +170,7 @@ class StorageController extends Controller
             ->addColumn('client_name', function ($r) {
                 return $r->client ? trim($r->client->first_name.' '.$r->client->last_name) : '';
             })
+            ->addColumn('client_company', fn ($r) => optional(optional($r->client)->company)->name)
             // Primary contact name (for table display & filter)
             ->addColumn('contact_name', function (Storage $r) {
                 /** @var \App\Models\Contact|null $primary */

@@ -203,6 +203,14 @@
                         @endforeach
                     </select>
                 </div>
+                {{-- Company --}}
+                <div class="flex flex-col">
+                    <label class="text-gray-700 font-medium">Company</label>
+                    <input type="text" id="filterCompany"
+                           class="border border-gray-300 rounded px-2 py-2 w-44
+                                  focus:ring-cyan-500 focus:border-cyan-500"
+                           placeholder="Search company...">
+                </div>
                 <!-- Contact -->
                 <div class="flex flex-col">
                     <label class="text-gray-700 font-medium">Publisher</label>
@@ -384,6 +392,7 @@
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">LB</th>
                     <th class="px-4 py-2">Client</th>
+                    <th class="px-4 py-2">Company</th>
                     <th class="px-4 py-2">Publisher</th>
                     <th class="px-4 py-2">Copywriter</th>
                     <th class="px-4 py-2">Copywriter Amount €</th>
@@ -605,6 +614,7 @@
                         d.language_id      =$('#filterLanguage').val();
                         d.country_id       =$('#filterCountry').val();
                         d.client_id        =$('#filterClient').val();
+                        d.company          =$('#filterCompany').val();
                         d.contact_id = $('#filterContact').val();
 
                         // NEW
@@ -634,6 +644,7 @@
                     {data:'client_name',name:'client.first_name',
                         render:(d,t,r)=>r.client_id?`<a href="#" class="client-link underline text-blue-600"
                                            data-client-id="${r.client_id}">${d}</a>`:''},
+                    {data:'client_company',name:'client.company',className:'text-center'},
                     {
                         data: 'contact_name',
                         orderable: false,
@@ -818,6 +829,7 @@
                     language_id       : $('#filterLanguage').val(),
                     country_id        : $('#filterCountry').val(),
                     client_id         : $('#filterClient').val(),
+                    company           : $('#filterCompany').val(),
                     status            : $('#filterStatus').val(),
 // NEW
                     website_domain    : $('#filterWebsiteDomain').val(),
@@ -979,6 +991,7 @@
                     language_id     :$('#filterLanguage').val(),
                     country_id      :$('#filterCountry').val(),
                     client_id       :$('#filterClient').val(),
+                    company         :$('#filterCompany').val(),
                     website_domain  :$('#filterWebsiteDomain').val(),
                     campaign        :$('#filterCampaign').val(),
                     campaign_code   :$('#filterCampaignCode').val(),
