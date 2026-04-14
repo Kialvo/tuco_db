@@ -1443,12 +1443,26 @@ class WebsiteController extends Controller
         }
 
         $websites = Website::whereIn('id', array_values($ids))->select(['id', 'domain_name'])->get();
-        $results  = $service->fetchBatch($websites->pluck('domain_name')->all());
+        $domains  = $websites->pluck('domain_name')->all();
+        $results  = $service->fetchBatch($domains);
         $updated  = $this->upsertDataForSeo($websites->all(), $results);
+
+        // Debug detail — shows exactly what happened per domain
+        $debug = [];
+        foreach ($websites as $w) {
+            $d = $results[$w->domain_name] ?? null;
+            $allNull = !$d || ($d['ms'] === null && $d['organic_keywords'] === null && $d['organic_traffic'] === null && $d['kw_traffic_ratio'] === null);
+            $debug[] = [
+                'domain'    => $w->domain_name,
+                'api_found' => !$allNull,
+                'data'      => $d,
+            ];
+        }
 
         return response()->json([
             'updated' => $updated,
             'message' => "Synced {$updated} domain(s).",
+            'debug'   => $debug,
         ]);
     }
 
