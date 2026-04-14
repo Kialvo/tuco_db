@@ -644,7 +644,7 @@
                     {data:'client_name',name:'client.first_name',
                         render:(d,t,r)=>r.client_id?`<a href="#" class="client-link underline text-blue-600"
                                            data-client-id="${r.client_id}">${d}</a>`:''},
-                    {data:'client_company',name:'client.company',className:'text-center'},
+                    {data:'client_company',name:'client_company',searchable:false,orderable:false,className:'text-center'},
                     {
                         data: 'contact_name',
                         orderable: false,
