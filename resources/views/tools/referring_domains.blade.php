@@ -34,6 +34,12 @@
                     Results for <strong id="resultDomain"></strong> —
                     <span id="resultCount"></span> referring domain(s) found.
                 </p>
+                <button id="btnExportCsv"
+                        class="bg-green-600 text-white px-4 py-1.5 rounded shadow-sm text-sm
+                               hover:bg-green-700 focus:outline-none focus:ring-2
+                               focus:ring-offset-2 focus:ring-green-500 transition flex items-center gap-2">
+                    <i class="fas fa-file-csv"></i> Export CSV
+                </button>
             </div>
 
             <div class="bg-white border border-gray-200 rounded shadow-sm overflow-x-auto">
@@ -76,6 +82,37 @@ $(function () {
 
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
+    let lastRows   = [];
+    let lastDomain = '';
+
+    // ── CSV export ──
+    $('#btnExportCsv').on('click', function () {
+        if (!lastRows.length) return;
+
+        const headers = ['Referring Domain', 'Domain MS', 'Backlink Type'];
+        const lines   = [headers.join(',')];
+
+        lastRows.forEach(function (row) {
+            const cols = [
+                '"' + (row.domain      || '').replace(/"/g, '""') + '"',
+                row.ms !== null ? row.ms : '',
+                '"' + (row.backlink_type || '').replace(/"/g, '""') + '"',
+            ];
+            lines.push(cols.join(','));
+        });
+
+        const csv      = lines.join('\r\n');
+        const blob     = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url      = URL.createObjectURL(blob);
+        const filename = 'referring-domains-' + lastDomain + '.csv';
+
+        const a = document.createElement('a');
+        a.href     = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
     function setLoading(on) {
         if (on) {
             btnSearch.prop('disabled', true);
@@ -108,6 +145,8 @@ $(function () {
             data: { domain: domain },
             success: function (res) {
                 setLoading(false);
+                lastRows   = res.rows || [];
+                lastDomain = res.domain || '';
                 resultDomain.text(res.domain);
                 resultCount.text(res.total);
 
