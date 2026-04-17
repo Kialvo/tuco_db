@@ -5,6 +5,7 @@ use App\Http\Controllers\NewEntryController;
 use App\Http\Controllers\NewEntryImportController;
 use App\Http\Controllers\OutreachController;
 use App\Http\Controllers\Tool\AhrefsCleanerController;
+use App\Http\Controllers\Tool\ReferringDomainsController;
 use App\Http\Controllers\Tool\WebScraperController;
 use App\Http\Controllers\WebsiteImportController;
 use Illuminate\Support\Facades\Route;
@@ -292,6 +293,10 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
         //Ahrefs cleaner
         Route::get ('ahrefs-cleaner',     [AhrefsCleanerController::class, 'index'])->name('ahrefs.index');
         Route::post('ahrefs-cleaner/run', [AhrefsCleanerController::class, 'run'])->name('ahrefs.run');
+
+        // Referring Domains
+        Route::get ('referring-domains',        [ReferringDomainsController::class, 'index'])->name('referring_domains.index');
+        Route::post('referring-domains/search', [ReferringDomainsController::class, 'search'])->name('referring_domains.search');
     });
 
 });
