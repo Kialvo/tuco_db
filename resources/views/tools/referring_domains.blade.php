@@ -48,7 +48,9 @@
                     <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                         <th class="py-3 px-4 font-semibold text-left">#</th>
                         <th class="py-3 px-4 font-semibold text-left">Referring Domain</th>
-                        <th class="py-3 px-4 font-semibold text-center">Domain MS</th>
+                        <th id="thMs" class="py-3 px-4 font-semibold text-center cursor-pointer select-none hover:text-gray-700">
+                            Domain MS <span id="msArrow">↓</span>
+                        </th>
                         <th class="py-3 px-4 font-semibold text-left">Backlink Type</th>
                     </tr>
                     </thead>
@@ -84,6 +86,7 @@ $(function () {
 
     let lastRows   = [];
     let lastDomain = '';
+    let sortAsc    = false;
 
     // ── CSV export ──
     $('#btnExportCsv').on('click', function () {
@@ -155,22 +158,9 @@ $(function () {
                     return;
                 }
 
-                res.rows.forEach(function (row, i) {
-                    const ms = row.ms !== null ? row.ms : '—';
-                    const type = row.backlink_type || '—';
-                    resultsBody.append(`
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-2 px-4 text-gray-400">${i + 1}</td>
-                            <td class="py-2 px-4 font-medium">
-                                <a href="https://${row.domain}" target="_blank"
-                                   class="text-cyan-700 hover:underline">${row.domain}</a>
-                            </td>
-                            <td class="py-2 px-4 text-center font-semibold">${ms}</td>
-                            <td class="py-2 px-4 text-gray-500">${type}</td>
-                        </tr>
-                    `);
-                });
-
+                sortAsc = false;
+                $('#msArrow').text('↓');
+                renderRows();
                 resultsWrapper.removeClass('hidden');
             },
             error: function (xhr) {
@@ -180,6 +170,38 @@ $(function () {
             }
         });
     }
+
+    function renderRows() {
+        const sorted = lastRows.slice().sort(function (a, b) {
+            const msA = a.ms !== null ? a.ms : -1;
+            const msB = b.ms !== null ? b.ms : -1;
+            return sortAsc ? msA - msB : msB - msA;
+        });
+
+        resultsBody.empty();
+        sorted.forEach(function (row, i) {
+            const ms   = row.ms !== null ? row.ms : '—';
+            const type = row.backlink_type || '—';
+            resultsBody.append(`
+                <tr class="hover:bg-gray-50">
+                    <td class="py-2 px-4 text-gray-400">${i + 1}</td>
+                    <td class="py-2 px-4 font-medium">
+                        <a href="https://${row.domain}" target="_blank"
+                           class="text-cyan-700 hover:underline">${row.domain}</a>
+                    </td>
+                    <td class="py-2 px-4 text-center font-semibold">${ms}</td>
+                    <td class="py-2 px-4 text-gray-500">${type}</td>
+                </tr>
+            `);
+        });
+    }
+
+    $('#thMs').on('click', function () {
+        if (!lastRows.length) return;
+        sortAsc = !sortAsc;
+        $('#msArrow').text(sortAsc ? '↑' : '↓');
+        renderRows();
+    });
 
     btnSearch.on('click', doSearch);
 
