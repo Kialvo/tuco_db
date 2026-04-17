@@ -6,6 +6,7 @@ use App\Http\Controllers\NewEntryImportController;
 use App\Http\Controllers\OutreachController;
 use App\Http\Controllers\Tool\AhrefsCleanerController;
 use App\Http\Controllers\Tool\ReferringDomainsController;
+use App\Http\Controllers\Tool\TrafficDistributionController;
 use App\Http\Controllers\Tool\WebScraperController;
 use App\Http\Controllers\WebsiteImportController;
 use Illuminate\Support\Facades\Route;
@@ -297,6 +298,10 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
         // Referring Domains
         Route::get ('referring-domains',        [ReferringDomainsController::class, 'index'])->name('referring_domains.index');
         Route::post('referring-domains/search', [ReferringDomainsController::class, 'search'])->name('referring_domains.search');
+
+        // Traffic Distribution by Country
+        Route::get ('traffic-distribution',        [TrafficDistributionController::class, 'index'])->name('traffic_distribution.index');
+        Route::post('traffic-distribution/search', [TrafficDistributionController::class, 'search'])->name('traffic_distribution.search');
     });
 
 });

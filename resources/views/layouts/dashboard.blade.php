@@ -140,7 +140,7 @@
             @endif
 
             @unless($isGuestUser)
-                <div x-data="{ open: {{ request()->routeIs('tools.*') ? 'true' : 'false' }} }">
+                <div x-data="{ open: {{ request()->routeIs('tools.*') || request()->routeIs('tools.traffic_distribution.*') ? 'true' : 'false' }} }">
                     <div class="flex items-center justify-between px-3 py-2 rounded transition
                                 hover:bg-slate-800 {{ request()->routeIs('tools.*') ? 'bg-slate-800' : '' }}">
                         <a href="#"
@@ -170,6 +170,12 @@
                            class="block px-3 py-2 rounded transition hover:bg-slate-800
                                   {{ request()->routeIs('tools.referring_domains.*') ? 'bg-slate-800' : '' }}">
                             <i class="fas fa-link w-4 inline-block me-2"></i> Referring Domains
+                        </a>
+
+                        <a href="{{ route('tools.traffic_distribution.index') }}"
+                           class="block px-3 py-2 rounded transition hover:bg-slate-800
+                                  {{ request()->routeIs('tools.traffic_distribution.*') ? 'bg-slate-800' : '' }}">
+                            <i class="fas fa-globe-europe w-4 inline-block me-2"></i> Traffic by Country
                         </a>
                     </div>
                 </div>
