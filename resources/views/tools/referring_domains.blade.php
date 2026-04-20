@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('content')
+
     <h1 class="text-lg font-bold text-gray-700 py-6">Referring Domains</h1>
 
     <div class="px-6 pb-10 bg-gray-50 min-h-screen">
