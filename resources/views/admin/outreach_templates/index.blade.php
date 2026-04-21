@@ -13,7 +13,7 @@
         <code class="mx-1 bg-cyan-100 px-1 rounded">[special topic price]</code>
         <code class="mx-1 bg-cyan-100 px-1 rounded">[brand]</code>
         <code class="mx-1 bg-cyan-100 px-1 rounded">[target url]</code>
-        <code class="mx-1 bg-cyan-100 px-1 rounded">{{sensitive_line}}</code>
+        <code class="mx-1 bg-cyan-100 px-1 rounded">@{{sensitive_line}}</code>
         <span class="text-cyan-600 ml-1">(first template only — auto-removed when no special topic price)</span>
     </div>
 
