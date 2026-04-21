@@ -137,11 +137,6 @@
                           {{ request()->routeIs('admin.users.*') ? 'bg-slate-800' : '' }}">
                     <i class="fas fa-users-cog w-5 inline-block me-2"></i> Manage Users
                 </a>
-                <a href="{{ route('admin.outreach_templates.index') }}"
-                   class="block px-3 py-2 rounded transition hover:bg-slate-800
-                          {{ request()->routeIs('admin.outreach_templates.*') ? 'bg-slate-800' : '' }}">
-                    <i class="fas fa-envelope-open-text w-5 inline-block me-2"></i> Outreach Templates
-                </a>
             @endif
 
             @unless($isGuestUser)
