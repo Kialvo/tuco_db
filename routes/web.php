@@ -17,6 +17,7 @@ use App\Http\Middleware\RestrictGuestToDomainsMiddleware;
  |  Controllers
  *───────────────────────────────────────────────────────────*/
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\OutreachTemplateController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserFavoritesController;
 
@@ -325,6 +326,9 @@ Route::middleware(['auth', AdminMiddleware::class])->group(function () {
         ->name('admin.users.favorites.export.csv');
     Route::get('/admin/users/{user}/favorites/export/pdf', [UserFavoritesController::class, 'exportPdf'])
         ->name('admin.users.favorites.export.pdf');
+
+    Route::get ('admin/outreach-templates',              [OutreachTemplateController::class, 'index'])->name('admin.outreach_templates.index');
+    Route::post('admin/outreach-templates/{language}/{type}', [OutreachTemplateController::class, 'update'])->name('admin.outreach_templates.update');
 
     Route::resource('admin/users', UserController::class)->names([
         'index'   => 'admin.users.index',
