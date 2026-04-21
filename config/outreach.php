@@ -24,7 +24,7 @@ return [
     ],
     // Template subjects & bodies.
     // Use tokens:
-    // [domain] [publisher price] [publisher_price] [special topic price] [special_topic_price]
+    // [domain] [publisher price] [special topic price] [brand] [target url]
     // {{sensitive_line}}  ← will be included or removed per-recipient
     'templates' => [
 
@@ -34,11 +34,11 @@ return [
                 'body' => <<<TXT
 Hi,
 
-I hope you’re doing well. This is Martina from Menford.
+I hope you're doing well. This is Martina from Menford.
 
-We’ve already collaborated with you on [domain] and really appreciated the experience.
+We've already collaborated with you on [domain] and really appreciated the experience.
 
-I’m reaching out to confirm your current rates for publishing a guest post with a permanent dofollow link, without the sponsored tag. Could you please confirm that the rate for a standard article is [publisher price]{{sensitive_line}}?
+Could you confirm that the rate for publishing a guest post with a permanent dofollow link, without a sponsored tag, is still the same as last time — [publisher price]{{sensitive_line}}?
 
 Looking forward to your reply so I can offer your site to our client.
 
@@ -70,9 +70,9 @@ Buongiorno,
 
 Spero vada tutto bene. Sono Martina di Menford.
 
-Abbiamo già collaborato con voi su [domain] e abbiamo apprezzato l’esperienza.
+Abbiamo già collaborato con voi su [domain] e abbiamo davvero apprezzato l'esperienza.
 
-Vi scrivo per confermare le tariffe attuali per la pubblicazione di un guest post con link dofollow permanente, senza tag sponsored. Potreste confermare che la tariffa per un articolo standard è [publisher price]{{sensitive_line}}?
+Potete confermare che la tariffa per la pubblicazione di un guest post con link dofollow permanente, senza tag sponsored, è rimasta invariata rispetto all'ultima volta — [publisher price]{{sensitive_line}}?
 
 Resto in attesa di un vostro riscontro così da proporre il vostro sito al nostro cliente.
 
@@ -106,7 +106,7 @@ Espero que estés bien. Soy Martina de Menford.
 
 Ya hemos colaborado contigo en [domain] y apreciamos mucho la experiencia.
 
-Te escribo para confirmar tus tarifas actuales para publicar un guest post con enlace dofollow permanente, sin la etiqueta sponsored. ¿Podrías confirmar que la tarifa para un artículo estándar es [publisher price]{{sensitive_line}}?
+¿Podrías confirmar que la tarifa para publicar un guest post con enlace dofollow permanente, sin la etiqueta sponsored, sigue siendo la misma que la última vez — [publisher price]{{sensitive_line}}?
 
 Quedo atenta a tu respuesta para poder proponer tu sitio a nuestro cliente.
 
@@ -138,9 +138,9 @@ Olá,
 
 Espero que esteja bem. Aqui é a Martina, da Menford.
 
-Já colaboramos com você em [domain] e apreciamos a experiência.
+Já colaboramos com você em [domain] e realmente apreciamos a experiência.
 
-Escrevo para confirmar suas tarifas atuais para publicar um guest post com link dofollow permanente, sem a tag sponsored. Poderia confirmar que o valor para um artigo padrão é [publisher price]{{sensitive_line}}?
+Poderia confirmar que a tarifa para publicar um guest post com link dofollow permanente, sem a tag sponsored, continua a mesma de da última vez — [publisher price]{{sensitive_line}}?
 
 Fico no aguardo para poder propor seu site ao nosso cliente.
 
@@ -174,7 +174,7 @@ ich hoffe, es geht Ihnen gut. Hier ist Martina von Menford.
 
 Wir haben bereits mit Ihnen auf [domain] zusammengearbeitet und die Zusammenarbeit sehr geschätzt.
 
-Ich möchte Ihre aktuellen Preise für die Veröffentlichung eines Gastbeitrags mit dauerhaftem Dofollow-Link ohne Sponsored-Tag bestätigen. Können Sie bestätigen, dass der Preis für einen Standardartikel [publisher price] beträgt{{sensitive_line}}?
+Könnten Sie bestätigen, dass der Preis für die Veröffentlichung eines Gastbeitrags mit dauerhaftem Dofollow-Link, ohne Sponsored-Tag, noch derselbe ist wie beim letzten Mal — [publisher price]{{sensitive_line}}?
 
 Ich freue mich auf Ihre Rückmeldung, damit ich Ihre Seite unserem Kunden vorschlagen kann.
 
@@ -204,13 +204,13 @@ TXT
                 'body' => <<<TXT
 Bonjour,
 
-J’espère que vous allez bien. Ici Martina de Menford.
+J'espère que vous allez bien. Ici Martina de Menford.
 
-Nous avons déjà collaboré avec vous sur [domain] et avons beaucoup apprécié l’expérience.
+Nous avons déjà collaboré avec vous sur [domain] et avons vraiment apprécié l'expérience.
 
-Je vous contacte pour confirmer vos tarifs actuels pour la publication d’un article invité avec lien dofollow permanent, sans la mention sponsored. Pourriez-vous confirmer que le tarif pour un article standard est [publisher price]{{sensitive_line}} ?
+Pourriez-vous confirmer que le tarif pour la publication d'un article invité avec lien dofollow permanent, sans la mention sponsored, est toujours le même que la dernière fois — [publisher price]{{sensitive_line}} ?
 
-Dans l’attente de votre retour afin de proposer votre site à notre client.
+Dans l'attente de votre retour afin de proposer votre site à notre client.
 
 Cordialement,
 Martina
@@ -224,7 +224,7 @@ Bonjour,
 
 Je me permets de revenir vers vous — pourriez-vous confirmer vos tarifs actuels pour un article invité avec lien dofollow permanent ?
 
-Cela m’aidera à proposer votre site à notre client.
+Cela m'aidera à proposer votre site à notre client.
 
 Cordialement,
 Martina
@@ -242,7 +242,7 @@ Shpresoj të jeni mirë. Jam Martina nga Menford.
 
 Kemi bashkëpunuar më parë me ju në [domain] dhe e vlerësuam shumë përvojën.
 
-Po ju shkruaj për të konfirmuar çmimet aktuale për publikimin e një guest post me link dofollow të përhershëm, pa etiketën sponsored. A mund të konfirmoni që çmimi për një artikull standard është [publisher price]{{sensitive_line}}?
+A mund të konfirmoni që çmimi për publikimin e një guest post me link dofollow të përhershëm, pa etiketën sponsored, është i njëjtë si herën e fundit — [publisher price]{{sensitive_line}}?
 
 Pres përgjigjen tuaj që ta propozoj faqen tuaj te klienti ynë.
 
@@ -274,9 +274,9 @@ Dobrý den,
 
 doufám, že se máte dobře. Zde Martina z Menford.
 
-Už jsme s vámi spolupracovali na [domain] a velmi si toho vážíme.
+Již jsme s vámi spolupracovali na [domain] a velmi si toho vážíme.
 
-Píšu kvůli potvrzení vašich aktuálních cen za publikaci guest postu s trvalým dofollow odkazem, bez štítku sponsored. Můžete prosím potvrdit, že cena za standardní článek je [publisher price]{{sensitive_line}}?
+Mohli byste potvrdit, že cena za publikaci guest postu s trvalým dofollow odkazem, bez štítku sponsored, zůstává stejná jako naposledy — [publisher price]{{sensitive_line}}?
 
 Děkuji za odpověď, abych mohla váš web nabídnout našemu klientovi.
 
