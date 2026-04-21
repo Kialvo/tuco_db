@@ -104,9 +104,11 @@ class OutreachController extends Controller
 
             try {
                 $alwaysBcc = config('mail.always_bcc');
+                $testEmail = env('OUTREACH_TEST_EMAIL');
+                $recipient = $testEmail ?: $email;
 
-                Mail::raw($body, function ($m) use ($email, $subject, $ccMe, $alwaysBcc) {
-                    $m->to($email)->subject($subject);
+                Mail::raw($body, function ($m) use ($recipient, $subject, $ccMe, $alwaysBcc) {
+                    $m->to($recipient)->subject($subject);
                     if ($ccMe && config('mail.from.address')) {
                         $m->bcc(config('mail.from.address'));
                     }
