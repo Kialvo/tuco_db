@@ -3,7 +3,7 @@
     /* Lookups */
     $countries   = \App\Models\Country ::orderBy('country_name')->pluck('country_name','id');
     $languages   = \App\Models\Language::orderBy('name')        ->pluck('name','id');
-    $categories  = \App\Models\Category::orderBy('name')        ->pluck('name','id');
+    $categories  = \App\Models\Category::orderBy('name')->where('name','!=','Betting')->pluck('name','id');
 
     /* Labels shown to user */
     $bulkLabels = [
@@ -31,7 +31,7 @@
         'first_contact_date' => 'Date – First Contact',
         'category_ids'=>'Categories',
 
-        'betting'              => 'Betting',
+        /* 'betting' => 'Betting', */
         'trading'              => 'Trading',
         'permanent_link'       => 'Permanent Link',
         'more_than_one_link'   => 'More than one link',
@@ -66,7 +66,7 @@
 
         'category_ids' => ['type'=>'multiselect','options'=>$categories],
 
-        'betting'              => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
+        /* 'betting' => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']], */
         'trading'              => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
         'permanent_link'       => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],
         'more_than_one_link'   => ['type'=>'select','options'=>[''=>'-- Clear --',1=>'Yes',0=>'No']],

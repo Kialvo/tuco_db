@@ -25,7 +25,7 @@
         <div class="mb-2"><strong>Ahrefs Keyword:</strong> {{ $website->ahrefs_keyword }}</div>
         <div class="mb-2"><strong>Ahrefs Traffic:</strong> {{ $website->ahrefs_traffic }}</div>
         <div class="mb-2"><strong>Keyword vs Traffic:</strong> {{ $website->keyword_vs_traffic }}</div>
-        <div class="mb-2"><strong>Betting:</strong> {{ $website->betting ? 'Yes' : 'No' }}</div>
+        {{-- <div class="mb-2"><strong>Betting:</strong> {{ $website->betting ? 'Yes' : 'No' }}</div> --}}
         <div class="mb-2"><strong>Trading:</strong> {{ $website->trading ? 'Yes' : 'No' }}</div>
         <div class="mb-2"><strong>LINK LIFETIME:</strong> {{ $website->permanent_link ? 'Yes' : 'No' }}</div>
         <div class="mb-2"><strong>More than 1 Link:</strong> {{ $website->more_than_one_link ? 'Yes' : 'No' }}</div>

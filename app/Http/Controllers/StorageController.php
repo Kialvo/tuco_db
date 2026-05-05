@@ -60,7 +60,7 @@ class StorageController extends Controller
         $countries  = Country::all();
         $languages  = Language::all();
         $clients    = Client::all();
-        $categories = Category::all();
+        $categories = Category::where('name', '!=', 'Betting')->get();
         $copies     = Copy::all();
 
         // pick one id per (name,email) pair, ordered by name
@@ -445,7 +445,7 @@ class StorageController extends Controller
         $languages  = Language::all();
         $clients    = Client::all();
         $copies     = Copy::all();
-        $categories = Category::all();
+        $categories = Category::where('name', '!=', 'Betting')->get();
 
         // Websites with their linked contact
         $websites   = Website::with('contact')
@@ -622,7 +622,7 @@ class StorageController extends Controller
         $languages  = Language::all();
         $clients    = Client::all();
         $copies     = Copy::all();
-        $categories = Category::all();
+        $categories = Category::where('name', '!=', 'Betting')->get();
 
         $websites   = Website::with('contact')
             ->orderBy('domain_name')
