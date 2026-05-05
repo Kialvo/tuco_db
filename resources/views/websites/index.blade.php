@@ -601,7 +601,7 @@
                 @php
                     $toggleFilters = $isGuestUser
                         ? ['trading']
-                        : ['trading','permanent_link','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'];
+                        : ['betting','trading','permanent_link','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'];
                 @endphp
                 @foreach($toggleFilters as $chk)
                     <div class="flex items-center space-x-1">
