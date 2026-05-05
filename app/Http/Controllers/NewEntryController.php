@@ -55,7 +55,7 @@ class NewEntryController extends Controller
         $countries  = Country::all();
         $languages  = Language::all();
         $contacts   = Contact::all();
-        $categories = Category::all();
+        $categories = Category::where('name', '!=', 'Betting')->get();
 
         return view('new_entries.index', compact(
             'countries','languages','contacts','categories'
@@ -702,7 +702,7 @@ class NewEntryController extends Controller
             'countries'  => Country::all(),
             'languages'  => Language::all(),
             'contacts'   => Contact::all(),
-            'categories' => Category::all(),
+            'categories' => Category::where('name', '!=', 'Betting')->get(),
         ];
     }
 

@@ -43,7 +43,7 @@
         <th>Ahrefs Keyword</th>
         <th>Ahrefs Traffic</th>
         <th>Keyword vs Traffic</th>
-        <th>Betting</th>
+        {{-- <th>Betting</th> --}}
         <th>Trading</th>
     </tr>
     </thead>
@@ -72,7 +72,7 @@
             <td>{{ $web->ahrefs_keyword }}</td>
             <td>{{ $web->ahrefs_traffic }}</td>
             <td>{{ $web->keyword_vs_traffic }}</td>
-            <td>{{ $yn($web->betting) }}</td>
+            {{-- <td>{{ $yn($web->betting) }}</td> --}}
             <td>{{ $yn($web->trading) }}</td>
         </tr>
     @endforeach

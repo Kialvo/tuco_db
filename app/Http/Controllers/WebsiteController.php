@@ -60,7 +60,7 @@ class WebsiteController extends Controller
         $countries  = Country::all();
         $languages  = Language::all();
         $contacts   = Contact::all();
-        $categories = Category::all();
+        $categories = Category::where('name', '!=', 'Betting')->get();
 
         return view('websites.index', compact('countries','languages','contacts','categories'));
     }
@@ -799,7 +799,7 @@ class WebsiteController extends Controller
         $countries  = Country::all();
         $languages  = Language::all();
         $contacts   = Contact::all();
-        $categories = Category::all();
+        $categories = Category::where('name', '!=', 'Betting')->get();
 
         return view('websites.create', compact('countries', 'languages', 'contacts', 'categories'));
     }
@@ -933,7 +933,7 @@ class WebsiteController extends Controller
         $countries  = Country::all();
         $languages  = Language::all();
         $contacts   = Contact::all();
-        $categories = Category::all();
+        $categories = Category::where('name', '!=', 'Betting')->get();
 
         return view('websites.edit', compact('website', 'countries', 'languages', 'contacts', 'categories'));
     }

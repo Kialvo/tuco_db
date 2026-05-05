@@ -381,6 +381,7 @@
 
         <!-- Boolean Fields -->
         <div class="grid grid-cols-3 gap-4">
+            {{-- Betting hidden from UI (field kept in backend)
             <div>
                 <label class="flex items-center">
                     <input type="checkbox" name="betting" value="1" {{ old('betting', $website->betting) ? 'checked' : '' }} class="mr-2">
@@ -390,6 +391,7 @@
                 <p class="text-red-500 text-sm">{{ $message }}</p>
                 @enderror
             </div>
+            --}}
             <div>
                 <label class="flex items-center">
                     <input type="checkbox" name="trading" value="1" {{ old('trading', $website->trading) ? 'checked' : '' }} class="mr-2">

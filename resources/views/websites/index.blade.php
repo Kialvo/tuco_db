@@ -11,7 +11,7 @@
         'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
         'TF_vs_CF','semrush_traffic','ahrefs_keyword','ahrefs_traffic',
         'keyword_vs_traffic','seo_metrics_date',
-        'betting','trading','permanent_link','more_than_one_link',
+        /* 'betting', */ 'trading','permanent_link','more_than_one_link',
         'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
         'category_ids',              // m-m
         'recalculate_totals',        // pseudo
@@ -60,7 +60,7 @@
         'organic_traffic'  => 'Organic Traffic',
         'kw_traffic_ratio' => 'KW/Traffic Ratio',
         'seo_metrics_date' => 'SEO Metrics Date',
-        'betting' => 'Betting',
+        /* 'betting' => 'Betting', */
         'trading' => 'Trading',
         'permanent_link' => 'LINK LIFETIME',
         'more_than_one_link' => 'More than 1 link',
@@ -600,8 +600,8 @@
             <div class="flex flex-wrap items-center gap-3 mb-2">
                 @php
                     $toggleFilters = $isGuestUser
-                        ? ['betting', 'trading']
-                        : ['betting','trading','permanent_link','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'];
+                        ? ['trading']
+                        : ['trading','permanent_link','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'];
                 @endphp
                 @foreach($toggleFilters as $chk)
                     <div class="flex items-center space-x-1">
@@ -1112,7 +1112,7 @@
                     </th>
                     <th class="whitespace-nowrap px-4 py-2">KW/Traffic Ratio</th>
                     <th class="whitespace-nowrap px-4 py-2">SEO Metrics Date</th>
-                    <th class="whitespace-nowrap px-4 py-2">Betting</th>
+                    {{-- <th class="whitespace-nowrap px-4 py-2">Betting</th> --}}
                     <th class="whitespace-nowrap px-4 py-2">Trading</th>
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
@@ -1221,7 +1221,7 @@
             seo_metrics_date     : {type:'date'},
 
             /* ========= BOOLEAN FLAGS ========= */
-            betting:{type:'select',options:{1:'Yes',0:'No'}},
+            // betting:{type:'select',options:{1:'Yes',0:'No'}},
             trading:{type:'select',options:{1:'Yes',0:'No'}},
             permanent_link:{type:'select',options:{1:'Yes',0:'No'}},
             more_than_one_link:{type:'select',options:{1:'Yes',0:'No'}},
@@ -1450,7 +1450,7 @@
                         d.kw_traffic_ratio_min = $('#filterKWTRRatioMin').val();
                         d.kw_traffic_ratio_max = $('#filterKWTRRatioMax').val();
 
-                        d.betting = $('#filterBetting').is(':checked');
+                        // d.betting = $('#filterBetting').is(':checked');
                         d.trading = $('#filterTrading').is(':checked');
                         d.permanent_link = $('#filterPermanent_link').is(':checked');
                         d.more_than_one_link = $('#filterMore_than_one_link').is(':checked');
@@ -1673,15 +1673,12 @@
                     { data: 'kw_traffic_ratio', name: 'kw_traffic_ratio', type: 'number', className: 'text-center' },
                     { data:'seo_metrics_date', name:'seo_metrics_date',
                       className:'text-center', render:dt, visible: !isGuestUser },
-                    { data: 'betting', name: 'betting', className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === 1 )  {
-                                return 'YES';
-                            }else if(data === 0)
-
-                            return 'NO';
-                        }
-                    },
+                    // { data: 'betting', name: 'betting', className: 'text-center',
+                    //     render: function (data, type, row) {
+                    //         if (data === 1 )  { return 'YES'; }
+                    //         else if(data === 0) return 'NO';
+                    //     }
+                    // },
                     { data: 'trading', name: 'trading', className: 'text-center',
                         render: function (data, type, row) {
                             if (data === 1 )  {
@@ -1753,7 +1750,13 @@
                 ],
                 order: [[1, 'desc']],
                 responsive: false,
-                autoWidth: false
+                autoWidth: false,
+                language: {
+                    lengthMenu:   'Show _MENU_ websites',
+                    info:         'Showing _START_ to _END_ of _TOTAL_ websites',
+                    infoFiltered: '(filtered from _MAX_ total websites)',
+                    infoEmpty:    'Showing 0 to 0 of 0 websites',
+                }
             });
 
             // Move search box into the DataTable header (next to "Show entries")
@@ -2084,7 +2087,7 @@
                     organic_traffic_max:  $('#filterOrganicTRMax').val(),
                     kw_traffic_ratio_min: $('#filterKWTRRatioMin').val(),
                     kw_traffic_ratio_max: $('#filterKWTRRatioMax').val(),
-                    betting: $('#filterBetting').is(':checked') ? 1 : 0,
+                    // betting: $('#filterBetting').is(':checked') ? 1 : 0,
                     trading: $('#filterTrading').is(':checked') ? 1 : 0,
                     permanent_link: $('#filterPermanent_link').is(':checked') ? 1 : 0,
                     more_than_one_link: $('#filterMore_than_one_link').is(':checked') ? 1 : 0,
