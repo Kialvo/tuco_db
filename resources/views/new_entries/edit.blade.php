@@ -397,7 +397,7 @@
 
         <!-- ───── BOOLEAN FIELDS ───── -->
         <div class="grid grid-cols-3 gap-4">
-            @foreach([/*'betting',*/'trading','permanent_link','more_than_one_link'] as $bool)
+            @foreach(['betting','trading','permanent_link','more_than_one_link'] as $bool)
                 <div>
                     <label class="flex items-center">
                         <input type="checkbox" name="{{ $bool }}" value="1"

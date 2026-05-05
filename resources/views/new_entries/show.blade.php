@@ -58,7 +58,7 @@
             $bool = fn($v) => $v ? 'Yes' : 'No';
         @endphp
         <div class="grid grid-cols-3 gap-2 text-sm my-3">
-            {{-- <div><strong>Betting:</strong> {{ $bool($new_entry->betting) }}</div> --}}
+            <div><strong>Betting:</strong> {{ $bool($new_entry->betting) }}</div>
             <div><strong>Trading:</strong> {{ $bool($new_entry->trading) }}</div>
             <div><strong>Permanent Link:</strong> {{ $bool($new_entry->permanent_link) }}</div>
             <div><strong>More than 1 Link:</strong> {{ $bool($new_entry->more_than_one_link) }}</div>

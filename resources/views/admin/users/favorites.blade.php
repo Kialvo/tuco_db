@@ -36,7 +36,7 @@
         'ahrefs_traffic' => 'Ahrefs Traffic',
         'keyword_vs_traffic' => 'Keywords vs Traffic',
         'seo_metrics_date' => 'SEO Metrics Date',
-        /* 'betting' => 'Betting', */
+        'betting' => 'Betting',
         'trading' => 'Trading',
         'permanent_link' => 'LINK LIFETIME',
         'more_than_one_link' => 'More than 1 link',
@@ -402,7 +402,7 @@
                         </span>
                     </th>
                     <th class="whitespace-nowrap px-4 py-2">SEO Metrics Date</th>
-                    {{-- <th class="whitespace-nowrap px-4 py-2">Betting</th> --}}
+                    <th class="whitespace-nowrap px-4 py-2">Betting</th>
                     <th class="whitespace-nowrap px-4 py-2">Trading</th>
                     <th class="whitespace-nowrap px-4 py-2">
                         <span class="inline-flex items-center gap-1">
@@ -635,14 +635,14 @@
                     { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic', className: 'text-center', },
                     { data:'seo_metrics_date', name:'seo_metrics_date',
                       className:'text-center', render:dt},
-                    // { data: 'betting', name: 'betting', className: 'text-center',
-                    //     render: function (data, type, row) {
-                    //         if (data === 1 )  {
-                    //             return 'YES';
-                    //         }else if(data === 0)
-                    //         return 'NO';
-                    //     }
-                    // },
+                    { data: 'betting', name: 'betting', className: 'text-center',
+                        render: function (data, type, row) {
+                            if (data === 1 )  {
+                                return 'YES';
+                            }else if(data === 0)
+                            return 'NO';
+                        }
+                    },
                     { data: 'trading', name: 'trading', className: 'text-center',
                         render: function (data, type, row) {
                             if (data === 1 )  {

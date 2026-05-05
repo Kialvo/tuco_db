@@ -186,7 +186,7 @@
                     </th>
                     <th class="px-4 py-2">SEO Metrics Date</th>
 
-                    {{-- <th class="px-4 py-2">Betting</th> --}}
+                    <th class="px-4 py-2">Betting</th>
                     <th class="px-4 py-2">Trading</th>
                     <th class="px-4 py-2">Permanent Link</th>
                     <th class="px-4 py-2">
@@ -362,7 +362,7 @@
                     {data:'semrush_traffic'}, {data:'ahrefs_keyword'},
                     {data:'ahrefs_traffic'}, {data:'keyword_vs_traffic'},
                     {data:'seo_metrics_date',     render:dateFmt},
-                    // {data:'betting',              render:yesNo},
+                    {data:'betting',              render:yesNo},
                     {data:'trading',              render:yesNo},
                     {data:'permanent_link',       render:yesNo},
                     {data:'more_than_one_link',   render:yesNo},

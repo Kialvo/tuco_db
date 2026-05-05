@@ -58,7 +58,7 @@
         <th>Organic Traffic</th>
         <th>KW/Traffic Ratio</th>
         <th>SEO Metrics Date</th>
-        {{-- <th>Betting</th> --}}
+        <th>Betting</th>
         <th>Trading</th>
         <th>LINK LIFETIME</th>
         <th>More than 1 link</th>
@@ -112,7 +112,7 @@
             <td>{{ $web->organic_traffic }}</td>
             <td>{{ $web->kw_traffic_ratio }}</td>
             <td>{{ $web->seo_metrics_date }}</td>
-            {{-- <td>{{ $web->betting ? 'Yes' : 'No' }}</td> --}}
+            <td>{{ $web->betting ? 'Yes' : 'No' }}</td>
             <td>{{ $web->trading ? 'Yes' : 'No' }}</td>
             <td>{{ $web->permanent_link ? 'Yes' : 'No' }}</td>
             <td>{{ $web->more_than_one_link ? 'Yes' : 'No' }}</td>

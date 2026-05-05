@@ -8,7 +8,7 @@
         'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
         'TF_vs_CF','semrush_traffic','ahrefs_keyword','ahrefs_traffic',
         'keyword_vs_traffic','seo_metrics_date',
-        /* 'betting', */ 'trading','permanent_link','more_than_one_link',
+        'betting','trading','permanent_link','more_than_one_link',
         'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
         'category_ids',              // many-to-many
         'recalculate_totals',        // pseudo
@@ -300,7 +300,7 @@
                     <th class="px-4 py-2">KW/Traffic Ratio</th>
                     <th class="px-4 py-2">SEO Metrics Date</th>
 
-                    {{-- <th class="px-4 py-2">Betting</th> --}}
+                    <th class="px-4 py-2">Betting</th>
                     <th class="px-4 py-2">Trading</th>
                     <th class="px-4 py-2">Permanent Link</th>
                     <th class="px-4 py-2">
@@ -542,7 +542,7 @@
                     { data:'kw_traffic_ratio', type:'number', className:'text-center' },
                     { data:'seo_metrics_date', render:dateFmt, className:'text-center' },
 
-                    // { data:'betting', render:yesNo, className:'text-center' },
+                    { data:'betting', render:yesNo, className:'text-center' },
                     { data:'trading',            render:yesNo, className:'text-center' },
                     { data:'permanent_link',     render:yesNo, className:'text-center' },
                     { data:'more_than_one_link', render:yesNo, className:'text-center' },

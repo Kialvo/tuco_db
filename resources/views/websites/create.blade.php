@@ -508,7 +508,6 @@
 
         <!-- Boolean Fields -->
         <div class="grid grid-cols-3 gap-4">
-            {{-- Betting hidden from UI (field kept in backend)
             <div>
                 <label class="flex items-center">
                     <input type="checkbox" name="betting" value="1"
@@ -520,7 +519,6 @@
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>
-            --}}
             <div>
                 <label class="flex items-center">
                     <input type="checkbox" name="trading" value="1"
