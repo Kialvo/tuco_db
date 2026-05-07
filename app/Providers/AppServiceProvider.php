@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
         VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
             $appName = config('app.name');
             return (new MailMessage)
+                ->mailer('auth')
                 ->subject("Verify your {$appName} email address")
                 ->greeting("Hi {$notifiable->name},")
                 ->line("Welcome to {$appName}! Please confirm your email address to activate your account.")
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
             ], false));
 
             return (new MailMessage)
+                ->mailer('auth')
                 ->subject("Reset your {$appName} password")
                 ->greeting("Hi {$notifiable->name},")
                 ->line("You are receiving this email because we received a password reset request for your account.")

@@ -12,6 +12,8 @@ class AdminTemporaryPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public string $mailer = 'auth';
+
     public function __construct(
         public string $userName,
         public string $temporaryPassword,
