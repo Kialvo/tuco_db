@@ -39,12 +39,8 @@
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
-            </a>
-
-            <x-primary-button class="ms-4">
+        <div class="flex items-center justify-end mt-6">
+            <x-primary-button>
                 {{ __('Register') }}
             </x-primary-button>
         </div>
@@ -69,4 +65,15 @@
         </svg>
         Sign up with Google
     </a>
+
+    <p class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+        Already have an account?
+        <a href="{{ route('login') }}"
+           class="group ms-1 inline-flex items-center font-semibold text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 dark:focus:ring-offset-gray-800 rounded">
+            Log in
+            <svg class="ms-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 11H4a1 1 0 110-2h9.586l-3.293-3.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </a>
+    </p>
 </x-guest-layout>
