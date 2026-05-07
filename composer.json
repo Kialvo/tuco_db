@@ -10,6 +10,7 @@
         "amrshawky/laravel-currency": "^3.2",
         "barryvdh/laravel-dompdf": "^3.1",
         "laravel/framework": "^11.31",
+        "laravel/socialite": "^5.27",
         "laravel/tinker": "^2.9",
         "setasign/fpdf": "^1.8",
         "setasign/fpdi": "^2.6",

@@ -6,30 +6,19 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class RestrictGuestToDomainsMiddleware
+class ForcePasswordChangeMiddleware
 {
     private const ALLOWED_ROUTE_NAMES = [
-        'websites.index',
-        'websites.data',
-        'websites.show',
-        'websites.export.csv',
-        'websites.export.pdf',
-        'websites.favorites.toggle',
-        'logout',
-        'verification.notice',
-        'verification.verify',
-        'verification.send',
         'password.force.show',
         'password.force.update',
-        'password.update',
-        'password.confirm',
+        'logout',
     ];
 
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        if (! $user || ! $user->isGuest()) {
+        if (! $user || ! $user->must_change_password) {
             return $next($request);
         }
 
@@ -41,10 +30,10 @@ class RestrictGuestToDomainsMiddleware
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
-                'message' => 'Guest users may only access domains pages.',
+                'message' => 'You must change your password before continuing.',
             ], 403);
         }
 
-        return redirect()->route('websites.index');
+        return redirect()->route('password.force.show');
     }
 }

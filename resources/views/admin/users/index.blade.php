@@ -2,11 +2,9 @@
 
 @section('content')
     <div class="px-6 py-6 bg-gray-50 min-h-screen">
-        <!-- Page Header -->
         <div class="mb-6 flex flex-wrap justify-between items-center gap-3">
             <h1 class="text-2xl font-bold text-gray-700">Manage Users</h1>
 
-            <!-- Create User Button (Opens Modal) -->
             <button id="btnOpenModal"
                     class="bg-cyan-600 text-white px-6 py-3 rounded-lg shadow-lg
                       hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2
@@ -15,7 +13,20 @@
             </button>
         </div>
 
-        <!-- User Table Wrapper -->
+        {{-- Tabs --}}
+        <div class="flex gap-2 mb-4 border-b border-gray-200">
+            <button data-tab="system"
+                    class="user-tab px-5 py-2 text-sm font-semibold border-b-2 transition
+                           {{ ($tab ?? 'system') === 'system' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+                <i class="fas fa-user-shield mr-1"></i> System Users
+            </button>
+            <button data-tab="guests"
+                    class="user-tab px-5 py-2 text-sm font-semibold border-b-2 transition
+                           {{ ($tab ?? 'system') === 'guests' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+                <i class="fas fa-user-friends mr-1"></i> Guests
+            </button>
+        </div>
+
         <div class="bg-white border border-gray-200 rounded shadow-sm p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
@@ -27,14 +38,6 @@
                            class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
                            placeholder="Search users...">
                 </div>
-
-                <select id="roleFilter"
-                        class="border border-gray-300 rounded px-4 py-2 text-sm w-56 focus:ring-cyan-500 focus:border-cyan-500">
-                    <option value="">All Roles</option>
-                    <option value="admin" {{ ($role ?? '') === 'admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="editor" {{ ($role ?? '') === 'editor' ? 'selected' : '' }}>Editor</option>
-                    <option value="guest" {{ ($role ?? '') === 'guest' ? 'selected' : '' }}>Guest</option>
-                </select>
             </div>
 
             <table id="usersTable" class="w-full text-sm text-left text-gray-700 border-collapse">
@@ -44,466 +47,270 @@
                     <th class="px-4 py-3">Name</th>
                     <th class="px-4 py-3">Email</th>
                     <th class="px-4 py-3">Role</th>
-                    <th class="px-4 py-3 text-right">
-                        <div class="flex justify-end">Actions</div>
-                    </th>
+                    <th class="px-4 py-3">Verified</th>
+                    <th class="px-4 py-3">Google</th>
+                    <th class="px-4 py-3">Registered</th>
+                    <th class="px-4 py-3 text-right">Actions</th>
                 </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
-                @forelse($users as $user)
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-4 py-3 font-medium">{{ $user->id }}</td>
-                        <td class="px-4 py-3">{{ $user->name }}</td>
-                        <td class="px-4 py-3">{{ $user->email }}</td>
-                        <td class="px-4 py-3">{{ ucfirst($user->role) }}</td>
-                        <td class="px-4 py-3 text-right flex justify-end space-x-3">
-                            @if($user->isGuest())
-                                <!-- Favorites Button -->
-                                <a href="{{ route('admin.users.favorites', $user->id) }}"
-                                   class="bg-amber-500 text-white px-3 py-2 rounded-md shadow flex items-center space-x-2
-                      hover:bg-amber-600 transition focus:outline-none focus:ring-2 focus:ring-amber-400">
-                                    <i class="fas fa-star"></i>
-                                    <span>Favorites</span>
-                                </a>
-                            @endif
-
-                            <div class="flex items-center space-x-3">
-                                <!-- Edit Button -->
-                                <button type="button"
-                                        class="editBtn bg-blue-500 text-white px-3 py-2 rounded-md shadow flex items-center space-x-2
-               hover:bg-blue-600 transition focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                        data-user-id="{{ $user->id }}">
-                                    <i class="fas fa-edit"></i>
-                                    <span>Edit</span>
-                                </button>
-
-                                <!-- Delete Button -->
-                                <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
-                                      class="inline-block">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="bg-red-500 text-white px-3 py-2 rounded-md shadow flex items-center space-x-2
-                       hover:bg-red-600 transition focus:outline-none focus:ring-2 focus:ring-red-400"
-                                            onclick="return confirm('Are you sure you want to delete this user?')">
-                                        <i class="fas fa-trash"></i>
-                                        <span>Delete</span>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="px-4 py-4 text-center text-gray-500">No users found.</td>
-                    </tr>
-                @endforelse
-                </tbody>
+                <tbody class="divide-y divide-gray-200"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- Include Create User Modal -->
     @include('admin.users.partials.create-modal')
     @include('admin.users.partials.edit-modal')
-
-
 @endsection
 
 @push('scripts')
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+            let currentTab = @json($tab ?? 'system');
+
             const usersTable = $('#usersTable').DataTable({
-                paging: true,
-                pageLength: 10,
-                lengthChange: false,
+                processing: true,
+                serverSide: true,
                 searching: true,
-                dom: "t<'flex items-center justify-between mt-4'<'dt-info'i><'dt-pagination'p>>"
+                lengthChange: false,
+                pageLength: 25,
+                order: [[0, 'desc']],
+                ajax: {
+                    url: '{{ route('admin.users.data') }}',
+                    data: (d) => { d.tab = currentTab; }
+                },
+                columns: [
+                    { data: 'id' },
+                    { data: 'name' },
+                    { data: 'email' },
+                    { data: 'role', render: r => r ? r.charAt(0).toUpperCase() + r.slice(1) : '' },
+                    { data: 'email_verified_at' },
+                    { data: 'google_id' },
+                    { data: 'created_at' },
+                    {
+                        data: 'id',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-right',
+                        render: function (id, type, row) {
+                            const favBtn = (row.role === 'guest')
+                                ? `<a href="/admin/users/${id}/favorites" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs"><i class="fas fa-star"></i> Favorites</a>`
+                                : '';
+                            return `
+                                <div class="flex items-center justify-end gap-2">
+                                    ${favBtn}
+                                    <button class="editBtn bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs" data-user-id="${id}"><i class="fas fa-edit"></i> Edit</button>
+                                    <button class="resetPwdBtn bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded text-xs" data-user-id="${id}" data-user-email="${row.email}"><i class="fas fa-key"></i> Reset PW</button>
+                                    <form action="/admin/users/${id}" method="POST" class="inline-block">
+                                        <input type="hidden" name="_token" value="${csrfToken}">
+                                        <input type="hidden" name="_method" value="DELETE">
+                                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" onclick="return confirm('Delete this user?')"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </div>`;
+                        }
+                    }
+                ],
+                dom: "t<'flex items-center justify-between mt-4'<'dt-info'i><'dt-pagination'p>>",
             });
 
-            // Custom search
+            // Tab switching
+            document.querySelectorAll('.user-tab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentTab = btn.dataset.tab;
+                    document.querySelectorAll('.user-tab').forEach(b => {
+                        b.classList.remove('border-cyan-600', 'text-cyan-700');
+                        b.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    btn.classList.add('border-cyan-600', 'text-cyan-700');
+                    usersTable.ajax.reload();
+                });
+            });
+
+            // Search
             const searchInput = document.getElementById('usersTableSearch');
             if (searchInput) {
-                let searchTimer;
+                let t;
                 searchInput.addEventListener('input', function () {
-                    clearTimeout(searchTimer);
-                    searchTimer = setTimeout(() => {
-                        usersTable.search(this.value).draw();
-                    }, 200);
-                });
-                searchInput.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter') {
-                        clearTimeout(searchTimer);
-                        usersTable.search(this.value).draw();
-                    }
+                    clearTimeout(t);
+                    t = setTimeout(() => usersTable.search(this.value).draw(), 250);
                 });
             }
 
-            // Role filter (client-side)
-            const roleFilter = document.getElementById('roleFilter');
-            if (roleFilter) {
-                roleFilter.addEventListener('change', function () {
-                    const val = this.value;
-                    usersTable.column(3).search(val).draw();
-                });
-                if (roleFilter.value) {
-                    usersTable.column(3).search(roleFilter.value).draw();
-                }
-            }
-
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
-
+            // Inline error helpers
             const setInlineError = (id, message) => {
                 const node = document.getElementById(id);
                 if (!node) return;
-                if (!message) {
-                    node.textContent = '';
-                    node.classList.add('hidden');
-                    return;
-                }
+                if (!message) { node.textContent = ''; node.classList.add('hidden'); return; }
                 node.textContent = message;
                 node.classList.remove('hidden');
             };
+            const clearInlineErrors = (ids) => ids.forEach(id => setInlineError(id, null));
+            const getFirstMessage = (errors, key) => (errors && errors[key] && errors[key][0]) || null;
 
-            const clearInlineErrors = (ids) => {
-                ids.forEach((id) => {
-                    const node = document.getElementById(id);
-                    if (!node) return;
-                    node.textContent = '';
-                    node.classList.add('hidden');
-                });
-            };
+            // ===== CREATE MODAL =====
+            const createModal = document.getElementById("createUserModal");
+            const btnOpenModal = document.getElementById("btnOpenModal");
+            const btnCloseModal = document.getElementById("closeModal");
+            const createForm = document.getElementById("createUserForm");
+            const createErrorIds = ['error_create_name','error_create_email','error_create_password','error_create_password_confirmation','error_create_role'];
 
-            const getFirstMessage = (errors, key) => {
-                if (errors && errors[key] && errors[key][0]) {
-                    return errors[key][0];
-                }
-                return null;
-            };
-
-            // ========================
-            // CREATE USER MODAL LOGIC
-            // ========================
-            let createModal = document.getElementById("createUserModal");
-            let btnOpenModal = document.getElementById("btnOpenModal");
-            let btnCloseModal = document.getElementById("closeModal");
-            let createForm = document.getElementById("createUserForm");
-            const createErrorIds = [
-                'error_create_name',
-                'error_create_email',
-                'error_create_password',
-                'error_create_password_confirmation',
-                'error_create_role',
-            ];
-
-            const validateCreateForm = () => {
+            btnOpenModal?.addEventListener("click", () => {
                 clearInlineErrors(createErrorIds);
-
-                const name = document.getElementById('create_name');
-                const email = document.getElementById('create_email');
-                const password = document.getElementById('create_password');
-                const confirmation = document.getElementById('create_password_confirmation');
-                const role = document.getElementById('create_role');
-
-                let valid = true;
-                [
-                    [name, 'error_create_name'],
-                    [email, 'error_create_email'],
-                    [password, 'error_create_password'],
-                    [confirmation, 'error_create_password_confirmation'],
-                    [role, 'error_create_role'],
-                ].forEach(([field, errId]) => {
-                    if (field && !field.checkValidity()) {
-                        setInlineError(errId, field.validationMessage || 'Invalid value.');
-                        valid = false;
-                    }
-                });
-
-                if (password && confirmation && password.value !== confirmation.value) {
-                    setInlineError('error_create_password_confirmation', 'Password confirmation does not match.');
-                    valid = false;
-                }
-
-                return valid;
-            };
-
-            if (btnOpenModal && createModal) {
-                btnOpenModal.addEventListener("click", function () {
-                    clearInlineErrors(createErrorIds);
-                    if (createForm) {
-                        createForm.reset();
-                    }
-                    createModal.classList.remove("hidden");
-                    createModal.classList.add("flex");
-                });
-            }
-
-            if (btnCloseModal && createModal) {
-                btnCloseModal.addEventListener("click", function () {
+                createForm?.reset();
+                createModal.classList.remove("hidden");
+                createModal.classList.add("flex");
+            });
+            btnCloseModal?.addEventListener("click", () => {
+                clearInlineErrors(createErrorIds);
+                createModal.classList.add("hidden");
+                createModal.classList.remove("flex");
+            });
+            createModal?.addEventListener("click", (e) => {
+                if (e.target === createModal) {
                     clearInlineErrors(createErrorIds);
                     createModal.classList.add("hidden");
                     createModal.classList.remove("flex");
-                });
+                }
+            });
 
-                createModal.addEventListener("click", function (e) {
-                    if (e.target === createModal) {
-                        clearInlineErrors(createErrorIds);
+            createForm?.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                clearInlineErrors(createErrorIds);
+
+                try {
+                    const response = await fetch(createForm.action, {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": csrfToken },
+                        body: new FormData(createForm),
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.status === "success") {
+                        Swal.fire({ icon: "success", title: "User created", timer: 1500, showConfirmButton: false });
                         createModal.classList.add("hidden");
                         createModal.classList.remove("flex");
-                    }
-                });
-            }
-
-            // Handle Create Form Submission via AJAX
-            if (createForm) {
-                createForm.addEventListener("submit", async function (event) {
-                    event.preventDefault(); // Prevent default form submission
-                    if (!validateCreateForm()) {
+                        usersTable.ajax.reload();
                         return;
                     }
-
-                    let formData = new FormData(createForm);
-                    let actionUrl = createForm.getAttribute("action");
-
-                    try {
-                        const response = await fetch(actionUrl, {
-                            method: "POST",
-                            headers: {
-                                "Accept": "application/json",
-                                "X-Requested-With": "XMLHttpRequest",
-                                "X-CSRF-TOKEN": csrfToken,
-                            },
-                            body: formData,
-                        });
-
-                        const isJson = (response.headers.get('content-type') || '').includes('application/json');
-                        const data = isJson ? await response.json() : null;
-
-                        if (response.ok && data && data.status === "success") {
-                            Swal.fire({
-                                icon: "success",
-                                title: "Success",
-                                text: "User created successfully!",
-                                timer: 3000,
-                                timerProgressBar: true,
-                                showConfirmButton: false,
-                            });
-
-                            createModal.classList.add("hidden");
-                            createModal.classList.remove("flex");
-
-                            setTimeout(() => {
-                                location.reload();
-                            }, 700);
-                            return;
-                        }
-
-                        if (response.status === 422 && data && data.errors) {
-                            setInlineError('error_create_name', getFirstMessage(data.errors, 'name'));
-                            setInlineError('error_create_email', getFirstMessage(data.errors, 'email'));
-                            setInlineError('error_create_password', getFirstMessage(data.errors, 'password'));
-                            setInlineError(
-                                'error_create_password_confirmation',
-                                getFirstMessage(data.errors, 'password_confirmation')
-                            );
-                            setInlineError('error_create_role', getFirstMessage(data.errors, 'role'));
-                            return;
-                        }
-                        setInlineError(
-                            'error_create_email',
-                            (data && data.message) ? data.message : 'User creation failed. Please try again.'
-                        );
-                    } catch (error) {
-                        console.error("Error creating user:", error);
-                        setInlineError('error_create_email', 'User creation failed. Please try again.');
+                    if (response.status === 422 && data.errors) {
+                        setInlineError('error_create_name', getFirstMessage(data.errors, 'name'));
+                        setInlineError('error_create_email', getFirstMessage(data.errors, 'email'));
+                        setInlineError('error_create_password', getFirstMessage(data.errors, 'password'));
+                        setInlineError('error_create_password_confirmation', getFirstMessage(data.errors, 'password_confirmation'));
+                        setInlineError('error_create_role', getFirstMessage(data.errors, 'role'));
                     }
-                });
-            }
-
-            // ========================
-            // EDIT USER MODAL LOGIC
-            // ========================
-            let editModal = document.getElementById("editUserModal");
-            let btnCloseEditModal = document.getElementById("closeEditModal");
-            let editForm = document.getElementById("editUserForm");
-            const editErrorIds = [
-                'error_edit_name',
-                'error_edit_email',
-                'error_edit_password',
-                'error_edit_password_confirmation',
-                'error_edit_role',
-            ];
-
-            const validateEditForm = () => {
-                clearInlineErrors(editErrorIds);
-
-                const name = document.getElementById('edit_name');
-                const email = document.getElementById('edit_email');
-                const password = document.getElementById('edit_password');
-                const confirmation = document.getElementById('edit_password_confirmation');
-                const role = document.getElementById('edit_role');
-                let valid = true;
-
-                [
-                    [name, 'error_edit_name'],
-                    [email, 'error_edit_email'],
-                    [role, 'error_edit_role'],
-                ].forEach(([field, errId]) => {
-                    if (field && !field.checkValidity()) {
-                        setInlineError(errId, field.validationMessage || 'Invalid value.');
-                        valid = false;
-                    }
-                });
-
-                const passwordValue = password ? password.value.trim() : '';
-                const confirmationValue = confirmation ? confirmation.value.trim() : '';
-                if (passwordValue !== '' || confirmationValue !== '') {
-                    if (passwordValue.length < 6) {
-                        setInlineError('error_edit_password', 'Password must be at least 6 characters.');
-                        valid = false;
-                    }
-                    if (confirmationValue.length < 6) {
-                        setInlineError('error_edit_password_confirmation', 'Confirmation must be at least 6 characters.');
-                        valid = false;
-                    }
-                    if (passwordValue !== confirmationValue) {
-                        setInlineError('error_edit_password_confirmation', 'Password confirmation does not match.');
-                        valid = false;
-                    }
+                } catch (err) {
+                    console.error(err);
+                    setInlineError('error_create_email', 'Could not create user.');
                 }
+            });
 
-                return valid;
-            };
+            // ===== EDIT MODAL =====
+            const editModal = document.getElementById("editUserModal");
+            const btnCloseEditModal = document.getElementById("closeEditModal");
+            const editForm = document.getElementById("editUserForm");
+            const btnResetPassword = document.getElementById("btnResetPassword");
+            const editErrorIds = ['error_edit_name','error_edit_email','error_edit_role'];
 
-            document.body.addEventListener("click", function (event) {
-                let button = event.target.closest(".editBtn");
+            document.body.addEventListener("click", (event) => {
+                const button = event.target.closest(".editBtn");
                 if (!button) return;
-
-                let userId = button.getAttribute("data-user-id");
-
-                if (!editModal || !editForm) {
-                    console.error("Edit modal or form not found.");
-                    return;
-                }
-
-                // Fetch user data via AJAX
+                const userId = button.dataset.userId;
                 fetch(`/admin/users/${userId}/edit-ajax`, {
-                    headers: {
-                        "X-Requested-With": "XMLHttpRequest",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
-                    },
+                    headers: { "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": csrfToken },
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === "success") {
-                            let user = data.data;
-                            editForm.action = `/admin/users/${user.id}`;
-                            document.getElementById("edit_name").value = user.name;
-                            document.getElementById("edit_email").value = user.email;
-                            document.getElementById("edit_role").value = user.role;
-                            document.getElementById("edit_password").value = '';
-                            document.getElementById("edit_password_confirmation").value = '';
-                            clearInlineErrors(editErrorIds);
-
-                            editModal.classList.remove("hidden");
-                            editModal.classList.add("flex");
-                        } else {
-                            console.error("User data could not be loaded.");
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Error fetching user:", error);
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.status !== "success") return;
+                        const u = d.data;
+                        editForm.action = `/admin/users/${u.id}`;
+                        document.getElementById("edit_name").value = u.name;
+                        document.getElementById("edit_email").value = u.email;
+                        document.getElementById("edit_role").value = u.role;
+                        btnResetPassword.dataset.userId = u.id;
+                        btnResetPassword.dataset.userEmail = u.email;
+                        clearInlineErrors(editErrorIds);
+                        editModal.classList.remove("hidden");
+                        editModal.classList.add("flex");
                     });
             });
 
-            if (btnCloseEditModal && editModal) {
-                btnCloseEditModal.addEventListener("click", function () {
+            btnCloseEditModal?.addEventListener("click", () => {
+                clearInlineErrors(editErrorIds);
+                editModal.classList.add("hidden");
+                editModal.classList.remove("flex");
+            });
+            editModal?.addEventListener("click", (e) => {
+                if (e.target === editModal) {
                     clearInlineErrors(editErrorIds);
                     editModal.classList.add("hidden");
                     editModal.classList.remove("flex");
-                });
+                }
+            });
 
-                editModal.addEventListener("click", function (e) {
-                    if (e.target === editModal) {
-                        clearInlineErrors(editErrorIds);
+            editForm?.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                clearInlineErrors(editErrorIds);
+                try {
+                    const response = await fetch(editForm.action, {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "X-Requested-With": "XMLHttpRequest", "X-CSRF-TOKEN": csrfToken },
+                        body: new FormData(editForm),
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.status === "success") {
                         editModal.classList.add("hidden");
                         editModal.classList.remove("flex");
-                    }
-                });
-            }
-
-            // Handle Edit Form Submission via AJAX
-            if (editForm) {
-                editForm.addEventListener("submit", async function (event) {
-                    event.preventDefault(); // Prevent default form submission
-                    if (!validateEditForm()) {
+                        usersTable.ajax.reload();
                         return;
                     }
-
-                    let formData = new FormData(editForm);
-                    let actionUrl = editForm.getAttribute("action");
-
-                    try {
-                        const response = await fetch(actionUrl, {
-                            method: "POST",
-                            headers: {
-                                "Accept": "application/json",
-                                "X-Requested-With": "XMLHttpRequest",
-                                "X-CSRF-TOKEN": csrfToken,
-                            },
-                            body: formData,
-                        });
-
-                        const isJson = (response.headers.get('content-type') || '').includes('application/json');
-                        const data = isJson ? await response.json() : null;
-
-                        if (response.ok && data && data.status === "success") {
-                            editModal.classList.add("hidden");
-                            editModal.classList.remove("flex");
-
-                            setTimeout(() => {
-                                location.reload();
-                            }, 700);
-                            return;
-                        }
-
-                        if (response.status === 422 && data && data.errors) {
-                            setInlineError('error_edit_name', getFirstMessage(data.errors, 'name'));
-                            setInlineError('error_edit_email', getFirstMessage(data.errors, 'email'));
-                            setInlineError('error_edit_password', getFirstMessage(data.errors, 'password'));
-                            setInlineError(
-                                'error_edit_password_confirmation',
-                                getFirstMessage(data.errors, 'password_confirmation')
-                            );
-                            setInlineError('error_edit_role', getFirstMessage(data.errors, 'role'));
-                            return;
-                        }
-                        setInlineError(
-                            'error_edit_email',
-                            (data && data.message) ? data.message : "Update failed. Please try again."
-                        );
-                    } catch (error) {
-                        console.error("Error updating user:", error);
-                        setInlineError('error_edit_email', 'User update failed. Please try again.');
+                    if (response.status === 422 && data.errors) {
+                        setInlineError('error_edit_name', getFirstMessage(data.errors, 'name'));
+                        setInlineError('error_edit_email', getFirstMessage(data.errors, 'email'));
+                        setInlineError('error_edit_role', getFirstMessage(data.errors, 'role'));
                     }
-                });
-            }
-
-            // ========================
-            // SUCCESS MESSAGE ALERTS
-            // ========================
-            @if (session('status'))
-            Swal.fire({
-                icon: "success",
-                title: "Success",
-                text: "{{ session('status') }}",
-                timer: 3000,
-                timerProgressBar: true,
-                showConfirmButton: false,
+                } catch (err) { console.error(err); }
             });
-            @endif
-        });
 
+            // ===== RESET PASSWORD =====
+            const triggerResetPassword = async (userId, email) => {
+                const confirm = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Reset password?',
+                    text: `A temporary password will be emailed to ${email}. The user will need to change it on their next login.`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, reset & email',
+                    confirmButtonColor: '#d97706',
+                });
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    const response = await fetch(`/admin/users/${userId}/reset-password`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken },
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.status === 'success') {
+                        Swal.fire({ icon: 'success', title: 'Password reset', text: data.message, timer: 2500, showConfirmButton: false });
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Failed', text: data.message || 'Could not reset password.' });
+                    }
+                } catch (err) {
+                    Swal.fire({ icon: 'error', title: 'Failed', text: 'Network error.' });
+                }
+            };
+
+            btnResetPassword?.addEventListener("click", () => {
+                const userId = btnResetPassword.dataset.userId;
+                const email = btnResetPassword.dataset.userEmail;
+                if (userId) triggerResetPassword(userId, email);
+            });
+
+            document.body.addEventListener("click", (e) => {
+                const btn = e.target.closest(".resetPwdBtn");
+                if (!btn) return;
+                triggerResetPassword(btn.dataset.userId, btn.dataset.userEmail);
+            });
+        });
     </script>
 @endpush

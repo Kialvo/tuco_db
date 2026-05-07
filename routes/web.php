@@ -11,6 +11,7 @@ use App\Http\Controllers\Tool\WebScraperController;
 use App\Http\Controllers\WebsiteImportController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\ForcePasswordChangeMiddleware;
 use App\Http\Middleware\RestrictGuestToDomainsMiddleware;
 
 /* ─────────────────────────────────────────────────────────────
@@ -43,7 +44,7 @@ require __DIR__.'/auth.php';
 /*======================================================================
 |  AUTHENTICATED ROUTES
 =====================================================================*/
-Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(function () {
+Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, RestrictGuestToDomainsMiddleware::class])->group(function () {
 
     /*--------------------------------------------------------------
     | Dashboard
@@ -312,10 +313,16 @@ Route::middleware(['auth', RestrictGuestToDomainsMiddleware::class])->group(func
 /*======================================================================
 |  ADMIN‑ONLY  (User management)
 =====================================================================*/
-Route::middleware(['auth', AdminMiddleware::class])->group(function () {
+Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, AdminMiddleware::class])->group(function () {
 
     Route::get('/admin/users/{id}/edit-ajax', [UserController::class, 'editAjax'])
         ->name('admin.users.editAjax');
+
+    Route::post('/admin/users/{user}/reset-password', [UserController::class, 'resetPassword'])
+        ->name('admin.users.resetPassword');
+
+    Route::get('/admin/users/data', [UserController::class, 'data'])
+        ->name('admin.users.data');
 
     Route::get('/admin/users/{user}/favorites', [UserFavoritesController::class, 'index'])
         ->name('admin.users.favorites');

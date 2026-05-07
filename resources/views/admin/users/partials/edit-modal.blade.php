@@ -1,17 +1,14 @@
-<div id="editUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+<div id="editUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
     <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-        <!-- Modal Header -->
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-bold text-gray-700">Edit User</h2>
             <button id="closeEditModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
 
-        <!-- Edit User Form -->
         <form id="editUserForm" method="POST">
             @csrf
             @method('PUT')
 
-            <!-- Name -->
             <div class="mb-4">
                 <label class="block text-gray-600 font-medium">Name</label>
                 <input type="text" name="name" id="edit_name" required
@@ -19,7 +16,6 @@
                 <p class="text-red-500 text-sm hidden" id="error_edit_name"></p>
             </div>
 
-            <!-- Email -->
             <div class="mb-4">
                 <label class="block text-gray-600 font-medium">Email</label>
                 <input type="email" name="email" id="edit_email" required
@@ -27,23 +23,6 @@
                 <p class="text-red-500 text-sm hidden" id="error_edit_email"></p>
             </div>
 
-            <!-- Password (Optional) -->
-            <div class="mb-4">
-                <label class="block text-gray-600 font-medium">New Password (Optional)</label>
-                <input type="password" name="password" id="edit_password" minlength="6"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
-                <p class="text-red-500 text-sm hidden" id="error_edit_password"></p>
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="mb-4">
-                <label class="block text-gray-600 font-medium">Confirm New Password</label>
-                <input type="password" name="password_confirmation" id="edit_password_confirmation" minlength="6"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
-                <p class="text-red-500 text-sm hidden" id="error_edit_password_confirmation"></p>
-            </div>
-
-            <!-- Role -->
             <div class="mb-6">
                 <label class="block text-gray-600 font-medium">Role</label>
                 <select name="role" id="edit_role"
@@ -55,7 +34,18 @@
                 <p class="text-red-500 text-sm hidden" id="error_edit_role"></p>
             </div>
 
-            <!-- Submit Button -->
+            <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded">
+                <p class="text-sm text-gray-700 mb-2">
+                    To change this user's password, click below. A temporary password will be emailed to them.
+                    They will be required to set a new one on their next login.
+                </p>
+                <button type="button" id="btnResetPassword"
+                        data-user-id=""
+                        class="bg-amber-500 text-white px-4 py-2 rounded shadow hover:bg-amber-600 text-sm font-semibold">
+                    <i class="fas fa-key mr-1"></i> Reset Password & Email
+                </button>
+            </div>
+
             <button type="submit"
                     class="w-full bg-blue-600 text-white py-3 rounded-lg shadow-md
                            hover:bg-blue-700 focus:outline-none focus:ring-2

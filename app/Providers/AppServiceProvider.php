@@ -2,23 +2,46 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
+            $appName = config('app.name');
+            return (new MailMessage)
+                ->subject("Verify your {$appName} email address")
+                ->greeting("Hi {$notifiable->name},")
+                ->line("Welcome to {$appName}! Please confirm your email address to activate your account.")
+                ->action('Verify email address', $url)
+                ->line('If you did not create an account, no further action is required.')
+                ->salutation("Thanks,\n{$appName}");
+        });
+
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            $appName = config('app.name');
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
+
+            return (new MailMessage)
+                ->subject("Reset your {$appName} password")
+                ->greeting("Hi {$notifiable->name},")
+                ->line("You are receiving this email because we received a password reset request for your account.")
+                ->action('Reset password', $url)
+                ->line('This password reset link will expire in '.config('auth.passwords.'.config('auth.defaults.passwords').'.expire').' minutes.')
+                ->line('If you did not request a password reset, no further action is required.')
+                ->salutation("Thanks,\n{$appName}");
+        });
     }
 }
