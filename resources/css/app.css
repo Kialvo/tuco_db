@@ -2,49 +2,150 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────
+ |  DESIGN-SYSTEM PRIMITIVES (ported from the marketplace prototype)
+ *────────────────────────────────────────────────────────────*/
+@layer components {
 
+    /* Filter / form input */
+    .fi {
+        @apply w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-[13px] text-gray-800 bg-white outline-none transition;
+    }
+    .fi:focus {
+        @apply border-green-600;
+        box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
+    }
+    select.fi {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239ca3af' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 16px;
+        padding-right: 28px;
+    }
+    .fi:disabled {
+        @apply bg-gray-50 text-gray-400 cursor-not-allowed;
+    }
+
+    /* Min/Max number pair */
+    .mpair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    /* Slim scrollbar (filter panels, drawers) */
+    .slim-scroll::-webkit-scrollbar         { width: 4px; }
+    .slim-scroll::-webkit-scrollbar-track   { background: transparent; }
+    .slim-scroll::-webkit-scrollbar-thumb   { background: #e2e8f0; border-radius: 2px; }
+    .slim-scroll::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+    /* Tooltip pattern */
+    .tip { position: relative; display: inline-flex; align-items: center; }
+    .tip .tip-box {
+        visibility: hidden;
+        opacity: 0;
+        position: absolute;
+        bottom: 130%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1e293b;
+        color: white;
+        font-size: 11px;
+        font-weight: 400;
+        padding: 4px 8px;
+        border-radius: 5px;
+        white-space: nowrap;
+        transition: opacity .15s;
+        z-index: 100;
+        pointer-events: none;
+    }
+    .tip .tip-box::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -4px;
+        border: 4px solid transparent;
+        border-top-color: #1e293b;
+    }
+    .tip:hover .tip-box { visibility: visible; opacity: 1; }
+
+    /* Toggle switch */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 42px;
+        height: 22px;
+        flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #cbd5e1;
+        border-radius: 22px;
+        transition: .25s;
+    }
+    .toggle-track:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: .25s;
+        box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .toggle-switch input:checked ~ .toggle-track             { background: #16a34a; }
+    .toggle-switch input:checked ~ .toggle-track:before      { transform: translateX(20px); }
+    .toggle-switch input:disabled ~ .toggle-track            { opacity: .5; cursor: not-allowed; }
+
+    /* Cart drawer slide animation */
+    .cart-panel {
+        transform: translateX(100%);
+        transition: transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    .cart-panel.open { transform: translateX(0); }
+
+    /* Sidebar nav active state */
+    .nav-active {
+        background: rgba(255, 255, 255, 0.15) !important;
+        color: white !important;
+    }
+
+    /* Table hover (used for native marketplace tables) */
+    .ds-table tbody tr:hover td { background: #f8fafc; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ |  LEGACY OVERRIDES — kept until each list page is ported off DataTables
+ |  TODO: remove once Phase 19 cleanup lands
+ *────────────────────────────────────────────────────────────*/
 .dataTables_wrapper .dataTables_length select {
-    /* Ensure it’s at least wide enough to fit the text “Show 10 entries” without overlap */
-    @apply w-14; /* or w-32, depending on how wide you need it */
-
-    /* Remove the default arrow in multiple browsers */
+    @apply w-14 pr-8 border border-gray-300 rounded-md text-sm py-1 pl-2;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-
-    /* Add some right padding so text doesn't collide with the arrow area */
-    @apply pr-8;
-
-    /* Basic border + rounding */
-    @apply border border-gray-300 rounded-md text-sm py-1 pl-2;
-
-    /* If you still want your own arrow, do: */
-    /*
-    background-image: url("/images/arrow.svg");
-    background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 1rem;
-    */
 }
-.dataTables_wrapper .dataTables_paginate {
-    /* Force it to the right */
-    float: right;
-    /* or, with Tailwind classes:
-       @apply float-right;
-    */
-}
-/* ────────────────────── Datatable SUMMARY ROW ────────────────────── */
-#summaryRow               { background:#0f172a; }          /* slate-900   */
-#summaryRow td            { box-sizing:border-box; padding:.5rem .4rem; }
-#summaryRow .sum-val      { font:700 0.95rem/1 'Inter',sans-serif; color:#facc15; } /* amber-400 */
+.dataTables_wrapper .dataTables_paginate { float: right; }
+
+#summaryRow               { background: #0f172a; }
+#summaryRow td            { box-sizing: border-box; padding: .5rem .4rem; }
+#summaryRow .sum-val      { font: 700 0.95rem/1 'Inter', sans-serif; color: #facc15; }
 
 #summaryRow .calc-toggle  {
-    font-size:10px; line-height:1; padding:.2rem .45rem;
-    border:1px solid #3b82f6;   /* blue-500 */
-    color:#bfdbfe;              /* blue-100 */
-    background:#1e3a8a;         /* blue-900 */
-    border-radius:4px;
-    transition:all .15s;
+    font-size: 10px;
+    line-height: 1;
+    padding: .2rem .45rem;
+    border: 1px solid #3b82f6;
+    color: #bfdbfe;
+    background: #1e3a8a;
+    border-radius: 4px;
+    transition: all .15s;
 }
-#summaryRow .calc-toggle:hover   { background:#2563eb; color:#fff; }
-#summaryRow .calc-toggle.active  { background:#059669; color:#ecfdf5; border-color:transparent; }
+#summaryRow .calc-toggle:hover  { background: #2563eb; color: #fff; }
+#summaryRow .calc-toggle.active { background: #059669; color: #ecfdf5; border-color: transparent; }
