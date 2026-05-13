@@ -10,13 +10,13 @@
     $bodyDefault    = $templates[$defaultLang][$defaultKind]['body']    ?? '';
 @endphp
 
-<div id="bulkOutreachModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl">
+<div id="bulkOutreachModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl">
         <!-- Header -->
         <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
             <h3 class="text-sm font-semibold text-gray-800">Send outreach</h3>
             <button id="boCloseTop" type="button" class="text-gray-500 hover:text-gray-700" aria-label="Close">
-                <i class="fas fa-times"></i>
+                <x-icon name="x" size="sm" class="inline" />
             </button>
         </div>
 
@@ -27,7 +27,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Language</label>
                     <select id="boLanguage"
-                            class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                            class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-green-500 focus:border-green-500">
                         @foreach($languages as $code => $label)
                             <option value="{{ $code }}" @selected($code === $defaultLang)>{{ $label }}</option>
                         @endforeach
@@ -37,7 +37,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Template</label>
                     <select id="boTemplate"
-                            class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                            class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-green-500 focus:border-green-500">
                         <option value="first" @selected($defaultKind==='first')>First email</option>
                         <option value="followup" @selected($defaultKind==='followup')>Follow-up</option>
                     </select>
@@ -54,13 +54,13 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Target URL (optional)</label>
                     <input type="url" id="boTargetUrl" placeholder="https://client.com/landing"
-                           class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-green-500 focus:border-green-500">
                 </div>
 
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Brand (optional)</label>
                     <input type="text" id="boBrand" placeholder="Client / brand name"
-                           class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-green-500 focus:border-green-500">
                 </div>
 
                 <!-- Subject -->
@@ -68,7 +68,7 @@
                     <label class="block text-gray-700 font-medium mb-1">Subject *</label>
                     <input type="text" id="boSubject"
                            value="{{ $subjectDefault }}"
-                           class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-2 focus:ring-green-500 focus:border-green-500">
                 </div>
 
                 <!-- Body -->
@@ -81,12 +81,12 @@
                         </span>
                     </label>
                     <textarea id="boBody" rows="10"
-                              class="w-full border border-gray-300 rounded px-2 py-2 leading-5 font-mono focus:ring-cyan-500 focus:border-cyan-500">{{ $bodyDefault }}</textarea>
+                              class="w-full border border-gray-300 rounded px-2 py-2 leading-5 font-mono focus:ring-green-500 focus:border-green-500">{{ $bodyDefault }}</textarea>
                 </div>
             </div>
 
             <div class="flex items-center gap-2">
-                <input id="boOnlyPast" type="checkbox" class="h-4 w-4 text-cyan-600">
+                <input id="boOnlyPast" type="checkbox" class="h-4 w-4 text-green-600">
                 <label for="boOnlyPast" class="text-gray-700">
                     Only send to websites with Status = <b>past</b> (prior collaboration)
                 </label>
@@ -117,7 +117,7 @@
                     Cancel
                 </button>
                 <button id="boSend" type="button"
-                        class="px-3 py-2 rounded bg-cyan-700 hover:bg-cyan-800 text-white text-xs disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="px-3 py-2 rounded bg-green-700 hover:bg-green-800 text-white text-xs disabled:opacity-50 disabled:cursor-not-allowed">
                     Send
                 </button>
             </div>

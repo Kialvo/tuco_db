@@ -2,14 +2,14 @@
 
 <!-- CREATE CLIENT MODAL (hidden by default) -->
 <div id="createModal"
-     class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
     <!-- Modal card -->
-    <div class="bg-white border border-gray-200 p-6 rounded shadow-sm max-w-md w-full mx-2 relative">
+    <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xl max-w-md w-full mx-2 relative">
 
         <!-- Close “X” button -->
         <button id="modalCloseBtn" type="button"
                 class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none">
-            <i class="fas fa-times"></i>
+            <x-icon name="x" size="sm" class="inline" />
         </button>
 
         <h2 class="text-xl font-bold text-gray-800 mb-4">Add New Client</h2>
@@ -40,7 +40,7 @@
                     value="{{ old('first_name') }}"
                     required
                     class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
-                           focus:ring-cyan-500 focus:border-cyan-500"
+                           focus:ring-green-500 focus:border-green-500"
                 />
             </div>
 
@@ -55,7 +55,7 @@
                     value="{{ old('last_name') }}"
                     required
                     class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
-                           focus:ring-cyan-500 focus:border-cyan-500"
+                           focus:ring-green-500 focus:border-green-500"
                 />
             </div>
 
@@ -70,7 +70,7 @@
                     value="{{ old('email') }}"
                     required
                     class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
-                           focus:ring-cyan-500 focus:border-cyan-500"
+                           focus:ring-green-500 focus:border-green-500"
                 />
             </div>
 
@@ -81,7 +81,7 @@
                 </label>
                 <select name="company_id" id="create_company_id"
                         class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
-                               focus:ring-cyan-500 focus:border-cyan-500"
+                               focus:ring-green-500 focus:border-green-500"
                         style="width:100%">
                     <option value=""></option>
                 </select>
@@ -91,8 +91,8 @@
             <div class="pt-2">
                 <button
                     type="submit"
-                    class="bg-cyan-600 text-white px-5 py-2 rounded shadow-sm hover:bg-cyan-700
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-sm">
+                    class="bg-green-600 text-white px-5 py-2 rounded shadow-sm hover:bg-green-700
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-sm">
                     Save Client
                 </button>
             </div>

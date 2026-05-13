@@ -1,13 +1,18 @@
 @extends('layouts.dashboard')
+@section('title', 'Referring Domains')
 
 @section('content')
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Referring Domains</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Inspect competitor backlink profiles.</p>
+        </div>
+    </div>
 
-    <h1 class="text-lg font-bold text-gray-700 py-6">Referring Domains</h1>
-
-    <div class="px-6 pb-10 bg-gray-50 min-h-screen">
-
+    <div class="px-6 py-6 pb-10 bg-gray-50 min-h-screen">
         {{-- ── Search bar ── --}}
-        <div class="bg-white border border-gray-200 rounded shadow-sm p-6 mb-6 max-w-2xl">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card p-6 mb-6 max-w-2xl">
             <p class="text-sm text-gray-500 mb-4">
                 Enter a competitor domain to see its top 200 most authoritative referring domains (dofollow only, sorted by MS descending).
             </p>
@@ -16,12 +21,12 @@
                        id="domainInput"
                        placeholder="e.g. corriere.it"
                        class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm
-                              focus:ring-cyan-500 focus:border-cyan-500"/>
+                              focus:ring-green-500 focus:border-green-500"/>
                 <button id="btnSearch"
-                        class="bg-cyan-600 text-white px-5 py-2 rounded shadow-sm text-sm
-                               hover:bg-cyan-700 focus:outline-none focus:ring-2
-                               focus:ring-offset-2 focus:ring-cyan-500 transition flex items-center gap-2">
-                    <i class="fas fa-search"></i>
+                        class="bg-green-600 text-white px-5 py-2 rounded shadow-sm text-sm
+                               hover:bg-green-700 focus:outline-none focus:ring-2
+                               focus:ring-offset-2 focus:ring-green-500 transition flex items-center gap-2">
+                    <x-icon name="search" size="sm" class="inline" />
                     <span id="btnLabel">Search</span>
                 </button>
             </div>
@@ -39,11 +44,11 @@
                         class="bg-green-600 text-white px-4 py-1.5 rounded shadow-sm text-sm
                                hover:bg-green-700 focus:outline-none focus:ring-2
                                focus:ring-offset-2 focus:ring-green-500 transition flex items-center gap-2">
-                    <i class="fas fa-file-csv"></i> Export CSV
+                    <x-icon name="document-csv" size="sm" class="inline" /> Export CSV
                 </button>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded shadow-sm overflow-x-auto">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-card overflow-x-auto">
                 <table class="w-full text-sm text-gray-700">
                     <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
@@ -63,7 +68,7 @@
 
         {{-- ── Empty state ── --}}
         <div id="emptyState" class="hidden text-center py-16 text-gray-400">
-            <i class="fas fa-search text-4xl mb-3"></i>
+            <x-icon name="search" size="xl" class="inline mb-3" />
             <p class="text-lg">No results found for this domain.</p>
         </div>
 
@@ -121,7 +126,7 @@ $(function () {
         if (on) {
             btnSearch.prop('disabled', true);
             btnLabel.text('Searching…');
-            btnSearch.prepend('<i class="fas fa-spinner fa-spin mr-1" id="spinner"></i>');
+            btnSearch.prepend('<svg id="spinner" class="w-3.5 h-3.5 me-1 inline animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>');
         } else {
             btnSearch.prop('disabled', false);
             btnLabel.text('Search');
@@ -188,7 +193,7 @@ $(function () {
                     <td class="py-2 px-4 text-gray-400">${i + 1}</td>
                     <td class="py-2 px-4 font-medium">
                         <a href="https://${row.domain}" target="_blank"
-                           class="text-cyan-700 hover:underline">${row.domain}</a>
+                           class="text-green-700 hover:underline">${row.domain}</a>
                     </td>
                     <td class="py-2 px-4 text-center font-semibold">${ms}</td>
                     <td class="py-2 px-4 text-gray-500">${type}</td>

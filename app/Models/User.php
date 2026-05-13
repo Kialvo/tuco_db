@@ -61,4 +61,19 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Website::class, 'user_favorite_domains')
             ->withTimestamps();
     }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class)->latest();
+    }
+
+    /**
+     * Returns this user's open draft order (the cart). Creates one if none exists.
+     */
+    public function draftOrder(): Order
+    {
+        return $this->orders()
+            ->where('status', Order::STATUS_DRAFT)
+            ->firstOrCreate(['status' => Order::STATUS_DRAFT]);
+    }
 }

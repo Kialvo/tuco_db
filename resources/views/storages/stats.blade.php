@@ -21,7 +21,7 @@
                     <label class="flex flex-col gap-1">
                         <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Time Window</span>
                         <select name="window"
-                                class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200">
+                                class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
                             @foreach($windowOptions as $value => $label)
                                 <option value="{{ $value }}" @selected($window === $value)>{{ $label }}</option>
                             @endforeach
@@ -31,7 +31,7 @@
                     <label class="flex flex-col gap-1">
                         <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Granularity</span>
                         <select name="granularity"
-                                class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200">
+                                class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
                             @foreach($granularityOptions as $value => $label)
                                 <option value="{{ $value }}" @selected($granularity === $value)>{{ $label }}</option>
                             @endforeach
@@ -45,7 +45,7 @@
                                value="{{ $dateFrom }}"
                                placeholder="YYYY-MM-DD"
                                autocomplete="off"
-                               class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200">
+                               class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
                     </label>
 
                     <label class="flex flex-col gap-1">
@@ -55,17 +55,17 @@
                                value="{{ $dateTo }}"
                                placeholder="YYYY-MM-DD"
                                autocomplete="off"
-                               class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-200">
+                               class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
                     </label>
 
                     <button type="submit"
-                            class="inline-flex h-[42px] items-center justify-center self-end rounded-xl bg-cyan-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-300">
+                            class="inline-flex h-[42px] items-center justify-center self-end rounded-xl bg-green-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300">
                         Apply
                     </button>
 
                     <a href="{{ route('storages.stats') }}"
                        class="inline-flex h-[42px] items-center justify-center gap-2 self-end rounded-xl border border-pink-200 bg-pink-50 px-4 text-sm font-semibold text-pink-700 transition hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-200">
-                        <i class="fas fa-rotate-left text-xs"></i>
+                        <x-icon name="rotate" size="sm" class="inline" />
                         Reset
                     </a>
 
@@ -83,7 +83,7 @@
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <section class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-sky-50 to-white p-6 shadow-sm">
                 <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                    <i class="fas fa-newspaper text-sm"></i>
+                    <x-icon name="newspaper" size="sm" class="inline" />
                 </div>
                 <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Published Articles</p>
                 <p class="mt-3 text-4xl font-bold leading-none text-slate-900">{{ number_format($totalPublished) }}</p>
@@ -92,7 +92,7 @@
 
             <section class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm">
                 <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                    <i class="fas fa-euro-sign text-sm"></i>
+                    <x-icon name="euro" size="sm" class="inline" />
                 </div>
                 <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Net Profit</p>
                 <p class="mt-3 text-4xl font-bold leading-none text-emerald-700">

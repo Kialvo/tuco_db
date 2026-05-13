@@ -1,12 +1,18 @@
 @extends('layouts.dashboard')
+@section('title', 'Traffic by Country')
 
 @section('content')
-    <h1 class="text-lg font-bold text-gray-700 py-6">Traffic Distribution by Country</h1>
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Traffic by Country</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Top 3 traffic countries for any list of domains.</p>
+        </div>
+    </div>
 
-    <div class="px-6 pb-10 bg-gray-50 min-h-screen">
-
+    <div class="px-6 py-6 pb-10 bg-gray-50 min-h-screen">
         {{-- ── Input card ── --}}
-        <div class="bg-white border border-gray-200 rounded shadow-sm p-6 mb-6 max-w-2xl">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card p-6 mb-6 max-w-2xl">
             <p class="text-sm text-gray-500 mb-4">
                 Enter up to 50 domains (one per line) or upload a CSV file. The tool will show the top 3 traffic countries and their share for each domain.
             </p>
@@ -19,7 +25,7 @@
                 <textarea id="domainsInput" rows="6"
                           placeholder="corriere.it&#10;repubblica.it&#10;gazzetta.it"
                           class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm
-                                 focus:ring-cyan-500 focus:border-cyan-500 font-mono"></textarea>
+                                 focus:ring-green-500 focus:border-green-500 font-mono"></textarea>
             </div>
 
             {{-- Divider --}}
@@ -38,16 +44,16 @@
                        class="block w-full text-sm text-gray-500
                               file:mr-3 file:py-1.5 file:px-3 file:rounded
                               file:border-0 file:text-sm file:font-medium
-                              file:bg-cyan-50 file:text-cyan-700
-                              hover:file:bg-cyan-100 cursor-pointer"/>
+                              file:bg-green-50 file:text-green-700
+                              hover:file:bg-green-100 cursor-pointer"/>
             </div>
 
             <div class="flex items-center gap-3">
                 <button id="btnSearch"
-                        class="bg-cyan-600 text-white px-5 py-2 rounded shadow-sm text-sm
-                               hover:bg-cyan-700 focus:outline-none focus:ring-2
-                               focus:ring-offset-2 focus:ring-cyan-500 transition flex items-center gap-2">
-                    <i class="fas fa-globe-europe"></i>
+                        class="bg-green-600 text-white px-5 py-2 rounded shadow-sm text-sm
+                               hover:bg-green-700 focus:outline-none focus:ring-2
+                               focus:ring-offset-2 focus:ring-green-500 transition flex items-center gap-2">
+                    <x-icon name="globe-europe" size="sm" class="inline" />
                     <span id="btnLabel">Analyse</span>
                 </button>
                 <span id="progressText" class="text-sm text-gray-500 hidden"></span>
@@ -66,11 +72,11 @@
                         class="bg-green-600 text-white px-4 py-1.5 rounded shadow-sm text-sm
                                hover:bg-green-700 focus:outline-none focus:ring-2
                                focus:ring-offset-2 focus:ring-green-500 transition flex items-center gap-2">
-                    <i class="fas fa-file-csv"></i> Export CSV
+                    <x-icon name="document-csv" size="sm" class="inline" /> Export CSV
                 </button>
             </div>
 
-            <div class="bg-white border border-gray-200 rounded shadow-sm overflow-x-auto">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-card overflow-x-auto">
                 <table class="w-full text-sm text-gray-700">
                     <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
@@ -88,7 +94,7 @@
 
         {{-- ── Empty state ── --}}
         <div id="emptyState" class="hidden text-center py-16 text-gray-400">
-            <i class="fas fa-globe text-4xl mb-3"></i>
+            <x-icon name="globe" size="xl" class="inline mb-3" />
             <p class="text-lg">No traffic data found for the given domains.</p>
         </div>
 
@@ -154,7 +160,7 @@ $(function () {
         if (on) {
             btnSearch.prop('disabled', true);
             btnLabel.text('Analysing…');
-            btnSearch.prepend('<i class="fas fa-spinner fa-spin mr-1" id="spinner"></i>');
+            btnSearch.prepend('<svg id="spinner" class="w-3.5 h-3.5 me-1 inline animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>');
             progressText.text('Sending request…').removeClass('hidden');
         } else {
             btnSearch.prop('disabled', false);
@@ -172,7 +178,7 @@ $(function () {
             if (!entry) return '<td class="py-2 px-4 text-gray-400">—</td>';
             const pct = entry.pct;
             let badgeClass = 'bg-gray-100 text-gray-600';
-            if (pct >= 50) badgeClass = 'bg-cyan-100 text-cyan-800';
+            if (pct >= 50) badgeClass = 'bg-green-100 text-green-800';
             else if (pct >= 20) badgeClass = 'bg-blue-100 text-blue-800';
             return `<td class="py-2 px-4">
                         <span class="inline-flex items-center gap-1">
@@ -192,7 +198,7 @@ $(function () {
         return `<tr class="hover:bg-gray-50">
                     <td class="py-2 px-4 font-medium">
                         <a href="https://${row.domain}" target="_blank"
-                           class="text-cyan-700 hover:underline">${row.domain}</a>
+                           class="text-green-700 hover:underline">${row.domain}</a>
                     </td>
                     ${cell(c[0])}
                     ${cell(c[1])}

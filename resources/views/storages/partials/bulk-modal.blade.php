@@ -133,14 +133,14 @@
 
 
 {{-- Bulk-edit modal --}}
-<div id="bulkEditModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-    <div class="bg-white w-96 rounded shadow p-4 space-y-4">
+<div id="bulkEditModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white w-96 rounded-2xl shadow-2xl p-5 space-y-4">
         <h2 class="font-semibold text-lg text-gray-700">Bulk Edit Storages</h2>
 
         <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700">Field</label>
             <select id="bulkField"
-                    class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-cyan-500">
+                    class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-green-500">
                 <option value="recalculate_totals">Apply Auto Calculation</option>
 
             @foreach($bulkEditable as $f)

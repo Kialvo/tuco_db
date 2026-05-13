@@ -1,46 +1,35 @@
 @extends('layouts.dashboard')
+@section('title', 'Publishers')
 
 @section('content')
-
-    <h1 class="text-lg font-bold text-gray-700  py-6">Publishers</h1>
-    <div class="px-6 py-6 bg-gray-50 min-h-screen">
-
-
-        <!-- Row for the toggle (Show Deleted) + Create Contact button -->
-        <div class="flex items-center justify-between mb-4">
-
-
-            <!-- Show Deleted Toggle -->
-            <div class="flex items-center space-x-2">
-                <label for="filterShowDeleted" class="text-gray-700 font-medium">Show Deleted</label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="filterShowDeleted" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 rounded-full
-                                peer dark:bg-gray-700 peer-checked:bg-cyan-600
-                                peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500
-                                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                                after:bg-white after:border-gray-300 after:border
-                                after:rounded-full after:h-5 after:w-5
-                                after:transition-all peer-checked:after:translate-x-full
-                                peer-checked:after:border-white">
-                    </div>
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Publishers</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Domain owners and contact records.</p>
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+            <label for="filterShowDeleted" class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+                <span>Show deleted</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="filterShowDeleted">
+                    <span class="toggle-track"></span>
                 </label>
-            </div>
-
-            <!-- Button that opens the Create Contact Modal -->
+            </label>
             <button id="btnOpenModal"
-                    class="bg-cyan-600 text-white px-5 py-2 rounded shadow
-                           hover:bg-cyan-700 focus:outline-none focus:ring-2
-                           focus:ring-offset-2 focus:ring-cyan-500 transition">
-                Create Publisher
+                    class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                <x-icon name="plus" size="sm" /> Create Publisher
             </button>
         </div>
+    </div>
+
+    <div class="px-6 py-6 bg-gray-50 min-h-screen">
 
         <div id="contactsTableSearchWrap" class="table-search-wrap">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
-                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                        focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500">
                 <span class="px-3 text-gray-400 text-base leading-none">
-                    <i class="fas fa-search"></i>
+                    <x-icon name="search" size="sm" class="inline" />
                 </span>
                 <input id="contactsTableSearch" type="text"
                        class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
@@ -49,8 +38,8 @@
         </div>
 
         <!-- DataTable Container -->
-        <div class="bg-white border border-gray-200 rounded shadow-sm p-4">
-            <table id="contactsTable" class="w-full text-sm text-gray-700">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card p-4 max-w-5xl mx-auto">
+            <table id="contactsTable" class="text-sm text-gray-700" style="width:100%; table-layout:auto;">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                     <th class="py-3 px-4 font-semibold">ID</th>
@@ -94,10 +83,12 @@
                     }
                 },
                 columns: [
-                    { data: 'id', name: 'id' },
-                    { data: 'name', name: 'contact_name' },
-                    { data: 'email', name: 'email' },
-                    { data: 'phone', name: 'phone' },
+                    { data: 'id', name: 'id', className: 'text-right' },
+                    { data: 'name', name: 'contact_name', render: d => d || '<span class="text-gray-300">—</span>' },
+                    { data: 'email', name: 'email', render: d => d
+                        ? `<a href="mailto:${d}" class="text-green-600 hover:text-green-700 hover:underline">${d}</a>`
+                        : '<span class="text-gray-300">—</span>' },
+                    { data: 'phone', name: 'phone', render: d => d || '<span class="text-gray-300">—</span>' },
                     { data: 'facebook', name: 'facebook' },
                     { data: 'instagram', name: 'instagram' },
                     { data: 'action', name: 'action', orderable: false, searchable: false }
@@ -105,9 +96,9 @@
                 order: [[0, 'desc']],
                 responsive: true,
                 autoWidth: false,
-                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
-                    "tr" +
-                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
+                dom: "<'dt-toolbar-top'<'flex items-center gap-3'l<'dt-search'>>>" +
+                     "<'dt-scroll'rt>" +
+                     "<'dt-toolbar-bottom'ip>",
                 language: {
                     lengthMenu: "Show _MENU_ entries",
                     search: "Search:",
@@ -151,7 +142,7 @@
                 let newSelect    = lengthLabel.find('select');
                 newSelect.addClass(
                     "border border-gray-300 bg-white rounded-md px-3 py-1 text-gray-700 " +
-                    "focus:ring-cyan-500 focus:border-cyan-500"
+                    "focus:ring-green-500 focus:border-green-500"
                 );
                 lengthLabel.addClass("text-gray-600 flex items-center space-x-2");
 

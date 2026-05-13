@@ -73,61 +73,65 @@
 @endphp
 
 @extends('layouts.dashboard')
+@section('title', 'Domains')
+
+{{-- ─── Page header (top bar) ─── --}}
+@section('pageHeader')
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Domains</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Manage your domain inventory.</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            @if($isGuestUser)
+                <button id="btnFavoritesToggle"
+                        class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">
+                    <x-icon name="star" size="sm" class="inline me-0.5" /> My Favorites
+                </button>
+                <button type="button"
+                        id="btnOpenCart"
+                        onclick="window.LIBCart && window.LIBCart.openDrawer()"
+                        class="relative inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                    <x-icon name="cart" size="sm" />
+                    <span>Current Order</span>
+                    <span id="cartCountBadge"
+                          class="ml-1 hidden items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-white text-green-700 text-[11px] font-bold leading-none">0</span>
+                </button>
+            @endif
+
+            <a href="#" id="btnExportCsv"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+                <x-icon name="download" size="sm" /> Export CSV
+            </a>
+            <a href="#" id="btnExportPdf"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+                <x-icon name="document-pdf" size="sm" /> Export PDF
+            </a>
+            @unless($isGuestUser)
+                <a href="{{ route('websites.import.index') }}" id="btnImportCsv"
+                   class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+                    <x-icon name="upload" size="sm" /> Import CSV
+                </a>
+                <a href="{{ route('websites.create') }}"
+                   class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                    <x-icon name="plus" size="sm" /> Create Domain
+                </a>
+            @endunless
+        </div>
+    </div>
+@endsection
+
+{{-- ─── Sticky left filter panel ─── --}}
+@section('filters')
+    @include('websites.partials.admin-filter-panel')
+@endsection
 
 @section('content')
-    <h1 class="text-lg font-bold text-gray-700 py-6">Domains</h1>
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
-        <!-- Header: Title + Buttons -->
-
-        <div class="relative flex flex-col gap-3 mb-4">
-
-
-            <div class="space-x-2">
-                <!-- "Show/Hide Filters" button -->
-                <button  id="toggleFiltersBtn"
-                         class="bg-gray-300 text-gray-700 px-4 py-2 rounded shadow text-xs hover:bg-gray-400
-                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
-                    Hide Filters
-                </button>
-
-                @if($isGuestUser)
-                    <button id="btnFavoritesToggle"
-                            class="bg-amber-500 text-white px-4 py-2 rounded shadow hover:bg-amber-600
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400 text-xs">
-                        <i class="fas fa-star mr-1"></i> My Favorites
-                    </button>
-                @endif
-
-                <a href="#" id="btnExportCsv"
-                   class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
-                    Export CSV
-                </a>
-                <a href="#" id="btnExportPdf"
-                   class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
-                      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
-                    Export PDF
-                </a>
-                @unless($isGuestUser)
-                    <a href="{{ route('websites.create') }}"
-                       class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
-                        Create Domain
-                    </a>
-                    <a href="{{ route('websites.import.index') }}"
-                       id="btnImportCsv"
-                       class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
-                        Import CSV
-                    </a>
-                @endunless
-
-
-            </div>
-            @unless($isGuestUser)
+        @unless($isGuestUser)
             <div id="websiteExportPicker"
-                 class="hidden absolute left-0 top-full z-40 mt-2 w-full max-w-3xl">
-                <div class="w-full rounded border border-gray-200 bg-white shadow-xl">
+                 class="hidden fixed top-20 right-6 z-40 w-full max-w-3xl">
+                <div class="w-full rounded-xl border border-gray-200 bg-white shadow-2xl">
                     <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
                         <p id="websiteExportPickerTitle" class="text-sm font-semibold text-gray-700">
                             Choose columns to export
@@ -140,14 +144,14 @@
                     <div class="border-b border-gray-200 px-4 py-2">
                         <label class="inline-flex items-center gap-2 text-xs text-gray-700">
                             <input type="checkbox" id="websiteExportSelectAll" checked
-                                   class="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
+                                   class="rounded border-gray-300 text-green-600 focus:ring-green-500">
                             Select all columns
                         </label>
                     </div>
                     <div class="grid max-h-[55vh] grid-cols-1 gap-2 overflow-y-auto p-4 sm:grid-cols-2 md:grid-cols-3">
                         @foreach($adminExportColumns as $key => $label)
                             <label class="inline-flex items-center gap-2 text-xs text-gray-700">
-                                <input type="checkbox" class="website-export-field rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                                <input type="checkbox" class="website-export-field rounded border-gray-300 text-green-600 focus:ring-green-500"
                                        value="{{ $key }}" checked>
                                 <span>{{ $label }}</span>
                             </label>
@@ -159,575 +163,63 @@
                             Cancel
                         </button>
                         <button type="button" id="websiteExportConfirm"
-                                class="rounded bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-700">
+                                class="rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700">
                             Continue Export
                         </button>
                     </div>
                 </div>
             </div>
-            @endunless
-        </div>
-
-        <!-- FILTERS WRAPPER -->
-
-        <div id="filterForm"
-             class="bg-white border border-gray-200 rounded shadow p-2 mb-8
-            inline-block max-w-[2000px]">
-            <!-- ROW 1 -->
-            <div class="flex flex-wrap gap-2 mb-2">
-                <!-- Domain -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Domain</label>
-                    <input id="filterDomainName" type="text"
-                           class="border border-gray-300 rounded px-2 py-2 w-30
-                              focus:ring-cyan-500 focus:border-cyan-500" placeholder="Type Domain">
-                </div>
-
-                <!-- Type -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Type</label>
-                    <select id="filterWebsiteType"
-                            class="border border-gray-300 rounded px-2 py-2 w-28
-                               focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        <option value="FORUM">Forum</option>
-                        <option value="GENERALIST">Generalist</option>
-                        <option value="VERTICAL">Vertical</option>
-                        <option value="LOCAL">Local</option>
-                    </select>
-                </div>
-
-                <!-- Language -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Language</label>
-                    <select id="filterLanguage"
-                            class="border border-gray-300 rounded px-2 py-2 w-28
-                               focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        @foreach($languages as $lang)
-                            <option value="{{ $lang->id }}">{{ $lang->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                @unless($isGuestUser)
-                    <!-- Status -->
-                    <div class="flex flex-col">
-                        <label class="text-gray-700 font-medium">Status</label>
-                        <select id="filterStatus"
-                                class="border border-gray-300 rounded px-2 py-2 w-28
-                                   focus:ring-cyan-500 focus:border-cyan-500">
-                            <option value="">-- Any --</option>
-                            <option value="active">Active</option>
-                            <option value="past">Past</option>
-                        </select>
-                    </div>
-                @endunless
-
-                @unless($isGuestUser)
-                    <!-- Publisher -->
-                    <div class="flex flex-col">
-                        <label class="text-gray-700 font-medium">Publisher</label>
-                        <select id="filterContact"
-                                class="border border-gray-300 rounded px-2 py-2 w-48
-                           focus:ring-cyan-500 focus:border-cyan-500">
-                            <option value="">-- Any --</option>
-                            @foreach($contacts as $c)
-                                <option value="{{ $c->id }}">{{ $c->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endunless
-                <!-- Country -->
-                <!-- Include Countries -->
-                <div class="flex flex-col">
-                    <label for="filterCountriesInclude" class="text-gray-700 font-medium">Include Countries</label>
-                    <select id="filterCountriesInclude" multiple
-                            class="border border-gray-300 rounded px-2 py-2 w-48
-                   focus:ring-cyan-500 focus:border-cyan-500">
-                        @foreach($countries as $c)
-                            <option value="{{ $c->id }}">{{ $c->country_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Exclude Countries -->
-                <div class="flex flex-col">
-                    <label for="filterCountriesExclude" class="text-gray-700 font-medium">Exclude Countries</label>
-                    <select id="filterCountriesExclude" multiple
-                            class="border border-gray-300 rounded px-2 py-2 w-48
-                   focus:ring-cyan-500 focus:border-cyan-500">
-                        @foreach($countries as $c)
-                            <option value="{{ $c->id }}">{{ $c->country_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-            </div>
-
-            <!-- ROW 2: Publisher, Kialvo, Profit -->
-            <div class="flex flex-wrap gap-2 mb-2">
-                <!-- Price Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Price Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" step="0.01" id="filterPriceMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" step="0.01" id="filterPriceMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-
-                <!-- Sensitive Topic Price Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Sensitive Topic Price Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" step="0.01" id="filterSensitiveTopicPriceMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" step="0.01" id="filterSensitiveTopicPriceMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-
-                @unless($isGuestUser)
-                    <!-- Publisher Price Min/Max -->
-                    <div class="flex flex-col">
-                        <label class="text-gray-700 font-medium">Publisher Min/Max</label>
-                        <div class="flex gap-1">
-                            <input type="number" id="filterPublisher_priceMin"
-                                   class="border border-gray-300 rounded w-16 px-2 py-2
-                                      focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                            <input type="number" id="filterPublisher_priceMax"
-                                   class="border border-gray-300 rounded w-16 px-2 py-2
-                                      focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                        </div>
-                    </div>
-                @endunless
-
-                @unless($isGuestUser)
-                <!-- Kialvo Evaluation Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Kialvo Evaluation Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterKialvo_evaluationMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterKialvo_evaluationMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                @endunless
-
-                @unless($isGuestUser)
-                <!-- Profit Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Profit Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterProfitMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterProfitMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-
-                {{--  Banner Price Min / Max  --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Banner &euro; Min</label>
-                    <input type="number" step="0.01" id="filterBannerMin"
-                           class="border border-gray-300 w-16 rounded px-2 py-2
-                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Banner &euro; Max</label>
-                    <input type="number" step="0.01" id="filterBannerMax"
-                           class="border border-gray-300 rounded w-16 px-2 py-2
-                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                </div>
-
-                {{--  Site-wide Price Min / Max  --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Site-wide &euro; Min</label>
-                    <input type="number" step="0.01" id="filterSWMin"
-                           class="border border-gray-300 rounded w-16 px-2 py-2
-                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Site-wide &euro; Max</label>
-                    <input type="number" step="0.01" id="filterSWMax"
-                           class="border border-gray-300 rounded w-16 px-2 py-2
-                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                </div>
-                @endunless
-
-            </div>
-
-
-            <!-- ROW 3: DA/PA, TF/CF, DR/UR, etc. -->
-            <div class="flex flex-wrap gap-2 mb-2">
-                <!-- DA Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">DA Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterDAMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterDAMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- PA Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">PA Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterPAMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterPAMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                @unless($isGuestUser)
-                <!-- TF Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">TF Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterTFMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterTFMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- CF Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">CF Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterCFMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterCFMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- DR Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">DR Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterDRMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterDRMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                @endunless
-                <!-- UR Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">UR Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterURMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterURMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- ZA Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">ZA Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterZAMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterZAMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- AS Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">AS Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterASMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterASMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                @unless($isGuestUser)
-                <!-- TF vs CF Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">TF vs CF</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterTF_vS_cfMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterTF_vS_cfMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                @endunless
-                <!-- Semrush Traffic Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Semrush Traffic</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterSemrush_trafficMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterSemrush_trafficMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                @unless($isGuestUser)
-                <!-- Ahrefs KW Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Ahrefs KW</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterAhrefs_keywordMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterAhrefs_keywordMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- Ahrefs Traffic Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Ahrefs Traffic</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterAhrefs_trafficMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterAhrefs_trafficMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- KW vs Traffic Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">KW vs Traffic</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterKeyword_vs_trafficMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterKeyword_vs_trafficMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                @endunless
-                <!-- MS Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">MS Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterMSMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterMSMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- Organic KW Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Organic KW Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterOrganicKWMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterOrganicKWMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- Organic TR Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Organic TR Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" id="filterOrganicTRMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" id="filterOrganicTRMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-                <!-- KW/TR Ratio Min/Max -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">KW/TR Ratio Min/Max</label>
-                    <div class="flex gap-1">
-                        <input type="number" step="0.01" id="filterKWTRRatioMin"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Min">
-                        <input type="number" step="0.01" id="filterKWTRRatioMax"
-                               class="border border-gray-300 rounded w-16 px-2 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500" placeholder="Max">
-                    </div>
-                </div>
-            </div><!-- END ROW 3 -->
-
-            <!-- ROW 4: Categories -->
-            <div class="mb-2 flex items-center">
-                <label class="text-gray-700 font-medium mr-2">Categories</label>
-                <select id="filterCategories" multiple
-                        class="border border-gray-300 rounded px-2 py-2 text-xs w-48
-               max-h-16 overflow-y-auto focus:ring-cyan-500 focus:border-cyan-500">
-
-                    @foreach($categories as $category)
-                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- ROW 5: Toggles in one row -->
-            <div class="flex flex-wrap items-center gap-3 mb-2">
-                @php
-                    $toggleFilters = $isGuestUser
-                        ? ['trading']
-                        : ['betting','trading','permanent_link','more_than_one_link','copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage'];
-                @endphp
-                @foreach($toggleFilters as $chk)
-                    <div class="flex items-center space-x-1">
-                        <span class="text-gray-700">{{ str_replace('_',' ', $chk) }}</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="filter{{ ucfirst($chk) }}" class="sr-only peer">
-                            <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-cyan-600
-                                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                                after:bg-white after:border-gray-300 after:border
-                                after:rounded-full after:h-4 after:w-4 after:transition-all
-                                peer-checked:after:translate-x-full peer-focus:outline-none
-                                peer-focus:ring-1 peer-focus:ring-cyan-500 peer-checked:after:border-white">
-                            </div>
-                        </label>
-                    </div>
-                @endforeach
-
-                    @unless($isGuestUser)
-                        {{-- Orphan domains --}}
-                        <div class="flex items-center space-x-1">
-                            <span class="text-gray-700">no publisher</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="filterNoContact" class="sr-only peer">
-                                <div class="w-10 h-6 bg-gray-200 rounded-full peer-checked:bg-cyan-600
-                after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                after:bg-white after:border-gray-300 after:border after:rounded-full
-                after:h-4 after:w-4 after:transition-all
-                peer-checked:after:translate-x-full peer-focus:outline-none
-                peer-focus:ring-1 peer-focus:ring-cyan-500 peer-checked:after:border-white">
-                                </div>
-                            </label>
-                        </div>
-                    @endunless
-            </div>
-
-
-
-            <!-- ROW 6: Buttons -->
-            <div class="flex space-x-2">
-                <button id="btnSearch"
-                        class="bg-cyan-600 text-white px-4 py-2 rounded shadow text-xs hover:bg-cyan-700
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                    Search
-                </button>
-                <button id="btnClear"
-                        class="bg-gray-400 text-white px-4 py-2 rounded shadow text-xs hover:bg-gray-500
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
-                    Clear
-                </button>
-            </div>
-        </div><!-- END FILTER FORM -->
-
-        @unless($isGuestUser)
-            <!-- Show Deleted Toggle -->
-            <div class="flex items-center space-x-2 mb-4">
-                <label for="filterShowDeleted" class="text-lg font-medium text-gray-700">Show Deleted</label>
-
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="filterShowDeleted" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 rounded-full
-                        peer dark:bg-gray-700 peer-checked:bg-cyan-600
-                        peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500
-                        after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                        after:bg-white after:border-gray-300 after:border
-                        after:rounded-full after:h-5 after:w-5
-                        after:transition-all peer-checked:after:translate-x-full
-                        peer-checked:after:border-white">
-                    </div>
-                </label>
-            </div>
         @endunless
+
+        {{-- Hidden no-op placeholder so existing JS that targets #toggleFiltersBtn doesn't error --}}
+        <button id="toggleFiltersBtn" class="hidden" aria-hidden="true"></button>
+
 
         {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ TABLE ACTION BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
         @unless($isGuestUser)
         <div id="actionBar"
-             class="flex items-center gap-3 mb-2
-            sticky top-0 z-10 bg-gray-50 border-b border-gray-200 py-2">
-
+             class="flex items-center flex-wrap gap-2 mb-3 px-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-card">
             {{-- Bulk Edit --}}
             <button id="btnBulkEdit"
-                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
-                   bg-amber-600 hover:bg-amber-700 text-white shadow disabled:opacity-50
-                   disabled:cursor-not-allowed">
-                <i class="fas fa-pen"></i> Bulk&nbsp;Edit
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200
+                           disabled:opacity-50 disabled:cursor-not-allowed">
+                <x-icon name="pencil" size="sm" /> Bulk Edit
             </button>
 
-            {{-- Restore / Rollback --}}
             <button id="btnBulkRestore"
-                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
-                   bg-purple-600 hover:bg-purple-700 text-white shadow disabled:opacity-50
-                   disabled:cursor-not-allowed">
-                <i class="fas fa-history"></i> Restore
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200
+                           disabled:opacity-50 disabled:cursor-not-allowed">
+                <x-icon name="history" size="sm" /> Restore
             </button>
 
             <button id="btnBulkOutreach"
-                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
-           bg-cyan-700 hover:bg-cyan-800 text-white shadow disabled:opacity-50
-           disabled:cursor-not-allowed">
-                <i class="fas fa-paper-plane"></i> Bulk Outreach
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-green-50 text-green-700 hover:bg-green-100 border border-green-200
+                           disabled:opacity-50 disabled:cursor-not-allowed">
+                <x-icon name="paper-plane" size="sm" /> Bulk Outreach
             </button>
 
-            {{-- Divider --}}
-            <span class="h-5 w-px bg-gray-300 mx-1"></span>
+            <span class="h-5 w-px bg-gray-200 mx-1"></span>
 
-            {{-- Sync DataforSEO --}}
             <button id="btnSyncDataForSeo"
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs shadow transition-colors duration-150"
-                    style="background-color:#4f46e5; color:#fff; border: 1px solid #6366f1;"
-                    onmouseover="this.style.backgroundColor='#4338ca'"
-                    onmouseout="this.style.backgroundColor='#4f46e5'">
-                <i class="fas fa-satellite-dish" style="color:#c7d2fe;"></i>
-                Sync DataforSEO
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
+                <x-icon name="satellite" size="sm" /> Sync DataforSEO
             </button>
 
-            {{-- live counter --}}
-            <span class="ml-2 text-sm text-gray-600">
-        Selected:&nbsp;<span id="selCount">0</span>
-    </span>
+            <span class="ml-auto text-xs text-gray-500">
+                Selected: <span id="selCount" class="font-semibold text-gray-800">0</span>
+            </span>
         </div>
         @endunless
 
         <div id="websitesTableSearchWrap" class="table-search-wrap">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
-                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                        focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500">
                 <span class="px-3 text-gray-400 text-base leading-none">
-                    <i class="fas fa-search"></i>
+                    <x-icon name="search" size="sm" class="inline" />
                 </span>
                 <input id="websitesTableSearch" type="text"
                        class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
@@ -735,21 +227,20 @@
             </div>
         </div>
 
-        <!-- TABLE WRAPPER for horizontal scrolling if needed -->
-        <div class="bg-white border border-gray-200 rounded shadow p-2
-            overflow-x-auto
-            max-w-[1400px]">
+        <!-- TABLE WRAPPER -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card">
 
             <table id="websitesTable" class="text-xs text-gray-700 w-full min-w-[1500px]">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-[12px] uppercase text-gray-500 tracking-wider">
                     <th class="px-4 py-2">
-                        <input type="checkbox" id="chkAll" class="form-checkbox h-4 w-4 text-cyan-600">
+                        <input type="checkbox" id="chkAll" class="form-checkbox h-4 w-4 text-green-600">
                     </th>
 
                     <th class="whitespace-nowrap px-4 py-2">ID</th>
                     @if($isGuestUser)
                         <th class="whitespace-nowrap px-4 py-2 text-center">Fav</th>
+                        <th class="whitespace-nowrap px-4 py-2 text-center">Order</th>
                     @endif
                     <th class="whitespace-nowrap px-4 py-2">Domain</th>
                     <th class="whitespace-nowrap px-4 py-2">Notes</th>
@@ -769,10 +260,10 @@
                             Price
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="This is the final amount you pay for placement on this website, including our service fee."
                                         aria-label="What is Price?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     This is the final amount you pay for placement on this website, including our service fee.
@@ -785,10 +276,10 @@
                             Sensitive Topic Price
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="This is the final amount you pay for publishing content in sensitive niches (e.g. gambling, crypto, adult, dating, CBD, etc.), including our service fee."
                                         aria-label="What is Sensitive Topic Price?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     This is the final amount you pay for publishing content in sensitive niches (e.g. gambling, crypto, adult, dating, CBD, etc.), including our service fee.
@@ -806,10 +297,10 @@
                             Kialvo Evaluation
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Kialvo Evaluation is the final amount you pay for placement on this website, including our service fee."
                                         aria-label="What is Kialvo Evaluation?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Kialvo Evaluation is the final amount you pay for placement on this website, including our service fee.
@@ -826,10 +317,10 @@
                             Type of Website
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Vertical: focused on one topic. Local: focused on a city/area. Generalist: covers many topics."
                                         aria-label="What is Type of Website?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Vertical: focused on one topic. Local: focused on a city/area. Generalist: covers many topics.
@@ -843,10 +334,10 @@
                             DA
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium."
                                         aria-label="What is DA?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium.
@@ -859,10 +350,10 @@
                             PA
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better."
                                         aria-label="What is PA?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better.
@@ -875,10 +366,10 @@
                             TF
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Trust Flow (Majestic): backlink quality score on 0-100. Higher is better; TF 20+ is typically reliable."
                                         aria-label="What is TF?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Trust Flow (Majestic): backlink quality score on 0-100. Higher is better; TF 20+ is typically reliable.
@@ -891,10 +382,10 @@
                             CF
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Citation Flow (Majestic): backlink quantity influence score on 0-100. Higher is better, especially when TF is close to or above CF."
                                         aria-label="What is CF?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Citation Flow (Majestic): backlink quantity influence score on 0-100. Higher is better, especially when TF is close to or above CF.
@@ -907,10 +398,10 @@
                             DR
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Domain Rating (Ahrefs): backlink profile strength from 0 to 100. Higher DR means stronger authority; 40+ is solid."
                                         aria-label="What is DR?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Domain Rating (Ahrefs): backlink profile strength from 0 to 100. Higher DR means stronger authority; 40+ is solid.
@@ -923,10 +414,10 @@
                             UR
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="URL Rating (Ahrefs): strength of the target page backlink profile on a 0-100 scale. Higher is better."
                                         aria-label="What is UR?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     URL Rating (Ahrefs): strength of the target page backlink profile on a 0-100 scale. Higher is better.
@@ -939,10 +430,10 @@
                             ZA
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Zoom Authority (SEOZoom): domain authority metric focused on Italian SERPs, on a 0-100 scale."
                                         aria-label="What is ZA?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Zoom Authority (SEOZoom): domain authority metric focused on Italian SERPs, on a 0-100 scale.
@@ -955,10 +446,10 @@
                             AS
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals."
                                         aria-label="What is AS?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals.
@@ -971,10 +462,10 @@
                             SEO Zoom
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="SEOZoom Traffic: estimated organic traffic from SEOZoom, especially useful for Italian-market visibility."
                                         aria-label="What is SEO Zoom?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     SEOZoom Traffic: estimated organic traffic from SEOZoom, especially useful for Italian-market visibility.
@@ -987,10 +478,10 @@
                             TF vs CF
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Ratio between Trust Flow and Citation Flow. Close to 1 is ideal; TF > CF suggests stronger quality, CF > TF may indicate spammy links."
                                         aria-label="What is TF vs CF?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Ratio between Trust Flow and Citation Flow. Close to 1 is ideal; TF > CF suggests stronger quality, CF > TF may indicate spammy links.
@@ -1003,10 +494,10 @@
                             Semrush Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent."
                                         aria-label="What is Semrush Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent.
@@ -1019,10 +510,10 @@
                             Ahrefs Keyword
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Number of keywords the domain ranks for. More keywords usually mean stronger organic visibility; 1k+ is strong."
                                         aria-label="What is Ahrefs Keyword?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Number of keywords the domain ranks for. More keywords usually mean stronger organic visibility; 1k+ is strong.
@@ -1035,10 +526,10 @@
                             Ahrefs Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Estimated monthly organic visitors from Ahrefs. Higher traffic means more exposure; 5k+ good, 50k+ excellent."
                                         aria-label="What is Ahrefs Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Estimated monthly organic visitors from Ahrefs. Higher traffic means more exposure; 5k+ good, 50k+ excellent.
@@ -1051,10 +542,10 @@
                             Keywords vs Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings."
                                         aria-label="What is Keywords vs Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings.
@@ -1067,10 +558,10 @@
                             MS
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Menford Score: proprietary authority score (0–1,000) based on a weighted average of backlink profile strength across multiple competitive intelligence sources. Higher is better; 100–200 entry level, 200–400 good, 400+ strong."
                                         aria-label="What is MS?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Menford Score: proprietary authority score (0–1,000) based on a weighted average of backlink profile strength across multiple competitive intelligence sources. Higher is better; 100–200 entry level, 200–400 good, 400+ strong.
@@ -1083,10 +574,10 @@
                             Organic Keywords
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Organic Keywords: estimated number of keywords a domain ranks for in organic search results globally, aggregated across multiple competitive intelligence sources. Higher values indicate broader topical relevance and search visibility; 1,000–5,000 entry level, 5,000–30,000 good, 30,000+ strong."
                                         aria-label="What is Organic Keywords?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Organic Keywords: estimated number of keywords a domain ranks for in organic search results globally, aggregated across multiple competitive intelligence sources. Higher values indicate broader topical relevance and search visibility; 1,000–5,000 entry level, 5,000–30,000 good, 30,000+ strong.
@@ -1099,10 +590,10 @@
                             Organic Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Organic Traffic: estimated monthly organic search visits, aggregated across multiple competitive intelligence sources. Values are best used for comparative analysis across domains rather than as standalone figures; 5,000–20,000 entry level, 20,000–200,000 good, 200,000+ strong."
                                         aria-label="What is Organic Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Organic Traffic: estimated monthly organic search visits, aggregated across multiple competitive intelligence sources. Values are best used for comparative analysis across domains rather than as standalone figures; 5,000–20,000 entry level, 20,000–200,000 good, 200,000+ strong.
@@ -1119,10 +610,10 @@
                             LINK LIFETIME
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration."
                                         aria-label="What is Link Lifetime?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration.
@@ -1135,10 +626,10 @@
                             More than 1 link
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Yes means the publisher accepts multiple backlinks in one guest post."
                                         aria-label="What does More than 1 link mean?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Yes means the publisher accepts multiple backlinks in one guest post.
@@ -1152,10 +643,10 @@
                             Sponsored Tag
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Indicates whether links are tagged sponsored/nofollow. No means full SEO value, yes means rel='sponsored' or rel='nofollow'."
                                         aria-label="What is Sponsored Tag?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Indicates whether links are tagged sponsored/nofollow. No means full SEO value, yes means rel='sponsored' or rel='nofollow'.
@@ -1368,9 +859,54 @@
                 // escape any "<" & ">" so the note can safely live in a data-attribute
                 const safe = $('<div>').text(data).html();
                 return `
-            <a href="#" class="note-link text-cyan-700" data-note="${safe}">
-                <i class="fas fa-comment-dots"></i>
+            <a href="#" class="note-link text-green-700" data-note="${safe}">
+                <x-icon name="comment" size="sm" class="inline" />
             </a>`;
+            };
+            const STATUS_TONES = {
+                'active': 'bg-green-100 text-green-700 ring-green-200',
+                'past': 'bg-gray-100 text-gray-600 ring-gray-200',
+                'negotiation': 'bg-blue-100 text-blue-700 ring-blue-200',
+                'waiting_for_first_answer': 'bg-blue-100 text-blue-700 ring-blue-200',
+                'read_but_never_answered': 'bg-amber-100 text-amber-700 ring-amber-200',
+                'refused_by_us': 'bg-red-100 text-red-700 ring-red-200',
+                'publisher_refused': 'bg-red-100 text-red-700 ring-red-200',
+                'never_opened': 'bg-gray-100 text-gray-500 ring-gray-200',
+            };
+            const renderStatusPill = function (data) {
+                if (!data) return '<span class="text-gray-300">—</span>';
+                const key = String(data).toLowerCase().replace(/\s+/g, '_');
+                const tone = STATUS_TONES[key] || 'bg-gray-100 text-gray-700 ring-gray-200';
+                const label = String(data).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                return `<span class="inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${tone}">${label}</span>`;
+            };
+            const emDash = '<span class="text-gray-300">—</span>';
+            const renderPrice = function (data) {
+                if (data === null || data === undefined || data === '') return emDash;
+                return '<span class="font-semibold text-gray-800">€ ' + data + '</span>';
+            };
+            const renderProfit = function (data) {
+                if (data === null || data === undefined || data === '') return emDash;
+                const neg = Number(data) < 0;
+                return '<span class="font-semibold ' + (neg ? 'text-red-600' : 'text-gray-800') + '">€ ' + data + '</span>';
+            };
+            const renderCurrencyPill = function (data) {
+                if (!data) return emDash;
+                return '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200">' + String(data).toUpperCase() + '</span>';
+            };
+            const renderMetric = function (data) {
+                if (data === null || data === undefined || data === '') return emDash;
+                return data;
+            };
+            const renderEmailLink = function (data) {
+                if (!data) return emDash;
+                const safe = $('<div>').text(data).html();
+                return '<a href="mailto:' + safe + '" class="text-green-600 hover:text-green-700 hover:underline">' + safe + '</a>';
+            };
+            const renderUrlLink = function (data) {
+                if (!data) return emDash;
+                const safe = $('<div>').text(data).html();
+                return '<a href="' + safe + '" target="_blank" rel="noopener" class="text-green-600 hover:text-green-700 hover:underline break-all">' + safe + '</a>';
             };
             const decodeHtml = (value) => $('<textarea/>').html(value ?? '').text();
             // Initialize the DataTable
@@ -1378,9 +914,9 @@
 
                 processing: true,
                 serverSide: true,
-                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
-                    "tr" +
-                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
+                dom: "<'dt-toolbar-top'<'flex items-center gap-3'l<'dt-search'>>>" +
+                     "<'dt-scroll'rt>" +
+                     "<'dt-toolbar-bottom'ip>",
                 ajax: {
                     url: "{{ route('websites.data') }}",
                     type: "POST",
@@ -1472,7 +1008,7 @@
                         visible   : !isGuestUser,
                         render    : id =>
                             `<input type="checkbox"
-                class="rowChk form-checkbox h-4 w-4 text-cyan-600"
+                class="rowChk form-checkbox h-4 w-4 text-green-600"
                 value="${id}">`
                     },
                     { data: 'id', name: 'id', visible: !isGuestUser },
@@ -1488,7 +1024,27 @@
                             const title = data ? 'Remove from favorites' : 'Add to favorites';
                             return `
             <button class="fav-toggle ${active}" data-id="${row.id}" data-fav="${data ? 1 : 0}" title="${title}">
-                <i class="fas fa-star"></i>
+                <x-icon name="star" size="sm" class="inline" />
+            </button>`;
+                        }
+                    },
+                    {
+                        data: 'is_in_cart',
+                        name: 'is_in_cart',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function (data, type, row) {
+                            const inCart = !!data;
+                            if (inCart) {
+                                return `
+            <button class="order-toggle inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-600 text-white hover:bg-green-700 transition" data-id="${row.id}" data-in-cart="1" title="Remove from order">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </button>`;
+                            }
+                            return `
+            <button class="order-toggle inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700 transition" data-id="${row.id}" data-in-cart="0" title="Add to order">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
             </button>`;
                         }
                     },
@@ -1508,8 +1064,16 @@
                         render: renderNote
                     },
                     @endunless
-                    { data: 'status', name: 'status', className: 'text-center', visible: !isGuestUser },
-                    { data: 'country_name', name: 'country.country_name', className: 'text-center', },
+                    { data: 'status', name: 'status', className: 'text-center', visible: !isGuestUser, render: renderStatusPill },
+                    { data: 'country_name', name: 'country.country_name', className: 'text-center',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            const flag = row.country_iso
+                                ? `<img src="https://flagcdn.com/48x36/${row.country_iso}.png" srcset="https://flagcdn.com/96x72/${row.country_iso}.png 2x" width="20" height="15" alt="" class="rounded-sm border border-gray-200" loading="lazy">`
+                                : '';
+                            return `<span class="inline-flex items-center gap-1.5">${flag}<span>${data}</span></span>`;
+                        }
+                    },
                     { data: 'language_name', name: 'language.name',  className: 'text-center', },
                     {
                         data: 'contact_name',
@@ -1526,147 +1090,50 @@
                         </a>`;
                         }
                     },
-                    { data: 'currency_code', name: 'currency_code', className: 'text-center', visible: !isGuestUser },
-                    {
-                        data: 'publisher_price',
-                        name: 'publisher_price',
-                        className: 'text-center',
-                        visible: !isGuestUser,
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            // Wrap the numeric value in <strong>
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'no_follow_price',
-                        name: 'no_follow_price',
-                        className: 'text-center',
-                        visible: !isGuestUser,
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'special_topic_price',
-                        name: 'special_topic_price',
-                        className: 'text-center',
-                        visible: !isGuestUser,
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'price',
-                        name: 'price',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'sensitive_topic_price',
-                        name: 'sensitive_topic_price',
-                        className: 'text-center',
-                        visible: true,
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data: 'link_insertion_price',
-                        name: 'link_insertion_price',
-                        className: 'text-center',
-                        visible: !isGuestUser,
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }
-                    },
-                    {
-                        data:'banner_price',
-                        name:'banner_price',
-                        className: 'text-center',
-                        visible: !isGuestUser,
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }},
-                    {
-                        data:'sitewide_link_price',
-                        name:'sitewide_link_price',
-                        className: 'text-center',
-                        visible: !isGuestUser,
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }},
+                    { data: 'currency_code', name: 'currency_code', className: 'text-center', visible: !isGuestUser, render: renderCurrencyPill },
+                    { data: 'publisher_price',     name: 'publisher_price',     className: 'text-right', visible: !isGuestUser, render: renderPrice },
+                    { data: 'no_follow_price',     name: 'no_follow_price',     className: 'text-right', visible: !isGuestUser, render: renderPrice },
+                    { data: 'special_topic_price', name: 'special_topic_price', className: 'text-right', visible: !isGuestUser, render: renderPrice },
+                    { data: 'price',               name: 'price',               className: 'text-right', render: renderPrice },
+                    { data: 'sensitive_topic_price', name: 'sensitive_topic_price', className: 'text-right', visible: true, render: renderPrice },
+                    { data: 'link_insertion_price', name: 'link_insertion_price', className: 'text-right', visible: !isGuestUser, render: renderPrice },
+                    { data: 'banner_price',        name: 'banner_price',        className: 'text-right', visible: !isGuestUser, render: renderPrice },
+                    { data: 'sitewide_link_price', name: 'sitewide_link_price', className: 'text-right', visible: !isGuestUser, render: renderPrice },
 
                     @unless($isGuestUser)
-                    {
-                        data: 'kialvo_evaluation',
-                        name: 'kialvo_evaluation',
-                        className: 'text-center',
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }
-                    },
+                    { data: 'kialvo_evaluation', name: 'kialvo_evaluation', className: 'text-right', render: renderPrice },
                     @endunless
-                    {
-                        data: 'profit',
-                        name: 'profit',
-                        className: 'text-center',
-                        visible: !isGuestUser,
-                        render: function (data, type, row) {
-                            if (data === null || data === undefined) {
-                                return '';
-                            }
-                            return '<strong> &euro; ' + data + '</strong>';
-                        }
-                    },
+                    { data: 'profit', name: 'profit', className: 'text-right', visible: !isGuestUser, render: renderProfit },
                     { data:'date_publisher_price', name:'date_publisher_price',
                        className:'text-center', render:dt, visible: !isGuestUser },
 
                     { data: 'linkbuilder', name: 'linkbuilder', className: 'text-center', visible: !isGuestUser },
                     { data: 'type_of_website', name: 'type_of_website', className: 'text-center', },
-                    { data: 'categories_list', name: 'categories_list', className: 'text-center', },
-                    { data: 'DA', name: 'DA', className: 'text-center', },
-                    { data: 'PA', name: 'PA', className: 'text-center', },
-                    { data: 'TF', name: 'TF', className: 'text-center', visible: !isGuestUser },
-                    { data: 'CF', name: 'CF', className: 'text-center', visible: !isGuestUser },
-                    { data: 'DR', name: 'DR', className: 'text-center', visible: !isGuestUser },
-                    { data: 'UR', name: 'UR', className: 'text-center', },
-                    { data: 'ZA', name: 'ZA', className: 'text-center', },
-                    { data: 'as_metric', name: 'as_metric', className: 'text-center', },
-                    { data: 'seozoom', name: 'seozoom', className: 'text-center', },
-                    { data: 'TF_vs_CF', name: 'TF_vs_CF', className: 'text-center', visible: !isGuestUser },
-                    { data: 'semrush_traffic', name: 'semrush_traffic', className: 'text-center', },
-                    { data: 'ahrefs_keyword', name: 'ahrefs_keyword', className: 'text-center', visible: !isGuestUser },
-                    { data: 'ahrefs_traffic', name: 'ahrefs_traffic', className: 'text-center', visible: !isGuestUser },
-                    { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic', className: 'text-center', visible: !isGuestUser },
+                    { data: 'categories_list', name: 'categories_list', className: 'text-center max-w-[160px]',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            if (type !== 'display') return data;
+                            const parts = data.split(',').map(s => s.trim()).filter(Boolean);
+                            if (parts.length <= 2) return `<span class="text-xs text-gray-600">${data}</span>`;
+                            const shown = parts.slice(0, 2).join(', ');
+                            const safe = data.replace(/"/g, '&quot;');
+                            return `<span class="text-xs text-gray-600" title="${safe}">${shown} <span class="text-gray-400">+${parts.length - 2} more</span></span>`;
+                        }
+                    },
+                    { data: 'DA', name: 'DA', className: 'text-right', render: renderMetric },
+                    { data: 'PA', name: 'PA', className: 'text-right', render: renderMetric },
+                    { data: 'TF', name: 'TF', className: 'text-right', visible: !isGuestUser, render: renderMetric },
+                    { data: 'CF', name: 'CF', className: 'text-right', visible: !isGuestUser, render: renderMetric },
+                    { data: 'DR', name: 'DR', className: 'text-right', visible: !isGuestUser, render: renderMetric },
+                    { data: 'UR', name: 'UR', className: 'text-right', render: renderMetric },
+                    { data: 'ZA', name: 'ZA', className: 'text-right', render: renderMetric },
+                    { data: 'as_metric', name: 'as_metric', className: 'text-right', render: renderMetric },
+                    { data: 'seozoom', name: 'seozoom', className: 'text-right', render: renderMetric },
+                    { data: 'TF_vs_CF', name: 'TF_vs_CF', className: 'text-right', visible: !isGuestUser, render: renderMetric },
+                    { data: 'semrush_traffic', name: 'semrush_traffic', className: 'text-right', render: renderMetric },
+                    { data: 'ahrefs_keyword', name: 'ahrefs_keyword', className: 'text-right', visible: !isGuestUser, render: renderMetric },
+                    { data: 'ahrefs_traffic', name: 'ahrefs_traffic', className: 'text-right', visible: !isGuestUser, render: renderMetric },
+                    { data: 'keyword_vs_traffic', name: 'keyword_vs_traffic', className: 'text-right', visible: !isGuestUser, render: renderMetric },
                     { data: 'ms',               name: 'ms',               type: 'number', className: 'text-center' },
                     { data: 'organic_keywords', name: 'organic_keywords', type: 'number', className: 'text-center' },
                     { data: 'organic_traffic',  name: 'organic_traffic',  type: 'number', className: 'text-center' },
@@ -1805,7 +1272,7 @@
                 if (meta.type === 'date') {
                     wrap.append(`<input id="bulkValue" type="date"
                             class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                                   focus:ring-cyan-500">`);
+                                   focus:ring-green-500">`);
                     return;
                 }
 
@@ -1816,7 +1283,7 @@
                     wrap.append(
                         `<select id="bulkValue"
                      class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                            focus:ring-cyan-500">${none}${opts}</select>`);
+                            focus:ring-green-500">${none}${opts}</select>`);
                     if ($('#bulkValue option').length > 15) {
                         $('#bulkValue').select2({ width: 'resolve', dropdownAutoWidth: true });
                     }
@@ -1829,7 +1296,7 @@
                     wrap.append(
                         `<select id="bulkValue" multiple
                      class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                            focus:ring-cyan-500">${opts}</select>`);
+                            focus:ring-green-500">${opts}</select>`);
                     $('#bulkValue').select2({ width:'resolve', dropdownAutoWidth:true });
                     return;
                 }
@@ -1837,14 +1304,14 @@
                 if (meta.type === 'textarea') {
                     wrap.append(`<textarea id="bulkValue" rows="3"
                                class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                                      focus:ring-cyan-500"></textarea>`);
+                                      focus:ring-green-500"></textarea>`);
                     return;
                 }
 
                 /* default = plain text/number */
                 wrap.append(`<input id="bulkValue" type="text"
                        class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                              focus:ring-cyan-500">`);
+                              focus:ring-green-500">`);
             }
 
             $('#bulkField').on('change', buildBulkInput);
@@ -1982,6 +1449,60 @@
                 });
             });
 
+            // Order cart toggle (guest only) — uses LIBCart bridge (no Alpine timing dependency)
+            $(document).on('click', '.order-toggle', function (e) {
+                e.preventDefault();
+                if (!isGuestUser) return;
+                if (!window.LIBCart) { console.warn('LIBCart bridge not present'); return; }
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const inCart = String($btn.data('in-cart')) === '1';
+                $btn.prop('disabled', true);
+                const done = () => {
+                    $btn.prop('disabled', false);
+                    table.ajax.reload(null, false);
+                };
+                if (inCart) {
+                    LIBCart.removeItemByWebsiteId(id).then(done, done);
+                } else {
+                    LIBCart.addItem(id).then((ok) => {
+                        if (ok) LIBCart.openDrawer();
+                        done();
+                    }, done);
+                }
+            });
+
+            // Header "Current Order" button — event-delegated, checked at click time (no gate)
+            $(document).on('click', '#btnOpenCart', function (e) {
+                e.preventDefault();
+                console.log('[btnOpenCart] click, LIBCart available?', !!window.LIBCart);
+                if (window.LIBCart) {
+                    LIBCart.openDrawer();
+                } else {
+                    console.warn('[btnOpenCart] LIBCart not loaded — falling back to DOM toggle');
+                    const aside = document.getElementById('cart-drawer');
+                    if (aside) aside.classList.add('open');
+                }
+            });
+
+            // Live header count badge — wire if bridge is available, retry shortly otherwise
+            function wireCartBadge() {
+                if (!isGuestUser) return;
+                if (!window.LIBCart) return setTimeout(wireCartBadge, 100);
+                const $badge = $('#cartCountBadge');
+                const renderBadge = (snap) => {
+                    const n = (snap && snap.count) || 0;
+                    if (n > 0) {
+                        $badge.text(n).removeClass('hidden').addClass('inline-flex');
+                    } else {
+                        $badge.addClass('hidden').removeClass('inline-flex');
+                    }
+                };
+                LIBCart.onChange(renderBadge);
+                LIBCart.refresh().then(renderBadge);
+            }
+            wireCartBadge();
+
             // Favorites filter toggle (guest only)
             $('#btnFavoritesToggle').on('click', function() {
                 if (!isGuestUser) return;
@@ -1990,7 +1511,7 @@
                     .toggleClass('bg-amber-600', favoritesOnly)
                     .toggleClass('bg-amber-500', !favoritesOnly)
                     .text(favoritesOnly ? 'Show All' : 'My Favorites')
-                    .prepend('<i class="fas fa-star mr-1"></i> ');
+                    .prepend('<svg class="w-3.5 h-3.5 inline me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg> ');
                 table.ajax.reload();
             });
 
@@ -2023,7 +1544,7 @@
                         .removeClass('bg-amber-600')
                         .addClass('bg-amber-500')
                         .text('My Favorites')
-                        .prepend('<i class="fas fa-star mr-1"></i> ');
+                        .prepend('<svg class="w-3.5 h-3.5 inline me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg> ');
                 }
                 table.ajax.reload();
             });

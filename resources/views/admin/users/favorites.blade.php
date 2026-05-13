@@ -51,18 +51,25 @@
 @extends('layouts.dashboard')
 
 @section('content')
-    <div class="px-6 py-6 bg-gray-50 min-h-screen text-sm">
-        <div class="max-w-[1400px]">
-            <div class="mb-4">
-                <h1 class="text-2xl font-bold text-gray-700">Favorites for {{ $user->name }}</h1>
-            </div>
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Favorites for {{ $user->name }}</h1>
+            <p class="text-xs text-gray-500 mt-0.5">{{ $user->email }}</p>
         </div>
+        <a href="{{ route('admin.users.index') }}"
+           class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+            <x-icon name="arrow-left" size="sm" /> Back to users
+        </a>
+    </div>
+
+    <div class="px-6 py-6 bg-gray-50 min-h-screen text-sm">
 
         <div id="favoritesTableSearchWrap" class="table-search-wrap mb-2">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
-                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                        focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500">
                 <span class="px-3 text-gray-400 text-base leading-none">
-                    <i class="fas fa-search"></i>
+                    <x-icon name="search" size="sm" class="inline" />
                 </span>
                 <input id="favoritesTableSearch" type="text"
                        class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
@@ -96,14 +103,14 @@
                 <div class="border-b border-gray-200 px-4 py-2">
                     <label class="inline-flex items-center gap-2 text-xs text-gray-700">
                         <input type="checkbox" id="favoritesExportSelectAll" checked
-                               class="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
+                               class="rounded border-gray-300 text-green-600 focus:ring-green-500">
                         Select all columns
                     </label>
                 </div>
                 <div class="grid max-h-[55vh] grid-cols-1 gap-2 overflow-y-auto p-4 sm:grid-cols-2 md:grid-cols-3">
                     @foreach($adminExportColumns as $key => $label)
                         <label class="inline-flex items-center gap-2 text-xs text-gray-700">
-                            <input type="checkbox" class="favorites-export-field rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                            <input type="checkbox" class="favorites-export-field rounded border-gray-300 text-green-600 focus:ring-green-500"
                                    value="{{ $key }}" checked>
                             <span>{{ $label }}</span>
                         </label>
@@ -115,7 +122,7 @@
                         Cancel
                     </button>
                     <button type="button" id="favoritesExportConfirm"
-                            class="rounded bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-700">
+                            class="rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700">
                         Continue Export
                     </button>
                 </div>
@@ -123,7 +130,7 @@
         </div>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto max-w-[1400px]">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card max-w-[1400px]">
             <table id="favoritesTable" class="text-xs text-gray-700 w-full min-w-[1500px]">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-[12px] uppercase text-gray-500 tracking-wider"><th class="whitespace-nowrap px-4 py-2">ID</th>
@@ -146,10 +153,10 @@
                             Price
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="The price you pay for a guest post placement on this website. This is your final cost including our service fee."
                                         aria-label="What is Price?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     The price you pay for a guest post placement on this website. This is your final cost including our service fee.
@@ -165,10 +172,10 @@
                             Type of Website
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Vertical: focused on one topic. Local: focused on a city/area. Generalist: covers many topics."
                                         aria-label="What is Type of Website?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Vertical: focused on one topic. Local: focused on a city/area. Generalist: covers many topics.
@@ -182,10 +189,10 @@
                             DA
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium."
                                         aria-label="What is DA?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium.
@@ -198,10 +205,10 @@
                             PA
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better."
                                         aria-label="What is PA?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better.
@@ -214,10 +221,10 @@
                             TF
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Trust Flow (Majestic): backlink quality score on 0-100. Higher is better; TF 20+ is typically reliable."
                                         aria-label="What is TF?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Trust Flow (Majestic): backlink quality score on 0-100. Higher is better; TF 20+ is typically reliable.
@@ -230,10 +237,10 @@
                             CF
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Citation Flow (Majestic): backlink quantity influence score on 0-100. Higher is better, especially when TF is close to or above CF."
                                         aria-label="What is CF?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Citation Flow (Majestic): backlink quantity influence score on 0-100. Higher is better, especially when TF is close to or above CF.
@@ -246,10 +253,10 @@
                             DR
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Domain Rating (Ahrefs): backlink profile strength from 0 to 100. Higher DR means stronger authority; 40+ is solid."
                                         aria-label="What is DR?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Domain Rating (Ahrefs): backlink profile strength from 0 to 100. Higher DR means stronger authority; 40+ is solid.
@@ -262,10 +269,10 @@
                             UR
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="URL Rating (Ahrefs): strength of the target page backlink profile on a 0-100 scale. Higher is better."
                                         aria-label="What is UR?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     URL Rating (Ahrefs): strength of the target page backlink profile on a 0-100 scale. Higher is better.
@@ -278,10 +285,10 @@
                             ZA
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Zoom Authority (SEOZoom): domain authority metric focused on Italian SERPs, on a 0-100 scale."
                                         aria-label="What is ZA?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Zoom Authority (SEOZoom): domain authority metric focused on Italian SERPs, on a 0-100 scale.
@@ -294,10 +301,10 @@
                             AS
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals."
                                         aria-label="What is AS?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals.
@@ -310,10 +317,10 @@
                             SEO Zoom
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="SEOZoom Traffic: estimated organic traffic from SEOZoom, especially useful for Italian-market visibility."
                                         aria-label="What is SEO Zoom?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     SEOZoom Traffic: estimated organic traffic from SEOZoom, especially useful for Italian-market visibility.
@@ -326,10 +333,10 @@
                             TF vs CF
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Ratio between Trust Flow and Citation Flow. Close to 1 is ideal; TF > CF suggests stronger quality, CF > TF may indicate spammy links."
                                         aria-label="What is TF vs CF?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Ratio between Trust Flow and Citation Flow. Close to 1 is ideal; TF > CF suggests stronger quality, CF > TF may indicate spammy links.
@@ -342,10 +349,10 @@
                             Semrush Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent."
                                         aria-label="What is Semrush Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent.
@@ -358,10 +365,10 @@
                             Ahrefs Keyword
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Number of keywords the domain ranks for. More keywords usually mean stronger organic visibility; 1k+ is strong."
                                         aria-label="What is Ahrefs Keyword?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Number of keywords the domain ranks for. More keywords usually mean stronger organic visibility; 1k+ is strong.
@@ -374,10 +381,10 @@
                             Ahrefs Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Estimated monthly organic visitors from Ahrefs. Higher traffic means more exposure; 5k+ good, 50k+ excellent."
                                         aria-label="What is Ahrefs Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Estimated monthly organic visitors from Ahrefs. Higher traffic means more exposure; 5k+ good, 50k+ excellent.
@@ -390,10 +397,10 @@
                             Keywords vs Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings."
                                         aria-label="What is Keywords vs Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings.
@@ -409,10 +416,10 @@
                             LINK LIFETIME
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration."
                                         aria-label="What is Link Lifetime?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Link duration. Permanent means it should stay online indefinitely; yearly options indicate minimum guaranteed duration.
@@ -425,10 +432,10 @@
                             More than 1 link
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Yes means the publisher accepts multiple backlinks in one guest post."
                                         aria-label="What does More than 1 link mean?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Yes means the publisher accepts multiple backlinks in one guest post.
@@ -442,10 +449,10 @@
                             Sponsored Tag
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Indicates whether links are tagged sponsored/nofollow. No means full SEO value, yes means rel='sponsored' or rel='nofollow'."
                                         aria-label="What is Sponsored Tag?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Indicates whether links are tagged sponsored/nofollow. No means full SEO value, yes means rel='sponsored' or rel='nofollow'.
@@ -474,19 +481,36 @@
                 if (!data) return '';
                 const safe = $('<div>').text(data).html();
                 return `
-                    <a href="#" class="note-link text-cyan-700" data-note="${safe}">
-                        <i class="fas fa-comment-dots"></i>
+                    <a href="#" class="note-link text-green-700" data-note="${safe}">
+                        <x-icon name="comment" size="sm" class="inline" />
                     </a>`;
             };
             const decodeHtml = (value) => $('<textarea/>').html(value ?? '').text();
             const dt = (v) => v ? new Date(v).toLocaleDateString('en-GB') : '';
+            const STATUS_TONES = {
+                'active': 'bg-green-100 text-green-700 ring-green-200',
+                'past': 'bg-gray-100 text-gray-600 ring-gray-200',
+                'negotiation': 'bg-blue-100 text-blue-700 ring-blue-200',
+                'waiting_for_first_answer': 'bg-blue-100 text-blue-700 ring-blue-200',
+                'read_but_never_answered': 'bg-amber-100 text-amber-700 ring-amber-200',
+                'refused_by_us': 'bg-red-100 text-red-700 ring-red-200',
+                'publisher_refused': 'bg-red-100 text-red-700 ring-red-200',
+                'never_opened': 'bg-gray-100 text-gray-500 ring-gray-200',
+            };
+            const renderStatusPill = function (data) {
+                if (!data) return '<span class="text-gray-300">—</span>';
+                const key = String(data).toLowerCase().replace(/\s+/g, '_');
+                const tone = STATUS_TONES[key] || 'bg-gray-100 text-gray-700 ring-gray-200';
+                const label = String(data).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                return `<span class="inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${tone}">${label}</span>`;
+            };
 
             const table = $('#favoritesTable').DataTable({
                 processing: true,
                 serverSide: true,
-                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
-                    "tr" +
-                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
+                dom: "<'dt-toolbar-top'<'flex items-center gap-3'l<'dt-search'>>>" +
+                     "<'dt-scroll'rt>" +
+                     "<'dt-toolbar-bottom'ip>",
                 ajax: {
                     url: "{{ route('admin.users.favorites.data', $user) }}",
                     type: "POST",
@@ -508,8 +532,16 @@
                         className: 'text-center',
                         render: renderNote
                     },
-                                        { data: 'status', name: 'status', className: 'text-center'},
-                    { data: 'country_name', name: 'country.country_name', className: 'text-center', },
+                                        { data: 'status', name: 'status', className: 'text-center', render: renderStatusPill },
+                    { data: 'country_name', name: 'country.country_name', className: 'text-center',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            const flag = row.country_iso
+                                ? `<img src="https://flagcdn.com/48x36/${row.country_iso}.png" srcset="https://flagcdn.com/96x72/${row.country_iso}.png 2x" width="20" height="15" alt="" class="rounded-sm border border-gray-200" loading="lazy">`
+                                : '';
+                            return `<span class="inline-flex items-center gap-1.5">${flag}<span>${data}</span></span>`;
+                        }
+                    },
                     { data: 'language_name', name: 'language.name',  className: 'text-center', },
                     {
                         data: 'contact_name',
@@ -618,7 +650,17 @@
 
                     { data: 'linkbuilder', name: 'linkbuilder', className: 'text-center'},
                     { data: 'type_of_website', name: 'type_of_website', className: 'text-center', },
-                    { data: 'categories_list', name: 'categories_list', className: 'text-center', },
+                    { data: 'categories_list', name: 'categories_list', className: 'text-center max-w-[160px]',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            if (type !== 'display') return data;
+                            const parts = data.split(',').map(s => s.trim()).filter(Boolean);
+                            if (parts.length <= 2) return `<span class="text-xs text-gray-600">${data}</span>`;
+                            const shown = parts.slice(0, 2).join(', ');
+                            const safe = data.replace(/"/g, '&quot;');
+                            return `<span class="text-xs text-gray-600" title="${safe}">${shown} <span class="text-gray-400">+${parts.length - 2} more</span></span>`;
+                        }
+                    },
                     { data: 'DA', name: 'DA', className: 'text-center', },
                     { data: 'PA', name: 'PA', className: 'text-center', },
                     { data: 'TF', name: 'TF', className: 'text-center', },

@@ -1,8 +1,35 @@
 {{-- resources/views/storages/index.blade.php --}}
 @extends('layouts.dashboard')
+@section('title', 'Storages')
+
+@section('pageHeader')
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Storages</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Publication tracking and revenue records.</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="#" id="btnExportCsv"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+                <x-icon name="download" size="sm" /> Export CSV
+            </a>
+            <a href="#" id="btnExportPdf"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+                <x-icon name="document-pdf" size="sm" /> Export PDF
+            </a>
+            <a href="{{ route('storages.create') }}"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                <x-icon name="plus" size="sm" /> Add new article
+            </a>
+        </div>
+    </div>
+@endsection
+
+@section('filters')
+@include('storages.partials.admin-filter-panel')
+@endsection
 
 @section('content')
-    <h1 class="text-lg font-bold text-gray-700 py-6">Storages</h1>
 
     {{-- map “database_field” → human label (used by export & bulk-edit) --}}
     @php
@@ -66,33 +93,9 @@
     @endphp
 
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
-        {{-- ───────────────────── HEADER BUTTONS ───────────────────── --}}
+        {{-- Hidden no-op placeholder so legacy JS that targets #toggleFiltersBtn doesn't error --}}
+        <button id="toggleFiltersBtn" class="hidden" aria-hidden="true"></button>
         <div class="relative flex flex-col gap-3 mb-4">
-            <div class="space-x-2 flex flex-wrap items-center">
-                <button id="toggleFiltersBtn"
-                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded shadow text-xs hover:bg-gray-400
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
-                    Hide Filters
-                </button>
-
-                <a href="{{ route('storages.create') }}"
-                   class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-xs">
-                    Add new article
-                </a>
-
-                {{-- Export --}}
-                <a href="#" id="btnExportCsv"
-                   class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-xs">
-                    Export CSV
-                </a>
-                <a href="#" id="btnExportPdf"
-                   class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700
-                          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-xs">
-                    Export PDF
-                </a>
-            </div>
 
             <div id="storageExportPicker"
                  class="hidden absolute left-0 top-full z-40 mt-2 w-full max-w-3xl">
@@ -109,14 +112,14 @@
                     <div class="border-b border-gray-200 px-4 py-2">
                         <label class="inline-flex items-center gap-2 text-xs text-gray-700">
                             <input type="checkbox" id="storageExportSelectAll" checked
-                                   class="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
+                                   class="rounded border-gray-300 text-green-600 focus:ring-green-500">
                             Select all columns
                         </label>
                     </div>
                     <div class="grid max-h-[55vh] grid-cols-1 gap-2 overflow-y-auto p-4 sm:grid-cols-2 md:grid-cols-3">
                         @foreach($exportColumns as $key=>$label)
                             <label class="inline-flex items-center gap-2 text-xs text-gray-700">
-                                <input type="checkbox" class="storage-export-field rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+                                <input type="checkbox" class="storage-export-field rounded border-gray-300 text-green-600 focus:ring-green-500"
                                        value="{{ $key }}" checked>
                                 <span>{{ $label }}</span>
                             </label>
@@ -128,7 +131,7 @@
                             Cancel
                         </button>
                         <button type="button" id="storageExportConfirm"
-                                class="rounded bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-700">
+                                class="rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700">
                             Continue Export
                         </button>
                     </div>
@@ -137,239 +140,35 @@
         </div>
 
         {{-- ───────────────────── FILTERS (unchanged) ───────────────────── --}}
-        <div id="filterForm"
-             class="bg-white border border-gray-200 rounded shadow p-2 mb-8 inline-block max-w-[2000px]">
-            {{-- ROW 1 --}}
-            <div class="flex flex-wrap gap-2 mb-2">
-                {{-- Publication From --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Publication From</label>
-                    <input type="date" id="filterPublicationFrom"
-                           class="border border-gray-300 rounded px-2 py-2 w-40
-                                  focus:ring-cyan-500 focus:border-cyan-500">
-                </div>
-                {{-- Publication To --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Publication To</label>
-                    <input type="date" id="filterPublicationTo"
-                           class="border border-gray-300 rounded px-2 py-2 w-40
-                                  focus:ring-cyan-500 focus:border-cyan-500">
-                </div>
-                {{-- Language --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Language</label>
-                    <select id="filterLanguage"
-                            class="border border-gray-300 rounded px-2 py-2 w-28
-                                   focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        @foreach($languages as $l)
-                            <option value="{{ $l->id }}">{{ $l->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                {{-- Country --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Country</label>
-                    <select id="filterCountry"
-                            class="border border-gray-300 rounded px-2 py-2 w-28
-                                   focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        @foreach($countries as $c)
-                            <option value="{{ $c->id }}">{{ $c->country_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                {{-- Copywriter --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Copywriter</label>
-                    <select id="filterCopy"
-                            class="border border-gray-300 rounded px-2 py-2 w-40
-                                   focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        @foreach($copies as $cp)
-                            <option value="{{ $cp->id }}">{{ $cp->copy_val }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                {{-- Client --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Client</label>
-                    <select id="filterClient"
-                            class="border border-gray-300 rounded px-2 py-2 w-44
-                                   focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        @foreach($clients as $cl)
-                            <option value="{{ $cl->id }}">{{ $cl->first_name }} {{ $cl->last_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                {{-- Company --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Company</label>
-                    <input type="text" id="filterCompany"
-                           class="border border-gray-300 rounded px-2 py-2 w-44
-                                  focus:ring-cyan-500 focus:border-cyan-500"
-                           placeholder="Search company...">
-                </div>
-                <!-- Contact -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Publisher</label>
-                    <select id="filterContact"
-                            class="border border-gray-300 rounded px-2 py-2 w-44
-                   focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        @foreach($contacts as $contact)
-                            <option value="{{ $contact->id }}">
-                                {{ $contact->name }}
-                                @if($contact->email)
-                                    ({{ $contact->email }})
-                                @endif
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- Status --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Status</label>
-                    <select id="filterStatus"
-                            class="border border-gray-300 rounded px-2 py-2 w-40
-                                   focus:ring-cyan-500 focus:border-cyan-500">
-                        <option value="">-- Any --</option>
-                        <option value="article_published">Article Published</option>
-                        <option value="publisher_refused">Publisher Refused</option>
-                        <option value="requirements_not_met">Requirements not met</option>
-                        <option value="already_used_by_client">Already used by client</option>
-                        <option value="out_of_topic">Out of topic</option>
-                        <option value="high_price">High Price</option>
-                    </select>
-                </div>
-            </div>
-
-            {{-- ROW 2 --}}
-            <div class="flex flex-wrap gap-2 mb-2">
-
-                {{-- Website Domain (publisher site) --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Domain</label>
-                    <input type="text" id="filterWebsiteDomain"
-                           class="border border-gray-300 rounded px-2 py-2 w-40
-                                  focus:ring-cyan-500 focus:border-cyan-500"
-                           placeholder="publisher-site.com">
-                </div>
-                {{-- Target Domain --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Target Domain</label>
-                    <input type="text" id="filterCampaign"
-                           class="border border-gray-300 rounded px-2 py-2 w-40
-                                  focus:ring-cyan-500 focus:border-cyan-500"
-                           placeholder="domain.com">
-                </div>
-
-
-                {{-- Campaign Code --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Campaign Code</label>
-                    <input type="text" id="filterCampaignCode"
-                           class="border border-gray-300 rounded px-2 py-2 w-28
-                                  focus:ring-cyan-500 focus:border-cyan-500"
-                           placeholder="code">
-                </div>
-                {{-- Invoice Menford NR --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Invoice Menford NR</label>
-                    <input type="text" id="filterInvoiceMenfordNr"
-                           class="border border-gray-300 rounded px-2 py-2 w-28
-                                  focus:ring-cyan-500 focus:border-cyan-500"
-                           placeholder="number">
-                </div>
-                {{-- Bill Publisher Name --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Bill Publisher Name</label>
-                    <input type="text" id="filterBillPublisherName"
-                           class="border border-gray-300 rounded px-2 py-2 w-40
-                                  focus:ring-cyan-500 focus:border-cyan-500"
-                           placeholder="publisher">
-                </div>
-                {{-- Link URL --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Link URL</label>
-                    <input type="text" id="filterTargetUrl"
-                           class="border border-gray-300 rounded px-2 py-2 w-48
-                                  focus:ring-cyan-500 focus:border-cyan-500"
-                           placeholder="full url">
-                </div>
-                {{-- Article URL --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Article URL</label>
-                    <input type="text" id="filterArticleUrl"
-                           class="border border-gray-300 rounded px-2 py-2 w-48
-                                  focus:ring-cyan-500 focus:border-cyan-500"
-                           placeholder="full url">
-                </div>
-            </div>
-
-            {{-- ROW 3 – Categories --}}
-            <div class="mb-2 flex items-center">
-                <label class="text-gray-700 font-medium mr-2">Categories</label>
-                <select id="filterCategories" multiple
-                        class="border border-gray-300 rounded px-2 py-2 text-xs w-48 max-h-20 overflow-y-auto
-                               focus:ring-cyan-500 focus:border-cyan-500">
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- ROW 4 – Buttons --}}
-            <div class="flex space-x-2">
-                <button id="btnSearch"
-                        class="bg-cyan-600 text-white px-4 py-2 rounded shadow text-xs hover:bg-cyan-700
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                    Search
-                </button>
-
-                <button id="btnClear"
-                        class="bg-gray-400 text-white px-4 py-2 rounded shadow text-xs hover:bg-gray-500
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
-                    Clear
-                </button>
-            </div>
-        </div><!-- /filterForm -->
 
         {{-- ───────────── TABLE ACTION BAR ───────────── --}}
         {{-- ───────────── TABLE ACTION BAR ───────────── --}}
         <div id="actionBar"
-             class="flex items-center gap-3 mb-2
-            sticky top-0 z-10 bg-gray-50 border-b border-gray-200 py-2">
-
-            {{-- Bulk Edit --}}
+             class="flex items-center flex-wrap gap-2 mb-3 px-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-card">
             <button id="btnBulkEdit"
-                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
-                   bg-amber-600 hover:bg-amber-700 text-white shadow">
-                <i class="fas fa-pen"></i> Bulk&nbsp;Edit
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200
+                           disabled:opacity-50 disabled:cursor-not-allowed">
+                <x-icon name="pencil" size="sm" /> Bulk Edit
             </button>
-
-            {{-- Rollback --}}
             <button id="btnRollback"
-                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
-                   bg-purple-600 hover:bg-purple-700 text-white shadow">
-                <i class="fas fa-history"></i> Rollback
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200
+                           disabled:opacity-50 disabled:cursor-not-allowed">
+                <x-icon name="history" size="sm" /> Rollback
             </button>
-
-            {{-- live counter --}}
-            <span class="ml-2 text-sm text-gray-600">
-        Selected:&nbsp;<span id="selCount">0</span>
-    </span>
+            <span class="ml-auto text-xs text-gray-500">
+                Selected: <span id="selCount" class="font-semibold text-gray-800">0</span>
+            </span>
         </div>
 
 
         {{-- ───────────────────── DATA TABLE ───────────────────── --}}
         <div id="storagesTableSearchWrap" class="table-search-wrap">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
-                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                        focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500">
                 <span class="px-3 text-gray-400 text-base leading-none">
-                    <i class="fas fa-search"></i>
+                    <x-icon name="search" size="sm" class="inline" />
                 </span>
                 <input id="storagesTableSearch" type="text"
                        class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
@@ -377,19 +176,19 @@
             </div>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto max-w-[2400px]">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card max-w-[2400px]">
 
             <table id="storagesTable" class="text-xs text-gray-700 w-full min-w-[2400px]">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-[11px] uppercase text-gray-500 tracking-wider">
                     {{-- master checkbox --}}
                     <th class="px-4 py-2">
-                        <input id="chkAll" type="checkbox" class="form-checkbox h-4 w-4 text-cyan-600">
+                        <input id="chkAll" type="checkbox" class="form-checkbox h-4 w-4 text-green-600">
                     </th>
 
                     <th class="px-4 py-2">ID</th>
                     <th class="px-4 py-2">Domain</th>
-                    <th class="px-4 py-2">Status</th>
+                    <th class="px-4 py-2 min-w-[160px]">Status</th>
                     <th class="px-4 py-2">LB</th>
                     <th class="px-4 py-2">Client</th>
                     <th class="px-4 py-2">Company</th>
@@ -436,55 +235,55 @@
                 </thead>
                 <tbody></tbody>
                 <tfoot>
+                {{-- Sticky summary row — one cell per thead column (46 cells). Numeric columns
+                     carry a data-col attribute so refreshSummary() can paint them. --}}
                 <tr id="summaryRow">
-                    {{-- 0–6 ─ no summary --}}
-                    <td></td>  {{-- 0 Checkbox --}}
-                    <td></td>  {{-- 1 ID --}}
-                    <td></td>  {{-- 2 Website --}}
-                    <td></td>  {{-- 3 Status --}}
-                    <td></td>  {{-- 4 LB --}}
-                    <td></td>  {{-- 5 Client --}}
-                    <td></td>  {{-- 3 Contact --}}
-                    <td></td>  {{-- 6 Copywriter --}}
-
-                    {{-- 7–10 ─ summary / some empty --}}
-                    <td data-col="copy_nr"            data-index="7"></td>  {{-- 7 Copywriter Amount € --}}
-                    <td></td>                                            {{-- 8 Copy Comm. Date --}}
-                    <td></td>                                            {{-- 9 Copy Subm. Date --}}
-                    <td data-col="copywriter_period"  data-index="10"></td> {{-- 10 Copy Period --}}
-
-                    {{-- 11–13 ─ no summary --}}
-                    <td></td>  {{-- 11 Language --}}
-                    <td></td>  {{-- 12 Country --}}
-                    <td></td>  {{-- 13 Publisher Currency --}}
-
-                    {{-- 14–20 ─ numeric summaries --}}
-                    <td data-col="publisher_amount"   data-index="14"></td>  {{-- 14 --}}
-                    <td data-col="publisher"          data-index="15"></td>  {{-- 15 --}}
-                    <td data-col="total_cost"         data-index="16"></td>  {{-- 16 --}}
-                    <td data-col="menford"            data-index="17"></td>  {{-- 17 --}}
-                    <td data-col="client_copy"        data-index="18"></td>  {{-- 18 --}}
-                    <td data-col="total_revenues"     data-index="19"></td>  {{-- 19 --}}
-                    <td data-col="profit"             data-index="20"></td>  {{-- 20 --}}
-
-                    {{-- 21–26 ─ still plain cells --}}
-                    <td></td> {{-- 21 Target Domain --}}
-                    <td></td> {{-- 22 Anchor Text --}}
-                    <td></td> {{-- 23 Target URL --}}
-                    <td></td> {{-- 24 Campaign Code --}}
-                    <td></td> {{-- 25 Sent to Publisher --}}
-                    <td></td> {{-- 26 Publication Date --}}
-
-                    {{-- 27 <<< NEW empty cell for Expiration Date --}}
-                    <td></td>
-
-                    {{-- 28 Publisher Period summary (now perfectly aligned) --}}
-                    <td data-col="publisher_period"   data-index="26"></td>
-
-                    {{-- 29–42 ─ remaining columns, no summary --}}
-                    <td></td> <td></td> <td></td> <td></td> <td></td>
-                    <td></td> <td></td> <td></td> <td></td> <td></td>
-                    <td></td> <td></td> <td></td> <td></td> <td></td>
+                    <td></td>                                            {{--  0 checkbox --}}
+                    <td class="text-right text-[10px] uppercase tracking-wider font-semibold text-gray-400">Total</td>  {{--  1 ID column repurposed as label --}}
+                    <td></td>                                            {{--  2 Domain --}}
+                    <td></td>                                            {{--  3 Status --}}
+                    <td></td>                                            {{--  4 LB --}}
+                    <td></td>                                            {{--  5 Client --}}
+                    <td></td>                                            {{--  6 Company --}}
+                    <td></td>                                            {{--  7 Publisher --}}
+                    <td></td>                                            {{--  8 Copywriter --}}
+                    <td data-col="copy_nr"            data-index="9"></td>  {{--  9 Copywriter Amount € --}}
+                    <td></td>                                            {{-- 10 Copy Comm. Date --}}
+                    <td></td>                                            {{-- 11 Copy Subm. Date --}}
+                    <td data-col="copywriter_period"  data-index="12"></td> {{-- 12 Copy Period --}}
+                    <td></td>                                            {{-- 13 Language --}}
+                    <td></td>                                            {{-- 14 Country --}}
+                    <td></td>                                            {{-- 15 Publisher Currency --}}
+                    <td data-col="publisher_amount"   data-index="16"></td> {{-- 16 Publisher Amount € --}}
+                    <td data-col="publisher"          data-index="17"></td> {{-- 17 Publisher Agreed € --}}
+                    <td data-col="total_cost"         data-index="18"></td> {{-- 18 Total Cost € --}}
+                    <td data-col="menford"            data-index="19"></td> {{-- 19 Menford € --}}
+                    <td data-col="client_copy"        data-index="20"></td> {{-- 20 Client Copy € --}}
+                    <td data-col="total_revenues"     data-index="21"></td> {{-- 21 Total Revenues € --}}
+                    <td data-col="profit"             data-index="22"></td> {{-- 22 Profit € --}}
+                    <td></td>                                            {{-- 23 Target Domain --}}
+                    <td></td>                                            {{-- 24 Anchor Text --}}
+                    <td></td>                                            {{-- 25 Target URL --}}
+                    <td></td>                                            {{-- 26 Campaign Code --}}
+                    <td></td>                                            {{-- 27 Sent to Publisher --}}
+                    <td></td>                                            {{-- 28 Publication Date --}}
+                    <td></td>                                            {{-- 29 Expiration Date --}}
+                    <td data-col="publisher_period"   data-index="30"></td> {{-- 30 Publisher Period --}}
+                    <td></td>                                            {{-- 31 Article URL --}}
+                    <td></td>                                            {{-- 32 Pay to Us Method --}}
+                    <td></td>                                            {{-- 33 Invoice Menford Date --}}
+                    <td></td>                                            {{-- 34 Invoice Menford Nr --}}
+                    <td></td>                                            {{-- 35 Invoice Company --}}
+                    <td></td>                                            {{-- 36 Pay to Us Date --}}
+                    <td></td>                                            {{-- 37 Bill Publisher Name --}}
+                    <td></td>                                            {{-- 38 Bill Publisher Nr --}}
+                    <td></td>                                            {{-- 39 Bill Publisher Date --}}
+                    <td></td>                                            {{-- 40 Pay to Publisher Date --}}
+                    <td></td>                                            {{-- 41 Pay to Publisher Method --}}
+                    <td></td>                                            {{-- 42 Categories --}}
+                    <td></td>                                            {{-- 43 Date Added --}}
+                    <td></td>                                            {{-- 44 Files --}}
+                    <td></td>                                            {{-- 45 Action --}}
                 </tr>
                 </tfoot>
 
@@ -596,12 +395,37 @@
                 .select2({width:'resolve',dropdownAutoWidth:true,placeholder:'Select',allowClear:true,
                     containerCssClass:'text-xs',dropdownCssClass:'text-xs'});
 
+            /* helpers */
+            const STATUS_TONES = {
+                'active': 'bg-green-100 text-green-700 ring-green-200',
+                'past': 'bg-gray-100 text-gray-600 ring-gray-200',
+                'paid': 'bg-green-100 text-green-700 ring-green-200',
+                'unpaid': 'bg-amber-100 text-amber-700 ring-amber-200',
+                'pending': 'bg-blue-100 text-blue-700 ring-blue-200',
+                'cancelled': 'bg-red-100 text-red-700 ring-red-200',
+                'completed': 'bg-green-100 text-green-700 ring-green-200',
+                'article_published': 'bg-green-100 text-green-700 ring-green-200',
+                'high_price': 'bg-amber-100 text-amber-700 ring-amber-200',
+                'low_price': 'bg-red-100 text-red-700 ring-red-200',
+                'already_used_by_client': 'bg-blue-100 text-blue-700 ring-blue-200',
+                'in_progress': 'bg-blue-100 text-blue-700 ring-blue-200',
+                'draft': 'bg-gray-100 text-gray-500 ring-gray-200',
+                'rejected': 'bg-red-100 text-red-700 ring-red-200',
+            };
+            const renderStatusPill = function (data) {
+                if (!data) return '<span class="text-gray-300">—</span>';
+                const key = String(data).toLowerCase().replace(/\s+/g, '_');
+                const tone = STATUS_TONES[key] || 'bg-gray-100 text-gray-700 ring-gray-200';
+                const label = String(data).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                return `<span class="inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${tone}">${label}</span>`;
+            };
+
             /* DataTable */
             const table = $('#storagesTable').DataTable({
                 processing:true, serverSide:true,
-                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
-                    "tr" +
-                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
+                dom: "<'dt-toolbar-top'<'flex items-center gap-3'l<'dt-search'>>>" +
+                     "<'dt-scroll'rt>" +
+                     "<'dt-toolbar-bottom'ip>",
                 ajax:{
                     url:"{{ route('storages.data') }}",
                     type:"POST",
@@ -635,11 +459,11 @@
                 columns:[
                     { /* row checkbox */
                         data:'id',orderable:false,searchable:false,className:'text-center',
-                        render:id=>`<input type="checkbox" class="rowChk form-checkbox h-4 w-4 text-cyan-600" value="${id}">`
+                        render:id=>`<input type="checkbox" class="rowChk form-checkbox h-4 w-4 text-green-600" value="${id}">`
                     },
                     {data:'id',name:'id'},
                     {data:'website_domain',name:'site.domain_name'},
-                    {data:'status',name:'status'},
+                    {data:'status',name:'status', render: renderStatusPill},
                     {data:'LB',name:'LB'},
                     {data:'client_name',name:'client.first_name',
                         render:(d,t,r)=>r.client_id?`<a href="#" class="client-link underline text-blue-600"
@@ -666,20 +490,28 @@
                     {data:'copywriter_name',name:'copy.copy_val',
                         render:(d,t,r)=>r.copy_id?`<a href="#" class="copy-link underline text-blue-600"
                                            data-copy-id="${r.copy_id}">${d}</a>`:''},
-                    {data:'copy_nr',name:'copy_nr',render:eu},
+                    {data:'copy_nr',name:'copy_nr',render:eu, className:'text-right'},
                     {data:'copywriter_commision_date',name:'copywriter_commision_date',render:dt},
                     {data:'copywriter_submission_date',name:'copywriter_submission_date',render:dt},
                     {data:'copywriter_period',name:'copywriter_period'},
                     {data:'language_name',name:'language.name'},
-                    {data:'country_name',name:'country.country_name'},
-                    {data:'publisher_currency',name:'publisher_currency'},
-                    {data:'publisher_amount',name:'publisher_amount',render:eu},
-                    {data:'publisher',name:'publisher',render:eu},
-                    {data:'total_cost',name:'total_cost',render:eu},
-                    {data:'menford',name:'menford',render:eu},
-                    {data:'client_copy',name:'client_copy',render:eu},
-                    {data:'total_revenues',name:'total_revenues',render:eu},
-                    {data:'profit',name:'profit',render:eu},
+                    {data:'country_name',name:'country.country_name',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            const flag = row.country_iso
+                                ? `<img src="https://flagcdn.com/48x36/${row.country_iso}.png" srcset="https://flagcdn.com/96x72/${row.country_iso}.png 2x" width="20" height="15" alt="" class="rounded-sm border border-gray-200" loading="lazy">`
+                                : '';
+                            return `<span class="inline-flex items-center gap-1.5">${flag}<span>${data}</span></span>`;
+                        }
+                    },
+                    {data:'publisher_currency',name:'publisher_currency', render: renderCurrencyPill, className:'text-center'},
+                    {data:'publisher_amount',name:'publisher_amount',render:eu,       className:'text-right'},
+                    {data:'publisher',name:'publisher',render:eu,                     className:'text-right'},
+                    {data:'total_cost',name:'total_cost',render:eu,                   className:'text-right'},
+                    {data:'menford',name:'menford',render:eu,                         className:'text-right'},
+                    {data:'client_copy',name:'client_copy',render:eu,                 className:'text-right'},
+                    {data:'total_revenues',name:'total_revenues',render:eu,           className:'text-right'},
+                    {data:'profit',name:'profit',render:euProfit,                     className:'text-right'},
                     {data:'campaign',name:'campaign'},
                     {data:'anchor_text',name:'anchor_text'},
                     {data:'target_url',name:'target_url',orderable:false,searchable:false,
@@ -701,10 +533,20 @@
                     {data:'bill_publisher_date',name:'bill_publisher_date',render:dt},
                     {data:'payment_to_publisher_date',name:'payment_to_publisher_date',render:dt},
                     {data:'method_payment_to_publisher',name:'method_payment_to_publisher'},
-                    {data:'categories_list',name:'categories_list',className:'text-center'},
+                    {data:'categories_list',name:'categories_list',className:'text-center max-w-[160px]',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            if (type !== 'display') return data;
+                            const parts = data.split(',').map(s => s.trim()).filter(Boolean);
+                            if (parts.length <= 2) return `<span class="text-xs text-gray-600">${data}</span>`;
+                            const shown = parts.slice(0, 2).join(', ');
+                            const safe = data.replace(/"/g, '&quot;');
+                            return `<span class="text-xs text-gray-600" title="${safe}">${shown} <span class="text-gray-400">+${parts.length - 2} more</span></span>`;
+                        }
+                    },
                     { data:'created_at', name:'created_at', render:dt },
                     {data:'files',name:'files',orderable:false,searchable:false,
-                        render:d=>d?`<a href="${d}" target="_blank"><i class="fas fa-paperclip text-lg text-blue-600"></i></a>`:''},
+                        render:d=>d?`<a href="${d}" target="_blank" class="text-blue-600 hover:text-blue-700"><x-icon name="paperclip" size="lg" class="inline" /></a>`:''},
                     {data:'action',name:'action',orderable:false,searchable:false}
                 ],
                 order:[[1,'desc']], /* skip checkbox column */
@@ -737,30 +579,9 @@
             setTimeout(syncFooterWidths, 0);
             /* ───────────────────────── SUMMARY ROW ───────────────────────── */
             // ── helper keeps footer cells the same width as their header  ──
-            // — keep footer cells exactly under the scroll-X header —
-            /* ———————————————————————————————————————————
- * Perfectly align footer cells to header cells
- * ——————————————————————————————————————————— */
-            function syncFooterWidths () {
-                const $head       = $('.dataTables_scrollHeadInner table th');   // visible header cells
-                const $footerTds  = $('#summaryRow td');
-
-                // 1. Set every footer <td> to match its header <th>
-                $footerTds.each(function (i) {
-                    $(this).css('width', $head.eq(i).outerWidth() + 'px');
-                });
-
-                // 2. Compensate for the vertical scroll-bar that appears inside
-                //    the DataTables scroll body: its width pushes the very last
-                //    header cell left by a few pixels, so we must subtract it.
-                const $body        = $('.dataTables_scrollBody')[0];
-                const scrollBarW   = $body.offsetWidth - $body.clientWidth;      // 0‒20 px depending on OS
-                if (scrollBarW) {
-                    const $last = $footerTds.last();
-                    $last.css('width',
-                        ($last.outerWidth() - scrollBarW) + 'px');
-                }
-            }
+            // The tfoot lives inside the actual table — cells inherit column widths
+            // automatically. No JS width-sync needed.
+            function syncFooterWidths () { /* no-op (kept for callsite compatibility) */ }
 
 
             const numericCols = [
@@ -783,38 +604,19 @@
                 // write back so it’s stored
 
                 $(this).html(`
-        <div class="flex flex-col items-center w-full">
-            <span class="sum-val font-semibold"></span>
-
+        <div class="flex flex-col items-end gap-0.5 w-full">
+            <span class="sum-val"></span>
             <button class="calc-toggle ${mode!=='none'?'active':'inactive'}"
-                    data-col="${col}">
-                ${calcLabels[mode]}
-            </button>
+                    data-col="${col}">${calcLabels[mode]}</button>
         </div>
     `);
             });
 
 
 
-            /* B.--- move footer once */
+            /* B.--- right-align the summary numeric cells (header alignment stays as authored) */
             table.one('init', () => {
-                $('.dataTables_scrollFootInner tfoot').append($('#summaryRow'));
-
-                /* perfectly align footer cells under their headers */
-                table.one('init', () => {
-                    table.columns().every(function () {
-                        const idx   = this.index();
-                        const width = $(this.header()).outerWidth();
-                        $('#summaryRow td').eq(idx).css({width});
-                    });
-                });
-
-
-                $('#summaryRow td[data-col]').each(function () {
-                    const index = +$(this).data('index');
-                    $(this).css('text-align', 'right');
-                    $('#storagesTable').find('th').eq(index).css('text-align', 'right');
-                });
+                $('#summaryRow td[data-col]').css('text-align', 'right');
             });
 
 
@@ -956,8 +758,18 @@
 
             window.stTable = table;
             /* cell formatters */
-            function dt(v){return v?new Date(v).toLocaleDateString('en-GB'):'';}
-            function eu(v){return v!==null?'<strong>&euro; '+v+'</strong>':'';}
+            const emDash = '<span class="text-gray-300">—</span>';
+            function dt(v){return v?new Date(v).toLocaleDateString('en-GB'):emDash;}
+            function eu(v){return (v===null || v===undefined || v==='') ? emDash : '<span class="font-semibold text-gray-800">€ '+v+'</span>';}
+            function euProfit(v){
+                if (v===null || v===undefined || v==='') return emDash;
+                const neg = Number(v) < 0;
+                return '<span class="font-semibold '+(neg?'text-red-600':'text-gray-800')+'">€ '+v+'</span>';
+            }
+            function renderMetric(v){return (v===null || v===undefined || v==='') ? emDash : v;}
+            function renderCurrencyPill(v){return v
+                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200">'+String(v).toUpperCase()+'</span>'
+                : emDash;}
 
             /* master checkbox */
             $('#chkAll').on('change',function(){ $('.rowChk').prop('checked',this.checked); });
@@ -1219,7 +1031,7 @@
                     wrap.append(
                         `<input id="bulkValue" type="date"
                     class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                           focus:ring-cyan-500">`
+                           focus:ring-green-500">`
                     );
                     return;
                 }
@@ -1233,7 +1045,7 @@
                     wrap.append(
                         `<select id="bulkValue"
                      class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                            focus:ring-cyan-500">${none}${opts}</select>`
+                            focus:ring-green-500">${none}${opts}</select>`
                     );
 
                     /* large lists → enhance with Select2 */
@@ -1248,7 +1060,7 @@
                     wrap.append(
                         `<textarea id="bulkValue" rows="3"
                        class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                              focus:ring-cyan-500"></textarea>`
+                              focus:ring-green-500"></textarea>`
                     );
                     return;
                 }
@@ -1261,7 +1073,7 @@
                     wrap.append(`
         <select id="bulkValue" multiple
                 class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                       focus:ring-cyan-500">${opts}</select>`);
+                       focus:ring-green-500">${opts}</select>`);
 
                     $('#bulkValue').select2({
                         width:'resolve', dropdownAutoWidth:true, placeholder:'Select'
@@ -1273,7 +1085,7 @@
                 wrap.append(
                     `<input id="bulkValue" type="text"
                 class="w-full border border-gray-300 rounded px-2 py-1 text-xs
-                       focus:ring-cyan-500">`
+                       focus:ring-green-500">`
                 );
             }
 

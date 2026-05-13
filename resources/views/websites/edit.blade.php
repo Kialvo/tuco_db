@@ -1,7 +1,24 @@
 @extends('layouts.dashboard')
+@section('title', 'Edit ' . $website->domain_name)
+
+@section('pageHeader')
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Edit Domain</h1>
+            <p class="text-xs text-gray-500 mt-0.5 truncate">{{ $website->domain_name }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('websites.index') }}"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+                <x-icon name="arrow-left" size="sm" /> Back
+            </a>
+        </div>
+    </div>
+@endsection
 
 @section('content')
-    <h1 class="text-2xl font-bold mb-4">Edit Domain</h1>
+    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="form-card max-w-6xl">
 
     <form method="POST" action="{{ route('websites.update', $website->id) }}" class="space-y-4">
         @csrf
@@ -207,14 +224,14 @@
                 <label class="block font-medium mb-1">Banner Price</label>
                 <input type="number" step="0.01" name="banner_price"
                        value="{{ old('banner_price', $website->banner_price ?? '') }}"
-                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                 @error('banner_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block font-medium mb-1">Original Banner Price</label>
                 <input type="number" step="0.01" name="original_banner_price"
                        value="{{ old('original_banner_price', $website->original_banner_price ?? '') }}"
-                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                 @error('original_banner_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
             </div>
 
@@ -223,14 +240,14 @@
                 <label class="block font-medium mb-1">Site-wide Link Price</label>
                 <input type="number" step="0.01" name="sitewide_link_price"
                        value="{{ old('sitewide_link_price', $website->sitewide_link_price ?? '') }}"
-                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                 @error('sitewide_link_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block font-medium mb-1">Original Site-wide Link Price</label>
                 <input type="number" step="0.01" name="original_sitewide_link_price"
                        value="{{ old('original_sitewide_link_price', $website->original_sitewide_link_price ?? '') }}"
-                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                 @error('original_sitewide_link_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
             </div>
         </div>
@@ -502,11 +519,21 @@
             </select>
         </div>
 
-        <button type="submit" class="bg-cyan-600 text-white px-16 py-2 rounded shadow hover:bg-cyan-700
-                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500
-                       text-lg">Update</button>
+        {{-- Submit --}}
+        <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
+            <a href="{{ route('websites.index') }}"
+               class="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center justify-center gap-1.5 px-6 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <x-icon name="check" size="sm" /> Update Domain
+            </button>
+        </div>
 
     </form>
+    </div>
+    </div>
 
     @if(session('duplicate_error'))
     <script>

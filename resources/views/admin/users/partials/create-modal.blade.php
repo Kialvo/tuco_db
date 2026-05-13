@@ -1,5 +1,5 @@
-<div id="createUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+<div id="createUserModal" class="hidden fixed inset-0 bg-black/50 flex justify-center items-center">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <!-- Modal Header -->
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-bold text-gray-700">Create User</h2>
@@ -14,7 +14,7 @@
             <div class="mb-4">
                 <label for="create_name" class="block text-gray-600 font-medium">Name</label>
                 <input type="text" name="name" id="create_name" required
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500">
                 <p class="text-red-500 text-sm hidden" id="error_create_name"></p>
             </div>
 
@@ -22,7 +22,7 @@
             <div class="mb-4">
                 <label for="create_email" class="block text-gray-600 font-medium">Email</label>
                 <input type="email" name="email" id="create_email" required
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500">
                 <p class="text-red-500 text-sm hidden" id="error_create_email"></p>
             </div>
 
@@ -31,7 +31,7 @@
                 <label for="create_password" class="block text-gray-600 font-medium">Password</label>
                 <input type="password" name="password" id="create_password" required minlength="8"
                        placeholder="Minimum 8 characters"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500">
                 <p class="text-red-500 text-sm hidden" id="error_create_password"></p>
             </div>
 
@@ -39,7 +39,7 @@
             <div class="mb-4">
                 <label for="create_password_confirmation" class="block text-gray-600 font-medium">Confirm Password</label>
                 <input type="password" name="password_confirmation" id="create_password_confirmation" required minlength="8"
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500">
                 <p class="text-red-500 text-sm hidden" id="error_create_password_confirmation"></p>
             </div>
 
@@ -47,7 +47,7 @@
             <div class="mb-6">
                 <label for="create_role" class="block text-gray-600 font-medium">Role</label>
                 <select name="role" id="create_role"
-                        class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                        class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500">
                     <option value="admin">Admin</option>
                     <option value="editor" selected>Editor</option>
                     <option value="guest">Guest</option>

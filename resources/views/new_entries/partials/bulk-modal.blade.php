@@ -80,8 +80,8 @@
 @endphp
 
 {{-- Overlay (flex centers the card; compact sizing) --}}
-<div id="bulkEditModal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-start justify-center pt-16">
-    <div class="bg-white rounded-lg shadow-xl p-3 w-[22rem] max-w-[95vw] text-xs">
+<div id="bulkEditModal" class="fixed inset-0 z-50 bg-black/50 hidden flex items-start justify-center pt-16 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-4 w-[22rem] max-w-[95vw] text-xs">
         <h2 class="font-semibold text-base mb-2">Bulk edit entries</h2>
 
         <input type="hidden" id="bulkIds">

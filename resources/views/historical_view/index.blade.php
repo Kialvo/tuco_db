@@ -1,109 +1,31 @@
 @extends('layouts.dashboard')
+@section('title', 'Historical View')
+
+@section('pageHeader')
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Historical View</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Archived and active new-entry records.</p>
+        </div>
+    </div>
+@endsection
+
+@section('filters')
+    @include('new_entries.partials.admin-filter-panel')
+@endsection
 
 @section('content')
-    <h1 class="text-lg font-bold text-gray-700 py-6">Historical View</h1>
-
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
+        {{-- Hidden no-op placeholder so legacy JS that targets #toggleFiltersBtn doesn't error --}}
+        <button id="toggleFiltersBtn" class="hidden" aria-hidden="true"></button>
 
-        {{-- â”€â”€â”€â”€â”€ HEADER â”€â”€â”€â”€â”€ --}}
-        <div class="flex items-center gap-2 mb-4">
-            <button id="toggleFiltersBtn"
-                    class="inline-flex items-center gap-1
-                   bg-gray-300 text-gray-700 px-3 py-1 rounded shadow text-xs
-                   hover:bg-gray-400 focus:outline-none">
-                <i class="fas fa-sliders-h text-[11px]"></i>
-                <span>Hide Filters</span>
-            </button>
-            {{--  no Create button here  --}}
-        </div>
-
-
-        {{-- â”€â”€â”€â”€â”€ FILTERS (4) â”€â”€â”€â”€â”€ --}}
-        <div id="filterForm"
-             class="bg-white border border-gray-200 rounded shadow p-2 mb-8 inline-block">
-            <div class="flex flex-wrap gap-2">
-                {{-- Domain --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Domain</label>
-                    <input id="filterDomainName" type="text"
-                           class="border border-gray-300 rounded px-2 py-2 w-32"
-                           placeholder="example.com">
-                </div>
-
-                {{-- Status --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Status</label>
-                    <select id="filterStatus"
-                            class="border border-gray-300 rounded px-2 py-2 w-40">
-                        <option value="">-- Any --</option>
-                        <option value="never_opened">Never Opened</option>
-                        <option value="read_but_never_answered">Read but never answered</option>
-                        <option value="waiting_for_first_answer">Waiting for 1st answer</option>
-                        <option value="refused_by_us">Refused by us</option>
-                        <option value="publisher_refused">Publisher refused</option>
-                        <option value="negotiation">Negotiation</option>
-                        <option value="active">Active</option>
-                    </select>
-                </div>
-
-                {{-- Country --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Country</label>
-                    <select id="filterCountries"
-                            class="border border-gray-300 rounded px-2 py-2 w-40">
-                        <option value="">-- Any --</option>
-                        @foreach($countries as $c)
-                            <option value="{{ $c->id }}">{{ $c->country_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Language (single) -->
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Language</label>
-                    <select id="filterLanguage"
-                            class="border border-gray-300 rounded px-2 py-2 w-40">
-                        <option value="">-- Any --</option>
-                        @foreach($languages as $lang)
-                            <option value="{{ $lang->id }}">{{ $lang->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- 1st-contact range --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">1st Contact From</label>
-                    <input id="filterFirstFrom" type="text"
-                           class="border border-gray-300 rounded px-2 py-2 w-36"
-                           placeholder="YYYY-MM-DD">
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">To</label>
-                    <input id="filterFirstTo" type="text"
-                           class="border border-gray-300 rounded px-2 py-2 w-36"
-                           placeholder="YYYY-MM-DD">
-                </div>
-            </div>
-
-            {{-- search / clear --}}
-            <div class="flex space-x-2 mt-3">
-                <button id="btnSearch"
-                        class="bg-cyan-600 text-white px-4 py-2 rounded shadow text-xs hover:bg-cyan-700">
-                    Search
-                </button>
-                <button id="btnClear"
-                        class="bg-gray-400 text-white px-4 py-2 rounded shadow text-xs hover:bg-gray-500">
-                    Clear
-                </button>
-            </div>
-        </div>
 
         {{-- â”€â”€â”€â”€â”€ TABLE â”€â”€â”€â”€â”€ --}}
         <div id="historicalTableSearchWrap" class="table-search-wrap">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
-                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                        focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500">
                 <span class="px-3 text-gray-400 text-base leading-none">
-                    <i class="fas fa-search"></i>
+                    <x-icon name="search" size="sm" class="inline" />
                 </span>
                 <input id="historicalTableSearch" type="text"
                        class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
@@ -111,7 +33,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card">
             <table id="newEntriesTable" class="text-xs text-gray-700 w-full min-w-[1550px]">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-[12px] uppercase text-gray-500 tracking-wider">
@@ -154,10 +76,10 @@
                             TF vs CF
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Majestic Trust Flow divided by Citation Flow. It compares link quality vs quantity; usually, higher is better."
                                         aria-label="What is TF vs CF?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Majestic Trust Flow divided by Citation Flow. It compares link quality vs quantity; usually, higher is better.
@@ -173,10 +95,10 @@
                             Keywords vs Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Compares ranking keywords with estimated visits. Higher generally means keyword visibility turns into stronger traffic."
                                         aria-label="What is Keywords vs Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Compares ranking keywords with estimated visits. Higher generally means keyword visibility turns into stronger traffic.
@@ -194,10 +116,10 @@
                             More than 1 link
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="YES means the publisher can place multiple links in one article/page, not only one link."
                                         aria-label="What does More than 1 link mean?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     YES means the publisher can place multiple links in one article/page, not only one link.
@@ -211,10 +133,10 @@
                             Sponsored Tag
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Shows whether links are marked rel=&quot;sponsored&quot;. YES means sponsored-tagged links, often with lower SEO impact."
                                         aria-label="What is Sponsored Tag?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Shows whether links are marked rel="sponsored". YES means sponsored-tagged links, often with lower SEO impact.
@@ -247,19 +169,39 @@
 
             /* â•â•â• helpers â•â•â• */
             const statusMap = [
-                {value:'never_opened',            label:'Never Opened'},
-                {value:'read_but_never_answered', label:'Read but never answered'},
-                {value:'waiting_for_first_answer',label:'Waiting for 1st answer'},
-                {value:'refused_by_us',           label:'Refused by us'},
-                {value:'publisher_refused',       label:'Publisher refused'},
-                {value:'negotiation',             label:'Negotiation'},
-                {value:'active',                  label:'Active'},
+                {value:'never_opened',            label:'Never Opened',           tone:'bg-gray-100 text-gray-500 ring-gray-200'},
+                {value:'read_but_never_answered', label:'Read but never answered',tone:'bg-amber-100 text-amber-700 ring-amber-200'},
+                {value:'waiting_for_first_answer',label:'Waiting for 1st answer', tone:'bg-blue-100 text-blue-700 ring-blue-200'},
+                {value:'refused_by_us',           label:'Refused by us',          tone:'bg-red-100 text-red-700 ring-red-200'},
+                {value:'publisher_refused',       label:'Publisher refused',      tone:'bg-red-100 text-red-700 ring-red-200'},
+                {value:'negotiation',             label:'Negotiation',            tone:'bg-blue-100 text-blue-700 ring-blue-200'},
+                {value:'active',                  label:'Active',                 tone:'bg-green-100 text-green-700 ring-green-200'},
+                {value:'past',                    label:'Past',                   tone:'bg-gray-100 text-gray-600 ring-gray-200'},
             ];
             const statusLabel = v => (statusMap.find(x => x.value === String(v))||{}).label || v;
+            const statusPill = v => {
+                if (!v) return '<span class="text-gray-300">—</span>';
+                const info = statusMap.find(x => x.value === String(v));
+                const tone = info ? info.tone : 'bg-gray-100 text-gray-700 ring-gray-200';
+                const label = info ? info.label : String(v).replace(/_/g,' ');
+                return `<span class="inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${tone}">${label}</span>`;
+            };
 
-            const money   = v=> v==null ? '' : `<strong>&euro; ${v}</strong>`;
-            const yesNo   = v=> v ? 'YES' : 'NO';
-            const dateFmt = v=> v ? new Date(v).toLocaleDateString('en-GB') : '';
+            const emDash = '<span class="text-gray-300">—</span>';
+            const money   = v=> (v==null || v==='') ? emDash : `<span class="font-semibold text-gray-800">€ ${v}</span>`;
+            const profitFmt = v=> {
+                if (v==null || v==='') return emDash;
+                const neg = Number(v) < 0;
+                return `<span class="font-semibold ${neg ? 'text-red-600' : 'text-gray-800'}">€ ${v}</span>`;
+            };
+            const renderMetric = v=> (v==null || v==='') ? emDash : v;
+            const renderCurrencyPill = v=> v
+                ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200">${String(v).toUpperCase()}</span>`
+                : emDash;
+            const yesNo   = v=> v
+                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700 ring-1 ring-inset ring-green-200">YES</span>'
+                : '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-500 ring-1 ring-inset ring-gray-200">NO</span>';
+            const dateFmt = v=> v ? new Date(v).toLocaleDateString('en-GB') : emDash;
             const decodeHtml = (value) => $('<textarea/>').html(value ?? '').text();
             const showInfoPopup = (message) => {
                 if (!message) return;
@@ -315,9 +257,9 @@
             /* DataTable */
             let tbl = $('#newEntriesTable').DataTable({
                 processing:true, serverSide:true,
-                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
-                    "tr" +
-                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
+                dom: "<'dt-toolbar-top'<'flex items-center gap-3'l<'dt-search'>>>" +
+                     "<'dt-scroll'rt>" +
+                     "<'dt-toolbar-bottom'ip>",
                 ajax:{
                     url:"{{ route('historical_view.data') }}",       // â† route changed
                     type:"POST",
@@ -336,31 +278,52 @@
                     {data:'extra_notes', render:d=>{
                             if(!d) return '';
                             const safe = $('<div>').text(d).html();
-                            return `<a href="#" class="note-link text-cyan-700" data-note="${safe}">
-                            <i class="fas fa-comment-dots"></i></a>`;
+                            return `<a href="#" class="note-link text-green-700" data-note="${safe}">
+                            <x-icon name="comment" size="sm" class="inline" /></a>`;
                         }},
-                    {data:'status', render:statusLabel},        // â† plain text
-                    {data:'country_name'}, {data:'language_name'}, {data:'contact_name'},
-                    {data:'currency_code'},
-                    {data:'publisher_price',      render:money},
-                    {data:'no_follow_price',      render:money},
-                    {data:'special_topic_price',  render:money},
-                    {data:'price',                render:money},
-                    {data:'sensitive_topic_price',render:money},
-                    {data:'link_insertion_price', render:money},
-                    {data:'banner_price',         render:money},
-                    {data:'sitewide_link_price',  render:money},
-                    {data:'kialvo_evaluation',    render:money},
-                    {data:'profit',               render:money},
-                    {data:'date_publisher_price', render:dateFmt},
+                    {data:'status', render:(d,t)=> t==='display' ? statusPill(d) : (statusLabel(d) || '')},        // â† plain text
+                    {data:'country_name',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            const flag = row.country_iso
+                                ? `<img src="https://flagcdn.com/48x36/${row.country_iso}.png" srcset="https://flagcdn.com/96x72/${row.country_iso}.png 2x" width="20" height="15" alt="" class="rounded-sm border border-gray-200" loading="lazy">`
+                                : '';
+                            return `<span class="inline-flex items-center gap-1.5">${flag}<span>${data}</span></span>`;
+                        }
+                    },
+                    {data:'language_name'}, {data:'contact_name'},
+                    {data:'currency_code', render: renderCurrencyPill, className:'text-center'},
+                    {data:'publisher_price',      render:money,     className:'text-right'},
+                    {data:'no_follow_price',      render:money,     className:'text-right'},
+                    {data:'special_topic_price',  render:money,     className:'text-right'},
+                    {data:'price',                render:money,     className:'text-right'},
+                    {data:'sensitive_topic_price',render:money,     className:'text-right'},
+                    {data:'link_insertion_price', render:money,     className:'text-right'},
+                    {data:'banner_price',         render:money,     className:'text-right'},
+                    {data:'sitewide_link_price',  render:money,     className:'text-right'},
+                    {data:'kialvo_evaluation',    render:money,     className:'text-right'},
+                    {data:'profit',               render:profitFmt, className:'text-right'},
+                    {data:'date_publisher_price', render:dateFmt,   className:'text-center'},
                     {data:'linkbuilder'},
                     {data:'type_of_website'},
-                    {data:'categories_list'},
-                    {data:'DA'}, {data:'PA'}, {data:'TF'}, {data:'CF'},
-                    {data:'DR'}, {data:'UR'}, {data:'ZA'}, {data:'as_metric'},
-                    {data:'seozoom'}, {data:'TF_vs_CF'},
-                    {data:'semrush_traffic'}, {data:'ahrefs_keyword'},
-                    {data:'ahrefs_traffic'}, {data:'keyword_vs_traffic'},
+                    {data:'categories_list', className:'max-w-[160px]',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            if (type !== 'display') return data;
+                            const parts = data.split(',').map(s => s.trim()).filter(Boolean);
+                            if (parts.length <= 2) return `<span class="text-xs text-gray-600">${data}</span>`;
+                            const shown = parts.slice(0, 2).join(', ');
+                            const safe = data.replace(/"/g, '&quot;');
+                            return `<span class="text-xs text-gray-600" title="${safe}">${shown} <span class="text-gray-400">+${parts.length - 2} more</span></span>`;
+                        }
+                    },
+                    {data:'DA', render:renderMetric, className:'text-right'}, {data:'PA', render:renderMetric, className:'text-right'},
+                    {data:'TF', render:renderMetric, className:'text-right'}, {data:'CF', render:renderMetric, className:'text-right'},
+                    {data:'DR', render:renderMetric, className:'text-right'}, {data:'UR', render:renderMetric, className:'text-right'},
+                    {data:'ZA', render:renderMetric, className:'text-right'}, {data:'as_metric', render:renderMetric, className:'text-right'},
+                    {data:'seozoom', render:renderMetric, className:'text-right'}, {data:'TF_vs_CF', render:renderMetric, className:'text-right'},
+                    {data:'semrush_traffic', render:renderMetric, className:'text-right'}, {data:'ahrefs_keyword', render:renderMetric, className:'text-right'},
+                    {data:'ahrefs_traffic', render:renderMetric, className:'text-right'}, {data:'keyword_vs_traffic', render:renderMetric, className:'text-right'},
                     {data:'seo_metrics_date',     render:dateFmt},
                     {data:'betting',              render:yesNo},
                     {data:'trading',              render:yesNo},

@@ -1,88 +1,65 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Thanks for signing up! Before getting started, please verify your email address by clicking the link we just emailed to you. If you didn't receive it, we'll gladly send you another.
-    </div>
+    <x-slot name="heading">Verify your email</x-slot>
+    <x-slot name="subheading">We sent a link to your inbox</x-slot>
+
+    <p class="text-sm text-gray-600 leading-relaxed mb-4">
+        Thanks for signing up! Before getting started, please verify your email address by clicking the link we just sent. If you didn't get it, we'll gladly send another.
+    </p>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600 dark:text-green-400">
+        <div class="mb-4 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
             A new verification link has been sent to your email address.
         </div>
     @endif
 
-    <form method="POST" action="{{ route('verification.send') }}" id="resendForm">
+    <form method="POST" action="{{ route('verification.send') }}" id="resendForm" class="space-y-3">
         @csrf
-
-        <button type="submit"
-                id="resendBtn"
-                class="mt-2 w-full inline-flex justify-center items-center px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 disabled:bg-gray-400 disabled:cursor-not-allowed border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-wider shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+        <button type="submit" id="resendBtn"
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
             <span id="resendBtnLabel">Resend verification email</span>
         </button>
-
-        <p class="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
+        <p class="text-center text-xs text-gray-400">
             Didn't get the email? Check your spam folder, or wait before resending.
         </p>
     </form>
 
     <form method="POST" action="{{ route('logout') }}" class="mt-6 text-center">
         @csrf
-        <button type="submit"
-                class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 underline">
+        <button type="submit" class="text-sm text-gray-500 hover:text-gray-700 underline">
             Log out
         </button>
     </form>
 
     <script>
         (function () {
-            const COOLDOWN_SECONDS = 60;
-            const STORAGE_KEY = 'verifyEmailCooldownUntil';
-
-            const form = document.getElementById('resendForm');
-            const btn = document.getElementById('resendBtn');
+            const COOLDOWN = 60;
+            const KEY = 'verifyEmailCooldownUntil';
+            const form  = document.getElementById('resendForm');
+            const btn   = document.getElementById('resendBtn');
             const label = document.getElementById('resendBtnLabel');
-
-            let timerId = null;
-
-            const startCountdown = (until) => {
-                if (timerId) clearInterval(timerId);
-
+            let t = null;
+            const start = (until) => {
+                if (t) clearInterval(t);
                 const tick = () => {
-                    const remaining = Math.ceil((until - Date.now()) / 1000);
-                    if (remaining <= 0) {
+                    const r = Math.ceil((until - Date.now()) / 1000);
+                    if (r <= 0) {
                         btn.disabled = false;
                         label.textContent = 'Resend verification email';
-                        sessionStorage.removeItem(STORAGE_KEY);
-                        clearInterval(timerId);
+                        sessionStorage.removeItem(KEY);
+                        clearInterval(t);
                         return;
                     }
                     btn.disabled = true;
-                    label.textContent = `Resend in ${remaining}s`;
+                    label.textContent = `Resend in ${r}s`;
                 };
-
-                tick();
-                timerId = setInterval(tick, 1000);
+                tick(); t = setInterval(tick, 1000);
             };
-
-            // Resume countdown on reload if still active
-            const stored = parseInt(sessionStorage.getItem(STORAGE_KEY), 10);
-            if (stored && stored > Date.now()) {
-                startCountdown(stored);
-            }
-
-            // Page just rendered the "verification-link-sent" status — start the cooldown
+            const stored = parseInt(sessionStorage.getItem(KEY), 10);
+            if (stored && stored > Date.now()) start(stored);
             @if (session('status') == 'verification-link-sent')
-                {
-                    const until = Date.now() + COOLDOWN_SECONDS * 1000;
-                    sessionStorage.setItem(STORAGE_KEY, until.toString());
-                    startCountdown(until);
-                }
+                { const u = Date.now() + COOLDOWN*1000; sessionStorage.setItem(KEY, u.toString()); start(u); }
             @endif
-
-            // Block submission while disabled
-            form.addEventListener('submit', (e) => {
-                if (btn.disabled) {
-                    e.preventDefault();
-                }
-            });
+            form.addEventListener('submit', (e) => { if (btn.disabled) e.preventDefault(); });
         })();
     </script>
 </x-guest-layout>

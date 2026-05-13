@@ -1,9 +1,17 @@
 @extends('layouts.dashboard')
+@section('title', 'Clean Ahrefs CSV')
 
 @section('content')
-    <h1 class="text-lg font-bold text-gray-700 py-6">Clean Ahrefs CSV</h1>
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Clean Ahrefs CSV</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Strip irrelevant rows from Ahrefs exports.</p>
+        </div>
+    </div>
 
-    <div class="bg-white p-6 rounded shadow w-full max-w-3xl">
+    <div class="px-6 py-6 bg-gray-50 min-h-screen space-y-6">
+    <div class="bg-white border border-gray-200 p-6 rounded-xl shadow-card w-full max-w-3xl">
         <form action="{{ route('tools.ahrefs.run') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
 
@@ -25,7 +33,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <button class="bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700">
+                <button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                     Clean
                 </button>
 
@@ -43,7 +51,7 @@
 
     {{-- Results panel (only renders after a run) --}}
     @isset($removed)
-        <div class="bg-white mt-6 p-6 rounded shadow w-full max-w-3xl">
+        <div class="bg-white border border-gray-200 p-6 rounded-xl shadow-card w-full max-w-3xl">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="font-semibold text-gray-800">Results</h2>
                 <div class="text-sm text-gray-600">
@@ -92,4 +100,5 @@
             @endif
         </div>
     @endisset
+    </div>
 @endsection

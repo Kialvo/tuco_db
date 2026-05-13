@@ -1,38 +1,41 @@
 @extends('layouts.dashboard')
+@section('title', 'Manage Users')
 
 @section('content')
-    <div class="px-6 py-6 bg-gray-50 min-h-screen">
-        <div class="mb-6 flex flex-wrap justify-between items-center gap-3">
-            <h1 class="text-2xl font-bold text-gray-700">Manage Users</h1>
-
-            <button id="btnOpenModal"
-                    class="bg-cyan-600 text-white px-6 py-3 rounded-lg shadow-lg
-                      hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2
-                      focus:ring-cyan-500 text-sm font-semibold transition-all">
-                + Create New User
-            </button>
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Manage Users</h1>
+            <p class="text-xs text-gray-500 mt-0.5">System users (admin/editor) and guests.</p>
         </div>
+        <button id="btnOpenModal"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+            <x-icon name="plus" size="sm" /> Create New User
+        </button>
+    </div>
+
+    <div class="px-6 py-6 bg-gray-50 min-h-screen">
 
         {{-- Tabs --}}
         <div class="flex gap-2 mb-4 border-b border-gray-200">
             <button data-tab="system"
                     class="user-tab px-5 py-2 text-sm font-semibold border-b-2 transition
-                           {{ ($tab ?? 'system') === 'system' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                <i class="fas fa-user-shield mr-1"></i> System Users
+                           {{ ($tab ?? 'system') === 'system' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+                <x-icon name="users-cog" size="sm" class="inline me-1" /> System Users
             </button>
             <button data-tab="guests"
                     class="user-tab px-5 py-2 text-sm font-semibold border-b-2 transition
-                           {{ ($tab ?? 'system') === 'guests' ? 'border-cyan-600 text-cyan-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                <i class="fas fa-user-friends mr-1"></i> Guests
+                           {{ ($tab ?? 'system') === 'guests' ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+                <x-icon name="address-book" size="sm" class="inline me-1" /> Guests
             </button>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded shadow-sm p-6">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card p-6">
             <div class="flex items-center gap-3 mb-4">
                 <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
-                            focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                            focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500">
                     <span class="px-3 text-gray-400 text-base leading-none">
-                        <i class="fas fa-search"></i>
+                        <x-icon name="search" size="sm" class="inline" />
                     </span>
                     <input id="usersTableSearch" type="text"
                            class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
@@ -94,23 +97,23 @@
                         className: 'text-right',
                         render: function (id, type, row) {
                             const favBtn = (row.role === 'guest')
-                                ? `<a href="/admin/users/${id}/favorites" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs"><i class="fas fa-star"></i> Favorites</a>`
+                                ? `<a href="/admin/users/${id}/favorites" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs"><x-icon name="star" size="sm" class="inline" /> Favorites</a>`
                                 : '';
                             return `
                                 <div class="flex items-center justify-end gap-2">
                                     ${favBtn}
-                                    <button class="editBtn bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs" data-user-id="${id}"><i class="fas fa-edit"></i> Edit</button>
-                                    <button class="resetPwdBtn bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded text-xs" data-user-id="${id}" data-user-email="${row.email}"><i class="fas fa-key"></i> Reset PW</button>
+                                    <button class="editBtn bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs" data-user-id="${id}"><x-icon name="pencil" size="sm" class="inline" /> Edit</button>
+                                    <button class="resetPwdBtn bg-amber-600 hover:bg-amber-700 text-white px-2 py-1 rounded text-xs" data-user-id="${id}" data-user-email="${row.email}"><x-icon name="key" size="sm" class="inline" /> Reset PW</button>
                                     <form action="/admin/users/${id}" method="POST" class="inline-block">
                                         <input type="hidden" name="_token" value="${csrfToken}">
                                         <input type="hidden" name="_method" value="DELETE">
-                                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" onclick="return confirm('Delete this user?')"><i class="fas fa-trash"></i></button>
+                                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" onclick="return confirm('Delete this user?')"><x-icon name="trash" size="sm" class="inline" /></button>
                                     </form>
                                 </div>`;
                         }
                     }
                 ],
-                dom: "t<'flex items-center justify-between mt-4'<'dt-info'i><'dt-pagination'p>>",
+                dom: "<'dt-scroll'rt><'dt-toolbar-bottom'ip>",
             });
 
             // Tab switching
@@ -118,11 +121,11 @@
                 btn.addEventListener('click', () => {
                     currentTab = btn.dataset.tab;
                     document.querySelectorAll('.user-tab').forEach(b => {
-                        b.classList.remove('border-cyan-600', 'text-cyan-700');
+                        b.classList.remove('border-green-600', 'text-green-700');
                         b.classList.add('border-transparent', 'text-gray-500');
                     });
                     btn.classList.remove('border-transparent', 'text-gray-500');
-                    btn.classList.add('border-cyan-600', 'text-cyan-700');
+                    btn.classList.add('border-green-600', 'text-green-700');
                     usersTable.ajax.reload();
                 });
             });

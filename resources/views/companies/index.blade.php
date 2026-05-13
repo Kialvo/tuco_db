@@ -1,25 +1,24 @@
 {{-- resources/views/companies/index.blade.php --}}
 @extends('layouts.dashboard')
+@section('title', 'Companies')
 
 @section('content')
-
-    <h1 class="text-lg font-bold text-gray-700 py-6">Companies</h1>
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Companies</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Parent organizations linked to your clients.</p>
+        </div>
+        <button id="btnOpenModal"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+            <x-icon name="plus" size="sm" /> Add Company
+        </button>
+    </div>
 
     <div class="px-6 py-6 bg-gray-50 min-h-screen">
-
-        <!-- ───── Action bar ───── -->
-        <div class="flex items-center justify-end mb-4">
-            <button id="btnOpenModal"
-                    class="bg-cyan-600 text-white px-5 py-2 rounded shadow
-                           hover:bg-cyan-700 focus:outline-none focus:ring-2
-                           focus:ring-offset-2 focus:ring-cyan-500 transition">
-                <i class="fas fa-plus mr-1"></i> Add Company
-            </button>
-        </div>
-
         <!-- ───── DataTable ───── -->
-        <div class="bg-white border border-gray-200 rounded shadow-sm p-4">
-            <table id="companiesTable" class="w-full text-sm text-gray-700">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card p-4 max-w-3xl mx-auto">
+            <table id="companiesTable" class="text-sm text-gray-700" style="width:100%; table-layout:auto;">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                     <th class="py-3 px-4 font-semibold">ID</th>
@@ -35,11 +34,11 @@
 
     <!-- ═══════════════════════  CREATE MODAL  ═══════════════════════ -->
     <div id="createModal"
-         class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white border border-gray-200 p-6 rounded shadow-sm max-w-md w-full mx-2 relative">
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+        <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xl max-w-md w-full mx-2 relative">
             <button id="modalCloseBtn" type="button"
                     class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none">
-                <i class="fas fa-times"></i>
+                <x-icon name="x" size="sm" class="inline" />
             </button>
             <h2 class="text-xl font-bold text-gray-800 mb-4">Add Company</h2>
             <div id="createErrors"
@@ -52,12 +51,12 @@
                     </label>
                     <input type="text" id="create_name" name="name" required
                            class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500"/>
+                                  focus:ring-green-500 focus:border-green-500"/>
                 </div>
                 <div class="pt-2">
                     <button type="submit"
-                            class="bg-cyan-600 text-white px-5 py-2 rounded shadow-sm hover:bg-cyan-700
-                                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-sm">
+                            class="bg-green-600 text-white px-5 py-2 rounded shadow-sm hover:bg-green-700
+                                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-sm">
                         Save Company
                     </button>
                 </div>
@@ -67,11 +66,11 @@
 
     <!-- ═══════════════════════  EDIT MODAL  ═══════════════════════ -->
     <div id="editModal"
-         class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white border border-gray-200 p-6 rounded shadow-sm max-w-md w-full mx-2 relative">
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+        <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xl max-w-md w-full mx-2 relative">
             <button id="editModalCloseBtn" type="button"
                     class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none">
-                <i class="fas fa-times"></i>
+                <x-icon name="x" size="sm" class="inline" />
             </button>
             <h2 class="text-xl font-bold text-gray-800 mb-4">Edit Company</h2>
             <div id="editErrors"
@@ -86,12 +85,12 @@
                     </label>
                     <input type="text" id="edit_name" name="name" required
                            class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
-                                  focus:ring-cyan-500 focus:border-cyan-500"/>
+                                  focus:ring-green-500 focus:border-green-500"/>
                 </div>
                 <div class="pt-2">
                     <button type="submit"
-                            class="bg-cyan-600 text-white px-5 py-2 rounded shadow-sm hover:bg-cyan-700
-                                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-sm">
+                            class="bg-green-600 text-white px-5 py-2 rounded shadow-sm hover:bg-green-700
+                                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-sm">
                         Update Company
                     </button>
                 </div>
@@ -115,17 +114,17 @@ $(function () {
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
         },
         columns: [
-            { data: 'id',            name: 'id',            width: '60px' },
-            { data: 'name',          name: 'name' },
-            { data: 'clients_count', name: 'clients_count', searchable: false },
+            { data: 'id',            name: 'id',            width: '60px', className: 'text-right' },
+            { data: 'name',          name: 'name',          render: d => d || '<span class="text-gray-300">—</span>' },
+            { data: 'clients_count', name: 'clients_count', searchable: false, className: 'text-right' },
             { data: 'action',        name: 'action',        orderable: false, searchable: false }
         ],
         order: [[1,'asc']],
         responsive: true,
         autoWidth: false,
-        dom: "<'flex items-center justify-between mb-2'<'dt-length'l><'dt-filter'f>>" +
-             "tr" +
-             "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
+        dom: "<'dt-toolbar-top'lf>" +
+             "<'dt-scroll'rt>" +
+             "<'dt-toolbar-bottom'ip>",
         language: {
             lengthMenu: "Show _MENU_ entries",
             search:     "Search:",
@@ -137,9 +136,9 @@ $(function () {
 
     table.on('init.dt', function () {
         $('div.dt-length label').addClass('text-gray-600 flex items-center space-x-2')
-            .find('select').addClass('border border-gray-300 bg-white rounded-md px-3 py-1 text-gray-700 focus:ring-cyan-500 focus:border-cyan-500');
+            .find('select').addClass('border border-gray-300 bg-white rounded-md px-3 py-1 text-gray-700 focus:ring-green-500 focus:border-green-500');
         $('div.dt-filter label').addClass('flex items-center space-x-2 text-gray-600')
-            .find('input').addClass('border border-gray-300 bg-white rounded-md px-3 py-1 text-gray-700 focus:ring-cyan-500 focus:border-cyan-500');
+            .find('input').addClass('border border-gray-300 bg-white rounded-md px-3 py-1 text-gray-700 focus:ring-green-500 focus:border-green-500');
         $('div.dt-pagination a').addClass('inline-block px-3 py-1 rounded hover:bg-gray-200 text-gray-700');
         $('div.dt-info').addClass('text-gray-600');
     });
