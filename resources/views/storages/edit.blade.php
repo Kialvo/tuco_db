@@ -1,14 +1,25 @@
 {{-- resources/views/storages/edit.blade.php --}}
 @extends('layouts.dashboard')
+@section('title', 'Edit Storage')
+
+@section('pageHeader')
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Edit Storage</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Update publication record.</p>
+        </div>
+        <a href="{{ route('storages.index') }}"
+           class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+            <x-icon name="arrow-left" size="sm" /> Back
+        </a>
+    </div>
+@endsection
 
 @section('content')
-    <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
-        <!-- Header -->
-        <div class="flex flex-col gap-3 mb-4">
-            <h1 class="text-lg font-bold text-gray-700">Edit Storage</h1>
-        </div>
+    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="form-card max-w-6xl">
 
-        <form method="POST" action="{{ route('storages.update', $storage->id) }}" class="space-y-4 text-xs">
+        <form method="POST" action="{{ route('storages.update', $storage->id) }}" class="space-y-4">
             @csrf
             @method('PUT')
 
@@ -19,7 +30,7 @@
                     <label class="block text-gray-700 font-medium mb-1">Domain</label>
                     <select name="website_id" id="websiteSelect"
                             class="w-full border border-gray-300 rounded px-2 py-1
-               focus:ring-cyan-500 focus:border-cyan-500">
+               focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
                         @foreach($websites as $w)
                             @php
@@ -60,7 +71,7 @@
                     <label class="block text-gray-700 font-medium mb-1">Publisher</label>
                     <select name="contact_id" id="contactSelect"
                             class="w-full border border-gray-300 rounded px-2 py-1
-                   focus:ring-cyan-500 focus:border-cyan-500">
+                   focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
                         @foreach($contacts as $ct)
                             @php
@@ -82,7 +93,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Status</label>
                     <select name="status"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
                         <option value="article_published"       {{ old('status', $storage->status)=='article_published'       ? 'selected' : '' }}>Article Published</option>
                         <option value="publisher_refused"      {{ old('status')=='publisher_refused'      ? 'selected' : '' }}>Publisher Refused</option>
@@ -98,7 +109,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">LB</label>
                     <input type="text" name="LB" value="{{ old('LB', $storage->LB) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('LB') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -106,7 +117,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Client</label>
                     <select name="client_id" id="clientSelect"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
                         @foreach($clients as $cl)
                             <option value="{{ $cl->id }}" {{ old('client_id', $storage->client_id)==$cl->id ? 'selected' : '' }}>
@@ -121,7 +132,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Copywriter</label>
                     <select name="copy_id" id="copywriterSelect"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
                         @foreach($copies as $cp)
                             <option value="{{ $cp->id }}" {{ old('copy_id', $storage->copy_id)==$cp->id ? 'selected' : '' }}>
@@ -136,7 +147,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Country</label>
                     <select name="country_id"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
                         @foreach($countries as $c)
                             <option value="{{ $c->id }}" {{ old('country_id', $storage->country_id)==$c->id ? 'selected' : '' }}>
@@ -151,7 +162,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Language</label>
                     <select name="language_id"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
                         @foreach($languages as $l)
                             <option value="{{ $l->id }}" {{ old('language_id', $storage->language_id)==$l->id ? 'selected' : '' }}>
@@ -168,21 +179,21 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Copywriter Amount EUR €</label>
                     <input type="number" name="copy_nr" value="{{ old('copy_nr', $storage->copy_nr) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('copy_nr') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Copy Comm. Date</label>
                     <input type="text" name="copywriter_commision_date"
                            value="{{ old('copywriter_commision_date', $storage->copywriter_commision_date ? \Carbon\Carbon::parse($storage->copywriter_commision_date)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('copywriter_commision_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Copy Subm. Date</label>
                     <input type="text" name="copywriter_submission_date"
                            value="{{ old('copywriter_submission_date', $storage->copywriter_submission_date ? \Carbon\Carbon::parse($storage->copywriter_submission_date)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('copywriter_submission_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
@@ -204,7 +215,7 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Publisher Currency</label>
                     <select name="publisher_currency"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="EUR" {{ old('publisher_currency', $storage->publisher_currency ?? 'EUR')=='EUR' ? 'selected' : '' }}>EUR</option>
                         <option value="USD" {{ old('publisher_currency', $storage->publisher_currency)=='USD' ? 'selected' : '' }}>USD</option>
                     </select>
@@ -216,7 +227,7 @@
                     <label class="block text-gray-700 font-medium mb-1">Publisher Amount</label>
                     <input type="number" step="0.01" name="publisher_amount"
                            value="{{ old('publisher_amount', $storage->publisher_amount) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('publisher_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -245,7 +256,7 @@
                             name="{{ $field }}"
                             value="{{ old($field, $storage->$field) }}"
                             {{ $autoCalc ? 'readonly' : '' }}
-                            class="w-full border rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500
+                            class="w-full border rounded px-2 py-1 focus:ring-green-500 focus:border-green-500
                                    {{ $autoCalc ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'border-gray-300' }}">
                         @error($field) <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
@@ -257,25 +268,25 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Target Domain</label>
                     <input type="text" name="campaign" value="{{ old('campaign', $storage->campaign) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('campaign') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Anchor Text</label>
                     <input type="text" name="anchor_text" value="{{ old('anchor_text', $storage->anchor_text) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('anchor_text') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Target URL</label>
                     <input type="url" name="target_url" value="{{ old('target_url', $storage->target_url) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('target_url') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Campaign Code</label>
                     <input type="text" name="campaign_code" value="{{ old('campaign_code', $storage->campaign_code) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('campaign_code') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -286,21 +297,21 @@
                     <label class="block text-gray-700 font-medium mb-1">Sent to Publisher</label>
                     <input type="text" name="article_sent_to_publisher"
                            value="{{ old('article_sent_to_publisher', $storage->article_sent_to_publisher ? \Carbon\Carbon::parse($storage->article_sent_to_publisher)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('article_sent_to_publisher')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Publication Date</label>
                     <input type="text" name="publication_date"
                            value="{{ old('publication_date', $storage->publication_date ? \Carbon\Carbon::parse($storage->publication_date)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('publication_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Expiration Date</label>
                     <input type="text" name="expiration_date"
                            value="{{ old('expiration_date', $storage->expiration_date ? \Carbon\Carbon::parse($storage->expiration_date)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('expiration_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
@@ -317,7 +328,7 @@
                 <div class="col-span-2">
                     <label class="block text-gray-700 font-medium mb-1">Article URL</label>
                     <input type="url" name="article_url" value="{{ old('article_url', $storage->article_url) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('article_url') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -327,33 +338,33 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Pay to Us Method</label>
                     <input type="text" name="method_payment_to_us" value="{{ old('method_payment_to_us', $storage->method_payment_to_us) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('method_payment_to_us')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Invoice Menford Date</label>
                     <input type="text" name="invoice_menford"
                            value="{{ old('invoice_menford', $storage->invoice_menford ? \Carbon\Carbon::parse($storage->invoice_menford)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('invoice_menford')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Invoice Menford Nr</label>
                     <input type="text" name="invoice_menford_nr" value="{{ old('invoice_menford_nr', $storage->invoice_menford_nr) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('invoice_menford_nr')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Invoice Company</label>
                     <input type="text" name="invoice_company" value="{{ old('invoice_company', $storage->invoice_company) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('invoice_company')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Pay to Us Date</label>
                     <input type="text" name="payment_to_us_date"
                            value="{{ old('payment_to_us_date', $storage->payment_to_us_date ? \Carbon\Carbon::parse($storage->payment_to_us_date)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('payment_to_us_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -362,13 +373,13 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Bill Publisher Name</label>
                     <input type="text" name="bill_publisher_name" value="{{ old('bill_publisher_name', $storage->bill_publisher_name) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('bill_publisher_name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Bill Publisher Nr</label>
                     <input type="text" name="bill_publisher_nr" value="{{ old('bill_publisher_nr', $storage->bill_publisher_nr) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('bill_publisher_nr')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <!-- Bill Publisher Date -->
@@ -377,7 +388,7 @@
                     <input type="text"
                            name="bill_publisher_date"
                            value="{{ old('bill_publisher_date', $storage->bill_publisher_date ? \Carbon\Carbon::parse($storage->bill_publisher_date)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('bill_publisher_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
 
@@ -385,13 +396,13 @@
                     <label class="block text-gray-700 font-medium mb-1">Pay to Publisher Date</label>
                     <input type="text" name="payment_to_publisher_date"
                            value="{{ old('payment_to_publisher_date', $storage->payment_to_publisher_date ? \Carbon\Carbon::parse($storage->payment_to_publisher_date)->format('d-m-Y') : '') }}"
-                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('payment_to_publisher_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Pay to Publisher Method</label>
                     <input type="text" name="method_payment_to_publisher" value="{{ old('method_payment_to_publisher', $storage->method_payment_to_publisher) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('method_payment_to_publisher')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -401,13 +412,13 @@
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Files (path or URL)</label>
                     <input type="text" name="files" value="{{ old('files', $storage->files) }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('files') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Extra Notes</label>
                     <textarea name="extra_notes" rows="3"
-                              class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">{{ old('extra_notes', $storage->extra_notes) }}</textarea>
+                              class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">{{ old('extra_notes', $storage->extra_notes) }}</textarea>
                     @error('extra_notes') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -416,7 +427,7 @@
             <div>
                 <label class="block text-gray-700 font-medium mb-1">Categories</label>
                 <select name="category_ids[]" id="categorySelect" multiple
-                        class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                        class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @foreach($categories as $cat)
                         <option value="{{ $cat->id }}"
                             {{ collect(old('category_ids', $storage->categories->pluck('id')->toArray()))->contains($cat->id) ? 'selected' : '' }}>
@@ -426,13 +437,18 @@
                 </select>
             </div>
 
-            {{-- ───────────── SUBMIT BUTTON ───────────── --}}
-            <button type="submit"
-                    class="bg-cyan-600 text-white px-16 py-2 rounded shadow hover:bg-cyan-700
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-lg">
-                Update
-            </button>
+            <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
+                <a href="{{ route('storages.index') }}"
+                   class="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center justify-center gap-1.5 px-6 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <x-icon name="check" size="sm" /> Update Storage
+                </button>
+            </div>
         </form>
+    </div>
     </div>
 @endsection
 

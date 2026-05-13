@@ -1,9 +1,17 @@
 @extends('layouts.dashboard')
+@section('title', 'Discover Domains')
 
 @section('content')
-    <h1 class="text-lg font-bold text-gray-700 py-6">Discover New Websites</h1>
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Discover Domains</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Search the web for fresh domains by keyword.</p>
+        </div>
+    </div>
 
-    <div class="bg-white p-6 rounded shadow w-full max-w-4xl">
+    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="bg-white border border-gray-200 p-6 rounded-xl shadow-card w-full max-w-4xl">
         <form id="searchForm" class="space-y-4">
 
             {{--  ➜ Keywords (required)  --}}
@@ -27,7 +35,7 @@
                     <input type="checkbox" id="toggleGovEdu"> Hide .gov / .edu / .org
                 </label>
 
-                <button class="bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700">
+                <button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                     Search
                 </button>
             </div>
@@ -48,6 +56,7 @@
                 class="list-disc pl-6 text-sm mt-2 max-h-96 overflow-y-auto">
             </ul>
         </div>
+    </div>
     </div>
 @endsection
 

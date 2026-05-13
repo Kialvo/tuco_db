@@ -3,6 +3,7 @@
 use App\Http\Controllers\HistoricalEntryController;
 use App\Http\Controllers\NewEntryController;
 use App\Http\Controllers\NewEntryImportController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OutreachController;
 use App\Http\Controllers\Tool\AhrefsCleanerController;
 use App\Http\Controllers\Tool\ReferringDomainsController;
@@ -18,6 +19,7 @@ use App\Http\Middleware\RestrictGuestToDomainsMiddleware;
  |  Controllers
  *───────────────────────────────────────────────────────────*/
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserFavoritesController;
 
@@ -127,12 +129,30 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     /*--------------------------------------------------------------
     | Websites
     --------------------------------------------------------------*/
+    /*--------------------------------------------------------------
+    | My Favorites (guest-facing)
+    --------------------------------------------------------------*/
+    Route::get('/favorites', [WebsiteController::class, 'guestFavorites'])->name('favorites.index');
+
+    /*--------------------------------------------------------------
+    | Orders (guest-facing — own orders only)
+    --------------------------------------------------------------*/
+    Route::get('/orders',                       [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}',               [OrderController::class, 'show'])->name('orders.show');
+
+    Route::get('/orders/cart/state',            [OrderController::class, 'cart'])->name('orders.cart');
+    Route::post('/orders/cart/{website}',       [OrderController::class, 'addItem'])->name('orders.cart.add');
+    Route::delete('/orders/cart/items/{item}',  [OrderController::class, 'removeItem'])->name('orders.cart.remove');
+    Route::patch('/orders/cart/items/{item}',   [OrderController::class, 'setArticleType'])->name('orders.cart.set-type');
+    Route::post('/orders/submit',               [OrderController::class, 'submit'])->name('orders.submit');
+
     Route::match(['get','post'], 'websites/data',   [WebsiteController::class, 'getData'])->name('websites.data');
     Route::post('/websites/{website}/restore',      [WebsiteController::class, 'restore'])->name('websites.restore');
 
     Route::get('/websites/export/csv',              [WebsiteController::class, 'exportCsv'])->name('websites.export.csv');
     Route::get('/websites/export/pdf',              [WebsiteController::class, 'exportPdf'])->name('websites.export.pdf');
     Route::post('/websites/{website}/favorite',     [FavoriteController::class, 'toggle'])->name('websites.favorites.toggle');
+    Route::post('/websites/favorites/bulk',          [FavoriteController::class, 'bulk'])->name('websites.favorites.bulk');
 
     Route::post('/websites/outreach/preview', [OutreachController::class, 'preview'])
         ->middleware(['auth', 'verified'])->name('websites.outreach.preview');
@@ -332,6 +352,13 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
         ->name('admin.users.favorites.export.csv');
     Route::get('/admin/users/{user}/favorites/export/pdf', [UserFavoritesController::class, 'exportPdf'])
         ->name('admin.users.favorites.export.pdf');
+
+    /*--------------------------------------------------------------
+    | Admin Orders
+    --------------------------------------------------------------*/
+    Route::get('/admin/orders',                       [AdminOrderController::class, 'index'])->name('admin.orders.index');
+    Route::get('/admin/orders/{order}',               [AdminOrderController::class, 'show'])->name('admin.orders.show');
+    Route::patch('/admin/orders/{order}/status',      [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
 
     Route::resource('admin/users', UserController::class)->names([
         'index'   => 'admin.users.index',

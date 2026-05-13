@@ -1,12 +1,18 @@
 {{-- resources/views/new_entries/import.blade.php --}}
 @extends('layouts.dashboard')
+@section('title', 'Import New Entries')
 
 @section('content')
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Bulk Import New Entries</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Upload a CSV to add many new entries at once.</p>
+        </div>
+    </div>
+
     <div class="px-6 py-6 bg-gray-50 min-h-screen text-sm">
-
-        <h1 class="text-lg font-bold text-gray-700 mb-4">Bulk Import New Entries (CSV)</h1>
-
-        <div class="bg-white rounded-xl shadow p-4 border">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card p-5">
             <form id="importForm"
                   method="POST"
                   action="{{ route('new_entries.import.preview') }}"  {{-- fallback if JS fails --}}
@@ -18,10 +24,10 @@
                     <input type="file" name="file" id="csvFile" accept=".csv,text/csv" required
                            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
                       file:rounded-md file:border-0 file:text-sm file:font-semibold
-                      file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"/>
+                      file:bg-green-50 file:text-green-700 hover:file:bg-green-100"/>
 
                     <a href="{{ route('new_entries.import.sample') }}"
-                       class="text-cyan-700 underline">Download sample</a>
+                       class="text-green-700 underline">Download sample</a>
                 </div>
 
                 <label class="flex items-center gap-2">
@@ -39,7 +45,7 @@
 
                 <div class="flex gap-2">
                     <button type="submit" id="btnPreview"
-                            class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700">
+                            class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
                         Preview
                     </button>
                     <button type="button" id="btnConfirm" disabled
@@ -87,7 +93,7 @@
 
         <!-- Busy overlay -->
         <div id="busy" class="hidden fixed inset-0 z-[90] flex items-center justify-center select-none">
-            <div class="absolute inset-0 bg-black/40"></div>
+            <div class="absolute inset-0 bg-black/50"></div>
             <div class="relative bg-white rounded-xl shadow-2xl p-6 w-[360px] text-center">
                 <div class="mx-auto mb-3 h-8 w-8 rounded-full border-4 border-gray-300 border-t-transparent animate-spin"></div>
                 <div id="busyTitle" class="font-semibold">Working…</div>
@@ -102,7 +108,7 @@
                 <div id="toastTitle" class="text-lg font-semibold mb-1">Import complete</div>
                 <div id="toastMsg" class="text-gray-600 text-sm"></div>
                 <div class="mt-4">
-                    <button id="closeToast" class="px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-700">
+                    <button id="closeToast" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                         Close
                     </button>
                 </div>

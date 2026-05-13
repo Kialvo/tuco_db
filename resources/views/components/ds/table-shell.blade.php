@@ -1,4 +1,6 @@
-<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-gray-200 overflow-hidden shadow-card ds-table']) }}>
+<div {{ $attributes->merge(['class' => 'bg-white rounded-xl border border-gray-200 shadow-card ds-table']) }}>
+    {{-- No inner scroll wrapper — sticky thead must propagate to <main>.
+         Wide tables will trigger horizontal scroll on main directly. --}}
     <table class="w-full text-sm">
         @isset($head)
             <thead>

@@ -1,5 +1,5 @@
-<div id="editUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+<div id="editUserModal" class="hidden fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-bold text-gray-700">Edit User</h2>
             <button id="closeEditModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
@@ -12,21 +12,21 @@
             <div class="mb-4">
                 <label class="block text-gray-600 font-medium">Name</label>
                 <input type="text" name="name" id="edit_name" required
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500">
                 <p class="text-red-500 text-sm hidden" id="error_edit_name"></p>
             </div>
 
             <div class="mb-4">
                 <label class="block text-gray-600 font-medium">Email</label>
                 <input type="email" name="email" id="edit_email" required
-                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                       class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500">
                 <p class="text-red-500 text-sm hidden" id="error_edit_email"></p>
             </div>
 
             <div class="mb-6">
                 <label class="block text-gray-600 font-medium">Role</label>
                 <select name="role" id="edit_role"
-                        class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-cyan-500 focus:border-cyan-500">
+                        class="w-full px-4 py-2 border border-gray-300 rounded focus:ring-green-500 focus:border-green-500">
                     <option value="admin">Admin</option>
                     <option value="editor">Editor</option>
                     <option value="guest">Guest</option>
@@ -42,7 +42,7 @@
                 <button type="button" id="btnResetPassword"
                         data-user-id=""
                         class="bg-amber-500 text-white px-4 py-2 rounded shadow hover:bg-amber-600 text-sm font-semibold">
-                    <i class="fas fa-key mr-1"></i> Reset Password & Email
+                    <x-icon name="key" size="sm" class="inline me-1" /> Reset Password & Email
                 </button>
             </div>
 

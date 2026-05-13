@@ -30,13 +30,15 @@
                 <x-icon name="globe" />
                 Domains
             </a>
-            <a href="#"
-               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all text-gray-300">
+            <a href="{{ route('favorites.index') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('favorites.*') ? 'nav-active' : 'text-gray-300' }}">
                 <x-icon name="star" />
                 My Favorites
             </a>
-            <a href="#"
-               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all text-gray-300">
+            <a href="{{ route('orders.index') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('orders.*') ? 'nav-active' : 'text-gray-300' }}">
                 <x-icon name="orders" />
                 My Orders
             </a>
@@ -124,6 +126,13 @@
                     </a>
                 </div>
             </div>
+
+            <a href="{{ route('admin.orders.index') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('admin.orders.*') ? 'nav-active' : 'text-gray-300' }}">
+                <x-icon name="orders" />
+                Orders
+            </a>
 
             @if($isAdmin)
                 <a href="{{ route('admin.users.index') }}"

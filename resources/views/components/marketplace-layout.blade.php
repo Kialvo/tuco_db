@@ -30,9 +30,12 @@
                 {{ $pageHeader }}
             @endisset
 
-            <main class="flex-1 overflow-auto {{ $padding ?? 'p-6' }}">
-                @yield('content')
-                {{ $slot ?? '' }}
+            {{-- pt-0 on main so sticky thead sticks flush with visible top (no gap).
+                 The pt-6 inner wrapper restores normal content spacing. --}}
+            <main class="flex-1 overflow-auto {{ $padding ?? 'px-6 pb-6' }}">
+                <div class="pt-6">
+                    {{ $slot }}
+                </div>
             </main>
         </div>
 
@@ -41,7 +44,14 @@
         @endisset
     </div>
 
-    {{-- Flash + global toast hook (Alpine-only, no SweetAlert) --}}
+    {{-- Cart drawer auto-included for guests --}}
+    @auth
+        @if(auth()->user()->isGuest())
+            @include('marketplace.partials.cart-drawer')
+        @endif
+    @endauth
+
+    {{-- Flash + global toast (Alpine-only, no SweetAlert) --}}
     @if(session('status'))
         <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 3000)" x-show="show" x-transition.duration.300ms
              class="fixed bottom-4 right-4 bg-white border border-gray-200 shadow-lg rounded-lg px-4 py-3 z-50 flex items-center gap-2 text-sm text-gray-700">

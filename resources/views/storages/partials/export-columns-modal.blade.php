@@ -1,7 +1,7 @@
 {{-- resources/views/storages/partials/export-columns-modal.blade.php --}}
 <div id="exportColumnsModal"
      class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
-    <div class="bg-white w-full max-w-xl rounded shadow-lg p-4 space-y-4">
+    <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-4 space-y-4">
 
         {{-- Header --}}
         <div class="flex justify-between items-center border-b pb-2">
@@ -58,7 +58,7 @@
             @endphp
             @foreach($cols as $key=>$label)
                 <label class="inline-flex items-center space-x-1">
-                    <input type="checkbox" class="export-field h-4 w-4 text-cyan-600 rounded border-gray-300"
+                    <input type="checkbox" class="export-field h-4 w-4 text-green-600 rounded border-gray-300"
                            value="{{ $key }}" checked>
                     <span>{{ $label }}</span>
                 </label>

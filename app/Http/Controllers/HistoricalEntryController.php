@@ -50,16 +50,18 @@ class HistoricalEntryController extends Controller
             ->editColumn('price', fn($r) => $r->manual_price)
             ->editColumn('sensitive_topic_price', fn($r) => $r->manual_sensitive_topic_price)
             ->addColumn('country_name',    fn($r)=>optional($r->country )->country_name)
+            ->addColumn('country_iso',     fn($r)=>\App\Support\CountryCode::iso(optional($r->country)->country_name))
             ->addColumn('language_name',   fn($r)=>optional($r->language)->name)
             ->addColumn('contact_name',    fn($r)=>optional($r->contact )->name)
             ->addColumn('categories_list', fn($r)=>$r->categories->pluck('name')->join(', '))
-            ->addColumn('action', fn($row)=>'
-                    <a href="'.route('new_entries.edit',$row->id).'"
-                       class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
-                              hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2
-                              focus:ring-cyan-500">
-                        <i class=\"fas fa-eye mr-1\"></i> View
-                    </a>')
+            ->addColumn('action', function ($row) {
+                $iconEdit = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>';
+                return '
+                    <div class="inline-flex items-center gap-1">
+                        <a href="'.route('new_entries.edit', $row->id).'" title="View / Edit"
+                           class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition">'.$iconEdit.'</a>
+                    </div>';
+            })
             ->rawColumns(['action'])
             ->make(true);
     }

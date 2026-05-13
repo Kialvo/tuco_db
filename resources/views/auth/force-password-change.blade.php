@@ -1,27 +1,26 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-700 dark:text-gray-300">
-        For security reasons, please set a new password before continuing.
-    </div>
+    <x-slot name="heading">Set your new password</x-slot>
+    <x-slot name="subheading">For security, please change your temporary password</x-slot>
 
-    <form method="POST" action="{{ route('password.force.update') }}">
+    <form method="POST" action="{{ route('password.force.update') }}" class="space-y-4">
         @csrf
 
         <div>
-            <x-input-label for="password" :value="__('New password')" />
-            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autofocus autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1.5">New password</label>
+            <input id="password" name="password" type="password" required autofocus autocomplete="new-password"
+                   placeholder="••••••••" class="fi py-2.5">
+            @error('password')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
         </div>
 
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm password')" />
-            <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+        <div>
+            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1.5">Confirm new password</label>
+            <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password"
+                   placeholder="••••••••" class="fi py-2.5">
+            @error('password_confirmation')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
         </div>
 
-        <div class="flex items-center justify-end mt-6">
-            <x-primary-button>
-                {{ __('Save new password') }}
-            </x-primary-button>
-        </div>
+        <x-ds.button type="submit" variant="primary" size="lg" block class="mt-2">
+            Save new password
+        </x-ds.button>
     </form>
 </x-guest-layout>

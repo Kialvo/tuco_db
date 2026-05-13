@@ -1,90 +1,81 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-        Forgot your password? No problem. Enter your email and we'll send you a link to choose a new one.
-    </div>
+    <x-slot name="heading">Reset password</x-slot>
+    <x-slot name="subheading">We'll email you a link to choose a new one</x-slot>
 
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('status'))
+        <div class="mb-4 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+            {{ session('status') }}
+        </div>
+    @endif
 
-    <form method="POST" action="{{ route('password.email') }}" id="forgotForm">
+    <form method="POST" action="{{ route('password.email') }}" class="space-y-4" id="forgotForm">
         @csrf
 
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+            <input id="email" name="email" type="email" required autofocus
+                   value="{{ old('email') }}" placeholder="you@company.com"
+                   class="fi py-2.5">
+            @error('email')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
         </div>
 
-        <button type="submit"
-                id="forgotBtn"
-                class="mt-6 w-full inline-flex justify-center items-center px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 disabled:bg-gray-400 disabled:cursor-not-allowed border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-wider shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+        <button type="submit" id="forgotBtn"
+                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
             <span id="forgotBtnLabel">Email password reset link</span>
         </button>
 
-        <p class="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
+        <p class="text-center text-xs text-gray-400">
             Didn't get the email? Check your spam folder, or wait before resending.
         </p>
     </form>
 
-    <p class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+    <p class="mt-8 text-center text-sm text-gray-500">
         Remembered it?
         <a href="{{ route('login') }}"
-           class="group ms-1 inline-flex items-center font-semibold text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 dark:focus:ring-offset-gray-800 rounded">
+           class="group ms-1 inline-flex items-center font-semibold text-green-600 hover:text-green-700">
             Back to login
-            <svg class="ms-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M10.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L13.586 11H4a1 1 0 110-2h9.586l-3.293-3.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-            </svg>
+            <x-icon name="arrow-right" size="sm" class="ms-1 transition-transform group-hover:translate-x-0.5" />
         </a>
     </p>
 
     <script>
         (function () {
             const COOLDOWN_SECONDS = 60;
-            const STORAGE_KEY = 'forgotPasswordCooldownUntil';
-
-            const form = document.getElementById('forgotForm');
-            const btn = document.getElementById('forgotBtn');
+            const KEY = 'forgotPasswordCooldownUntil';
+            const form  = document.getElementById('forgotForm');
+            const btn   = document.getElementById('forgotBtn');
             const label = document.getElementById('forgotBtnLabel');
+            let timer = null;
 
-            let timerId = null;
-
-            const startCountdown = (until) => {
-                if (timerId) clearInterval(timerId);
-
+            const start = (until) => {
+                if (timer) clearInterval(timer);
                 const tick = () => {
-                    const remaining = Math.ceil((until - Date.now()) / 1000);
-                    if (remaining <= 0) {
+                    const r = Math.ceil((until - Date.now()) / 1000);
+                    if (r <= 0) {
                         btn.disabled = false;
                         label.textContent = 'Email password reset link';
-                        sessionStorage.removeItem(STORAGE_KEY);
-                        clearInterval(timerId);
+                        sessionStorage.removeItem(KEY);
+                        clearInterval(timer);
                         return;
                     }
                     btn.disabled = true;
-                    label.textContent = `Resend in ${remaining}s`;
+                    label.textContent = `Resend in ${r}s`;
                 };
-
-                tick();
-                timerId = setInterval(tick, 1000);
+                tick(); timer = setInterval(tick, 1000);
             };
 
-            const stored = parseInt(sessionStorage.getItem(STORAGE_KEY), 10);
-            if (stored && stored > Date.now()) {
-                startCountdown(stored);
-            }
+            const stored = parseInt(sessionStorage.getItem(KEY), 10);
+            if (stored && stored > Date.now()) start(stored);
 
             @if (session('status'))
                 {
                     const until = Date.now() + COOLDOWN_SECONDS * 1000;
-                    sessionStorage.setItem(STORAGE_KEY, until.toString());
-                    startCountdown(until);
+                    sessionStorage.setItem(KEY, until.toString());
+                    start(until);
                 }
             @endif
 
-            form.addEventListener('submit', (e) => {
-                if (btn.disabled) {
-                    e.preventDefault();
-                }
-            });
+            form.addEventListener('submit', (e) => { if (btn.disabled) e.preventDefault(); });
         })();
     </script>
 </x-guest-layout>

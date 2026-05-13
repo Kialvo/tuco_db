@@ -1,7 +1,22 @@
 @extends('layouts.dashboard')
+@section('title', 'Edit New Entry')
+
+@section('pageHeader')
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Edit New Entry</h1>
+            <p class="text-xs text-gray-500 mt-0.5 truncate">{{ $entry->domain_name }}</p>
+        </div>
+        <a href="{{ route('new_entries.index') }}"
+           class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+            <x-icon name="arrow-left" size="sm" /> Back
+        </a>
+    </div>
+@endsection
 
 @section('content')
-    <h1 class="text-2xl font-bold mb-4">Edit New Entry</h1>
+    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="form-card max-w-6xl">
 
     <form method="POST"
           action="{{ route('new_entries.update', $entry->id) }}"
@@ -456,13 +471,19 @@
             </select>
         </div>
 
-        <!-- ───── SUBMIT ───── -->
-        <button type="submit"
-                class="bg-cyan-600 text-white px-16 py-2 rounded shadow hover:bg-cyan-700
-                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-lg">
-            Update
-        </button>
+        <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
+            <a href="{{ route('new_entries.index') }}"
+               class="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center justify-center gap-1.5 px-6 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <x-icon name="check" size="sm" /> Update Entry
+            </button>
+        </div>
     </form>
+    </div>
+    </div>
 
     @if(session('duplicate_error'))
     <script>

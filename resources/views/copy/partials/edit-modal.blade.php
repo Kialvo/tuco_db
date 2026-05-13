@@ -1,12 +1,12 @@
 <!-- EDIT COPY MODAL -->
 <div id="editModal"
-     class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white border border-gray-200 p-6 rounded shadow-sm max-w-md w-full mx-2 relative">
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+    <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xl max-w-md w-full mx-2 relative">
 
         <!-- X -->
         <button id="editModalCloseBtn" type="button"
                 class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 focus:outline-none">
-            <i class="fas fa-times"></i>
+            <x-icon name="x" size="sm" class="inline" />
         </button>
 
         <h2 class="text-xl font-bold text-gray-800 mb-4">Edit Copy</h2>
@@ -24,13 +24,13 @@
                 </label>
                 <input type="text" id="edit_copy_val" name="copy_val" required
                        class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2
-                              focus:ring-cyan-500 focus:border-cyan-500">
+                              focus:ring-green-500 focus:border-green-500">
             </div>
 
             <div class="pt-2">
                 <button type="submit"
-                        class="bg-cyan-600 text-white px-5 py-2 rounded shadow-sm hover:bg-cyan-700
-                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 text-sm">
+                        class="bg-green-600 text-white px-5 py-2 rounded shadow-sm hover:bg-green-700
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 text-sm">
                     Update Copy
                 </button>
             </div>

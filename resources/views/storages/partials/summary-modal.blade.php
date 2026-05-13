@@ -1,6 +1,6 @@
 <div id="summaryModal"
      class="fixed inset-0 bg-gray-900 bg-opacity-50 z-[999999] hidden items-center justify-center">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-72 text-xs space-y-3">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-72 text-xs space-y-3">
         <h3 class="text-base font-semibold text-gray-700">Summary Settings</h3>
         <div id="summaryOptions" class="space-y-2">
             {{-- Will be filled dynamically --}}

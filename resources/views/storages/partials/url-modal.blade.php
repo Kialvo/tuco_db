@@ -1,5 +1,5 @@
 {{-- resources/views/storages/partials/url-modal.blade.php --}}
-<div id="urlModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+<div id="urlModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
     <div class="bg-white w-80 rounded shadow p-4 space-y-3">
         <h2 class="font-semibold text-lg text-gray-700">Link actions</h2>
 

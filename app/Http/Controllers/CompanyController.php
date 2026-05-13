@@ -24,19 +24,22 @@ class CompanyController extends Controller
 
         return datatables()->of($companies)
             ->addColumn('action', function (Company $c) {
+                $iconEdit  = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>';
+                $iconTrash = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
                 $deleteUrl = route('companies.destroy', $c->id);
-                return '<button type="button"
-                            class="editBtn inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
-                                   hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 mr-1"
-                            data-company-id="' . $c->id . '"
-                            data-company-name="' . e($c->name) . '">
-                            <i class="fas fa-pen mr-1"></i> Edit</button>'
-                    . '<form action="' . $deleteUrl . '" method="POST" style="display:inline-block;">'
-                    . csrf_field() . method_field('DELETE')
-                    . '<button type="submit" onclick="return confirm(\'Delete this company? Clients will have their company cleared.\');"
-                               class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
-                                      hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                        <i class="fas fa-trash mr-1"></i> Delete</button></form>';
+                return '
+                    <div class="inline-flex items-center gap-1">
+                        <button type="button" title="Edit"
+                                data-company-id="'.$c->id.'"
+                                data-company-name="'.e($c->name).'"
+                                class="editBtn inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition">'.$iconEdit.'</button>
+                        <form action="'.$deleteUrl.'" method="POST" class="inline">
+                            '.csrf_field().method_field('DELETE').'
+                            <button type="submit" title="Delete"
+                                    onclick="return confirm(\'Delete this company? Clients will have their company cleared.\');"
+                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700 transition">'.$iconTrash.'</button>
+                        </form>
+                    </div>';
             })
             ->rawColumns(['action'])
             ->make(true);

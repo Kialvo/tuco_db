@@ -1,12 +1,24 @@
 @extends('layouts.dashboard')
+@section('title', 'Create New Entry')
+
+@section('pageHeader')
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Create New Entry</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Add a new entry to the pre-publish queue.</p>
+        </div>
+        <a href="{{ route('new_entries.index') }}"
+           class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+            <x-icon name="arrow-left" size="sm" /> Back
+        </a>
+    </div>
+@endsection
 
 @section('content')
-    <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
-        <!-- Header: Title + Buttons -->
-        <div class="flex flex-col gap-3 mb-4">
-            <h1 class="text-lg font-bold text-gray-700 mb-4">Create New Entry</h1>
+    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+        <div class="form-card max-w-6xl">
 
-            <form method="POST" action="{{ route('new_entries.store') }}" class="space-y-4 text-xs">
+            <form method="POST" action="{{ route('new_entries.store') }}" class="space-y-4">
                 @csrf
 
                 <!-- General Information -->
@@ -17,7 +29,7 @@
                             type="text"
                             name="domain_name"
                             value="{{ old('domain_name') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                             required
                         >
                         @error('domain_name')
@@ -28,7 +40,7 @@
                         <label class="block text-gray-700 font-medium mb-1">Status</label>
                         <select
                             name="status"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
 
                             <option value="never_opened"
@@ -84,7 +96,7 @@
                         <label class="block text-gray-700 font-medium mb-1">Type of Website</label>
                         <select
                             name="type_of_website"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                             <option value="">-- None --</option>
                             <option value="VERTICAL" {{ old('type_of_website') === 'VERTICAL' ? 'selected' : '' }}>Vertical</option>
@@ -101,7 +113,7 @@
                             type="text"
                             name="linkbuilder"
                             value="{{ old('linkbuilder') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('linkbuilder')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -115,7 +127,7 @@
                         <label class="block text-gray-700 font-medium mb-1">Country</label>
                         <select
                             name="country_id"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                             <option value="">-- None --</option>
                             @foreach($countries as $c)
@@ -132,7 +144,7 @@
                         <label class="block text-gray-700 font-medium mb-1">Language</label>
                         <select
                             name="language_id"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                             <option value="">-- None --</option>
                             @foreach($languages as $lang)
@@ -152,7 +164,7 @@
                         <label class="block text-gray-700 font-medium mb-1">Publisher</label>
                         <select
                             name="contact_id"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                             <option value="">-- None --</option>
                             @foreach($contacts as $cnt)
@@ -169,7 +181,7 @@
                         <label class="block text-gray-700 font-medium mb-1">Currency</label>
                         <select
                             name="currency_code"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                             <option value="">-- None --</option>
                             <option value="EUR" {{ old('currency_code') == 'EUR' ? 'selected' : '' }}>EUR</option>
@@ -190,7 +202,7 @@
                             step="0.01"
                             name="publisher_price"
                             value="{{ old('publisher_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('publisher_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -203,7 +215,7 @@
                             step="0.01"
                             name="original_publisher_price"
                             value="{{ old('original_publisher_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('original_publisher_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -215,7 +227,7 @@
                             type="text"
                             name="date_publisher_price"
                             value="{{ old('date_publisher_price') }}"
-                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('date_publisher_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -228,7 +240,7 @@
                             step="0.01"
                             name="link_insertion_price"
                             value="{{ old('link_insertion_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('link_insertion_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -241,7 +253,7 @@
                             step="0.01"
                             name="original_link_insertion_price"
                             value="{{ old('original_link_insertion_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('original_link_insertion_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -257,7 +269,7 @@
                             step="0.01"
                             name="no_follow_price"
                             value="{{ old('no_follow_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('no_follow_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -270,7 +282,7 @@
                             step="0.01"
                             name="original_no_follow_price"
                             value="{{ old('original_no_follow_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('original_no_follow_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -283,7 +295,7 @@
                             step="0.01"
                             name="special_topic_price"
                             value="{{ old('special_topic_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('special_topic_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -302,7 +314,7 @@
                             step="0.01"
                             name="original_special_topic_price"
                             value="{{ old('original_special_topic_price') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('original_special_topic_price')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -317,14 +329,14 @@
                         <label class="block font-medium mb-1">Banner Price</label>
                         <input type="number" step="0.01" name="banner_price"
                                value="{{ old('banner_price', $website->banner_price ?? '') }}"
-                               class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                               class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                         @error('banner_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="block font-medium mb-1">Original Banner Price</label>
                         <input type="number" step="0.01" name="original_banner_price"
                                value="{{ old('original_banner_price', $website->original_banner_price ?? '') }}"
-                               class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                               class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                         @error('original_banner_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
                     </div>
 
@@ -333,14 +345,14 @@
                         <label class="block font-medium mb-1">Site-wide Link Price</label>
                         <input type="number" step="0.01" name="sitewide_link_price"
                                value="{{ old('sitewide_link_price', $website->sitewide_link_price ?? '') }}"
-                               class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                               class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                         @error('sitewide_link_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="block font-medium mb-1">Original Site-wide Link Price</label>
                         <input type="number" step="0.01" name="original_sitewide_link_price"
                                value="{{ old('original_sitewide_link_price', $website->original_sitewide_link_price ?? '') }}"
-                               class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500">
+                               class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                         @error('original_sitewide_link_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
                     </div>
                 </div>
@@ -354,7 +366,7 @@
                             step="0.01"
                             name="kialvo_evaluation"
                             value="{{ old('kialvo_evaluation') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('kialvo_evaluation')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -366,7 +378,7 @@
                             type="text"
                             name="date_kialvo_evaluation"
                             value="{{ old('date_kialvo_evaluation') }}"
-                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('date_kialvo_evaluation')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -382,7 +394,7 @@
                             type="number"
                             name="DA"
                             value="{{ old('DA') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('DA')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -394,7 +406,7 @@
                             type="number"
                             name="PA"
                             value="{{ old('PA') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('PA')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -406,7 +418,7 @@
                             type="number"
                             name="TF"
                             value="{{ old('TF') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('TF')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -418,7 +430,7 @@
                             type="number"
                             name="CF"
                             value="{{ old('CF') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('CF')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -433,7 +445,7 @@
                             type="number"
                             name="DR"
                             value="{{ old('DR') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('DR')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -445,7 +457,7 @@
                             type="number"
                             name="UR"
                             value="{{ old('UR') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('UR')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -457,7 +469,7 @@
                             type="number"
                             name="ZA"
                             value="{{ old('ZA') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('ZA')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -469,7 +481,7 @@
                             type="number"
                             name="as_metric"
                             value="{{ old('as_metric') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('as_metric')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -484,7 +496,7 @@
                             type="text"
                             name="seozoom"
                             value="{{ old('seozoom') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('seozoom')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -496,7 +508,7 @@
                             type="number"
                             name="semrush_traffic"
                             value="{{ old('semrush_traffic') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('semrush_traffic')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -508,7 +520,7 @@
                             type="number"
                             name="ahrefs_keyword"
                             value="{{ old('ahrefs_keyword') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('ahrefs_keyword')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -523,7 +535,7 @@
                             type="number"
                             name="ahrefs_traffic"
                             value="{{ old('ahrefs_traffic') }}"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('ahrefs_traffic')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -536,7 +548,7 @@
 
                             name="seo_metrics_date"
                             value="{{ old('seo_metrics_date') }}"
-                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('seo_metrics_date')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -549,7 +561,7 @@
                             type="text"
                             name="first_contact_date"
                             value="{{ old('first_contact_date') }}"
-                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >
                         @error('first_contact_date')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -564,7 +576,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="betting" value="1"
                                    {{ old('betting') ? 'checked' : '' }}
-                                   class="mr-2 focus:ring-cyan-500">
+                                   class="mr-2 focus:ring-green-500">
                             Betting
                         </label>
                         @error('betting')
@@ -575,7 +587,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="trading" value="1"
                                    {{ old('trading') ? 'checked' : '' }}
-                                   class="mr-2 focus:ring-cyan-500">
+                                   class="mr-2 focus:ring-green-500">
                             Trading
                         </label>
                         @error('trading')
@@ -586,7 +598,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="permanent_link" value="1"
                                    {{ old('permanent_link') ? 'checked' : '' }}
-                                   class="mr-2 focus:ring-cyan-500">
+                                   class="mr-2 focus:ring-green-500">
                             Permanent Link
                         </label>
                         @error('permanent_link')
@@ -597,7 +609,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="more_than_one_link" value="1"
                                    {{ old('more_than_one_link') ? 'checked' : '' }}
-                                   class="mr-2 focus:ring-cyan-500">
+                                   class="mr-2 focus:ring-green-500">
                             More than one link
                         </label>
                         @error('more_than_one_link')
@@ -611,7 +623,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="copywriting" value="1"
                                    {{ old('copywriting') ? 'checked' : '' }}
-                                   class="mr-2 focus:ring-cyan-500">
+                                   class="mr-2 focus:ring-green-500">
                             Copywriting
                         </label>
                         @error('copywriting')
@@ -622,7 +634,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="no_sponsored_tag" value="1"
                                    {{ old('no_sponsored_tag') ? 'checked' : '' }}
-                                   class="mr-2 focus:ring-cyan-500">
+                                   class="mr-2 focus:ring-green-500">
                             No Sponsored Tag
                         </label>
                         @error('no_sponsored_tag')
@@ -633,7 +645,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="social_media_sharing" value="1"
                                    {{ old('social_media_sharing') ? 'checked' : '' }}
-                                   class="mr-2 focus:ring-cyan-500">
+                                   class="mr-2 focus:ring-green-500">
                             Social Media Sharing
                         </label>
                         @error('social_media_sharing')
@@ -647,7 +659,7 @@
                         <label class="flex items-center">
                             <input type="checkbox" name="post_in_homepage" value="1"
                                    {{ old('post_in_homepage') ? 'checked' : '' }}
-                                   class="mr-2 focus:ring-cyan-500">
+                                   class="mr-2 focus:ring-green-500">
                             Post in Homepage
                         </label>
                         @error('post_in_homepage')
@@ -663,7 +675,7 @@
                         <textarea
                             name="extra_notes"
                             rows="3"
-                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                         >{{ old('extra_notes') }}</textarea>
                         @error('extra_notes')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -679,7 +691,7 @@
                         id="categorySelect"
                         name="category_ids[]"
                         multiple
-                        class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-cyan-500 focus:border-cyan-500"
+                        class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
                     >
 
                         @foreach($categories as $cat)
@@ -693,15 +705,16 @@
                     </select>
                 </div>
 
-                <!-- Submit -->
-                <button
-                    type="submit"
-                    class="bg-cyan-600 text-white px-16 py-2 rounded shadow hover:bg-cyan-700
-                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500
-                       text-lg"
-                >
-                    Save
-                </button>
+                <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
+                    <a href="{{ route('new_entries.index') }}"
+                       class="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                            class="inline-flex items-center justify-center gap-1.5 px-6 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <x-icon name="check" size="sm" /> Save Entry
+                    </button>
+                </div>
             </form>
         </div>
     </div>

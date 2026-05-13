@@ -28,6 +28,7 @@ class UserFavoritesController extends Controller
 
         return DataTables::of($query)
             ->addColumn('country_name', fn ($r) => optional($r->country)->country_name)
+            ->addColumn('country_iso',  fn ($r) => \App\Support\CountryCode::iso(optional($r->country)->country_name))
             ->addColumn('language_name', fn ($r) => optional($r->language)->name)
             ->addColumn('contact_name', fn ($r) => optional($r->contact)->name)
             ->addColumn('categories_list', fn ($r) => $r->categories->pluck('name')->join(', '))

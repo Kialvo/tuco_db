@@ -40,36 +40,20 @@
     .slim-scroll::-webkit-scrollbar-thumb   { background: #e2e8f0; border-radius: 2px; }
     .slim-scroll::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
-    /* Tooltip pattern */
+    /* Tooltip trigger — actual tooltip is rendered into <body> by app.js
+       so it can escape any parent overflow context. The inline .tip-box
+       carries the text and is kept in the DOM for the JS to read, but
+       remains invisible & non-blocking. */
     .tip { position: relative; display: inline-flex; align-items: center; }
     .tip .tip-box {
-        visibility: hidden;
-        opacity: 0;
         position: absolute;
-        bottom: 130%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #1e293b;
-        color: white;
-        font-size: 11px;
-        font-weight: 400;
-        padding: 4px 8px;
-        border-radius: 5px;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
         white-space: nowrap;
-        transition: opacity .15s;
-        z-index: 100;
         pointer-events: none;
     }
-    .tip .tip-box::after {
-        content: "";
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        margin-left: -4px;
-        border: 4px solid transparent;
-        border-top-color: #1e293b;
-    }
-    .tip:hover .tip-box { visibility: visible; opacity: 1; }
 
     /* Toggle switch */
     .toggle-switch {
@@ -111,6 +95,9 @@
     }
     .cart-panel.open { transform: translateX(0); }
 
+    /* Alpine: hide elements until Alpine boots so x-show bindings don't flash. */
+    [x-cloak] { display: none !important; }
+
     /* Sidebar nav active state */
     .nav-active {
         background: rgba(255, 255, 255, 0.15) !important;
@@ -119,33 +106,305 @@
 
     /* Table hover (used for native marketplace tables) */
     .ds-table tbody tr:hover td { background: #f8fafc; }
+
+    /* ──────────────────────────────────────────────────────────────
+     |  Form card — auto-styles every form field inside the container.
+     |  Used by create/edit/show pages so we don't have to touch every
+     |  individual <input> / <select> / <textarea>.
+     *─────────────────────────────────────────────────────────────*/
+    .form-card {
+        @apply bg-white rounded-xl border border-gray-200 shadow-card p-6;
+    }
+    .form-card label {
+        @apply block text-sm font-medium text-gray-700 mb-1.5;
+    }
+    .form-card input[type="text"],
+    .form-card input[type="email"],
+    .form-card input[type="password"],
+    .form-card input[type="number"],
+    .form-card input[type="date"],
+    .form-card input[type="datetime-local"],
+    .form-card input[type="tel"],
+    .form-card input[type="url"],
+    .form-card input[type="search"],
+    .form-card select,
+    .form-card textarea {
+        @apply w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white outline-none transition;
+    }
+    .form-card input[type="text"]:focus,
+    .form-card input[type="email"]:focus,
+    .form-card input[type="password"]:focus,
+    .form-card input[type="number"]:focus,
+    .form-card input[type="date"]:focus,
+    .form-card input[type="datetime-local"]:focus,
+    .form-card input[type="tel"]:focus,
+    .form-card input[type="url"]:focus,
+    .form-card input[type="search"]:focus,
+    .form-card select:focus,
+    .form-card textarea:focus {
+        @apply border-green-600;
+        box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
+    }
+    .form-card select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239ca3af' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 16px;
+        padding-right: 32px;
+    }
+    .form-card select[multiple] {
+        background-image: none;
+        padding-right: 12px;
+    }
+    .form-card input[type="checkbox"] {
+        @apply rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500;
+    }
+    .form-card .form-section + .form-section {
+        @apply mt-6 pt-6 border-t border-gray-100;
+    }
+    .form-card .form-section-title {
+        @apply text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2;
+    }
+    /* Validation error text under a field */
+    .form-card .error,
+    .form-card p.text-red-500 {
+        @apply text-xs text-red-600 mt-1;
+    }
 }
 
 /* ─────────────────────────────────────────────────────────────
- |  LEGACY OVERRIDES — kept until each list page is ported off DataTables
- |  TODO: remove once Phase 19 cleanup lands
+ |  DATATABLES SKIN — on-brand chrome for every admin list page
+ |  Targets default DataTables wrappers; respects the green theme.
  *────────────────────────────────────────────────────────────*/
+
+/* Wrapper paddings/spacing */
+.dataTables_wrapper {
+    @apply text-sm text-gray-700;
+    position: relative;
+}
+
+/* Top + bottom toolbars wrapped via DataTables dom config */
+.dt-toolbar-top,
+.dt-toolbar-bottom {
+    @apply flex items-center justify-between gap-3 px-4 py-3 bg-white flex-wrap;
+}
+.dt-toolbar-top    { @apply border-b border-gray-100 rounded-t-xl; }
+.dt-toolbar-bottom { @apply border-t border-gray-100 rounded-b-xl; }
+
+/* .dt-scroll intentionally has NO overflow set.
+   CSS spec coerces overflow-y:visible → auto whenever overflow-x is non-visible,
+   which would make .dt-scroll a scroll container and trap position:sticky inside it.
+   Without any overflow on .dt-scroll, sticky propagates up to <main overflow-auto>
+   which is the true vertical scroll container. Horizontal overflow for wide tables
+   also flows up to <main> which handles it via overflow-auto. */
+.dt-scroll {}
+
+/* ─── Sticky table headers (every table — admin DataTables + marketplace ds-table) ───
+   Apply to thead AND tr AND th simultaneously with !important, because:
+   - DataTables injects inline styles that can override our position rules
+   - position:sticky on <th> alone is unreliable with border-collapse: collapse
+   - applying at every level wins all the corner cases */
+
+/* Tables need border-collapse: separate for reliable sticky thead in all browsers.
+   Use border-spacing: 0 so the layout still looks identical to collapse. */
+.dt-scroll table.dataTable,
+.ds-table table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+.dt-scroll table.dataTable thead,
+.dt-scroll table.dataTable thead tr,
+.dt-scroll table.dataTable thead th,
+.ds-table thead,
+.ds-table thead tr,
+.ds-table thead th {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30;
+}
+
+/* Opaque background so body rows don't bleed through */
+.dt-scroll table.dataTable thead th,
+.ds-table thead th {
+    background-color: #f9fafb;
+    box-shadow: inset 0 -1px 0 #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Body cells need an opaque base so they don't show through the sticky thead while scrolling */
+.dt-scroll table.dataTable tbody td,
+.ds-table tbody td {
+    background-color: #ffffff;
+}
+.dt-scroll table.dataTable tbody tr:hover td,
+.ds-table tbody tr:hover td {
+    background-color: #f9fafb;
+}
+
+/* ─── Sticky tfoot summary row (Storages + any other future tfoot rows) ─── */
+.dt-scroll table.dataTable tfoot,
+.dt-scroll table.dataTable tfoot tr,
+.dt-scroll table.dataTable tfoot td {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 25;
+}
+.dt-scroll table.dataTable tfoot td {
+    background-color: #ffffff;
+    box-shadow: inset 0 1px 0 #e5e7eb;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Tabular numerals for numeric columns */
+.tabular-nums,
+table.dataTable td.text-right {
+    font-variant-numeric: tabular-nums;
+}
+
+/* "Show 10 entries" length menu */
+.dataTables_wrapper .dataTables_length {
+    @apply text-sm text-gray-500;
+}
 .dataTables_wrapper .dataTables_length select {
-    @apply w-14 pr-8 border border-gray-300 rounded-md text-sm py-1 pl-2;
+    @apply pr-8 pl-2.5 py-1.5 border border-gray-200 rounded-md text-sm bg-white text-gray-800;
+    min-width: 5rem;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%239ca3af' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
 }
-.dataTables_wrapper .dataTables_paginate { float: right; }
+.dataTables_wrapper .dataTables_length select:focus {
+    @apply border-green-600 outline-none;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
+}
 
-#summaryRow               { background: #0f172a; }
-#summaryRow td            { box-sizing: border-box; padding: .5rem .4rem; }
-#summaryRow .sum-val      { font: 700 0.95rem/1 'Inter', sans-serif; color: #facc15; }
+/* Search box */
+.dataTables_wrapper .dataTables_filter input {
+    @apply w-52 px-2.5 py-1.5 border border-gray-200 rounded-md text-sm bg-white text-gray-800;
+}
+.dataTables_wrapper .dataTables_filter input:focus {
+    @apply border-green-600 outline-none;
+    box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
+}
 
+/* Info "Showing 1 to 10 of N" */
+.dataTables_wrapper .dataTables_info {
+    @apply text-xs text-gray-500;
+    padding-top: 0;
+}
+
+/* Table itself */
+table.dataTable {
+    @apply w-full text-sm border-separate border-spacing-0;
+}
+table.dataTable thead th {
+    @apply bg-gray-50 px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-left border-b border-gray-200;
+}
+table.dataTable tbody td {
+    @apply px-3 py-3 text-sm text-gray-700 border-b border-gray-100;
+}
+table.dataTable tbody tr:hover td {
+    @apply bg-gray-50;
+}
+
+/* Sort icons */
+table.dataTable thead th.sorting,
+table.dataTable thead th.sorting_asc,
+table.dataTable thead th.sorting_desc {
+    @apply cursor-pointer relative pr-6;
+}
+table.dataTable thead th.sorting::after,
+table.dataTable thead th.sorting_asc::after,
+table.dataTable thead th.sorting_desc::after {
+    @apply absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs;
+    content: "⇅";
+}
+table.dataTable thead th.sorting_asc::after  { content: "▲"; @apply text-green-600; }
+table.dataTable thead th.sorting_desc::after { content: "▼"; @apply text-green-600; }
+
+/* Pagination */
+.dataTables_wrapper .dataTables_paginate {
+    @apply inline-flex items-center gap-1;
+    padding-top: 0;
+    float: none;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    @apply px-3 py-1.5 text-sm border border-gray-200 rounded-lg cursor-pointer;
+    background: transparent !important;
+    color: #4b5563 !important;          /* gray-600 */
+    margin: 0 !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #f9fafb !important;     /* gray-50 */
+    color: #111827 !important;          /* gray-900 */
+    border-color: #d1d5db !important;   /* gray-300 */
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: #16a34a !important;     /* green-600 */
+    color: #ffffff !important;
+    border-color: #16a34a !important;
+    @apply font-semibold cursor-default;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+    background: transparent !important;
+    color: #d1d5db !important;          /* gray-300 */
+    border-color: #e5e7eb !important;   /* gray-200 */
+    @apply cursor-not-allowed;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.previous::before { content: "← "; }
+.dataTables_wrapper .dataTables_paginate .paginate_button.next::after      { content: " →"; }
+
+/* DataTable Buttons (Export PDF/CSV/Print) */
+.dt-buttons .dt-button {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 mr-2;
+    background: white !important;
+}
+.dt-buttons .dt-button:focus {
+    @apply outline-none ring-2 ring-offset-2 ring-green-500;
+}
+
+/* Checkbox column for bulk-select */
+table.dataTable input[type="checkbox"] {
+    @apply rounded border-gray-300 text-green-600 focus:ring-green-500;
+}
+
+/* Storages footer summary row — sticky, light, column-aligned via the actual table */
+#summaryRow td            {
+    box-sizing: border-box;
+    padding: .5rem .6rem;
+    vertical-align: middle;
+    background: #ffffff;
+    border-top: 2px solid #e5e7eb;
+}
+#summaryRow .sum-val      {
+    font: 600 0.875rem/1.1 'Inter', sans-serif;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    display: block;
+}
+#summaryRow .sum-val:empty::before { content: '—'; color: #d1d5db; }
 #summaryRow .calc-toggle  {
-    font-size: 10px;
-    line-height: 1;
-    padding: .2rem .45rem;
-    border: 1px solid #3b82f6;
-    color: #bfdbfe;
-    background: #1e3a8a;
-    border-radius: 4px;
+    font: 600 9px/1 'Inter', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 2px 6px;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    background: #ffffff;
+    border-radius: 9999px;
     transition: all .15s;
+    cursor: pointer;
 }
-#summaryRow .calc-toggle:hover  { background: #2563eb; color: #fff; }
-#summaryRow .calc-toggle.active { background: #059669; color: #ecfdf5; border-color: transparent; }
+#summaryRow .calc-toggle:hover    { background: #f3f4f6; color: #111827; border-color: #d1d5db; }
+#summaryRow .calc-toggle.active   { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+#summaryRow .calc-toggle.inactive { background: #ffffff; color: #9ca3af; }

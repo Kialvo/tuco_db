@@ -17,151 +17,66 @@
 
 @extends('layouts.dashboard')
 
+{{-- Page header --}}
+@section('pageHeader')
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">New Entries</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Pre-publish queue and outreach pipeline.</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <a href="{{ route('new_entries.import.index') }}"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+                <x-icon name="upload" size="sm" /> Import CSV
+            </a>
+            <a href="{{ route('new_entries.create') }}"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                <x-icon name="plus" size="sm" /> Create Entry
+            </a>
+        </div>
+    </div>
+@endsection
+
+@section('filters')
+    @include('new_entries.partials.admin-filter-panel')
+@endsection
+
 @section('content')
-    <h1 class="text-lg font-bold text-gray-700 py-6">New Entries</h1>
-
     <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
-        {{-- HEADER --}}
-        <div class="flex flex-col gap-3 mb-4">
-            <div class="space-x-2">
-                <button id="toggleFiltersBtn"
-                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded shadow text-xs hover:bg-gray-400">
-                    Hide Filters
-                </button>
+        {{-- Hidden no-op placeholder so existing JS that targets #toggleFiltersBtn doesn't error --}}
+        <button id="toggleFiltersBtn" class="hidden" aria-hidden="true"></button>
 
-                <a href="{{ route('new_entries.create') }}"
-                   class="bg-cyan-600 text-white px-4 py-2 rounded shadow hover:bg-cyan-700">
-                    Create Entry
-                </a>
-
-                <a href="{{ route('new_entries.import.index') }}"
-                   class="bg-cyan-600 text-white px-3 py-2 rounded shadow hover:bg-cyan-700">
-                    Import CSV
-                </a>
-            </div>
-        </div>
-
-        {{-- FILTERS (keep your simpler set) --}}
-        <div id="filterForm"
-             class="bg-white border border-gray-200 rounded shadow p-2 mb-8 inline-block">
-            <div class="flex flex-wrap gap-2">
-                {{-- Domain --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Domain</label>
-                    <input id="filterDomainName" type="text"
-                           class="border border-gray-300 rounded px-2 py-2 w-32"
-                           placeholder="example.com">
-                </div>
-
-                {{-- Status --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Status</label>
-                    <select id="filterStatus"
-                            class="border border-gray-300 rounded px-2 py-2 w-40">
-                        <option value="">-- Any --</option>
-                        <option value="never_opened">Never Opened</option>
-                        <option value="read_but_never_answered">Read but never answered</option>
-                        <option value="waiting_for_first_answer">Waiting for 1st answer</option>
-                        <option value="refused_by_us">Refused by us</option>
-                        <option value="publisher_refused">Publisher refused</option>
-                        <option value="negotiation">Negotiation</option>
-                        <option value="active">Active</option>
-                    </select>
-                </div>
-
-                {{-- Country --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Country</label>
-                    <select id="filterCountries"
-                            class="border border-gray-300 rounded px-2 py-2 w-40">
-                        <option value="">-- Any --</option>
-                        @foreach($countries as $c)
-                            <option value="{{ $c->id }}">{{ $c->country_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- Language --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">Language</label>
-                    <select id="filterLanguage"
-                            class="border border-gray-300 rounded px-2 py-2 w-40">
-                        <option value="">-- Any --</option>
-                        @foreach($languages as $lang)
-                            <option value="{{ $lang->id }}">{{ $lang->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- 1st Contact date range --}}
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">1st Contact From</label>
-                    <input id="filterFirstFrom" type="text"
-                           class="border border-gray-300 rounded px-2 py-2 w-36"
-                           placeholder="YYYY-MM-DD">
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-gray-700 font-medium">To</label>
-                    <input id="filterFirstTo" type="text"
-                           class="border border-gray-300 rounded px-2 py-2 w-36"
-                           placeholder="YYYY-MM-DD">
-                </div>
-            </div>
-
-            {{-- Filter buttons --}}
-            <div class="flex space-x-2 mt-3">
-                <button id="btnSearch"
-                        class="bg-cyan-600 text-white px-4 py-2 rounded shadow text-xs hover:bg-cyan-700">
-                    Search
-                </button>
-                <button id="btnClear"
-                        class="bg-gray-400 text-white px-4 py-2 rounded shadow text-xs hover:bg-gray-500">
-                    Clear
-                </button>
-            </div>
-        </div>
-
-        {{-- ACTION BAR (identical pattern to Websites) --}}
+        {{-- ACTION BAR --}}
         <div id="actionBar"
-             class="flex items-center gap-3 mb-2 sticky top-0 z-10 bg-gray-50 border-b border-gray-200 py-2">
-
-            {{-- Bulk Edit --}}
+             class="flex items-center flex-wrap gap-2 mb-3 px-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-card">
             <button id="btnBulkEdit"
-                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
-                           bg-amber-600 hover:bg-amber-700 text-white shadow disabled:opacity-50
-                           disabled:cursor-not-allowed">
-                <i class="fas fa-pen"></i> Bulk&nbsp;Edit
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200
+                           disabled:opacity-50 disabled:cursor-not-allowed">
+                <x-icon name="pencil" size="sm" /> Bulk Edit
             </button>
-
-            {{-- Restore / Rollback --}}
             <button id="btnBulkRestore"
-                    class="flex items-center gap-1 px-3 py-1.5 rounded text-xs
-                           bg-purple-600 hover:bg-purple-700 text-white shadow disabled:opacity-50
-                           disabled:cursor-not-allowed">
-                <i class="fas fa-history"></i> Restore
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200
+                           disabled:opacity-50 disabled:cursor-not-allowed">
+                <x-icon name="history" size="sm" /> Restore
             </button>
-
-            {{-- Sync DataforSEO --}}
+            <span class="h-5 w-px bg-gray-200 mx-1"></span>
             <button id="btnSyncDataForSeo"
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs shadow transition-colors duration-150"
-                    style="background-color:#4f46e5; color:#fff; border: 1px solid #6366f1;"
-                    onmouseover="this.style.backgroundColor='#4338ca'"
-                    onmouseout="this.style.backgroundColor='#4f46e5'">
-                <i class="fas fa-satellite-dish" style="color:#c7d2fe;"></i>
-                Sync DataforSEO
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
+                <x-icon name="satellite" size="sm" /> Sync DataforSEO
             </button>
-
-            {{-- live counter --}}
-            <span class="ml-2 text-sm text-gray-600">
-                Selected:&nbsp;<span id="selCount">0</span>
+            <span class="ml-auto text-xs text-gray-500">
+                Selected: <span id="selCount" class="font-semibold text-gray-800">0</span>
             </span>
         </div>
 
         <div id="newEntriesTableSearchWrap" class="table-search-wrap">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
-                        focus-within:ring-1 focus-within:ring-cyan-500 focus-within:border-cyan-500">
+                        focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500">
                 <span class="px-3 text-gray-400 text-base leading-none">
-                    <i class="fas fa-search"></i>
+                    <x-icon name="search" size="sm" class="inline" />
                 </span>
                 <input id="newEntriesTableSearch" type="text"
                        class="w-full bg-transparent border-0 focus:ring-0 focus:outline-none py-2 pr-3 text-sm leading-5"
@@ -170,12 +85,12 @@
         </div>
 
         {{-- TABLE --}}
-        <div class="bg-white border border-gray-200 rounded shadow p-2 overflow-x-auto">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card">
             <table id="newEntriesTable" class="text-xs text-gray-700 w-full min-w-[1550px]">
                 <thead>
                 <tr class="border-b border-gray-200 bg-gray-50 text-[12px] uppercase text-gray-500 tracking-wider">
                     <th class="px-4 py-2">
-                        <input type="checkbox" id="chkAll" class="form-checkbox h-4 w-4 text-cyan-600">
+                        <input type="checkbox" id="chkAll" class="form-checkbox h-4 w-4 text-green-600">
                     </th>
                     <th class="px-4 py-2">ID</th>
                     <th class="px-4 py-2">Domain</th>
@@ -219,10 +134,10 @@
                             TF vs CF
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Majestic Trust Flow divided by Citation Flow. It compares link quality vs quantity; usually, higher is better."
                                         aria-label="What is TF vs CF?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Majestic Trust Flow divided by Citation Flow. It compares link quality vs quantity; usually, higher is better.
@@ -238,10 +153,10 @@
                             Keywords vs Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Compares ranking keywords with estimated visits. Higher generally means keyword visibility turns into stronger traffic."
                                         aria-label="What is Keywords vs Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Compares ranking keywords with estimated visits. Higher generally means keyword visibility turns into stronger traffic.
@@ -254,10 +169,10 @@
                             MS
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Menford Score: proprietary authority score (0–1,000) based on a weighted average of backlink profile strength across multiple competitive intelligence sources. Higher is better; 100–200 entry level, 200–400 good, 400+ strong."
                                         aria-label="What is MS?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Menford Score: proprietary authority score (0–1,000) based on a weighted average of backlink profile strength across multiple competitive intelligence sources. Higher is better; 100–200 entry level, 200–400 good, 400+ strong.
@@ -270,10 +185,10 @@
                             Organic Keywords
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Organic Keywords: estimated number of keywords a domain ranks for in organic search results globally, aggregated across multiple competitive intelligence sources. Higher values indicate broader topical relevance and search visibility; 1,000–5,000 entry level, 5,000–30,000 good, 30,000+ strong."
                                         aria-label="What is Organic Keywords?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Organic Keywords: estimated number of keywords a domain ranks for in organic search results globally, aggregated across multiple competitive intelligence sources. Higher values indicate broader topical relevance and search visibility; 1,000–5,000 entry level, 5,000–30,000 good, 30,000+ strong.
@@ -286,10 +201,10 @@
                             Organic Traffic
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Organic Traffic: estimated monthly organic search visits, aggregated across multiple competitive intelligence sources. Values are best used for comparative analysis across domains rather than as standalone figures; 5,000–20,000 entry level, 20,000–200,000 good, 200,000+ strong."
                                         aria-label="What is Organic Traffic?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Organic Traffic: estimated monthly organic search visits, aggregated across multiple competitive intelligence sources. Values are best used for comparative analysis across domains rather than as standalone figures; 5,000–20,000 entry level, 20,000–200,000 good, 200,000+ strong.
@@ -308,10 +223,10 @@
                             More than 1 link
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="YES means the publisher can place multiple links in one article/page, not only one link."
                                         aria-label="What does More than 1 link mean?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     YES means the publisher can place multiple links in one article/page, not only one link.
@@ -325,10 +240,10 @@
                             Sponsored Tag
                             <span class="relative inline-flex group cursor-help">
                                 <button type="button"
-                                        class="metric-info-btn text-cyan-600 text-[11px]"
+                                        class="metric-info-btn text-green-600 text-[11px]"
                                         data-info="Shows whether links are marked rel=&quot;sponsored&quot;. YES means sponsored-tagged links, often with lower SEO impact."
                                         aria-label="What is Sponsored Tag?">
-                                    <i class="fas fa-info-circle"></i>
+                                    <x-icon name="info" size="sm" class="inline" />
                                 </button>
                                 <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
                                     Shows whether links are marked rel="sponsored". YES means sponsored-tagged links, often with lower SEO impact.
@@ -363,25 +278,39 @@
         $(function () {
             /* ========== helpers (same as Websites) ========== */
             const statusMap = [
-                {value:'never_opened',            label:'Never Opened'},
-                {value:'read_but_never_answered', label:'Read but never answered'},
-                {value:'waiting_for_first_answer',label:'Waiting for 1st answer'},
-                {value:'refused_by_us',           label:'Refused by us'},
-                {value:'publisher_refused',       label:'Publisher refused'},
-                {value:'negotiation',             label:'Negotiation'},
-                {value:'active',                  label:'Active'},
+                {value:'never_opened',            label:'Never Opened',           tone:'bg-gray-100 text-gray-500 ring-gray-200'},
+                {value:'read_but_never_answered', label:'Read but never answered',tone:'bg-amber-100 text-amber-700 ring-amber-200'},
+                {value:'waiting_for_first_answer',label:'Waiting for 1st answer', tone:'bg-blue-100 text-blue-700 ring-blue-200'},
+                {value:'refused_by_us',           label:'Refused by us',          tone:'bg-red-100 text-red-700 ring-red-200'},
+                {value:'publisher_refused',       label:'Publisher refused',      tone:'bg-red-100 text-red-700 ring-red-200'},
+                {value:'negotiation',             label:'Negotiation',            tone:'bg-blue-100 text-blue-700 ring-blue-200'},
+                {value:'active',                  label:'Active',                 tone:'bg-green-100 text-green-700 ring-green-200'},
             ];
-            function selectHTML(cur, id){
-                let html = `<select class="status-dd border border-gray-300 rounded px-1 py-[2px] text-xs" data-id="${id}">`;
-                statusMap.forEach(({value,label})=>{
-                    const sel = (String(cur)===value)?'selected':'';
-                    html += `<option value="${value}" ${sel}>${label}</option>`;
-                });
-                return html + '</select>';
+            const statusByValue = Object.fromEntries(statusMap.map(s => [s.value, s]));
+            function pillHTML(cur, id){
+                const info = statusByValue[String(cur)] || { label: (cur ? String(cur).replace(/_/g,' ') : '—'), tone:'bg-gray-100 text-gray-700 ring-gray-200' };
+                const empty = !cur ? 'text-gray-300' : '';
+                return `<button type="button" class="status-pill inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${info.tone} ${empty} hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-500" data-id="${id}" data-status="${cur||''}">
+                            ${info.label}
+                            <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </button>`;
             }
-            const money = v => (v==null? '' : `<strong>&euro; ${v}</strong>`);
-            const yesNo = v => (v ? 'YES' : 'NO');
-            const dateFmt = v => (v ? new Date(v).toLocaleDateString('en-GB') : '');
+            const emDash = '<span class="text-gray-300">—</span>';
+            const money = v => (v==null || v==='' ? emDash : `<span class="font-semibold text-gray-800">€ ${v}</span>`);
+            const profitFmt = v => {
+                if (v==null || v==='') return emDash;
+                const neg = Number(v) < 0;
+                return `<span class="font-semibold ${neg ? 'text-red-600' : 'text-gray-800'}">€ ${v}</span>`;
+            };
+            const renderMetric = v => (v==null || v==='' ? emDash : v);
+            const renderCurrencyPill = v => v
+                ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200">${String(v).toUpperCase()}</span>`
+                : emDash;
+            const yesNoPill = v => v
+                ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700 ring-1 ring-inset ring-green-200">YES</span>'
+                : '<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-500 ring-1 ring-inset ring-gray-200">NO</span>';
+            const yesNo = yesNoPill;
+            const dateFmt = v => (v ? new Date(v).toLocaleDateString('en-GB') : emDash);
             const decodeHtml = (value) => $('<textarea/>').html(value ?? '').text();
             const showInfoPopup = (message) => {
                 if (!message) return;
@@ -462,9 +391,9 @@
             /* ========== DataTable (same renderers/order as Websites) ========== */
             window.tbl = $('#newEntriesTable').DataTable({
                 processing:true, serverSide:true,
-                dom: "<'dt-top flex items-center justify-between mb-2'<'dt-left flex items-center gap-3'l<'dt-search'>>>" +
-                    "tr" +
-                    "<'flex items-center justify-between mt-2'<'dt-info'i><'dt-pagination'p>>",
+                dom: "<'dt-toolbar-top'<'flex items-center gap-3'l<'dt-search'>>>" +
+                     "<'dt-scroll'rt>" +
+                     "<'dt-toolbar-bottom'ip>",
                 ajax:{
                     url:"{{ route('new_entries.data') }}",
                     type:"POST",
@@ -481,7 +410,7 @@
                 columns:[
                     {
                         data: 'id', orderable:false, searchable:false, className:'text-center',
-                        render: id => `<input type="checkbox" class="rowChk form-checkbox h-4 w-4 text-cyan-600" value="${id}">`
+                        render: id => `<input type="checkbox" class="rowChk form-checkbox h-4 w-4 text-green-600" value="${id}">`
                     },
                     { data:'id' },
                     { data:'domain_name' },
@@ -490,13 +419,21 @@
                         render:d=>{
                             if(!d) return '';
                             const safe=$('<div>').text(d).html();
-                            return `<a href="#" class="note-link text-cyan-700" data-note="${safe}">
-                              <i class="fas fa-comment-dots"></i></a>`;
+                            return `<a href="#" class="note-link text-green-700" data-note="${safe}">
+                              <x-icon name="comment" size="sm" class="inline" /></a>`;
                         }
                     },
 
-                    { data:'status', render:(d,t,r)=> t==='display' ? selectHTML(d,r.id) : d },
-                    { data:'country_name' },
+                    { data:'status', render:(d,t,r)=> t==='display' ? pillHTML(d,r.id) : d },
+                    { data:'country_name',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            const flag = row.country_iso
+                                ? `<img src="https://flagcdn.com/48x36/${row.country_iso}.png" srcset="https://flagcdn.com/96x72/${row.country_iso}.png 2x" width="20" height="15" alt="" class="rounded-sm border border-gray-200" loading="lazy">`
+                                : '';
+                            return `<span class="inline-flex items-center gap-1.5">${flag}<span>${data}</span></span>`;
+                        }
+                    },
                     { data:'language_name' },
                     {
                         data: 'contact_name',
@@ -509,37 +446,47 @@
                         </a>`;
                         }
                     },
-                    { data:'currency_code' },
+                    { data:'currency_code', render: renderCurrencyPill, className: 'text-center' },
 
-                    { data:'publisher_price',      render:money, className:'text-center' },
-                    { data:'no_follow_price',      render:money, className:'text-center' },
-                    { data:'special_topic_price',  render:money, className:'text-center' },
-                    { data:'price',                render:money, className:'text-center' },
-                    { data:'sensitive_topic_price',render:money, className:'text-center' },
-                    { data:'link_insertion_price', render:money, className:'text-center' },
-                    { data:'banner_price',         render:money, className:'text-center' },
-                    { data:'sitewide_link_price',  render:money, className:'text-center' },
+                    { data:'publisher_price',      render:money,     className:'text-right' },
+                    { data:'no_follow_price',      render:money,     className:'text-right' },
+                    { data:'special_topic_price',  render:money,     className:'text-right' },
+                    { data:'price',                render:money,     className:'text-right' },
+                    { data:'sensitive_topic_price',render:money,     className:'text-right' },
+                    { data:'link_insertion_price', render:money,     className:'text-right' },
+                    { data:'banner_price',         render:money,     className:'text-right' },
+                    { data:'sitewide_link_price',  render:money,     className:'text-right' },
 
-                    { data:'kialvo_evaluation',    render:money, className:'text-center' },
-                    { data:'profit',               render:money, className:'text-center' },
+                    { data:'kialvo_evaluation',    render:money,     className:'text-right' },
+                    { data:'profit',               render:profitFmt, className:'text-right' },
 
                     { data:'date_publisher_price', render:dateFmt, className:'text-center' },
                     { data:'linkbuilder',          className:'text-center' },
                     { data:'type_of_website',      className:'text-center' },
-                    { data:'categories_list',      className:'text-center' },
+                    { data:'categories_list', className:'text-center max-w-[160px]',
+                        render: function (data, type, row) {
+                            if (! data) return '<span class="text-gray-300">—</span>';
+                            if (type !== 'display') return data;
+                            const parts = data.split(',').map(s => s.trim()).filter(Boolean);
+                            if (parts.length <= 2) return `<span class="text-xs text-gray-600">${data}</span>`;
+                            const shown = parts.slice(0, 2).join(', ');
+                            const safe = data.replace(/"/g, '&quot;');
+                            return `<span class="text-xs text-gray-600" title="${safe}">${shown} <span class="text-gray-400">+${parts.length - 2} more</span></span>`;
+                        }
+                    },
 
-                    { data:'DA', className:'text-center' }, { data:'PA', className:'text-center' },
-                    { data:'TF', className:'text-center' }, { data:'CF', className:'text-center' },
-                    { data:'DR', className:'text-center' }, { data:'UR', className:'text-center' },
-                    { data:'ZA', className:'text-center' }, { data:'as_metric', className:'text-center' },
+                    { data:'DA', render:renderMetric, className:'text-right' }, { data:'PA', render:renderMetric, className:'text-right' },
+                    { data:'TF', render:renderMetric, className:'text-right' }, { data:'CF', render:renderMetric, className:'text-right' },
+                    { data:'DR', render:renderMetric, className:'text-right' }, { data:'UR', render:renderMetric, className:'text-right' },
+                    { data:'ZA', render:renderMetric, className:'text-right' }, { data:'as_metric', render:renderMetric, className:'text-right' },
 
-                    { data:'seozoom', className:'text-center' }, { data:'TF_vs_CF', className:'text-center' },
-                    { data:'semrush_traffic', className:'text-center' }, { data:'ahrefs_keyword', className:'text-center' },
-                    { data:'ahrefs_traffic', className:'text-center' }, { data:'keyword_vs_traffic', className:'text-center' },
-                    { data:'ms',               type:'number', className:'text-center' },
-                    { data:'organic_keywords', type:'number', className:'text-center' },
-                    { data:'organic_traffic',  type:'number', className:'text-center' },
-                    { data:'kw_traffic_ratio', type:'number', className:'text-center' },
+                    { data:'seozoom', render:renderMetric, className:'text-right' }, { data:'TF_vs_CF', render:renderMetric, className:'text-right' },
+                    { data:'semrush_traffic', render:renderMetric, className:'text-right' }, { data:'ahrefs_keyword', render:renderMetric, className:'text-right' },
+                    { data:'ahrefs_traffic', render:renderMetric, className:'text-right' }, { data:'keyword_vs_traffic', render:renderMetric, className:'text-right' },
+                    { data:'ms',               type:'number', render:renderMetric, className:'text-right' },
+                    { data:'organic_keywords', type:'number', render:renderMetric, className:'text-right' },
+                    { data:'organic_traffic',  type:'number', render:renderMetric, className:'text-right' },
+                    { data:'kw_traffic_ratio', type:'number', render:renderMetric, className:'text-right' },
                     { data:'seo_metrics_date', render:dateFmt, className:'text-center' },
 
                     { data:'betting', render:yesNo, className:'text-center' },
@@ -589,8 +536,8 @@
                 }
             });
 
-            // status inline change (same pattern as you had)
-            $(document).on('change', '.status-dd', function () {
+            // status inline change (replaced by pill popover below; legacy <select> path kept inert)
+            $(document).on('change', '.status-dd-disabled', function () {
                 const $sel = $(this), newVal = $sel.val();
                 $.ajax({
                     url: `{{ url('/new-entries') }}/${$sel.data('id')}/status`,
@@ -609,6 +556,65 @@
                     }
                 });
             });
+
+            /* ===== Status pill popover (replaces inline <select>) ===== */
+            const $statusPopover = $(`
+                <div id="statusPopover" class="hidden absolute z-50 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-1">
+                    ${statusMap.map(s => `
+                        <button type="button" data-value="${s.value}"
+                                class="status-pop-item w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50 flex items-center gap-2">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ${s.tone}">${s.label}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `).appendTo('body');
+            let popoverPillId = null;
+            function closeStatusPopover() {
+                $statusPopover.addClass('hidden');
+                popoverPillId = null;
+            }
+            $(document).on('click', '.status-pill', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                const $btn = $(this);
+                const id = $btn.data('id');
+                const cur = String($btn.data('status') || '');
+                if (popoverPillId === id && !$statusPopover.hasClass('hidden')) { closeStatusPopover(); return; }
+                popoverPillId = id;
+                $statusPopover.find('.status-pop-item').each(function () {
+                    $(this).toggleClass('bg-gray-50 font-semibold', $(this).data('value') === cur);
+                });
+                const rect = this.getBoundingClientRect();
+                $statusPopover.css({
+                    top: (window.scrollY + rect.bottom + 4) + 'px',
+                    left: (window.scrollX + rect.left) + 'px',
+                }).removeClass('hidden');
+            });
+            $(document).on('click', '.status-pop-item', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                const newVal = $(this).data('value');
+                const id = popoverPillId;
+                closeStatusPopover();
+                if (!id) return;
+                $.ajax({
+                    url: `{{ url('/new-entries') }}/${id}/status`,
+                    type: 'PUT',
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    data: { status: newVal },
+                    success: () => {
+                        Swal.fire({ toast:true, position:'top-end', timer:2500, showConfirmButton:false,
+                            icon:'success', title:'Status changed to ' + ((statusByValue[newVal]||{}).label || newVal) });
+                        tbl.ajax.reload(null, false);
+                    },
+                    error: () => {
+                        Swal.fire({ toast:true, position:'top-end', timer:3000, showConfirmButton:false,
+                            icon:'error', title:'Status update failed' });
+                        tbl.ajax.reload(null, false);
+                    }
+                });
+            });
+            $(document).on('click', () => closeStatusPopover());
+            $(document).on('keydown', (e) => { if (e.key === 'Escape') closeStatusPopover(); });
+            $(window).on('scroll resize', () => closeStatusPopover());
 
             // live selected count + enable/disable buttons (exactly like Websites)
             function updateSelCount(){ $('#selCount').text($('.rowChk:checked').length); }
@@ -698,27 +704,27 @@
                     return;
                 }
                 if(meta.type==='date'){
-                    wrap.append(`<input id="bulkValue" type="date" class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-cyan-500">`);
+                    wrap.append(`<input id="bulkValue" type="date" class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-green-500">`);
                     return;
                 }
                 if(meta.type==='select'){
                     const none=`<option value="">-- Clear --</option>`;
                     const opts = Object.entries(meta.options || {}).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
-                    wrap.append(`<select id="bulkValue" class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-cyan-500">${none}${opts}</select>`);
+                    wrap.append(`<select id="bulkValue" class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-green-500">${none}${opts}</select>`);
                     if($('#bulkValue option').length>15){ $('#bulkValue').select2({width:'resolve', dropdownAutoWidth:true}); }
                     return;
                 }
                 if(meta.type==='multiselect'){
                     const opts = Object.entries(meta.options || {}).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
-                    wrap.append(`<select id="bulkValue" multiple class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-cyan-500">${opts}</select>`);
+                    wrap.append(`<select id="bulkValue" multiple class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-green-500">${opts}</select>`);
                     $('#bulkValue').select2({width:'resolve', dropdownAutoWidth:true});
                     return;
                 }
                 if(meta.type==='textarea'){
-                    wrap.append(`<textarea id="bulkValue" rows="3" class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-cyan-500"></textarea>`);
+                    wrap.append(`<textarea id="bulkValue" rows="3" class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-green-500"></textarea>`);
                     return;
                 }
-                wrap.append(`<input id="bulkValue" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-cyan-500">`);
+                wrap.append(`<input id="bulkValue" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:ring-green-500">`);
             }
             $('#bulkField').on('change', buildBulkInput);
 

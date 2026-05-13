@@ -1,24 +1,56 @@
-<div id="contactModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
-    <div class="bg-white rounded shadow-lg w-[520px] p-4">
-        <div class="flex justify-between items-center mb-2">
-            <h3 class="text-sm font-semibold text-gray-700">Contact</h3>
-            <button id="closeContactModal" class="text-gray-500 hover:text-gray-700">&times;</button>
+{{-- Contact Details modal (new entries) --}}
+<div id="contactModal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4 flex"
+     aria-labelledby="modalContactTitle"
+     role="dialog"
+     aria-modal="true">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0">
+            <h2 id="modalContactTitle" class="text-base font-bold text-gray-800">Contact Details</h2>
+            <button type="button" id="closeContactModal"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition">
+                <x-icon name="x" size="lg" />
+            </button>
         </div>
 
-        <div class="text-xs space-y-1">
-            <div><span class="font-medium">Name:</span> <span id="modalContactName"></span></div>
-            <div><span class="font-medium">Email:</span> <span id="modalContactEmail"></span></div>
-            <div><span class="font-medium">Phone:</span> <span id="modalContactPhone"></span></div>
-            <div><span class="font-medium">Facebook:</span> <span id="modalContactFacebook"></span></div>
-            <div><span class="font-medium">Instagram:</span> <span id="modalContactInstagram"></span></div>
-            <div class="mt-2">
-                <div class="font-medium">Websites:</div>
-                <div id="modalContactWebsites" class="pl-3"></div>
+        {{-- Body --}}
+        <div class="px-5 py-4 overflow-y-auto slim-scroll flex-1">
+            <dl class="divide-y divide-gray-100 text-sm">
+                <div class="py-2 grid grid-cols-3 gap-2">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</dt>
+                    <dd id="modalContactName" class="col-span-2 text-gray-800"></dd>
+                </div>
+                <div class="py-2 grid grid-cols-3 gap-2">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</dt>
+                    <dd id="modalContactEmail" class="col-span-2 text-gray-800 break-all"></dd>
+                </div>
+                <div class="py-2 grid grid-cols-3 gap-2">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</dt>
+                    <dd id="modalContactPhone" class="col-span-2 text-gray-800"></dd>
+                </div>
+                <div class="py-2 grid grid-cols-3 gap-2">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Facebook</dt>
+                    <dd id="modalContactFacebook" class="col-span-2 text-gray-800 break-all"></dd>
+                </div>
+                <div class="py-2 grid grid-cols-3 gap-2">
+                    <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Instagram</dt>
+                    <dd id="modalContactInstagram" class="col-span-2 text-gray-800 break-all"></dd>
+                </div>
+            </dl>
+
+            <div class="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-lg">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Websites for this contact</p>
+                <div id="modalContactWebsites" class="text-sm text-gray-700 space-y-1"></div>
             </div>
         </div>
 
-        <div class="mt-3 flex justify-end">
-            <button id="closeContactModalBottom" class="bg-gray-500 text-white px-3 py-1 rounded text-xs">Close</button>
+        {{-- Footer --}}
+        <div class="px-5 py-3 border-t border-gray-100 flex justify-end rounded-b-2xl flex-shrink-0">
+            <button type="button" id="closeContactModalBottom"
+                    class="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                Close
+            </button>
         </div>
     </div>
 </div>

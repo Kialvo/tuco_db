@@ -103,21 +103,24 @@ class NewEntryController extends Controller
 
         return DataTables::of($q)
             ->addColumn('country_name',    fn ($r) => optional($r->country)->country_name)
+            ->addColumn('country_iso',     fn ($r) => \App\Support\CountryCode::iso(optional($r->country)->country_name))
             ->addColumn('language_name',   fn ($r) => optional($r->language)->name)
             ->addColumn('contact_name',    fn ($r) => optional($r->contact)->name)
             ->addColumn('categories_list', fn ($r) => $r->categories->pluck('name')->join(', '))
             ->addColumn('action', function ($row) {
+                $iconEye     = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
+                $iconEdit    = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>';
+                $iconTrash   = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+                $iconRestore = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>';
+
                 if ($row->trashed()) {
                     $restoreUrl = route('new_entries.restore', $row->id);
                     return '
-                        <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
+                        <form action="'.$restoreUrl.'" method="POST" class="inline">
                             '.csrf_field().'
-                            <button
-                                onclick="return confirm(\'Are you sure you want to restore this entry?\')"
-                                class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
-                                       hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                <i class="fas fa-undo-alt mr-1"></i> Restore
-                            </button>
+                            <button type="submit" title="Restore"
+                                    onclick="return confirm(\'Restore this entry?\')"
+                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100 transition">'.$iconRestore.'</button>
                         </form>';
                 }
 
@@ -126,27 +129,18 @@ class NewEntryController extends Controller
                 $deleteUrl = route('new_entries.destroy', $row->id);
 
                 return '
-                <div class="inline-flex space-x-1">
-                    <a href="'.$viewUrl.'"
-                       class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
-                              hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        <i class="fas fa-eye mr-1"></i> View
-                    </a>
-                    <a href="'.$editUrl.'"
-                       class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
-                              hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                        <i class="fas fa-pen mr-1"></i> Edit
-                    </a>
-                    <form action="'.$deleteUrl.'" method="POST" style="display:inline-block;">
-                        '.csrf_field().method_field("DELETE").'
-                        <button
-                            onclick="return confirm(\'Are you sure you want to delete this entry?\')"
-                            class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
-                                   hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                            <i class="fas fa-trash mr-1"></i> Delete
-                        </button>
-                    </form>
-                </div>';
+                    <div class="inline-flex items-center gap-1">
+                        <a href="'.$viewUrl.'" title="View"
+                           class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition">'.$iconEye.'</a>
+                        <a href="'.$editUrl.'" title="Edit"
+                           class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition">'.$iconEdit.'</a>
+                        <form action="'.$deleteUrl.'" method="POST" class="inline">
+                            '.csrf_field().method_field("DELETE").'
+                            <button type="submit" title="Delete"
+                                    onclick="return confirm(\'Delete this entry?\')"
+                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700 transition">'.$iconTrash.'</button>
+                        </form>
+                    </div>';
             })
             ->rawColumns(['action'])
             ->make(true);

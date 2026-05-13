@@ -52,17 +52,117 @@ class WebsiteController extends Controller
         return auth()->check() && auth()->user()->isGuest();
     }
     /**
-     * Display the index page with filters and DataTable.
+     * Display the index page.
+     *
+     * Guests see the marketplace view (server-paginated, filter panel left).
+     * Admins/editors see the existing DataTable view.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Load foreign data for the filter form.
+        if ($this->isGuestUser()) {
+            return $this->guestMarketplace($request);
+        }
+
+        // Existing admin/editor behaviour — DataTable-driven, dropdowns supplied for filter form.
         $countries  = Country::all();
         $languages  = Language::all();
         $contacts   = Contact::all();
         $categories = Category::where('name', '!=', 'Betting')->get();
 
         return view('websites.index', compact('countries','languages','contacts','categories'));
+    }
+
+    /**
+     * Guest-facing favorites list (own favorites only).
+     */
+    public function guestFavorites(Request $request)
+    {
+        $favoriteIds = auth()->user()->favoriteWebsites()->pluck('websites.id')->all();
+
+        $perPage = (int) $request->get('per_page', 25);
+        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 25;
+        }
+
+        if (empty($favoriteIds)) {
+            $websites = Website::whereRaw('1 = 0')->paginate($perPage);
+        } else {
+            $websites = Website::with(['country'])
+                ->whereIn('id', $favoriteIds)
+                ->orderBy('domain_name')
+                ->paginate($perPage);
+        }
+
+        return view('marketplace.favorites', [
+            'websites'    => $websites,
+            'favoriteIds' => array_flip($favoriteIds),
+            'perPage'     => $perPage,
+        ]);
+    }
+
+    /**
+     * Guest-facing marketplace listing of domains.
+     */
+    private function guestMarketplace(Request $request)
+    {
+        $perPage = (int) $request->get('per_page', 10);
+        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 10;
+        }
+
+        $allowedSorts = ['domain_name', 'price', 'sensitive_topic_price', 'DA', 'PA', 'ms', 'created_at'];
+        $sort      = in_array($request->get('sort'), $allowedSorts, true) ? $request->get('sort') : 'ms';
+        $direction = $request->get('direction') === 'asc' ? 'asc' : 'desc';
+
+        $query = Website::with(['country', 'language', 'categories'])
+            ->select([
+                'id', 'domain_name', 'country_id', 'language_id', 'type_of_website',
+                'price', 'sensitive_topic_price',
+                'DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'as_metric',
+                'semrush_traffic', 'ahrefs_keyword', 'ahrefs_traffic', 'keyword_vs_traffic',
+                'ms', 'organic_keywords', 'organic_traffic', 'kw_traffic_ratio',
+                'created_at',
+            ]);
+
+        $this->applyFilters($request, $query);
+        $query->orderBy($sort, $direction);
+
+        $websites = $query->paginate($perPage)->withQueryString();
+
+        $favoriteIds = auth()->user()
+            ? auth()->user()->favoriteWebsites()->pluck('websites.id')->all()
+            : [];
+
+        $totalCount = Website::query()
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhereRaw('LOWER(status) <> ?', ['past']);
+            })
+            ->count();
+
+        $countries  = Country::orderBy('country_name')->get(['id', 'country_name']);
+        $languages  = Language::orderBy('name')->get(['id', 'name']);
+        $categories = Category::where('name', '!=', 'Betting')->orderBy('name')->get(['id', 'name']);
+
+        // Active filter chip count (anything in the URL except pagination/sort)
+        $filterParams = $request->except(['page', 'per_page', 'sort', 'direction']);
+        $activeCount  = collect($filterParams)->filter(function ($v) {
+            if (is_array($v)) return count($v) > 0;
+            return $v !== null && $v !== '' && $v !== '0';
+        })->count();
+
+        return view('marketplace.domains', [
+            'websites'    => $websites,
+            'favoriteIds' => array_flip($favoriteIds),
+            'countries'   => $countries,
+            'languages'   => $languages,
+            'categories'  => $categories,
+            'activeCount' => $activeCount,
+            'totalCount'  => $totalCount,
+            'perPage'     => $perPage,
+            'sort'        => $sort,
+            'direction'   => $direction,
+            'filters'     => $request->all(),
+        ]);
     }
 
 
@@ -73,12 +173,21 @@ class WebsiteController extends Controller
     {
         $isGuestUser = $this->isGuestUser();
         $favoriteIds = [];
+        $cartIds = [];
         if ($isGuestUser) {
             $favoriteIds = DB::table('user_favorite_domains')
                 ->where('user_id', auth()->id())
                 ->pluck('website_id')
                 ->all();
             $favoriteIds = array_fill_keys($favoriteIds, true);
+
+            $cartIds = DB::table('order_items')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->where('orders.user_id', auth()->id())
+                ->where('orders.status', \App\Models\Order::STATUS_DRAFT)
+                ->pluck('order_items.website_id')
+                ->all();
+            $cartIds = array_fill_keys($cartIds, true);
         }
 
         // 1) base query + eager-loads
@@ -100,74 +209,60 @@ class WebsiteController extends Controller
         // 3) feed into Yajra
         $dataTable = DataTables::of($query)
             ->addColumn('is_favorite', fn ($r) => $isGuestUser && isset($favoriteIds[$r->id]))
+            ->addColumn('is_in_cart',  fn ($r) => $isGuestUser && isset($cartIds[$r->id]))
             ->addColumn('banner_price',        fn($r)=>$r->banner_price)
             ->addColumn('sitewide_link_price', fn($r)=>$r->sitewide_link_price)
             ->addColumn('country_name',    fn ($r) => optional($r->country)->country_name)
+            ->addColumn('country_iso',     fn ($r) => \App\Support\CountryCode::iso(optional($r->country)->country_name))
             ->addColumn('language_name',   fn ($r) => optional($r->language)->name)
             ->addColumn('contact_name',    fn ($r) => $isGuestUser ? null : optional($r->contact)->name)
             ->addColumn('categories_list', fn ($r) => $r->categories->pluck('name')->join(', '))
             ->addColumn('action', function($row) use ($isGuestUser) {
                 $viewUrl = route('websites.show', $row->id);
 
+                /* Reusable inline SVG icons (single-line so JS templates parse OK) */
+                $iconEye    = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
+                $iconEdit   = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>';
+                $iconTrash  = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+                $iconRestore= '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>';
+
                 if ($isGuestUser) {
                     return '
-            <a href="'.$viewUrl.'"
-               class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
-                      hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                <i class="fas fa-eye mr-1"></i> View
-            </a>
-        ';
+                        <a href="'.$viewUrl.'" title="View"
+                           class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-50 text-green-700 hover:bg-green-100 transition">'
+                           .$iconEye.
+                        '</a>';
                 }
 
-                // Check if this website is soft-deleted (trashed)
                 if ($row->trashed()) {
                     $restoreUrl = route('websites.restore', $row->id);
                     return '
-            <form action="'.$restoreUrl.'" method="POST" style="display:inline;">
-                '.csrf_field().'
-                <button
-                    onclick="return confirm(\'Are you sure you want to restore this website?\')"
-                    class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
-                           hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    <i class="fas fa-undo-alt mr-1"></i> Restore
-                </button>
-            </form>
-        ';
+                        <form action="'.$restoreUrl.'" method="POST" class="inline">
+                            '.csrf_field().'
+                            <button type="submit" title="Restore"
+                                    onclick="return confirm(\'Restore this website?\')"
+                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100 transition">'
+                                .$iconRestore.
+                            '</button>
+                        </form>';
                 }
 
-                // Otherwise (not trashed), show View, Edit, Delete
                 $editUrl   = route('websites.edit', $row->id);
                 $deleteUrl = route('websites.destroy', $row->id);
 
                 return '
-        <div class="inline-flex space-x-1">
-            <!-- VIEW -->
-            <a href="'.$viewUrl.'"
-               class="inline-flex items-center bg-green-600 text-white px-3 py-1 rounded shadow-sm
-                      hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                <i class="fas fa-eye mr-1"></i> View
-            </a>
-
-            <!-- EDIT -->
-            <a href="'.$editUrl.'"
-               class="inline-flex items-center bg-cyan-600 text-white px-3 py-1 rounded shadow-sm
-                      hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                <i class="fas fa-pen mr-1"></i> Edit
-            </a>
-
-            <!-- DELETE -->
-            <form action="'.$deleteUrl.'" method="POST" style="display:inline-block;">
-                '.csrf_field().method_field("DELETE").'
-                <button
-                    onclick="return confirm(\'Are you sure you want to delete this website?\')"
-                    class="inline-flex items-center bg-red-600 text-white px-3 py-1 rounded shadow-sm
-                           hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                    <i class="fas fa-trash mr-1"></i> Delete
-                </button>
-            </form>
-        </div>
-
-    ';
+                    <div class="inline-flex items-center gap-1">
+                        <a href="'.$viewUrl.'" title="View"
+                           class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700 transition">'.$iconEye.'</a>
+                        <a href="'.$editUrl.'" title="Edit"
+                           class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition">'.$iconEdit.'</a>
+                        <form action="'.$deleteUrl.'" method="POST" class="inline">
+                            '.csrf_field().method_field("DELETE").'
+                            <button type="submit" title="Delete"
+                                    onclick="return confirm(\'Delete this website?\')"
+                                    class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700 transition">'.$iconTrash.'</button>
+                        </form>
+                    </div>';
             });
 
         if ($isGuestUser) {
@@ -849,11 +944,7 @@ class WebsiteController extends Controller
             $this->publisherPriceForPriceFormula($validated),
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
         );
-        $spTopic = $validated['special_topic_price'] ?? null;
-        $validated['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
-            ? MenfordPriceCalculator::calculate((float) $spTopic,
-                  isset($validated['language_id']) ? (int) $validated['language_id'] : null)
-            : ($validated['price'] ?? null);
+        $validated['sensitive_topic_price'] = $this->calcSensitiveTopicPrice($validated);
 
         // 3) Compute 'TF_vs_CF' =>
         $TF   = $validated['TF'] ?? 0;
@@ -977,12 +1068,7 @@ class WebsiteController extends Controller
             $this->publisherPriceForPriceFormula($validated),
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
         );
-
-        $spTopic = $validated['special_topic_price'] ?? null;
-        $validated['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
-            ? MenfordPriceCalculator::calculate((float) $spTopic,
-                  isset($validated['language_id']) ? (int) $validated['language_id'] : null)
-            : ($validated['price'] ?? null);
+        $validated['sensitive_topic_price'] = $this->calcSensitiveTopicPrice($validated);
 
         // 3) Compute 'TF_vs_CF' =>
         $TF   = $validated['TF'] ?? 0;
@@ -1182,11 +1268,7 @@ class WebsiteController extends Controller
             isset($d['language_id']) ? (int) $d['language_id'] : null
         );
 
-        $spTopic = $d['special_topic_price'] ?? null;
-        $d['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
-            ? MenfordPriceCalculator::calculate((float) $spTopic,
-                  isset($d['language_id']) ? (int) $d['language_id'] : null)
-            : ($d['price'] ?? null);
+        $d['sensitive_topic_price'] = $this->calcSensitiveTopicPrice($d);
 
         $rev   = (float) ($d['kialvo_evaluation'] ?? 0)
             + (float) ($d['banner_price'] ?? 0)
@@ -1286,6 +1368,34 @@ class WebsiteController extends Controller
         }
 
         return (float) $baseUsd * $this->usdEurRate();
+    }
+
+    /**
+     * Mirrors publisherPriceForPriceFormula but for special_topic_price.
+     * For USD rows, uses original_special_topic_price × current rate so that
+     * sensitive_topic_price and price are always computed from the same rate,
+     * preventing the 1€ rounding gap caused by stale stored EUR values.
+     */
+    private function calcSensitiveTopicPrice(array $data): ?float
+    {
+        $langId = isset($data['language_id']) ? (int) $data['language_id'] : null;
+
+        $raw = $data['special_topic_price'] ?? null;
+        if ($raw === null || $raw === '') {
+            return $data['price'] ?? null;
+        }
+
+        if (strtoupper((string) ($data['currency_code'] ?? '')) === 'USD') {
+            $baseUsd = $data['original_special_topic_price'] ?? $raw;
+            if ($baseUsd === null || $baseUsd === '') {
+                return $data['price'] ?? null;
+            }
+            $eurValue = (float) $baseUsd * $this->usdEurRate();
+        } else {
+            $eurValue = (float) $raw;
+        }
+
+        return MenfordPriceCalculator::calculate($eurValue, $langId);
     }
 
     private function usdEurRate(): float

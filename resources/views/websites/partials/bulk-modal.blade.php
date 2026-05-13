@@ -85,8 +85,8 @@
 
 
 {{--──────────────────────────── Modal overlay ───────────────────────────--}}
-<div id="bulkEditModal" class="fixed inset-0 z-50 bg-black/50 hidden">
-    <div class="bg-white rounded-lg shadow-xl p-4 w-[26rem] mx-auto mt-24 text-sm">
+<div id="bulkEditModal" class="fixed inset-0 z-50 bg-black/50 hidden p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-5 w-[26rem] mx-auto mt-24 text-sm">
         <h2 class="font-semibold text-lg mb-3">Bulk edit websites</h2>
 
         <input type="hidden" id="bulkIds">
