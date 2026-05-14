@@ -166,7 +166,7 @@ class OrderController extends Controller
         }
 
         try {
-            Mail::to('marvindinaku@gmail.com')->send(new OrderSubmittedAdminMail($order));
+            Mail::to('networkmenford@gmail.com')->send(new OrderSubmittedAdminMail($order));
         } catch (\Throwable $e) {
             Log::error('Order admin email failed: '.$e->getMessage());
         }
