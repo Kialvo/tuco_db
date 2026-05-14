@@ -64,6 +64,20 @@ return [
             ],
         ],
 
+        'orders' => [
+            'transport'  => 'smtp',
+            'host'       => 'smtp.gmail.com',
+            'port'       => 587,
+            'encryption' => 'tls',
+            'username'   => env('ORDERS_MAIL_USERNAME'),
+            'password'   => env('ORDERS_MAIL_PASSWORD'),
+            'timeout'    => null,
+            'from' => [
+                'address' => env('ORDERS_MAIL_FROM_ADDRESS', 'networkmenford@gmail.com'),
+                'name'    => env('ORDERS_MAIL_FROM_NAME', 'Linkinablink'),
+            ],
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

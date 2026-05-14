@@ -70,11 +70,15 @@ class TrafficDistributionController extends Controller
     // ────────────────────────────────────────────────────────────
     private function fetchDomain(string $domain): array
     {
+        $login    = env('DATAFORSEO_LOGIN');
+        $password = env('DATAFORSEO_PASSWORD');
+
+        if (!$login || !$password) {
+            return ['domain' => $domain, 'error' => 'DataForSEO API credentials not configured on this server.', 'countries' => []];
+        }
+
         try {
-            $response = Http::withBasicAuth(
-                env('DATAFORSEO_LOGIN'),
-                env('DATAFORSEO_PASSWORD')
-            )->timeout(60)->post(
+            $response = Http::withBasicAuth($login, $password)->timeout(60)->post(
                 'https://api.dataforseo.com/v3/dataforseo_labs/google/domain_rank_overview/live',
                 [['target' => $domain]]
             );

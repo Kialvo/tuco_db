@@ -1,10 +1,16 @@
 {{-- Vertical filter panel for /new-entries (admin/editor view). All input IDs preserved. --}}
-<div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-    <span class="text-sm font-semibold text-gray-700">Filters</span>
-    <button id="btnClear" type="button"
-            class="text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
-        Clear all
-    </button>
+<div class="px-4 py-3 border-b border-gray-100 flex-shrink-0">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-gray-700">Filters</span>
+            <span id="filterActiveBadge" class="hidden bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full"></span>
+        </div>
+        <button id="btnClear" type="button"
+                class="text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+            Clear all
+        </button>
+    </div>
+    <div id="filterChipsBar" class="hidden mt-2 flex flex-wrap gap-1.5"></div>
 </div>
 
 <div id="filterForm" class="flex-1 overflow-y-auto slim-scroll p-4 space-y-4">

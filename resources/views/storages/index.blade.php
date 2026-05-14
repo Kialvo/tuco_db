@@ -556,6 +556,9 @@
                     [10, 25, 50, 100, 200, 500, "All"]],
             });
 
+            // Sticky header
+            if (window.initDtStickyHeader) window.initDtStickyHeader(table);
+
             // Move search box into the DataTable header (next to "Show entries")
             $(table.table().container()).find('.dt-search').append($('#storagesTableSearchWrap'));
 
@@ -780,10 +783,11 @@
                 table.ajax.reload();
                 filtersApplied = true;                     // mark that filters are active
                 table.ajax.reload(refreshSummary);
+                window.buildFilterChips(() => table.ajax.reload(refreshSummary));
             });
             $('#btnClear').on('click',e=>{
                 e.preventDefault();
-                $('#filterForm').find('input[type="text"],input[type="date"]').val('');
+                $('#filterForm').find('input[type=”text”],input[type=”date”]').val('');
                 $('#filterForm').find('select').val('').trigger('change');
                 $('#filterShowDeleted').prop('checked',false);
                 $('#storagesTableSearch').val('');
@@ -791,6 +795,7 @@
                 filtersApplied = false;                    // back to “no filters”
                 table.ajax.reload();                       // redraw table
                 $('#summaryRow .sum-val').text('—');
+                window.buildFilterChips(() => table.ajax.reload(refreshSummary));
             });
             $('#filterShowDeleted').on('change',()=>table.ajax.reload());
 

@@ -13,9 +13,10 @@ class OrderSubmittedCustomerMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public string $mailer = 'auth';
-
-    public function __construct(public Order $order) {}
+    public function __construct(public Order $order)
+    {
+        $this->mailer = 'orders';
+    }
 
     public function envelope(): Envelope
     {

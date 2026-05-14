@@ -509,6 +509,7 @@
                 order: [[1, 'desc']],
                 responsive:false,
                 autoWidth:false,
+                scrollX:true,
                 language: {
                     lengthMenu:   'Show _MENU_ websites',
                     info:         'Showing _START_ to _END_ of _TOTAL_ websites',
@@ -516,6 +517,9 @@
                     infoEmpty:    'Showing 0 to 0 of 0 websites',
                 }
             });
+
+            // Sticky header
+            if (window.initDtStickyHeader) window.initDtStickyHeader(tbl);
 
             // Move search box into the DataTable header (next to "Show entries")
             $(tbl.table().container()).find('.dt-search').append($('#newEntriesTableSearchWrap'));
@@ -631,8 +635,11 @@
             tbl.on('draw',()=>{ updateSelCount(); toggleActionButtons(); });
 
             // Search / Clear
-            $('#btnSearch').on('click', ()=> tbl.ajax.reload());
-            $('#btnClear').on('click', ()=>{
+            $('#btnSearch').on('click', () => {
+                tbl.ajax.reload();
+                window.buildFilterChips(() => tbl.ajax.reload());
+            });
+            $('#btnClear').on('click', () => {
                 $('#filterForm input').val('');
                 $('#filterStatus').val('');
                 $('#filterLanguage').val('');
@@ -640,6 +647,7 @@
                 $('#newEntriesTableSearch').val('');
                 tbl.search('');
                 tbl.ajax.reload();
+                window.buildFilterChips(() => tbl.ajax.reload());
             });
 
             // NOTE modal

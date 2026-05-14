@@ -1218,6 +1218,7 @@
                 order: [[1, 'desc']],
                 responsive: false,
                 autoWidth: false,
+                scrollX: true,
                 language: {
                     lengthMenu:   'Show _MENU_ websites',
                     info:         'Showing _START_ to _END_ of _TOTAL_ websites',
@@ -1225,6 +1226,9 @@
                     infoEmpty:    'Showing 0 to 0 of 0 websites',
                 }
             });
+
+            // Sticky header (JS clone — CSS sticky blocked by DataTables' own overflow:hidden)
+            if (window.initDtStickyHeader) window.initDtStickyHeader(table);
 
             // Move search box into the DataTable header (next to "Show entries")
             $(table.table().container()).find('.dt-search').append($('#websitesTableSearchWrap'));
@@ -1519,6 +1523,7 @@
             $('#btnSearch').on('click', function(e) {
                 e.preventDefault();
                 table.ajax.reload();
+                window.buildFilterChips(() => table.ajax.reload());
             });
 
             // Clear
@@ -1547,6 +1552,7 @@
                         .prepend('<svg class="w-3.5 h-3.5 inline me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg> ');
                 }
                 table.ajax.reload();
+                window.buildFilterChips(() => table.ajax.reload());
             });
 
             function csvList(selector){

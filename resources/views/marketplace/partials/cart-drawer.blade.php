@@ -390,12 +390,29 @@
                         this.notes = '';
                         this.close();
                         this.confirmShown = true;
-                        // refresh the domains table so + buttons reset
+                        // Repaint table + buttons so they go back to gray
+                        if (window.LIBCart && typeof window.LIBCart.notify === 'function') {
+                            window.LIBCart.notify();
+                        }
                         if (window.jQuery && jQuery.fn.dataTable && jQuery.fn.dataTable.isDataTable('#websitesTable')) {
                             jQuery('#websitesTable').DataTable().ajax.reload(null, false);
                         }
+                    } else {
+                        const d = await r.json().catch(() => ({}));
+                        const msg = d.error || 'Something went wrong. Please try again.';
+                        if (window.Swal) {
+                            await Swal.fire({ icon: 'error', title: 'Order failed', text: msg });
+                        } else {
+                            alert(msg);
+                        }
+                        // Sync cart state from server to fix any client/server mismatch
+                        await this.load();
                     }
-                } catch (e) {}
+                } catch (e) {
+                    if (window.Swal) {
+                        Swal.fire({ icon: 'error', title: 'Network error', text: 'Please check your connection and try again.' });
+                    }
+                }
                 this.submitting = false;
             },
 

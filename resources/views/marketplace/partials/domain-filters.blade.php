@@ -17,6 +17,72 @@
     <x-ds.filter-panel :active-count="$activeCount ?? 0"
                        :clear-url="route('websites.index')">
 
+        {{-- Active filter chips --}}
+        @php
+            $typeLabels = ['FORUM'=>'Forum','GENERALIST'=>'Generalist','NICHE'=>'Niche','NEWS'=>'News','VERTICAL'=>'Vertical','LOCAL'=>'Local'];
+
+            $langName = '';
+            foreach ($languages as $l) {
+                if ((string)$l->id === (string)$get('language_id')) { $langName = $l->name; break; }
+            }
+            $countryName = '';
+            foreach ($countries as $c) {
+                if ((string)$c->id === (string)$get('country_id')) { $countryName = $c->country_name; break; }
+            }
+            $catName = '';
+            foreach ($categories as $cat) {
+                if ((string)$cat->id === (string)$get('category_ids')) { $catName = $cat->name; break; }
+            }
+
+            $mkChips = array_values(array_filter([
+                $get('domain_name')     ? ['label'=>'Domain',    'val'=>$get('domain_name'),                               'remove'=>['domain_name']]     : null,
+                $get('type_of_website') ? ['label'=>'Type',      'val'=>$typeLabels[$get('type_of_website')] ?? $get('type_of_website'), 'remove'=>['type_of_website']] : null,
+                $langName               ? ['label'=>'Language',  'val'=>$langName,                                         'remove'=>['language_id']]     : null,
+                $countryName            ? ['label'=>'Country',   'val'=>$countryName,                                      'remove'=>['country_id']]      : null,
+                $catName                ? ['label'=>'Category',  'val'=>$catName,                                          'remove'=>['category_ids']]    : null,
+                $get('betting')=='1'    ? ['label'=>'Betting',   'val'=>'✓',                                               'remove'=>['betting']]         : null,
+                $get('trading')=='1'    ? ['label'=>'Trading',   'val'=>'✓',                                               'remove'=>['trading']]         : null,
+            ]));
+
+            foreach ([
+                ['keys'=>['price_min','price_max'],                                  'label'=>'Price (€)'],
+                ['keys'=>['sensitive_topic_price_min','sensitive_topic_price_max'],   'label'=>'Sensitive (€)'],
+                ['keys'=>['DA_min','DA_max'],                                         'label'=>'DA'],
+                ['keys'=>['PA_min','PA_max'],                                         'label'=>'PA'],
+                ['keys'=>['UR_min','UR_max'],                                         'label'=>'UR'],
+                ['keys'=>['ZA_min','ZA_max'],                                         'label'=>'ZA'],
+                ['keys'=>['SR_min','SR_max'],                                         'label'=>'AS'],
+                ['keys'=>['semrush_traffic_min','semrush_traffic_max'],               'label'=>'Semrush Traffic'],
+                ['keys'=>['ms_min','ms_max'],                                         'label'=>'MS'],
+                ['keys'=>['organic_keywords_min','organic_keywords_max'],             'label'=>'Organic KW'],
+                ['keys'=>['organic_traffic_min','organic_traffic_max'],               'label'=>'Organic Traffic'],
+            ] as $pair) {
+                $pMin = $get($pair['keys'][0]);
+                $pMax = $get($pair['keys'][1]);
+                if ($pMin === '' && $pMax === '') continue;
+                $pDisplay = ($pMin !== '' && $pMax !== '') ? ($pMin.' – '.$pMax)
+                          : ($pMin !== '' ? '≥ '.$pMin : '≤ '.$pMax);
+                $mkChips[] = ['label'=>$pair['label'], 'val'=>$pDisplay, 'remove'=>$pair['keys']];
+            }
+        @endphp
+
+        @if(count($mkChips))
+            <x-slot name="chips">
+                @foreach($mkChips as $chip)
+                    @php
+                        $removeUrl = route('websites.index').'?'.http_build_query(
+                            collect($f)->except($chip['remove'])->filter(fn($v) => $v !== '' && $v !== null)->all()
+                        );
+                    @endphp
+                    <a href="{{ $removeUrl }}"
+                       class="inline-flex items-center gap-1 bg-green-50 border border-green-200 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors">
+                        <span class="max-w-[110px] truncate">{{ $chip['label'] }}: {{ $chip['val'] }}</span>
+                        <span class="flex-shrink-0 font-bold ml-0.5">×</span>
+                    </a>
+                @endforeach
+            </x-slot>
+        @endif
+
         {{-- Domain search --}}
         <x-ds.filter-input name="domain_name" label="Domain" placeholder="e.g. techbullion.com"
                            value="{{ $get('domain_name') }}" />

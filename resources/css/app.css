@@ -192,49 +192,37 @@
 .dt-toolbar-top    { @apply border-b border-gray-100 rounded-t-xl; }
 .dt-toolbar-bottom { @apply border-t border-gray-100 rounded-b-xl; }
 
-/* .dt-scroll intentionally has NO overflow set.
-   CSS spec coerces overflow-y:visible → auto whenever overflow-x is non-visible,
-   which would make .dt-scroll a scroll container and trap position:sticky inside it.
-   Without any overflow on .dt-scroll, sticky propagates up to <main overflow-auto>
-   which is the true vertical scroll container. Horizontal overflow for wide tables
-   also flows up to <main> which handles it via overflow-auto. */
-.dt-scroll {}
+/* ── Marketplace DS table: horizontal scroll within the card.
+   overflow-x:auto means CSS position:sticky on <thead> would be trapped here,
+   so sticky is handled by the JS clone in app.js (initDsTableSticky). ── */
+.ds-table {
+    overflow-x: auto;
+}
 
-/* ─── Sticky table headers (every table — admin DataTables + marketplace ds-table) ───
-   Apply to thead AND tr AND th simultaneously with !important, because:
-   - DataTables injects inline styles that can override our position rules
-   - position:sticky on <th> alone is unreliable with border-collapse: collapse
-   - applying at every level wins all the corner cases */
-
-/* Tables need border-collapse: separate for reliable sticky thead in all browsers.
-   Use border-spacing: 0 so the layout still looks identical to collapse. */
-.dt-scroll table.dataTable,
+/* DS table: border-collapse separate keeps row dividers pixel-perfect. */
 .ds-table table {
     border-collapse: separate !important;
     border-spacing: 0 !important;
 }
 
-.dt-scroll table.dataTable thead,
-.dt-scroll table.dataTable thead tr,
-.dt-scroll table.dataTable thead th,
-.ds-table thead,
-.ds-table thead tr,
-.ds-table thead th {
-    position: -webkit-sticky !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 30;
+/* ── Admin metric-info tooltips ─────────────────────────────────────────
+   The old CSS group-hover tooltip (.metric-info-text) is replaced by the
+   unified global JS tooltip in app.js.  Hiding it prevents a double tooltip
+   when the admin button is hovered.  The data-info attr on .metric-info-btn
+   is what the JS tooltip reads. ── */
+.metric-info-text {
+    display: none !important;
 }
 
-/* Opaque background so body rows don't bleed through */
-.dt-scroll table.dataTable thead th,
+/* ── Opaque backgrounds ── */
+.dataTables_scrollHead th,
 .ds-table thead th {
     background-color: #f9fafb;
     box-shadow: inset 0 -1px 0 #e5e7eb;
     border-bottom: 1px solid #e5e7eb;
 }
 
-/* Body cells need an opaque base so they don't show through the sticky thead while scrolling */
+/* Body cells need an opaque base so they don't show through sticky header */
 .dt-scroll table.dataTable tbody td,
 .ds-table tbody td {
     background-color: #ffffff;
@@ -244,7 +232,7 @@
     background-color: #f9fafb;
 }
 
-/* ─── Sticky tfoot summary row (Storages + any other future tfoot rows) ─── */
+/* ── Sticky tfoot summary row (Storages) ── */
 .dt-scroll table.dataTable tfoot,
 .dt-scroll table.dataTable tfoot tr,
 .dt-scroll table.dataTable tfoot td {
