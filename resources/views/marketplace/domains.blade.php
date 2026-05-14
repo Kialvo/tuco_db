@@ -213,10 +213,10 @@
                             <span class="text-sm text-gray-600">{{ $w->kw_traffic_ratio ?? '—' }}</span>
                         </td>
                         <td class="px-3 py-3 text-center">
-                            <x-ds.pill :tone="$w->betting ? 'green' : 'gray'" size="sm">{{ $w->betting ? 'YES' : 'NO' }}</x-ds.pill>
+                            <x-ds.pill :tone="$w->betting ? 'green' : 'red'" size="sm">{{ $w->betting ? 'YES' : 'NO' }}</x-ds.pill>
                         </td>
                         <td class="px-3 py-3 text-center">
-                            <x-ds.pill :tone="$w->trading ? 'green' : 'gray'" size="sm">{{ $w->trading ? 'YES' : 'NO' }}</x-ds.pill>
+                            <x-ds.pill :tone="$w->trading ? 'green' : 'red'" size="sm">{{ $w->trading ? 'YES' : 'NO' }}</x-ds.pill>
                         </td>
                     </tr>
                 @endforeach
