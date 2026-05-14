@@ -116,11 +116,12 @@ class WebsiteController extends Controller
 
         $query = Website::with(['country', 'language', 'categories'])
             ->select([
-                'id', 'domain_name', 'country_id', 'language_id', 'type_of_website',
+                'id', 'domain_name', 'notes', 'country_id', 'language_id', 'type_of_website',
                 'price', 'sensitive_topic_price',
-                'DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'as_metric',
+                'DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'as_metric', 'seozoom',
                 'semrush_traffic', 'ahrefs_keyword', 'ahrefs_traffic', 'keyword_vs_traffic',
                 'ms', 'organic_keywords', 'organic_traffic', 'kw_traffic_ratio',
+                'betting', 'trading',
                 'created_at',
             ]);
 

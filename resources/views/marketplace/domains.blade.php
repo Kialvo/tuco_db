@@ -101,6 +101,7 @@
                     </x-ds.th>
                     <x-ds.th width="10" align="center" tip="Add to order">+</x-ds.th>
                     <x-ds.th>{{ __('Domain') }}</x-ds.th>
+                    <x-ds.th>Notes</x-ds.th>
                     <x-ds.th>Country</x-ds.th>
                     <x-ds.th>Lang</x-ds.th>
                     <x-ds.th tip="Standard guest post price in €">Price</x-ds.th>
@@ -109,7 +110,17 @@
                     <x-ds.th>Categories</x-ds.th>
                     <x-ds.th align="center" tip="Domain Authority (Moz) 0–100">DA</x-ds.th>
                     <x-ds.th align="center" tip="Page Authority (Moz) 0–100">PA</x-ds.th>
+                    <x-ds.th align="center" tip="URL Rating (Ahrefs) 0–100">UR</x-ds.th>
+                    <x-ds.th align="center" tip="Zoom Authority — composite link metric">ZA</x-ds.th>
+                    <x-ds.th align="center" tip="Authority Score (Semrush) 0–100">AS</x-ds.th>
+                    <x-ds.th align="center" tip="SEO Zoom score">SEO Zoom</x-ds.th>
+                    <x-ds.th align="center" tip="Estimated monthly traffic (Semrush)">Semrush Traffic</x-ds.th>
                     <x-ds.th align="center" tip="Menford Score 0–100">MS</x-ds.th>
+                    <x-ds.th align="center" tip="Organic keyword count">Organic KW</x-ds.th>
+                    <x-ds.th align="center" tip="Estimated organic traffic">Organic Traffic</x-ds.th>
+                    <x-ds.th align="center" tip="Keyword to traffic ratio">KW/Traffic</x-ds.th>
+                    <x-ds.th align="center" tip="Accepts betting and gambling content">Betting</x-ds.th>
+                    <x-ds.th align="center" tip="Accepts trading, forex and crypto content">Trading</x-ds.th>
                 </x-slot>
 
                 @foreach($websites as $w)
@@ -153,6 +164,9 @@
                                 @endif
                             </div>
                         </td>
+                        <td class="px-3 py-3 text-xs text-gray-500 max-w-[140px]">
+                            <span class="block truncate" title="{{ $w->notes }}">{{ $w->notes ?: '—' }}</span>
+                        </td>
                         <td class="px-3 py-3 text-sm text-gray-600 whitespace-nowrap">
                             <x-flag :country="optional($w->country)->country_name" /> {{ optional($w->country)->country_name ?? '—' }}
                         </td>
@@ -180,8 +194,46 @@
                             <span class="text-sm font-semibold text-gray-600">{{ $w->PA ?? '—' }}</span>
                         </td>
                         <td class="px-3 py-3 text-center">
+                            <span class="text-sm font-semibold text-gray-600">{{ $w->UR ?? '—' }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <span class="text-sm font-semibold text-gray-600">{{ $w->ZA ?? '—' }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <span class="text-sm font-semibold text-gray-600">{{ $w->as_metric ?? '—' }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <span class="text-sm font-semibold text-gray-600">{{ $w->seozoom ?? '—' }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <span class="text-sm text-gray-600">{{ $w->semrush_traffic ? number_format($w->semrush_traffic) : '—' }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
                             @if(! is_null($w->ms))
                                 <x-ds.score-badge :score="$w->ms" :thresholds="[80, 65]" />
+                            @else
+                                <span class="text-gray-300 text-xs">—</span>
+                            @endif
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <span class="text-sm text-gray-600">{{ $w->organic_keywords ? number_format($w->organic_keywords) : '—' }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <span class="text-sm text-gray-600">{{ $w->organic_traffic ? number_format($w->organic_traffic) : '—' }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <span class="text-sm text-gray-600">{{ $w->kw_traffic_ratio ?? '—' }}</span>
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            @if($w->betting)
+                                <x-ds.pill tone="green" size="sm">YES</x-ds.pill>
+                            @else
+                                <span class="text-gray-300 text-xs">—</span>
+                            @endif
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            @if($w->trading)
+                                <x-ds.pill tone="green" size="sm">YES</x-ds.pill>
                             @else
                                 <span class="text-gray-300 text-xs">—</span>
                             @endif
