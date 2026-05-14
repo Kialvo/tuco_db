@@ -49,8 +49,6 @@
                 ['keys'=>['sensitive_topic_price_min','sensitive_topic_price_max'],   'label'=>'Sensitive (€)'],
                 ['keys'=>['DA_min','DA_max'],                                         'label'=>'DA'],
                 ['keys'=>['PA_min','PA_max'],                                         'label'=>'PA'],
-                ['keys'=>['UR_min','UR_max'],                                         'label'=>'UR'],
-                ['keys'=>['ZA_min','ZA_max'],                                         'label'=>'ZA'],
                 ['keys'=>['SR_min','SR_max'],                                         'label'=>'AS'],
                 ['keys'=>['semrush_traffic_min','semrush_traffic_max'],               'label'=>'Semrush Traffic'],
                 ['keys'=>['ms_min','ms_max'],                                         'label'=>'MS'],
@@ -140,8 +138,6 @@
             $metrics = [
                 'DA' => ['label' => 'DA',  'tip' => 'Domain Authority (Moz) — 0 to 100'],
                 'PA' => ['label' => 'PA',  'tip' => 'Page Authority (Moz) — 0 to 100'],
-                'UR' => ['label' => 'UR',  'tip' => 'URL Rating (Ahrefs) — 0 to 100'],
-                'ZA' => ['label' => 'ZA',  'tip' => 'Zino Authority — composite link metric'],
                 'SR' => ['label' => 'AS',  'tip' => 'Authority Score (Semrush) — 0 to 100'],
             ];
         @endphp
