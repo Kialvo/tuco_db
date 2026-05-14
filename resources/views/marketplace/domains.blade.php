@@ -110,10 +110,7 @@
                     <x-ds.th>Categories</x-ds.th>
                     <x-ds.th align="center" tip="Domain Authority (Moz) 0–100">DA</x-ds.th>
                     <x-ds.th align="center" tip="Page Authority (Moz) 0–100">PA</x-ds.th>
-                    <x-ds.th align="center" tip="URL Rating (Ahrefs) 0–100">UR</x-ds.th>
-                    <x-ds.th align="center" tip="Zoom Authority — composite link metric">ZA</x-ds.th>
                     <x-ds.th align="center" tip="Authority Score (Semrush) 0–100">AS</x-ds.th>
-                    <x-ds.th align="center" tip="SEO Zoom score">SEO Zoom</x-ds.th>
                     <x-ds.th align="center" tip="Estimated monthly traffic (Semrush)">Semrush Traffic</x-ds.th>
                     <x-ds.th align="center" tip="Menford Score 0–100">MS</x-ds.th>
                     <x-ds.th align="center" tip="Organic keyword count">Organic KW</x-ds.th>
@@ -194,16 +191,7 @@
                             <span class="text-sm font-semibold text-gray-600">{{ $w->PA ?? '—' }}</span>
                         </td>
                         <td class="px-3 py-3 text-center">
-                            <span class="text-sm font-semibold text-gray-600">{{ $w->UR ?? '—' }}</span>
-                        </td>
-                        <td class="px-3 py-3 text-center">
-                            <span class="text-sm font-semibold text-gray-600">{{ $w->ZA ?? '—' }}</span>
-                        </td>
-                        <td class="px-3 py-3 text-center">
                             <span class="text-sm font-semibold text-gray-600">{{ $w->as_metric ?? '—' }}</span>
-                        </td>
-                        <td class="px-3 py-3 text-center">
-                            <span class="text-sm font-semibold text-gray-600">{{ $w->seozoom ?? '—' }}</span>
                         </td>
                         <td class="px-3 py-3 text-center">
                             <span class="text-sm text-gray-600">{{ $w->semrush_traffic ? number_format($w->semrush_traffic) : '—' }}</span>
