@@ -8,22 +8,22 @@ window.Alpine = Alpine;
 Alpine.start();
 
 /* ─────────────────────────────────────────────────────────────
- |  Global tooltip + popover
+ |  Global tooltip + modal
  |  Handles two trigger types:
  |    • .tip  (guest) — reads text from child .tip-box
  |    • .metric-info-btn  (admin) — reads text from data-info attr
  |
  |  Hover  → small dark tooltip  (#global-tooltip)
- |  Click  → styled white popover card (#global-popover, stays open)
+ |  Click  → Swal info modal (guest .tip) / white popover (admin)
  |
  |  All styling is inline CSS — app.js is NOT in Tailwind's content scan.
  *────────────────────────────────────────────────────────────*/
 (function initGlobalTooltip() {
-    /* ── Shared state ── */
-    let tipEl  = null;   // #global-tooltip  (hover)
-    let popEl  = null;   // #global-popover  (click)
-    let raf    = null;
-    let open   = false;  // popover is open
+    /* ── State (admin popover only — guest uses Swal modal) ── */
+    let tipEl       = null;
+    let popEl       = null;
+    let raf         = null;
+    let open        = false;
     let openTrigger = null;
 
     /* ── Lazy create: dark mini tooltip ── */
@@ -42,7 +42,7 @@ Alpine.start();
         return tipEl;
     };
 
-    /* ── Lazy create: white popover card ── */
+    /* ── Lazy create: white popover card (admin only) ── */
     const ensurePop = () => {
         if (popEl) return popEl;
         popEl = document.createElement('div');
@@ -86,7 +86,8 @@ Alpine.start();
 
     /* ── Hover tooltip helpers ── */
     const showTip = (trigger) => {
-        if (open) return;           // popover is active — suppress hover tooltip
+        if (open) return;
+        if (window.Swal && Swal.isVisible()) return;
         const text = getText(trigger);
         if (!text) return;
         const tip = ensureTip();
@@ -99,7 +100,7 @@ Alpine.start();
         if (tipEl) tipEl.style.opacity = '0';
     };
 
-    /* ── Popover helpers ── */
+    /* ── Admin popover helpers ── */
     const showPop = (trigger) => {
         const text = getText(trigger);
         if (!text) return;
@@ -121,6 +122,7 @@ Alpine.start();
     /* ── Hover ── */
     document.addEventListener('mouseover', (e) => {
         if (open) return;
+        if (window.Swal && Swal.isVisible()) return;
         const trigger = e.target.closest && e.target.closest('.tip, .metric-info-btn');
         if (!trigger) return;
         showTip(trigger);
@@ -135,8 +137,9 @@ Alpine.start();
         hideTip();
     }, true);
 
-    /* ── Click: open/close popover ── */
+    /* ── Click ── */
     document.addEventListener('click', (e) => {
+        /* Admin: metric-info-btn → white popover card (toggle) */
         const infoBtn = e.target.closest && e.target.closest('.metric-info-btn');
         if (infoBtn) {
             e.stopPropagation();
@@ -144,16 +147,21 @@ Alpine.start();
             else { showPop(infoBtn); }
             return;
         }
+        /* Guest: .tip → Swal info modal */
         const tipTrigger = e.target.closest && e.target.closest('.tip');
         if (tipTrigger) {
-            if (open && openTrigger === tipTrigger) { hidePop(); }
-            else { showPop(tipTrigger); }
+            const text = getText(tipTrigger);
+            if (!text) return;
+            hideTip();
+            if (window.Swal) {
+                Swal.fire({ icon: 'info', text: text });
+            }
             return;
         }
         if (open) hidePop();
     }, true);
 
-    /* ── Escape dismisses ── */
+    /* ── Escape dismisses admin popover (Swal handles its own Escape) ── */
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && open) hidePop();
     });
