@@ -47,7 +47,10 @@ class OrderController extends Controller
             'status' => 'required|in:' . implode(',', Order::STATUSES),
         ]);
 
-        $order->update(['status' => $validated['status']]);
+        $order->update([
+            'status'            => $validated['status'],
+            'status_changed_at' => now(),
+        ]);
 
         return back()->with('status', "Order {$order->reference} marked as " . Order::STATUS_LABELS[$validated['status']]);
     }

@@ -14,7 +14,7 @@
     <div class="max-w-5xl mx-auto space-y-6">
 
         {{-- Customer + summary --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white rounded-xl border border-gray-200 shadow-card p-5">
                 <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">Customer</div>
                 <div class="font-semibold text-gray-800">{{ $order->user->name }}</div>
@@ -28,6 +28,15 @@
                 </div>
                 <div class="text-sm text-gray-500">
                     {{ $order->submitted_at?->format('H:i') ?? '' }}
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 shadow-card p-5">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">Last updated</div>
+                <div class="font-semibold text-gray-800">
+                    {{ $order->status_changed_at?->format('M j, Y') ?? '—' }}
+                </div>
+                <div class="text-sm text-gray-500">
+                    {{ $order->status_changed_at?->format('H:i') ?? '' }}
                 </div>
             </div>
             <div class="bg-green-50 rounded-xl border border-green-100 p-5">

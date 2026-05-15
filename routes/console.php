@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('dataforseo:sync')->monthly();
+Schedule::command('orders:advance-in-progress')->hourly();

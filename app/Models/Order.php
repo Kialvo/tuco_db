@@ -13,8 +13,6 @@ class Order extends Model
 
     public const STATUS_DRAFT       = 'draft';
     public const STATUS_SUBMITTED   = 'submitted';
-    public const STATUS_CONFIRMED   = 'confirmed';
-    public const STATUS_APPROVED    = 'approved';
     public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_COMPLETED   = 'completed';
     public const STATUS_CANCELLED   = 'cancelled';
@@ -22,8 +20,6 @@ class Order extends Model
     public const STATUSES = [
         self::STATUS_DRAFT,
         self::STATUS_SUBMITTED,
-        self::STATUS_CONFIRMED,
-        self::STATUS_APPROVED,
         self::STATUS_IN_PROGRESS,
         self::STATUS_COMPLETED,
         self::STATUS_CANCELLED,
@@ -32,8 +28,6 @@ class Order extends Model
     public const STATUS_LABELS = [
         self::STATUS_DRAFT       => 'Draft',
         self::STATUS_SUBMITTED   => 'Submitted',
-        self::STATUS_CONFIRMED   => 'Prices Confirmed',
-        self::STATUS_APPROVED    => 'Approved',
         self::STATUS_IN_PROGRESS => 'In Progress',
         self::STATUS_COMPLETED   => 'Completed',
         self::STATUS_CANCELLED   => 'Cancelled',
@@ -43,8 +37,6 @@ class Order extends Model
     public const STATUS_TONES = [
         self::STATUS_DRAFT       => 'gray',
         self::STATUS_SUBMITTED   => 'amber',
-        self::STATUS_CONFIRMED   => 'blue',
-        self::STATUS_APPROVED    => 'indigo',
         self::STATUS_IN_PROGRESS => 'purple',
         self::STATUS_COMPLETED   => 'green',
         self::STATUS_CANCELLED   => 'red',
@@ -55,10 +47,12 @@ class Order extends Model
         'status',
         'notes',
         'submitted_at',
+        'status_changed_at',
     ];
 
     protected $casts = [
-        'submitted_at' => 'datetime',
+        'submitted_at'     => 'datetime',
+        'status_changed_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

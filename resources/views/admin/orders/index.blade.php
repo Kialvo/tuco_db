@@ -34,6 +34,7 @@
                 <x-ds.th>Sites</x-ds.th>
                 <x-ds.th align="right">Est. Total</x-ds.th>
                 <x-ds.th>Status</x-ds.th>
+                <x-ds.th>Status changed</x-ds.th>
                 <x-ds.th align="right">&nbsp;</x-ds.th>
             </x-slot>
 
@@ -53,6 +54,9 @@
                     </td>
                     <td class="px-3 py-3">
                         <x-ds.pill :tone="$order->status_tone">{{ $order->status_label }}</x-ds.pill>
+                    </td>
+                    <td class="px-3 py-3 text-sm text-gray-500">
+                        {{ $order->status_changed_at?->format('M j, Y · H:i') ?? '—' }}
                     </td>
                     <td class="px-3 py-3 text-right">
                         <a href="{{ route('admin.orders.show', $order->id) }}"
