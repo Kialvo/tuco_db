@@ -6,6 +6,7 @@ use App\Http\Controllers\NewEntryImportController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OutreachController;
 use App\Http\Controllers\Tool\AhrefsCleanerController;
+use App\Http\Controllers\Tool\KeywordResearchController;
 use App\Http\Controllers\Tool\ReferringDomainsController;
 use App\Http\Controllers\Tool\TrafficDistributionController;
 use App\Http\Controllers\Tool\WebScraperController;
@@ -319,6 +320,10 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
         // Traffic Distribution by Country
         Route::get ('traffic-distribution',        [TrafficDistributionController::class, 'index'])->name('traffic_distribution.index');
         Route::post('traffic-distribution/search', [TrafficDistributionController::class, 'search'])->name('traffic_distribution.search');
+
+        // Keyword Research
+        Route::get ('keyword-research',        [KeywordResearchController::class, 'index'])->name('keyword_research.index');
+        Route::post('keyword-research/search', [KeywordResearchController::class, 'search'])->name('keyword_research.search');
     });
 
 });

@@ -175,6 +175,11 @@
                               {{ $navActive('tools.traffic_distribution.*') ? 'nav-active' : 'text-gray-300' }}">
                         <x-icon name="globe-europe" size="sm" class="me-2 inline" /> Traffic by Country
                     </a>
+                    <a href="{{ route('tools.keyword_research.index') }}"
+                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
+                              {{ $navActive('tools.keyword_research.*') ? 'nav-active' : 'text-gray-300' }}">
+                        <x-icon name="key" size="sm" class="me-2 inline" /> Keyword Research
+                    </a>
                 </div>
             </div>
         @endif
