@@ -40,11 +40,10 @@ class DataForSeoService
     }
 
     /**
-     * Fetch metrics for multiple domains using bulk endpoints.
-     * Both API calls are bulk — no timeouts even for thousands of domains.
+     * Fetch metrics for multiple domains using DataForSEO Labs bulk endpoints.
      *
-     * - MS               → backlinks/bulk_ranks             (up to 1000/call)
-     * - Organic KW+TR    → dataforseo_labs/bulk_traffic_estimation (up to 1000/call)
+     * - Organic KW + Traffic → dataforseo_labs/bulk_traffic_estimation (up to 1000/call)
+     * - MS score             → derived from organic ETV via log-normalisation (0–1000 scale)
      *
      * Returns array keyed by the ORIGINAL domain string as passed in.
      */
@@ -54,53 +53,19 @@ class DataForSeoService
             return [];
         }
 
-        // Pre-fill results keyed by ORIGINAL domain string
         $results = [];
         foreach ($domains as $d) {
             $results[$d] = $this->nullRow();
         }
 
-        // Build map: normalizedDomain → originalDomain
-        // so we can match API response targets back to the original key
         $domainMap = [];
         foreach ($domains as $d) {
-            $normalized = $this->normalizeDomain($d);
-            // if two originals normalize to the same string, last one wins — acceptable edge case
-            $domainMap[$normalized] = $d;
+            $domainMap[$this->normalizeDomain($d)] = $d;
         }
 
-        $normalizedDomains = array_keys($domainMap);
-        $chunks = array_chunk($normalizedDomains, self::BULK_SIZE);
+        $chunks = array_chunk(array_keys($domainMap), self::BULK_SIZE);
 
-        // ── 1) MS via bulk_ranks ─────────────────────────────────────────────
-        foreach ($chunks as $chunk) {
-            try {
-                $response = Http::withBasicAuth(
-                    env('DATAFORSEO_LOGIN'),
-                    env('DATAFORSEO_PASSWORD')
-                )->timeout(60)->post(
-                    'https://api.dataforseo.com/v3/backlinks/bulk_ranks/live',
-                    [['targets' => $chunk]]
-                );
-
-                if (! $response->successful()) continue;
-
-                $task = $response->json('tasks.0') ?? [];
-                if (($task['status_code'] ?? 0) !== 20000) continue;
-
-                foreach ($task['result'][0]['items'] ?? [] as $item) {
-                    $target = $this->normalizeDomain($item['target'] ?? '');
-                    $orig   = $domainMap[$target] ?? null;
-                    if ($orig === null) continue;
-
-                    $results[$orig]['ms'] = isset($item['rank']) ? (int) $item['rank'] : null;
-                }
-            } catch (\Throwable $e) {
-                // ms stays null for this chunk
-            }
-        }
-
-        // ── 2) Organic Keywords + Traffic via bulk_traffic_estimation ────────
+        // ── Organic Keywords + Traffic + MS via bulk_traffic_estimation ──────
         foreach ($chunks as $chunk) {
             try {
                 $response = Http::withBasicAuth(
@@ -128,13 +93,17 @@ class DataForSeoService
 
                     $results[$orig]['organic_keywords'] = $kw;
                     $results[$orig]['organic_traffic']  = $tr;
-                    // ratio = traffic / keywords (how much traffic each keyword drives)
                     $results[$orig]['kw_traffic_ratio'] = ($kw && $tr)
-                        ? round($tr / $kw, 2)
+                        ? round($tr / $kw, 2) : null;
+
+                    // MS: log10-normalise ETV to 0–1000 scale
+                    // etv=0→0, etv=10→~208, etv=1k→~600, etv=10k→~800, etv=100k+→1000
+                    $results[$orig]['ms'] = $tr !== null
+                        ? min(1000, (int) round(log10(max(1, $tr) + 1) * 200))
                         : null;
                 }
             } catch (\Throwable $e) {
-                // organic data stays null for this chunk
+                // data stays null for this chunk
             }
         }
 
