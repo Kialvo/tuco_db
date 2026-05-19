@@ -97,9 +97,9 @@ class DataForSeoService
                         ? round($tr / $kw, 2) : null;
 
                     // MS: log10-normalise ETV to 0–1000 scale
-                    // etv=0→0, etv=10→~208, etv=1k→~600, etv=10k→~800, etv=100k+→1000
+                    // etv=0→0, etv=1k→~450, etv=10k→~600, etv=100k→~750, etv=10M→~1000
                     $results[$orig]['ms'] = $tr !== null
-                        ? min(1000, (int) round(log10(max(1, $tr) + 1) * 200))
+                        ? min(1000, (int) round(log10(max(1, $tr) + 1) * 150))
                         : null;
                 }
             } catch (\Throwable $e) {

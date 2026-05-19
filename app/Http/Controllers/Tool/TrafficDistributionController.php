@@ -16,9 +16,12 @@ class TrafficDistributionController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'domains'  => 'nullable|string|max:10000',
-            'csv_file' => 'nullable|file|mimes:csv,txt|max:512',
+            'domains'  => 'nullable|string|max:50000',
+            'csv_file' => 'nullable|file|mimes:csv,txt|max:2048',
+            'limit'    => 'nullable|integer|in:50,100,200',
         ]);
+
+        $limit = (int) $request->input('limit', 50);
 
         // ── Collect domains from textarea ──
         $rawLines = [];
@@ -33,7 +36,6 @@ class TrafficDistributionController extends Controller
             foreach ($lines as $line) {
                 $cols = str_getcsv($line);
                 $cell = trim($cols[0] ?? '');
-                // skip header row
                 if (in_array(strtolower($cell), ['domain', 'url', 'website', 'site'], true)) {
                     continue;
                 }
@@ -54,83 +56,133 @@ class TrafficDistributionController extends Controller
             return response()->json(['error' => 'Please enter at least one domain.'], 422);
         }
 
-        if (count($domains) > 50) {
-            return response()->json(['error' => 'Maximum 50 domains per request.'], 422);
+        if (count($domains) > $limit) {
+            return response()->json(['error' => "Maximum {$limit} domains per request."], 422);
         }
 
-        $results = [];
+        $login    = env('DATAFORSEO_LOGIN');
+        $password = env('DATAFORSEO_PASSWORD');
+        if (!$login || !$password) {
+            return response()->json(['error' => 'DataForSEO credentials not configured.'], 500);
+        }
 
+        // ── Call 1: bulk_traffic_estimation for organic keyword counts ──────
+        $kwMap = [];
+        try {
+            $bulkResponse = Http::withBasicAuth($login, $password)
+                ->timeout(60)
+                ->post(
+                    'https://api.dataforseo.com/v3/dataforseo_labs/google/bulk_traffic_estimation/live',
+                    [['targets' => $domains]]
+                );
+
+            if ($bulkResponse->successful()) {
+                $bulkTask = $bulkResponse->json('tasks.0') ?? [];
+                if (($bulkTask['status_code'] ?? 0) === 20000) {
+                    foreach ($bulkTask['result'][0]['items'] ?? [] as $item) {
+                        $t = $item['target'] ?? null;
+                        if ($t) {
+                            $kwMap[$t] = isset($item['metrics']['organic']['count'])
+                                ? (int) $item['metrics']['organic']['count']
+                                : null;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // organic_kw stays null — non-fatal
+        }
+
+        // ── Call 2: domain_rank_overview for per-country traffic ─────────────
+        // Chunked at 100 tasks per POST (DataForSEO Labs limit)
+        $rankData = []; // keyed by domain
+
+        foreach (array_chunk($domains, 100) as $chunk) {
+            try {
+                $rankTasks = array_map(fn ($d) => ['target' => $d], $chunk);
+
+                $rankResponse = Http::withBasicAuth($login, $password)
+                    ->timeout(120)
+                    ->post(
+                        'https://api.dataforseo.com/v3/dataforseo_labs/google/domain_rank_overview/live',
+                        $rankTasks
+                    );
+
+                if (!$rankResponse->successful()) continue;
+
+                foreach ($rankResponse->json('tasks') ?? [] as $i => $task) {
+                    $domain = $chunk[$i] ?? null;
+                    if (!$domain) continue;
+
+                    if (($task['status_code'] ?? 0) !== 20000) {
+                        $rankData[$domain] = ['error' => $task['status_message'] ?? 'API error'];
+                        continue;
+                    }
+
+                    $items = $task['result'][0]['items'] ?? [];
+
+                    $byLocation = [];
+                    foreach ($items as $item) {
+                        $code = $item['location_code'] ?? null;
+                        $etv  = $item['metrics']['organic']['etv'] ?? 0;
+                        if ($code === null) continue;
+                        $byLocation[$code] = ($byLocation[$code] ?? 0) + (float) $etv;
+                    }
+
+                    $globalTotal = array_sum($byLocation);
+                    arsort($byLocation);
+
+                    $countries = [];
+                    if ($globalTotal > 0) {
+                        foreach (array_slice($byLocation, 0, 3, true) as $code => $etv) {
+                            $countries[] = [
+                                'name' => $this->locationName((int) $code),
+                                'pct'  => round($etv / $globalTotal * 100, 1),
+                            ];
+                        }
+                    }
+
+                    $rankData[$domain] = [
+                        'organic_traffic' => $globalTotal > 0 ? (int) $globalTotal : null,
+                        'countries'       => $countries,
+                    ];
+
+                }
+            } catch (\Throwable $e) {
+                // chunk fails gracefully — affected domains get null data
+            }
+        }
+
+        // ── Assemble final results in original domain order ──────────────────
+        $results = [];
         foreach ($domains as $domain) {
-            $results[] = $this->fetchDomain($domain);
+            $rd  = $rankData[$domain] ?? [];
+            $etv = $rd['organic_traffic'] ?? null;
+            $ms  = $etv !== null
+                ? min(1000, (int) round(log10(max(1, (float) $etv) + 1) * 100))
+                : null;
+
+            if (isset($rd['error'])) {
+                $results[] = [
+                    'domain'          => $domain,
+                    'ms'              => null,
+                    'organic_kw'      => $kwMap[$domain] ?? null,
+                    'organic_traffic' => null,
+                    'countries'       => [],
+                    'error'           => $rd['error'],
+                ];
+            } else {
+                $results[] = [
+                    'domain'          => $domain,
+                    'ms'              => $ms,
+                    'organic_kw'      => $kwMap[$domain] ?? null,
+                    'organic_traffic' => $etv,
+                    'countries'       => $rd['countries'] ?? [],
+                ];
+            }
         }
 
         return response()->json(['results' => $results]);
-    }
-
-    // ────────────────────────────────────────────────────────────
-    private function fetchDomain(string $domain): array
-    {
-        $login    = env('DATAFORSEO_LOGIN');
-        $password = env('DATAFORSEO_PASSWORD');
-
-        if (!$login || !$password) {
-            return ['domain' => $domain, 'error' => 'DataForSEO API credentials not configured on this server.', 'countries' => []];
-        }
-
-        try {
-            $response = Http::withBasicAuth($login, $password)->timeout(60)->post(
-                'https://api.dataforseo.com/v3/dataforseo_labs/google/domain_rank_overview/live',
-                [['target' => $domain]]
-            );
-
-            if (!$response->successful()) {
-                return ['domain' => $domain, 'error' => 'API request failed (' . $response->status() . ').', 'countries' => []];
-            }
-
-            $task = $response->json('tasks.0') ?? [];
-
-            if (($task['status_code'] ?? 0) !== 20000) {
-                $msg = $task['status_message'] ?? 'Unknown API error.';
-                return ['domain' => $domain, 'error' => $msg, 'countries' => []];
-            }
-
-            $items = $task['result'][0]['items'] ?? [];
-
-            if (empty($items)) {
-                return ['domain' => $domain, 'countries' => []];
-            }
-
-            // ── Aggregate etv per location ──
-            $byLocation = [];
-            foreach ($items as $item) {
-                $code = $item['location_code'] ?? null;
-                $etv  = $item['metrics']['organic']['etv'] ?? 0;
-                if ($code === null) continue;
-                $byLocation[$code] = ($byLocation[$code] ?? 0) + (float) $etv;
-            }
-
-            $globalTotal = array_sum($byLocation);
-
-            if ($globalTotal <= 0) {
-                return ['domain' => $domain, 'countries' => []];
-            }
-
-            // Sort descending by etv
-            arsort($byLocation);
-
-            $countries = [];
-            foreach (array_slice($byLocation, 0, 3, true) as $code => $etv) {
-                $countries[] = [
-                    'name' => $this->locationName((int) $code),
-                    'pct'  => round($etv / $globalTotal * 100, 1),
-                ];
-            }
-
-            return ['domain' => $domain, 'countries' => $countries];
-
-        } catch (\Throwable $e) {
-            return ['domain' => $domain, 'error' => $e->getMessage(), 'countries' => []];
-        }
     }
 
     // ────────────────────────────────────────────────────────────
@@ -140,7 +192,6 @@ class TrafficDistributionController extends Controller
         if ($d === '') return '';
         $d = preg_replace('#^https?://#i', '', $d);
         $d = rtrim($d, '/');
-        // strip path
         $d = explode('/', $d)[0];
         return strtolower($d);
     }

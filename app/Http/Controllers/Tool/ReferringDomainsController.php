@@ -33,10 +33,32 @@ class ReferringDomainsController extends Controller
             return response()->json(['error' => 'DataForSEO credentials not configured.'], 500);
         }
 
+        $languageMap = [
+            'United States'  => 'English',
+            'United Kingdom' => 'English',
+            'Australia'      => 'English',
+            'Canada'         => 'English',
+            'India'          => 'English',
+            'Italy'          => 'Italian',
+            'Spain'          => 'Spanish',
+            'Mexico'         => 'Spanish',
+            'Argentina'      => 'Spanish',
+            'France'         => 'French',
+            'Germany'        => 'German',
+            'Netherlands'    => 'Dutch',
+            'Denmark'        => 'Danish',
+            'Sweden'         => 'Swedish',
+            'Norway'         => 'Norwegian',
+            'Brazil'         => 'Portuguese',
+            'Russia'         => 'Russian',
+            'Poland'         => 'Polish',
+        ];
+        $languageName = $languageMap[$locationName] ?? 'English';
+
         $payload = [[
             'target'        => $domain,
             'location_name' => $locationName,
-            'language_name' => 'English',
+            'language_name' => $languageName,
             'limit'         => 100,
         ]];
 
@@ -63,15 +85,22 @@ class ReferringDomainsController extends Controller
 
             $rows = array_map(function ($item) {
                 $etv = $item['full_domain_metrics']['organic']['etv'] ?? null;
+                // MS: log10-normalise ETV with multiplier 100 for better spread
+                // 100k ETV→507, 1M ETV→600, 10M ETV→700, 100M ETV→800, 1B ETV→900
+                $ms  = $etv !== null
+                    ? min(1000, (int) round(log10(max(1, (float) $etv) + 1) * 100))
+                    : null;
                 return [
-                    'domain'           => $item['domain'] ?? '',
-                    'intersections'    => $item['intersections'] ?? null,
-                    'relevance'        => isset($item['competitor_relevance'])
+                    'domain'          => $item['domain'] ?? '',
+                    'intersections'   => $item['intersections'] ?? null,
+                    'relevance'       => isset($item['competitor_relevance'])
                         ? round($item['competitor_relevance'] * 100, 1)
                         : null,
-                    'organic_traffic'  => $etv !== null ? (int) $etv : null,
+                    'ms'              => $ms,
+                    'organic_traffic' => $etv !== null ? (int) $etv : null,
                 ];
             }, $items);
+
 
             // Sort by shared keywords descending
             usort($rows, fn ($a, $b) => ($b['intersections'] ?? 0) <=> ($a['intersections'] ?? 0));

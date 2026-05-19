@@ -6,7 +6,7 @@
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
             <h1 class="text-base font-bold text-gray-800">Traffic by Country</h1>
-            <p class="text-xs text-gray-500 mt-0.5">Top 3 traffic countries for any list of domains.</p>
+            <p class="text-xs text-gray-500 mt-0.5">Top 3 traffic countries, MS, organic keywords and traffic for any list of domains.</p>
         </div>
     </div>
 
@@ -14,7 +14,7 @@
         {{-- ── Input card ── --}}
         <div class="bg-white border border-gray-200 rounded-xl shadow-card p-6 mb-6 max-w-2xl">
             <p class="text-sm text-gray-500 mb-4">
-                Enter up to 50 domains (one per line) or upload a CSV file. The tool will show the top 3 traffic countries and their share for each domain.
+                Enter up to 200 domains (one per line) or upload a CSV file.
             </p>
 
             {{-- Textarea --}}
@@ -48,7 +48,14 @@
                               hover:file:bg-green-100 cursor-pointer"/>
             </div>
 
+            {{-- Limit + Analyse --}}
             <div class="flex items-center gap-3">
+                <select id="limitSelect"
+                        class="border border-gray-300 rounded-md pl-3 pr-8 py-2 text-sm focus:ring-green-500 focus:border-green-500">
+                    <option value="50">Up to 50 domains</option>
+                    <option value="100">Up to 100 domains</option>
+                    <option value="200">Up to 200 domains</option>
+                </select>
                 <button id="btnSearch"
                         class="bg-green-600 text-white px-5 py-2 rounded shadow-sm text-sm
                                hover:bg-green-700 focus:outline-none focus:ring-2
@@ -81,6 +88,9 @@
                     <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                         <th class="py-3 px-4 font-semibold text-left">Domain</th>
+                        <th class="py-3 px-4 font-semibold text-center">MS</th>
+                        <th class="py-3 px-4 font-semibold text-center">Organic KW</th>
+                        <th class="py-3 px-4 font-semibold text-center">Organic Traffic</th>
                         <th class="py-3 px-4 font-semibold text-left">1st Country</th>
                         <th class="py-3 px-4 font-semibold text-left">2nd Country</th>
                         <th class="py-3 px-4 font-semibold text-left">3rd Country</th>
@@ -108,6 +118,7 @@ $(function () {
     const btnLabel       = $('#btnLabel');
     const domainsInput   = $('#domainsInput');
     const csvFile        = $('#csvFile');
+    const limitSelect    = $('#limitSelect');
     const errorMsg       = $('#errorMsg');
     const progressText   = $('#progressText');
     const resultsWrapper = $('#resultsWrapper');
@@ -124,7 +135,7 @@ $(function () {
         if (!lastResults.length) return;
 
         const headers = [
-            'Domain',
+            'Domain', 'MS', 'Organic KW', 'Organic Traffic',
             '1st Country', '1st Country %',
             '2nd Country', '2nd Country %',
             '3rd Country', '3rd Country %',
@@ -135,6 +146,9 @@ $(function () {
             const c = row.countries || [];
             const cols = [
                 '"' + (row.domain || '').replace(/"/g, '""') + '"',
+                row.ms               !== null ? row.ms               : '',
+                row.organic_kw       !== null ? row.organic_kw       : '',
+                row.organic_traffic  !== null ? row.organic_traffic  : '',
                 '"' + (c[0] ? c[0].name : '').replace(/"/g, '""') + '"',
                 c[0] ? c[0].pct : '',
                 '"' + (c[1] ? c[1].name : '').replace(/"/g, '""') + '"',
@@ -145,12 +159,12 @@ $(function () {
             lines.push(cols.join(','));
         });
 
-        const csv      = lines.join('\r\n');
-        const blob     = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url      = URL.createObjectURL(blob);
-        const a        = document.createElement('a');
-        a.href         = url;
-        a.download     = 'traffic-distribution.csv';
+        const csv  = lines.join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = 'traffic-distribution.csv';
         a.click();
         URL.revokeObjectURL(url);
     });
@@ -174,7 +188,7 @@ $(function () {
     function renderRow(row) {
         const c = row.countries || [];
 
-        function cell(entry) {
+        function countryCell(entry) {
             if (!entry) return '<td class="py-2 px-4 text-gray-400">—</td>';
             const pct = entry.pct;
             let badgeClass = 'bg-gray-100 text-gray-600';
@@ -191,18 +205,25 @@ $(function () {
         if (row.error) {
             return `<tr class="hover:bg-gray-50">
                         <td class="py-2 px-4 font-medium text-red-600">${row.domain}</td>
-                        <td colspan="3" class="py-2 px-4 text-red-500 text-xs">${row.error}</td>
+                        <td colspan="6" class="py-2 px-4 text-red-500 text-xs">${row.error}</td>
                     </tr>`;
         }
+
+        const ms      = row.ms              !== null ? row.ms                                      : '—';
+        const kw      = row.organic_kw      !== null ? row.organic_kw.toLocaleString()             : '—';
+        const traffic = row.organic_traffic !== null ? row.organic_traffic.toLocaleString()        : '—';
 
         return `<tr class="hover:bg-gray-50">
                     <td class="py-2 px-4 font-medium">
                         <a href="https://${row.domain}" target="_blank"
                            class="text-green-700 hover:underline">${row.domain}</a>
                     </td>
-                    ${cell(c[0])}
-                    ${cell(c[1])}
-                    ${cell(c[2])}
+                    <td class="py-2 px-4 text-center font-semibold">${ms}</td>
+                    <td class="py-2 px-4 text-center">${kw}</td>
+                    <td class="py-2 px-4 text-center">${traffic}</td>
+                    ${countryCell(c[0])}
+                    ${countryCell(c[1])}
+                    ${countryCell(c[2])}
                 </tr>`;
     }
 
@@ -224,6 +245,7 @@ $(function () {
 
         const formData = new FormData();
         formData.append('_token', csrfToken);
+        formData.append('limit', limitSelect.val());
         if (domainsText) formData.append('domains', domainsText);
         if (file)        formData.append('csv_file', file);
 
@@ -239,7 +261,7 @@ $(function () {
                 lastResults = rows;
                 resultCount.text(rows.length);
 
-                const hasData = rows.some(r => r.countries && r.countries.length > 0);
+                const hasData = rows.some(r => (r.countries && r.countries.length > 0) || r.ms !== null);
 
                 if (!hasData && !rows.some(r => r.error)) {
                     emptyState.removeClass('hidden');
