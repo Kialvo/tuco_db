@@ -1,12 +1,12 @@
 @extends('layouts.dashboard')
-@section('title', 'Referring Domains')
+@section('title', 'Organic Competitors')
 
 @section('content')
     {{-- Page header --}}
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
-            <h1 class="text-base font-bold text-gray-800">Referring Domains</h1>
-            <p class="text-xs text-gray-500 mt-0.5">Inspect competitor backlink profiles.</p>
+            <h1 class="text-base font-bold text-gray-800">Organic Competitors</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Find domains competing for the same organic keywords.</p>
         </div>
     </div>
 
@@ -14,14 +14,35 @@
         {{-- ── Search bar ── --}}
         <div class="bg-white border border-gray-200 rounded-xl shadow-card p-6 mb-6 max-w-2xl">
             <p class="text-sm text-gray-500 mb-4">
-                Enter a competitor domain to see its top 200 most authoritative referring domains (dofollow only, sorted by MS descending).
+                Enter a domain to find its top 100 organic competitors — sites ranking for the same keywords.
             </p>
-            <div class="flex gap-3">
+            <div class="flex gap-3 mb-3">
                 <input type="text"
                        id="domainInput"
                        placeholder="e.g. corriere.it"
                        class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm
                               focus:ring-green-500 focus:border-green-500"/>
+                <select id="locationSelect"
+                        class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-green-500 focus:border-green-500 w-44">
+                    <option value="United States">United States</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Italy">Italy</option>
+                    <option value="Spain">Spain</option>
+                    <option value="France">France</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Netherlands">Netherlands</option>
+                    <option value="Denmark">Denmark</option>
+                    <option value="Sweden">Sweden</option>
+                    <option value="Norway">Norway</option>
+                    <option value="Brazil">Brazil</option>
+                    <option value="Mexico">Mexico</option>
+                    <option value="Argentina">Argentina</option>
+                    <option value="India">India</option>
+                    <option value="Russia">Russia</option>
+                    <option value="Poland">Poland</option>
+                </select>
                 <button id="btnSearch"
                         class="bg-green-600 text-white px-5 py-2 rounded shadow-sm text-sm
                                hover:bg-green-700 focus:outline-none focus:ring-2
@@ -37,8 +58,8 @@
         <div id="resultsWrapper" class="hidden">
             <div class="flex items-center justify-between mb-3">
                 <p class="text-sm text-gray-600">
-                    Results for <strong id="resultDomain"></strong> —
-                    <span id="resultCount"></span> referring domain(s) found.
+                    Competitors for <strong id="resultDomain"></strong> —
+                    <span id="resultCount"></span> domain(s) found.
                 </p>
                 <button id="btnExportCsv"
                         class="bg-green-600 text-white px-4 py-1.5 rounded shadow-sm text-sm
@@ -53,11 +74,12 @@
                     <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                         <th class="py-3 px-4 font-semibold text-left">#</th>
-                        <th class="py-3 px-4 font-semibold text-left">Referring Domain</th>
-                        <th id="thMs" class="py-3 px-4 font-semibold text-center cursor-pointer select-none hover:text-gray-700">
-                            Domain MS <span id="msArrow">↓</span>
+                        <th class="py-3 px-4 font-semibold text-left">Competitor Domain</th>
+                        <th id="thIntersections" class="py-3 px-4 font-semibold text-center cursor-pointer select-none hover:text-gray-700">
+                            Shared KW <span id="kwArrow">↓</span>
                         </th>
-                        <th class="py-3 px-4 font-semibold text-left">Backlink Type</th>
+                        <th class="py-3 px-4 font-semibold text-center">Relevance</th>
+                        <th class="py-3 px-4 font-semibold text-center">Est. Traffic</th>
                     </tr>
                     </thead>
                     <tbody id="resultsBody" class="divide-y divide-gray-100">
@@ -69,7 +91,7 @@
         {{-- ── Empty state ── --}}
         <div id="emptyState" class="hidden text-center py-16 text-gray-400">
             <x-icon name="search" size="xl" class="inline mb-3" />
-            <p class="text-lg">No results found for this domain.</p>
+            <p class="text-lg">No competitors found for this domain.</p>
         </div>
 
     </div>
@@ -81,6 +103,7 @@ $(function () {
     const btnSearch      = $('#btnSearch');
     const btnLabel       = $('#btnLabel');
     const domainInput    = $('#domainInput');
+    const locationSelect = $('#locationSelect');
     const errorMsg       = $('#errorMsg');
     const resultsWrapper = $('#resultsWrapper');
     const resultsBody    = $('#resultsBody');
@@ -98,14 +121,15 @@ $(function () {
     $('#btnExportCsv').on('click', function () {
         if (!lastRows.length) return;
 
-        const headers = ['Referring Domain', 'Domain MS', 'Backlink Type'];
+        const headers = ['Competitor Domain', 'Shared Keywords', 'Relevance (%)', 'Est. Organic Traffic'];
         const lines   = [headers.join(',')];
 
         lastRows.forEach(function (row) {
             const cols = [
-                '"' + (row.domain      || '').replace(/"/g, '""') + '"',
-                row.ms !== null ? row.ms : '',
-                '"' + (row.backlink_type || '').replace(/"/g, '""') + '"',
+                '"' + (row.domain || '').replace(/"/g, '""') + '"',
+                row.intersections !== null ? row.intersections : '',
+                row.relevance     !== null ? row.relevance     : '',
+                row.organic_traffic !== null ? row.organic_traffic : '',
             ];
             lines.push(cols.join(','));
         });
@@ -113,7 +137,7 @@ $(function () {
         const csv      = lines.join('\r\n');
         const blob     = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url      = URL.createObjectURL(blob);
-        const filename = 'referring-domains-' + lastDomain + '.csv';
+        const filename = 'competitors-' + lastDomain + '.csv';
 
         const a = document.createElement('a');
         a.href     = url;
@@ -151,7 +175,7 @@ $(function () {
             url: "{{ route('tools.referring_domains.search') }}",
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': csrfToken },
-            data: { domain: domain },
+            data: { domain: domain, location_name: locationSelect.val() },
             success: function (res) {
                 setLoading(false);
                 lastRows   = res.rows || [];
@@ -165,7 +189,7 @@ $(function () {
                 }
 
                 sortAsc = false;
-                $('#msArrow').text('↓');
+                $('#kwArrow').text('↓');
                 renderRows();
                 resultsWrapper.removeClass('hidden');
             },
@@ -179,15 +203,16 @@ $(function () {
 
     function renderRows() {
         const sorted = lastRows.slice().sort(function (a, b) {
-            const msA = a.ms !== null ? a.ms : -1;
-            const msB = b.ms !== null ? b.ms : -1;
-            return sortAsc ? msA - msB : msB - msA;
+            const ka = a.intersections !== null ? a.intersections : -1;
+            const kb = b.intersections !== null ? b.intersections : -1;
+            return sortAsc ? ka - kb : kb - ka;
         });
 
         resultsBody.empty();
         sorted.forEach(function (row, i) {
-            const ms   = row.ms !== null ? row.ms : '—';
-            const type = row.backlink_type || '—';
+            const kw      = row.intersections    !== null ? row.intersections.toLocaleString()    : '—';
+            const rel     = row.relevance        !== null ? row.relevance + '%'                    : '—';
+            const traffic = row.organic_traffic  !== null ? row.organic_traffic.toLocaleString()  : '—';
             resultsBody.append(`
                 <tr class="hover:bg-gray-50">
                     <td class="py-2 px-4 text-gray-400">${i + 1}</td>
@@ -195,17 +220,18 @@ $(function () {
                         <a href="https://${row.domain}" target="_blank"
                            class="text-green-700 hover:underline">${row.domain}</a>
                     </td>
-                    <td class="py-2 px-4 text-center font-semibold">${ms}</td>
-                    <td class="py-2 px-4 text-gray-500">${type}</td>
+                    <td class="py-2 px-4 text-center font-semibold">${kw}</td>
+                    <td class="py-2 px-4 text-center">${rel}</td>
+                    <td class="py-2 px-4 text-center">${traffic}</td>
                 </tr>
             `);
         });
     }
 
-    $('#thMs').on('click', function () {
+    $('#thIntersections').on('click', function () {
         if (!lastRows.length) return;
         sortAsc = !sortAsc;
-        $('#msArrow').text(sortAsc ? '↑' : '↓');
+        $('#kwArrow').text(sortAsc ? '↑' : '↓');
         renderRows();
     });
 

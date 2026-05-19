@@ -16,37 +16,37 @@ class ReferringDomainsController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'domain' => 'required|string|max:255',
+            'domain'        => 'required|string|max:255',
+            'location_name' => 'nullable|string|max:100',
         ]);
 
-        $domain = $this->normalizeDomain($request->input('domain'));
+        $domain       = $this->normalizeDomain($request->input('domain'));
+        $locationName = $request->input('location_name', 'United States');
 
         if (empty($domain)) {
             return response()->json(['error' => 'Invalid domain.'], 422);
         }
 
+        $login    = env('DATAFORSEO_LOGIN');
+        $password = env('DATAFORSEO_PASSWORD');
+        if (! $login || ! $password) {
+            return response()->json(['error' => 'DataForSEO credentials not configured.'], 500);
+        }
+
         $payload = [[
-            'target'                    => $domain,
-            'mode'                      => 'one_per_domain',
-            'include_subdomains'        => true,
-            'exclude_internal_backlinks'=> true,
-            'include_indirect_links'    => false,
-            'backlinks_status_type'     => 'live',
-            'rank_scale'                => 'one_thousand',
-            'sort_field'                => 'rank',
-            'sort_order'                => 'desc',
-            'limit'                     => 200,
-            'filters'                   => [['dofollow', '=', true]],
+            'target'        => $domain,
+            'location_name' => $locationName,
+            'language_name' => 'English',
+            'limit'         => 100,
         ]];
 
         try {
-            $response = Http::withBasicAuth(
-                env('DATAFORSEO_LOGIN'),
-                env('DATAFORSEO_PASSWORD')
-            )->timeout(60)->post(
-                'https://api.dataforseo.com/v3/backlinks/backlinks/live',
-                $payload
-            );
+            $response = Http::withBasicAuth($login, $password)
+                ->timeout(60)
+                ->post(
+                    'https://api.dataforseo.com/v3/dataforseo_labs/google/competitors_domain/live',
+                    $payload
+                );
 
             if (! $response->successful()) {
                 return response()->json(['error' => 'API request failed.'], 502);
@@ -62,15 +62,19 @@ class ReferringDomainsController extends Controller
             $items = $task['result'][0]['items'] ?? [];
 
             $rows = array_map(function ($item) {
-                $platformTypes = $item['domain_from_platform_type'] ?? [];
+                $etv = $item['full_domain_metrics']['organic']['etv'] ?? null;
                 return [
-                    'domain'       => $item['domain_from'] ?? '',
-                    'ms'           => $item['domain_from_rank'] ?? null,
-                    'backlink_type'=> is_array($platformTypes)
-                        ? implode(', ', $platformTypes)
-                        : (string) $platformTypes,
+                    'domain'           => $item['domain'] ?? '',
+                    'intersections'    => $item['intersections'] ?? null,
+                    'relevance'        => isset($item['competitor_relevance'])
+                        ? round($item['competitor_relevance'] * 100, 1)
+                        : null,
+                    'organic_traffic'  => $etv !== null ? (int) $etv : null,
                 ];
             }, $items);
+
+            // Sort by shared keywords descending
+            usort($rows, fn ($a, $b) => ($b['intersections'] ?? 0) <=> ($a['intersections'] ?? 0));
 
             return response()->json([
                 'domain' => $domain,
