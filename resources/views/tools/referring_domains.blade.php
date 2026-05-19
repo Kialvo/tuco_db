@@ -79,7 +79,8 @@
                             Shared KW <span id="kwArrow">↓</span>
                         </th>
                         <th class="py-3 px-4 font-semibold text-center">Relevance</th>
-                        <th class="py-3 px-4 font-semibold text-center">Est. Traffic</th>
+                        <th class="py-3 px-4 font-semibold text-center">MS</th>
+                        <th class="py-3 px-4 font-semibold text-center">Organic Traffic</th>
                     </tr>
                     </thead>
                     <tbody id="resultsBody" class="divide-y divide-gray-100">
@@ -121,14 +122,15 @@ $(function () {
     $('#btnExportCsv').on('click', function () {
         if (!lastRows.length) return;
 
-        const headers = ['Competitor Domain', 'Shared Keywords', 'Relevance (%)', 'Est. Organic Traffic'];
+        const headers = ['Competitor Domain', 'Shared Keywords', 'Relevance (%)', 'MS', 'Organic Traffic'];
         const lines   = [headers.join(',')];
 
         lastRows.forEach(function (row) {
             const cols = [
                 '"' + (row.domain || '').replace(/"/g, '""') + '"',
-                row.intersections !== null ? row.intersections : '',
-                row.relevance     !== null ? row.relevance     : '',
+                row.intersections   !== null ? row.intersections   : '',
+                row.relevance       !== null ? row.relevance       : '',
+                row.ms              !== null ? row.ms              : '',
                 row.organic_traffic !== null ? row.organic_traffic : '',
             ];
             lines.push(cols.join(','));
@@ -210,9 +212,10 @@ $(function () {
 
         resultsBody.empty();
         sorted.forEach(function (row, i) {
-            const kw      = row.intersections    !== null ? row.intersections.toLocaleString()    : '—';
-            const rel     = row.relevance        !== null ? row.relevance + '%'                    : '—';
-            const traffic = row.organic_traffic  !== null ? row.organic_traffic.toLocaleString()  : '—';
+            const kw      = row.intersections    !== null ? row.intersections.toLocaleString()   : '—';
+            const rel     = row.relevance        !== null ? row.relevance + '%'                   : '—';
+            const ms      = row.ms               !== null ? row.ms                                : '—';
+            const traffic = row.organic_traffic  !== null ? row.organic_traffic.toLocaleString() : '—';
             resultsBody.append(`
                 <tr class="hover:bg-gray-50">
                     <td class="py-2 px-4 text-gray-400">${i + 1}</td>
@@ -222,6 +225,7 @@ $(function () {
                     </td>
                     <td class="py-2 px-4 text-center font-semibold">${kw}</td>
                     <td class="py-2 px-4 text-center">${rel}</td>
+                    <td class="py-2 px-4 text-center font-semibold">${ms}</td>
                     <td class="py-2 px-4 text-center">${traffic}</td>
                 </tr>
             `);
