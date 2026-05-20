@@ -8,23 +8,19 @@ window.Alpine = Alpine;
 Alpine.start();
 
 /* ─────────────────────────────────────────────────────────────
- |  Global tooltip + modal
+ |  Global tooltip + Swal modal
  |  Handles two trigger types:
- |    • .tip  (guest) — reads text from child .tip-box
+ |    • .tip              (guest) — reads text from child .tip-box
  |    • .metric-info-btn  (admin) — reads text from data-info attr
  |
- |  Hover  → small dark tooltip  (#global-tooltip)
- |  Click  → Swal info modal (guest .tip) / white popover (admin)
+ |  Hover → small dark tooltip (#global-tooltip)
+ |  Click → Swal.fire({ icon:'info', text }) for both guest and admin
  |
  |  All styling is inline CSS — app.js is NOT in Tailwind's content scan.
  *────────────────────────────────────────────────────────────*/
 (function initGlobalTooltip() {
-    /* ── State (admin popover only — guest uses Swal modal) ── */
-    let tipEl       = null;
-    let popEl       = null;
-    let raf         = null;
-    let open        = false;
-    let openTrigger = null;
+    let tipEl = null;
+    let raf   = null;
 
     /* ── Lazy create: dark mini tooltip ── */
     const ensureTip = () => {
@@ -42,24 +38,6 @@ Alpine.start();
         return tipEl;
     };
 
-    /* ── Lazy create: white popover card (admin only) ── */
-    const ensurePop = () => {
-        if (popEl) return popEl;
-        popEl = document.createElement('div');
-        popEl.id = 'global-popover';
-        popEl.style.cssText =
-            'position:fixed;z-index:10000;pointer-events:none;' +
-            'background:#fff;color:#374151;' +
-            'font-size:12px;line-height:1.55;font-weight:400;' +
-            'padding:12px 16px;border-radius:8px;' +
-            'border:1px solid #d1d5db;' +
-            'box-shadow:0 4px 16px rgba(0,0,0,0.13);' +
-            'max-width:264px;white-space:normal;word-break:break-word;' +
-            'opacity:0;transition:opacity 0.15s;';
-        document.body.appendChild(popEl);
-        return popEl;
-    };
-
     /* ── Read text from a trigger element ── */
     const getText = (trigger) => {
         if (trigger.classList.contains('metric-info-btn')) {
@@ -71,8 +49,8 @@ Alpine.start();
 
     /* ── Position an element above (or below) trigger ── */
     const placeEl = (node, trigger, maxW) => {
-        const r  = trigger.getBoundingClientRect();
-        const cx = r.left + r.width / 2;
+        const r    = trigger.getBoundingClientRect();
+        const cx   = r.left + r.width / 2;
         const left = Math.max(maxW / 2 + 8, Math.min(cx, window.innerWidth - maxW / 2 - 8));
         node.style.left = left + 'px';
         if (r.top > 70) {
@@ -86,7 +64,6 @@ Alpine.start();
 
     /* ── Hover tooltip helpers ── */
     const showTip = (trigger) => {
-        if (open) return;
         if (window.Swal && Swal.isVisible()) return;
         const text = getText(trigger);
         if (!text) return;
@@ -100,28 +77,8 @@ Alpine.start();
         if (tipEl) tipEl.style.opacity = '0';
     };
 
-    /* ── Admin popover helpers ── */
-    const showPop = (trigger) => {
-        const text = getText(trigger);
-        if (!text) return;
-        hideTip();
-        const pop = ensurePop();
-        pop.textContent = text;
-        placeEl(pop, trigger, 264);
-        pop.style.opacity = '1';
-        open        = true;
-        openTrigger = trigger;
-    };
-
-    const hidePop = () => {
-        if (popEl) popEl.style.opacity = '0';
-        open        = false;
-        openTrigger = null;
-    };
-
     /* ── Hover ── */
     document.addEventListener('mouseover', (e) => {
-        if (open) return;
         if (window.Swal && Swal.isVisible()) return;
         const trigger = e.target.closest && e.target.closest('.tip, .metric-info-btn');
         if (!trigger) return;
@@ -129,7 +86,6 @@ Alpine.start();
     }, true);
 
     document.addEventListener('mouseout', (e) => {
-        if (open) return;
         const trigger = e.target.closest && e.target.closest('.tip, .metric-info-btn');
         if (!trigger) return;
         const next = e.relatedTarget;
@@ -137,41 +93,21 @@ Alpine.start();
         hideTip();
     }, true);
 
-    /* ── Click ── */
+    /* ── Click: both guest .tip and admin .metric-info-btn → Swal ── */
     document.addEventListener('click', (e) => {
-        /* Admin: metric-info-btn → white popover card (toggle) */
-        const infoBtn = e.target.closest && e.target.closest('.metric-info-btn');
-        if (infoBtn) {
-            e.stopPropagation();
-            if (open && openTrigger === infoBtn) { hidePop(); }
-            else { showPop(infoBtn); }
-            return;
+        const trigger = e.target.closest && e.target.closest('.tip, .metric-info-btn');
+        if (!trigger) return;
+        e.stopPropagation();
+        const text = getText(trigger);
+        if (!text) return;
+        hideTip();
+        if (window.Swal) {
+            Swal.fire({ icon: 'info', text: text });
         }
-        /* Guest: .tip → Swal info modal */
-        const tipTrigger = e.target.closest && e.target.closest('.tip');
-        if (tipTrigger) {
-            const text = getText(tipTrigger);
-            if (!text) return;
-            hideTip();
-            if (window.Swal) {
-                Swal.fire({ icon: 'info', text: text });
-            }
-            return;
-        }
-        if (open) hidePop();
     }, true);
 
-    /* ── Escape dismisses admin popover (Swal handles its own Escape) ── */
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && open) hidePop();
-    });
-
-    /* ── Reposition on scroll / resize ── */
+    /* ── Reposition tooltip on scroll / resize ── */
     const reposition = () => {
-        if (open && openTrigger) {
-            placeEl(ensurePop(), openTrigger, 264);
-            return;
-        }
         if (tipEl && tipEl.style.opacity !== '0') {
             const hovered = document.querySelector('.tip:hover, .metric-info-btn:hover');
             if (!hovered) { hideTip(); return; }

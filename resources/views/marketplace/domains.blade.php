@@ -104,20 +104,20 @@
                     <x-ds.th>Notes</x-ds.th>
                     <x-ds.th>Country</x-ds.th>
                     <x-ds.th>Lang</x-ds.th>
-                    <x-ds.th tip="Standard guest post price in €">Price</x-ds.th>
-                    <x-ds.th tip="Price for betting, trading or adult content">Sens. Price</x-ds.th>
+                    <x-ds.th tip="This is the final amount you pay for placement on this website, including our service fee.">Price</x-ds.th>
+                    <x-ds.th tip="This is the final amount you pay for publishing content in sensitive niches (e.g. gambling, crypto, adult, dating, CBD, etc.), including our service fee.">Sens. Price</x-ds.th>
                     <x-ds.th>Type</x-ds.th>
                     <x-ds.th>Categories</x-ds.th>
-                    <x-ds.th align="center" tip="Domain Authority (Moz) 0–100">DA</x-ds.th>
-                    <x-ds.th align="center" tip="Page Authority (Moz) 0–100">PA</x-ds.th>
-                    <x-ds.th align="center" tip="Authority Score (Semrush) 0–100">AS</x-ds.th>
-                    <x-ds.th align="center" tip="Estimated monthly traffic (Semrush)">Semrush Traffic</x-ds.th>
-                    <x-ds.th align="center" tip="Menford Score 0–100">MS</x-ds.th>
-                    <x-ds.th align="center" tip="Organic keyword count">Organic KW</x-ds.th>
-                    <x-ds.th align="center" tip="Estimated organic traffic">Organic Traffic</x-ds.th>
-                    <x-ds.th align="center" tip="Keyword to traffic ratio">KW/Traffic</x-ds.th>
-                    <x-ds.th align="center" tip="Accepts betting and gambling content">Betting</x-ds.th>
-                    <x-ds.th align="center" tip="Accepts trading, forex and crypto content">Trading</x-ds.th>
+                    <x-ds.th align="center" tip="Domain Authority (Moz): ranking score 1-100. Higher DA usually passes more link value; 30+ good, 50+ excellent, 70+ premium.">DA</x-ds.th>
+                    <x-ds.th align="center" tip="Page Authority (Moz): predicts ranking strength of a specific page on a 1-100 scale. Higher is better.">PA</x-ds.th>
+                    <x-ds.th align="center" tip="Authority Score (Semrush): overall domain quality score (0-100) based on backlinks, traffic, and trust signals.">AS</x-ds.th>
+                    <x-ds.th align="center" tip="Estimated monthly organic visitors from Semrush. Higher traffic means more visibility; 5k+ good, 50k+ excellent.">Semrush Traffic</x-ds.th>
+                    <x-ds.th align="center" tip="Menford Score: proprietary authority score (0–1,000) based on a weighted average of backlink profile strength across multiple competitive intelligence sources. Higher is better; 100–200 entry level, 200–400 good, 400+ strong.">MS</x-ds.th>
+                    <x-ds.th align="center" tip="Organic Keywords: estimated number of keywords a domain ranks for in organic search results globally. Higher values indicate broader topical relevance; 1,000–5,000 entry level, 5,000–30,000 good, 30,000+ strong.">Organic KW</x-ds.th>
+                    <x-ds.th align="center" tip="Organic Traffic: estimated monthly organic search visits. Values are best used for comparative analysis across domains; 5,000–20,000 entry level, 20,000–200,000 good, 200,000+ strong.">Organic Traffic</x-ds.th>
+                    <x-ds.th align="center" tip="KW/Traffic Ratio: traffic efficiency per keyword. Higher means each keyword brings more visits; low ratios may suggest weak rankings.">KW/Traffic</x-ds.th>
+                    <x-ds.th align="center" tip="Accepts betting and gambling content.">Betting</x-ds.th>
+                    <x-ds.th align="center" tip="Accepts trading, forex and crypto content.">Trading</x-ds.th>
                 </x-slot>
 
                 @foreach($websites as $w)
