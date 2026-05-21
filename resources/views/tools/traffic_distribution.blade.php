@@ -88,9 +88,15 @@
                     <thead>
                     <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                         <th class="py-3 px-4 font-semibold text-left">Domain</th>
-                        <th class="py-3 px-4 font-semibold text-center">MS</th>
-                        <th class="py-3 px-4 font-semibold text-center">Organic KW</th>
-                        <th class="py-3 px-4 font-semibold text-center">Organic Traffic</th>
+                        <th class="py-3 px-4 font-semibold text-center cursor-pointer select-none hover:bg-gray-100 transition-colors" data-sort="ms">
+                            MS <span class="sort-indicator text-gray-400 not-italic normal-case tracking-normal">⇅</span>
+                        </th>
+                        <th class="py-3 px-4 font-semibold text-center cursor-pointer select-none hover:bg-gray-100 transition-colors" data-sort="organic_kw">
+                            Organic KW <span class="sort-indicator text-gray-400 not-italic normal-case tracking-normal">⇅</span>
+                        </th>
+                        <th class="py-3 px-4 font-semibold text-center cursor-pointer select-none hover:bg-gray-100 transition-colors" data-sort="organic_traffic">
+                            Organic Traffic <span class="sort-indicator text-gray-400 not-italic normal-case tracking-normal">⇅</span>
+                        </th>
                         <th class="py-3 px-4 font-semibold text-left">1st Country</th>
                         <th class="py-3 px-4 font-semibold text-left">2nd Country</th>
                         <th class="py-3 px-4 font-semibold text-left">3rd Country</th>
@@ -129,6 +135,56 @@ $(function () {
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
     let lastResults = [];
+    let sortState   = { col: null, dir: 'desc' };
+
+    // ── Sort helpers ──
+    function sortVal(row, col) {
+        if (col === 'ms')               return row.ms;
+        if (col === 'organic_kw')       return row.organic_kw;
+        if (col === 'organic_traffic')  return row.organic_traffic;
+        return null;
+    }
+
+    function sortedRows(rows) {
+        if (!sortState.col) return rows;
+        return [...rows].sort(function (a, b) {
+            const av = sortVal(a, sortState.col);
+            const bv = sortVal(b, sortState.col);
+            if (av === null && bv === null) return 0;
+            if (av === null) return 1;
+            if (bv === null) return -1;
+            return sortState.dir === 'asc' ? av - bv : bv - av;
+        });
+    }
+
+    function updateSortHeaders() {
+        $('[data-sort]').each(function () {
+            const col = $(this).data('sort');
+            const indicator = $(this).find('.sort-indicator');
+            if (sortState.col === col) {
+                indicator.text(sortState.dir === 'asc' ? '↑' : '↓').removeClass('text-gray-400').addClass('text-green-600');
+            } else {
+                indicator.text('⇅').removeClass('text-green-600').addClass('text-gray-400');
+            }
+        });
+    }
+
+    function renderTable(rows) {
+        resultsBody.empty();
+        sortedRows(rows).forEach(function (row) { resultsBody.append(renderRow(row)); });
+        updateSortHeaders();
+    }
+
+    $('[data-sort]').on('click', function () {
+        const col = $(this).data('sort');
+        if (sortState.col === col) {
+            sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortState.col = col;
+            sortState.dir = 'desc';
+        }
+        renderTable(lastResults);
+    });
 
     // ── CSV export ──
     $('#btnExportCsv').on('click', function () {
@@ -142,7 +198,7 @@ $(function () {
         ];
         const lines = [headers.join(',')];
 
-        lastResults.forEach(function (row) {
+        sortedRows(lastResults).forEach(function (row) {
             const c = row.countries || [];
             const cols = [
                 '"' + (row.domain || '').replace(/"/g, '""') + '"',
@@ -268,10 +324,8 @@ $(function () {
                     return;
                 }
 
-                rows.forEach(function (row) {
-                    resultsBody.append(renderRow(row));
-                });
-
+                sortState = { col: null, dir: 'desc' };
+                renderTable(rows);
                 resultsWrapper.removeClass('hidden');
             },
             error: function (xhr) {

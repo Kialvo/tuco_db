@@ -171,6 +171,7 @@ class KeywordResearchController extends Controller
         }
 
         // ── 3) Search Intent ─────────────────────────────────────────────────
+        // search_intent/live only accepts keywords + language — no location_name
         try {
             $response = Http::withBasicAuth($login, $password)
                 ->timeout(60)
@@ -178,7 +179,6 @@ class KeywordResearchController extends Controller
                     'https://api.dataforseo.com/v3/dataforseo_labs/google/search_intent/live',
                     [[
                         'keywords'      => $kwList,
-                        'location_name' => $locationName,
                         'language_name' => $languageName,
                     ]]
                 );
@@ -189,7 +189,7 @@ class KeywordResearchController extends Controller
                     foreach ($task['result'][0]['items'] ?? [] as $item) {
                         $kw = $item['keyword'] ?? null;
                         if ($kw && isset($keywords[$kw])) {
-                            $keywords[$kw]['intent'] = $item['keyword_intent']['main_intent'] ?? null;
+                            $keywords[$kw]['intent'] = $item['keyword_intent']['label'] ?? null;
                         }
                     }
                 }
