@@ -6,7 +6,7 @@
 
 {{-- Drawer panel --}}
 <div id="domainDrawer"
-     class="fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:w-[580px] bg-white shadow-2xl
+     class="fixed inset-y-0 right-0 z-50 flex flex-col w-full sm:w-[620px] bg-white shadow-2xl
             transition-transform duration-300 translate-x-full">
 
     {{-- Header --}}
@@ -26,7 +26,7 @@
     </div>
 
     {{-- Body --}}
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 overflow-y-auto p-3">
         {{-- Spinner --}}
         <div id="drawerSpinner" class="hidden flex flex-col items-center justify-center py-16 text-gray-400">
             <svg class="w-6 h-6 animate-spin mb-2 text-green-600" fill="none" viewBox="0 0 24 24">
@@ -35,27 +35,12 @@
             </svg>
             <span class="text-sm">Loading entries…</span>
         </div>
-
         {{-- Empty state --}}
         <div id="drawerEmpty" class="hidden text-center py-16 text-gray-400 text-sm">
             No storage entries found for this domain.
         </div>
-
-        {{-- Table --}}
-        <table id="drawerTable" class="hidden w-full text-xs text-gray-700">
-            <thead>
-                <tr class="text-[11px] uppercase text-gray-500 tracking-wider border-b border-gray-200 bg-gray-50 sticky top-0">
-                    <th class="py-2 px-3 text-left font-semibold">ID</th>
-                    <th class="py-2 px-3 text-left font-semibold">Status</th>
-                    <th class="py-2 px-3 text-left font-semibold">Campaign</th>
-                    <th class="py-2 px-3 text-left font-semibold">Anchor</th>
-                    <th class="py-2 px-3 text-left font-semibold">Published</th>
-                    <th class="py-2 px-3 text-right font-semibold">Profit</th>
-                    <th class="py-2 px-3 text-center font-semibold">Article</th>
-                </tr>
-            </thead>
-            <tbody id="drawerTableBody" class="divide-y divide-gray-100"></tbody>
-        </table>
+        {{-- Cards list --}}
+        <div id="drawerCards"></div>
     </div>
 
     {{-- Footer --}}
@@ -84,15 +69,14 @@ $(function () {
     const $drawer   = $('#domainDrawer');
     const $backdrop = $('#domainDrawerBackdrop');
 
+    /* ── open ── */
     function openDomainDrawer(domain) {
         $('#drawerDomainName').text(domain);
         $('#drawerEntryCount').text('…');
         $('#drawerViewAll').attr('href', STORAGE_URL + '?domain=' + encodeURIComponent(domain));
-
         $('#drawerSpinner').removeClass('hidden');
         $('#drawerEmpty').addClass('hidden');
-        $('#drawerTable').addClass('hidden');
-        $('#drawerTableBody').empty();
+        $('#drawerCards').empty();
 
         $backdrop.removeClass('opacity-0 pointer-events-none').addClass('opacity-100');
         $drawer.removeClass('translate-x-full').addClass('translate-x-0');
@@ -108,40 +92,9 @@ $(function () {
                     return;
                 }
 
-                let html = '';
                 res.entries.forEach(function (e) {
-                    const campaign  = e.campaign    ? esc(e.campaign)    : '<span class="text-gray-300">—</span>';
-                    const anchor    = e.anchor_text  ? esc(e.anchor_text) : '<span class="text-gray-300">—</span>';
-                    const pubDate   = e.publication_date
-                        ? new Date(e.publication_date).toLocaleDateString('en-GB')
-                        : '<span class="text-gray-300">—</span>';
-                    const profitNum = parseFloat(e.profit);
-                    const profitHtml = (e.profit !== null && e.profit !== undefined)
-                        ? `<span class="font-semibold ${profitNum < 0 ? 'text-red-600' : 'text-gray-800'}">€&thinsp;${e.profit}</span>`
-                        : '<span class="text-gray-300">—</span>';
-                    const articleLink = e.article_url
-                        ? `<a href="${esc(e.article_url)}" target="_blank" rel="noopener" class="text-blue-600 hover:underline" title="${esc(e.article_url)}">Link</a>`
-                        : '<span class="text-gray-300">—</span>';
-
-                    html += `<tr class="hover:bg-green-50 transition-colors">
-                        <td class="py-2 px-3">
-                            <a href="${e.edit_url}" class="text-green-700 font-semibold hover:underline">#${e.id}</a>
-                        </td>
-                        <td class="py-2 px-3">${statusBadge(e.status)}</td>
-                        <td class="py-2 px-3 max-w-[120px]">
-                            <span class="block truncate" title="${esc(e.campaign || '')}">${campaign}</span>
-                        </td>
-                        <td class="py-2 px-3 max-w-[110px]">
-                            <span class="block truncate" title="${esc(e.anchor_text || '')}">${anchor}</span>
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap">${pubDate}</td>
-                        <td class="py-2 px-3 text-right">${profitHtml}</td>
-                        <td class="py-2 px-3 text-center">${articleLink}</td>
-                    </tr>`;
+                    $('#drawerCards').append(buildCard(e));
                 });
-
-                $('#drawerTableBody').html(html);
-                $('#drawerTable').removeClass('hidden');
             })
             .fail(function () {
                 $('#drawerSpinner').addClass('hidden');
@@ -149,36 +102,22 @@ $(function () {
             });
     }
 
+    /* ── close ── */
     window.closeDomainDrawer = function () {
         $drawer.removeClass('translate-x-0').addClass('translate-x-full');
         $backdrop.removeClass('opacity-100').addClass('opacity-0 pointer-events-none');
         $('body').removeClass('overflow-hidden');
     };
 
-    function statusBadge(s) {
-        if (!s) return '<span class="text-gray-300">—</span>';
-        const palette = {
-            'published'  : 'bg-green-100 text-green-800',
-            'live'       : 'bg-green-100 text-green-800',
-            'pending'    : 'bg-yellow-100 text-yellow-800',
-            'in progress': 'bg-blue-100 text-blue-800',
-            'rejected'   : 'bg-red-100 text-red-800',
-            'draft'      : 'bg-gray-100 text-gray-600',
-            'cancelled'  : 'bg-red-50 text-red-500',
-        };
-        const cls = palette[s.toLowerCase()] || 'bg-gray-100 text-gray-600';
-        return `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${cls}">${esc(s)}</span>`;
-    }
+    /* ── card toggle ── */
+    $(document).on('click', '.drawer-card-header', function () {
+        const $body = $(this).next('.drawer-card-body');
+        const $icon = $(this).find('.drawer-chevron');
+        $body.toggleClass('hidden');
+        $icon.toggleClass('rotate-180');
+    });
 
-    function esc(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
-
+    /* ── trigger ── */
     $(document).on('click', '.domain-storage-link', function (e) {
         e.preventDefault();
         const domain = $(this).data('domain');
@@ -190,6 +129,170 @@ $(function () {
     $(document).on('keydown', function (e) {
         if (e.key === 'Escape') window.closeDomainDrawer();
     });
+
+    /* ══════════════════════════════════════════════
+       Card builder
+    ══════════════════════════════════════════════ */
+    function buildCard(e) {
+        const profitNum  = parseFloat(e.profit);
+        const profitCls  = !isNaN(profitNum) && profitNum < 0 ? 'text-red-600' : 'text-gray-800';
+        const profitDisp = e.profit !== null && e.profit !== undefined
+            ? `<span class="font-semibold ${profitCls}">€ ${e.profit}</span>`
+            : dash();
+
+        return `
+<div class="border border-gray-200 rounded-lg mb-2 overflow-hidden text-xs">
+
+    {{-- ── summary row (always visible, click to expand) ── --}}
+    <div class="drawer-card-header flex items-center gap-2 px-3 py-2.5 bg-gray-50
+                hover:bg-gray-100 cursor-pointer select-none">
+        <a href="${esc(e.edit_url)}" onclick="event.stopPropagation()"
+           class="text-green-700 font-bold hover:underline flex-shrink-0">#${e.id}</a>
+        ${statusBadge(e.status)}
+        <span class="flex-1 truncate text-gray-700 font-medium" title="${esc(e.campaign || '')}">${e.campaign ? esc(e.campaign) : dash()}</span>
+        <span class="text-gray-500 whitespace-nowrap flex-shrink-0">${fmtDate(e.publication_date)}</span>
+        <span class="flex-shrink-0">${profitDisp}</span>
+        <svg class="drawer-chevron w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform duration-200"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+    </div>
+
+    {{-- ── expanded details ── --}}
+    <div class="drawer-card-body hidden px-3 py-3 bg-white border-t border-gray-100 space-y-3">
+
+        ${section('General', [
+            ['Status',       statusBadge(e.status)],
+            ['LB',           e.LB],
+            ['Client',       e.client_name],
+            ['Contact',      e.contact_name],
+            ['Country',      e.country_name],
+            ['Language',     e.language_name],
+            ['Copywriter',   e.copywriter_name],
+            ['Categories',   e.categories_list],
+            ['Added',        e.created_at],
+        ])}
+
+        ${section('Campaign', [
+            ['Target Domain',  e.campaign],
+            ['Anchor Text',    e.anchor_text],
+            ['Target URL',     linkOrDash(e.target_url)],
+            ['Campaign Code',  e.campaign_code],
+            ['Article URL',    linkOrDash(e.article_url)],
+        ])}
+
+        ${section('Financial', [
+            ['Currency',         e.publisher_currency],
+            ['Publisher Amount', moneyRaw(e.publisher_amount, e.publisher_currency)],
+            ['Publisher €',      money(e.publisher)],
+            ['Copywriter €',     money(e.copy_nr)],
+            ['Total Cost',       money(e.total_cost)],
+            ['Menford',          money(e.menford)],
+            ['Client Copy',      money(e.client_copy)],
+            ['Total Revenues',   money(e.total_revenues)],
+            ['Profit',           profitDisp],
+        ])}
+
+        ${section('Timeline', [
+            ['CW Commission',   fmtDate(e.copywriter_commision_date)],
+            ['CW Submission',   fmtDate(e.copywriter_submission_date)],
+            ['CW Period (days)',  e.copywriter_period],
+            ['Article Sent',    fmtDate(e.article_sent_to_publisher)],
+            ['Published',       fmtDate(e.publication_date)],
+            ['Expires',         fmtDate(e.expiration_date)],
+            ['Pub Period (days)', e.publisher_period],
+        ])}
+
+        ${section('Invoicing', [
+            ['Method → Us',          e.method_payment_to_us],
+            ['Invoice Menford',      fmtDate(e.invoice_menford)],
+            ['Invoice Nr',           e.invoice_menford_nr],
+            ['Invoice Company',      e.invoice_company],
+            ['Payment To Us',        fmtDate(e.payment_to_us_date)],
+            ['Bill Publisher',       e.bill_publisher_name],
+            ['Bill Nr',              e.bill_publisher_nr],
+            ['Bill Date',            fmtDate(e.bill_publisher_date)],
+            ['Payment To Publisher', fmtDate(e.payment_to_publisher_date)],
+            ['Method → Publisher',   e.method_payment_to_publisher],
+        ])}
+
+        ${e.files ? section('Files', [['Files', esc(e.files)]]) : ''}
+
+        <div class="pt-1">
+            <a href="${esc(e.edit_url)}"
+               class="inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:underline">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Edit this entry
+            </a>
+        </div>
+    </div>
+</div>`;
+    }
+
+    /* ── helpers ── */
+    function section(title, rows) {
+        const filtered = rows.filter(([, v]) => v !== null && v !== undefined && v !== '' && v !== dash());
+        if (!filtered.length) return '';
+        const items = filtered.map(([label, value]) =>
+            `<div class="flex gap-1.5">
+                <dt class="w-36 flex-shrink-0 text-gray-400 font-medium">${esc(label)}</dt>
+                <dd class="text-gray-800 min-w-0 break-words">${value}</dd>
+            </div>`
+        ).join('');
+        return `<div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">${title}</p>
+            <dl class="space-y-1">${items}</dl>
+        </div>`;
+    }
+
+    function dash() { return '<span class="text-gray-300">—</span>'; }
+
+    function fmtDate(v) {
+        if (!v) return null;
+        try { return new Date(v).toLocaleDateString('en-GB'); } catch(e) { return v; }
+    }
+
+    function money(v) {
+        if (v === null || v === undefined || v === '') return null;
+        return `€ ${v}`;
+    }
+
+    function moneyRaw(v, currency) {
+        if (v === null || v === undefined || v === '') return null;
+        const sym = currency && currency.toUpperCase() !== 'EUR' ? currency + ' ' : '€ ';
+        return `${sym}${v}`;
+    }
+
+    function linkOrDash(url) {
+        if (!url) return null;
+        return `<a href="${esc(url)}" target="_blank" rel="noopener"
+                   class="text-blue-600 hover:underline break-all">${esc(url)}</a>`;
+    }
+
+    function statusBadge(s) {
+        if (!s) return dash();
+        const palette = {
+            'published'  : 'bg-green-100 text-green-800',
+            'live'       : 'bg-green-100 text-green-800',
+            'pending'    : 'bg-yellow-100 text-yellow-800',
+            'in progress': 'bg-blue-100 text-blue-800',
+            'rejected'   : 'bg-red-100 text-red-800',
+            'draft'      : 'bg-gray-100 text-gray-600',
+            'cancelled'  : 'bg-red-50 text-red-500',
+        };
+        const cls = palette[s.toLowerCase()] || 'bg-gray-100 text-gray-600';
+        return `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide flex-shrink-0 ${cls}">${esc(s)}</span>`;
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 });
 </script>
 @endpush
