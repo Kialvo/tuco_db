@@ -91,23 +91,75 @@ class StorageController extends Controller
     {
         $domain = trim($request->get('domain', ''));
 
-        $entries = Storage::whereHas('site', fn ($q) => $q->where('domain_name', $domain))
-            ->orderByDesc('publication_date')
-            ->limit(100)
-            ->get(['id', 'status', 'publication_date', 'campaign', 'anchor_text', 'article_url', 'profit', 'website_id']);
+        $entries = Storage::with([
+            'site:id,domain_name,contact_id',
+            'site.contact:id,name',
+            'country:id,country_name',
+            'language:id,name',
+            'client:id,first_name,last_name',
+            'copy:id,copy_val',
+            'contacts',
+            'categories:id,name',
+        ])
+        ->whereHas('site', fn ($q) => $q->where('domain_name', $domain))
+        ->orderByDesc('publication_date')
+        ->limit(100)
+        ->get();
 
         return response()->json([
             'domain'  => $domain,
             'total'   => $entries->count(),
             'entries' => $entries->map(fn ($e) => [
-                'id'               => $e->id,
-                'status'           => $e->status,
-                'publication_date' => $e->publication_date,
-                'campaign'         => $e->campaign,
-                'anchor_text'      => $e->anchor_text,
-                'article_url'      => $e->article_url,
-                'profit'           => $e->profit,
-                'edit_url'         => route('storages.edit', $e->id),
+                // identity
+                'id'                          => $e->id,
+                'edit_url'                    => route('storages.edit', $e->id),
+                'status'                      => $e->status,
+                'LB'                          => $e->LB,
+                'created_at'                  => $e->created_at?->format('d/m/Y'),
+                // relations
+                'client_name'                 => $e->client ? trim($e->client->first_name.' '.$e->client->last_name) : null,
+                'contact_name'                => $e->primary_contact?->name,
+                'copywriter_name'             => optional($e->copy)->copy_val,
+                'copy_nr'                     => $e->copy_nr,
+                'country_name'                => optional($e->country)->country_name,
+                'language_name'               => optional($e->language)->name,
+                'categories_list'             => $e->categories->pluck('name')->join(', '),
+                // campaign
+                'campaign'                    => $e->campaign,
+                'anchor_text'                 => $e->anchor_text,
+                'target_url'                  => $e->target_url,
+                'campaign_code'               => $e->campaign_code,
+                'article_url'                 => $e->article_url,
+                // financial
+                'publisher_currency'          => $e->publisher_currency,
+                'publisher_amount'            => $e->publisher_amount,
+                'publisher'                   => $e->publisher,
+                'total_cost'                  => $e->total_cost,
+                'menford'                     => $e->menford,
+                'client_copy'                 => $e->client_copy,
+                'total_revenues'              => $e->total_revenues,
+                'profit'                      => $e->profit,
+                // timeline
+                'copywriter_commision_date'   => $e->copywriter_commision_date,
+                'copywriter_submission_date'  => $e->copywriter_submission_date,
+                'copywriter_period'           => $e->copywriter_period,
+                'article_sent_to_publisher'   => $e->article_sent_to_publisher,
+                'publication_date'            => $e->publication_date,
+                'expiration_date'             => $e->expiration_date,
+                'publisher_period'            => $e->publisher_period,
+                // invoicing
+                'method_payment_to_us'        => $e->method_payment_to_us,
+                'invoice_menford'             => $e->invoice_menford,
+                'invoice_menford_nr'          => $e->invoice_menford_nr,
+                'invoice_company'             => $e->invoice_company,
+                'payment_to_us_date'          => $e->payment_to_us_date,
+                'bill_publisher_name'         => $e->bill_publisher_name,
+                'bill_publisher_nr'           => $e->bill_publisher_nr,
+                'bill_publisher_date'         => $e->bill_publisher_date,
+                'payment_to_publisher_date'   => $e->payment_to_publisher_date,
+                'method_payment_to_publisher' => $e->method_payment_to_publisher,
+                // misc
+                'files'                       => $e->files,
             ]),
         ]);
     }
