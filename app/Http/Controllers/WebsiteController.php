@@ -986,7 +986,8 @@ class WebsiteController extends Controller
 
         try {
             $service = app(\App\Services\DataForSeoService::class);
-            $results = $service->fetchBatch([$website->domain_name]);
+            $website->loadMissing(['country', 'language']);
+            $results = $this->fetchBatchByLocation($service, [$website]);
             $this->upsertDataForSeo([$website], $results);
         } catch (\Throwable $e) {
             // silent — website is saved regardless
@@ -1530,12 +1531,13 @@ class WebsiteController extends Controller
 
         $service = app(\App\Services\DataForSeoService::class);
 
-        // sync_all — now safe thanks to bulk endpoints (just ~10 API calls for thousands of domains)
         if ($request->boolean('sync_all')) {
-            $websites = Website::query()->select(['id', 'domain_name'])->get();
-            $domains  = $websites->pluck('domain_name')->all();
-            $results  = $service->fetchBatch($domains);
+            $websites = Website::query()
+                ->select(['id', 'domain_name', 'country_id', 'language_id'])
+                ->with(['country', 'language'])
+                ->get();
 
+            $results = $this->fetchBatchByLocation($service, $websites->all());
             $updated = $this->upsertDataForSeo($websites->all(), $results);
 
             return response()->json([
@@ -1553,12 +1555,14 @@ class WebsiteController extends Controller
             return response()->json(['message' => 'No IDs provided'], 422);
         }
 
-        $websites = Website::whereIn('id', array_values($ids))->select(['id', 'domain_name'])->get();
-        $domains  = $websites->pluck('domain_name')->all();
-        $results  = $service->fetchBatch($domains);
-        $updated  = $this->upsertDataForSeo($websites->all(), $results);
+        $websites = Website::whereIn('id', array_values($ids))
+            ->select(['id', 'domain_name', 'country_id', 'language_id'])
+            ->with(['country', 'language'])
+            ->get();
 
-        // Debug detail — shows exactly what happened per domain
+        $results = $this->fetchBatchByLocation($service, $websites->all());
+        $updated = $this->upsertDataForSeo($websites->all(), $results);
+
         $debug = [];
         foreach ($websites as $w) {
             $d = $results[$w->domain_name] ?? null;
@@ -1575,6 +1579,72 @@ class WebsiteController extends Controller
             'message' => "Synced {$updated} domain(s).",
             'debug'   => $debug,
         ]);
+    }
+
+    /**
+     * Group websites by (location_code, language_code), fetch each group
+     * from DataForSEO with the appropriate location, and merge all results.
+     */
+    private function fetchBatchByLocation(\App\Services\DataForSeoService $service, array $websites): array
+    {
+        // Country name → DataForSEO location_code
+        $locationMap = [
+            'Italy'          => 2380,
+            'United States'  => 2840,
+            'United Kingdom' => 2826,
+            'France'         => 2250,
+            'Germany'        => 2276,
+            'Spain'          => 2724,
+            'Netherlands'    => 2528,
+            'Denmark'        => 2208,
+            'Sweden'         => 2752,
+            'Norway'         => 2578,
+            'Brazil'         => 2076,
+            'Mexico'         => 2484,
+            'Argentina'      => 2032,
+            'India'          => 2356,
+            'Russia'         => 2643,
+            'Poland'         => 2616,
+            'Australia'      => 2036,
+            'Canada'         => 2124,
+            'Belgium'        => 2056,
+            'Switzerland'    => 2756,
+            'Austria'        => 2040,
+            'Portugal'       => 2620,
+            'Romania'        => 2642,
+            'Czech Republic' => 2203,
+            'Hungary'        => 2348,
+            'Greece'         => 2300,
+            'Turkey'         => 2792,
+            'Japan'          => 2392,
+            'South Korea'    => 2410,
+            'China'          => 2156,
+        ];
+
+        // Group websites by their (location_code, language_code) pair
+        $groups = [];
+        foreach ($websites as $w) {
+            $countryName  = $w->country?->country_name;
+            $languageCode = $w->language?->code;
+            $locationCode = $countryName ? ($locationMap[$countryName] ?? null) : null;
+
+            $key = ($locationCode ?? 'null') . '_' . ($languageCode ?? 'null');
+            $groups[$key]['location_code']  = $locationCode;
+            $groups[$key]['language_code']  = $languageCode;
+            $groups[$key]['domains'][]      = $w->domain_name;
+        }
+
+        $allResults = [];
+        foreach ($groups as $group) {
+            $fetched = $service->fetchBatch(
+                $group['domains'],
+                $group['location_code'],
+                $group['language_code']
+            );
+            $allResults = array_merge($allResults, $fetched);
+        }
+
+        return $allResults;
     }
 
     private function upsertDataForSeo(array $websites, array $results): int

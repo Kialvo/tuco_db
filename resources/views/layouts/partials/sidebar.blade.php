@@ -156,29 +156,29 @@
                 </div>
                 <div x-show="open" x-cloak class="space-y-0.5 mt-1 ps-6">
                     <a href="{{ route('tools.discover') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-all
                               {{ $navActive('tools.discover') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="search" size="sm" class="me-2 inline" /> Discover Domains
+                        <x-icon name="search" size="sm" class="flex-shrink-0" /><span class="truncate">Discover Domains</span>
                     </a>
                     <a href="{{ route('tools.ahrefs.index') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-all
                               {{ $navActive('tools.ahrefs.*') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="broom" size="sm" class="me-2 inline" /> Clean Ahrefs CSV
+                        <x-icon name="broom" size="sm" class="flex-shrink-0" /><span class="truncate">Clean Ahrefs CSV</span>
                     </a>
                     <a href="{{ route('tools.referring_domains.index') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-all
                               {{ $navActive('tools.referring_domains.*') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="link" size="sm" class="me-2 inline" /> Referring Domains
+                        <x-icon name="link" size="sm" class="flex-shrink-0" /><span class="truncate">Referring Domains</span>
                     </a>
                     <a href="{{ route('tools.traffic_distribution.index') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-all
                               {{ $navActive('tools.traffic_distribution.*') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="globe-europe" size="sm" class="me-2 inline" /> Traffic by Country
+                        <x-icon name="globe-europe" size="sm" class="flex-shrink-0" /><span class="truncate">Batch Analysis</span>
                     </a>
                     <a href="{{ route('tools.keyword_research.index') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
+                       class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-all
                               {{ $navActive('tools.keyword_research.*') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="key" size="sm" class="me-2 inline" /> Keyword Research
+                        <x-icon name="key" size="sm" class="flex-shrink-0" /><span class="truncate">Keyword Research</span>
                     </a>
                 </div>
             </div>

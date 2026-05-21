@@ -42,9 +42,50 @@ class KeywordResearchController extends Controller
         $languageName = $request->input('language_name', 'English');
         $limit        = (int) $request->input('limit', 100);
 
-        // ── 1) Keyword ideas + volume + CPC ─────────────────────────────────
+        // ── 1a) Seed keyword metrics (volume/CPC/competition for the seeds themselves) ──
         $keywords = [];
 
+        try {
+            $response = Http::withBasicAuth($login, $password)
+                ->timeout(60)
+                ->post(
+                    'https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live',
+                    [[
+                        'keywords'      => $seeds,
+                        'location_name' => $locationName,
+                        'language_name' => $languageName,
+                    ]]
+                );
+
+            if ($response->successful()) {
+                $task = $response->json('tasks.0') ?? [];
+                if (($task['status_code'] ?? 0) === 20000) {
+                    foreach ($task['result'] ?? [] as $item) {
+                        $kw = $item['keyword'] ?? null;
+                        if (! $kw) continue;
+
+                        $comp = $item['competition'] ?? null;
+                        if (is_float($comp)) {
+                            $comp = $comp < 0.34 ? 'LOW' : ($comp < 0.67 ? 'MEDIUM' : 'HIGH');
+                        }
+
+                        $keywords[$kw] = [
+                            'keyword'     => $kw,
+                            'volume'      => $item['search_volume'] ?? null,
+                            'cpc'         => isset($item['cpc']) ? round((float) $item['cpc'], 2) : null,
+                            'competition' => $comp ? strtoupper($comp) : null,
+                            'kd'          => null,
+                            'intent'      => null,
+                            'is_seed'     => true,
+                        ];
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // seed metrics unavailable — non-fatal, ideas will still load
+        }
+
+        // ── 1b) Keyword ideas + volume + CPC ────────────────────────────────
         try {
             $response = Http::withBasicAuth($login, $password)
                 ->timeout(60)
@@ -68,25 +109,27 @@ class KeywordResearchController extends Controller
                 return response()->json(['error' => $task['status_message'] ?? 'Keyword expansion API error.'], 502);
             }
 
-            foreach ($task['result'] ?? [] as $result) {
-                foreach ($result['items'] ?? [] as $item) {
-                    $kw = $item['keyword'] ?? null;
-                    if (! $kw) continue;
+            $ideaCount = 0;
+            foreach ($task['result'] ?? [] as $item) {
+                if ($ideaCount >= $limit) break;
+                $kw = $item['keyword'] ?? null;
+                if (! $kw || isset($keywords[$kw])) continue; // skip if already added as seed
 
-                    $comp = $item['competition'] ?? null;
-                    if (is_float($comp)) {
-                        $comp = $comp < 0.34 ? 'LOW' : ($comp < 0.67 ? 'MEDIUM' : 'HIGH');
-                    }
-
-                    $keywords[$kw] = [
-                        'keyword'     => $kw,
-                        'volume'      => $item['search_volume'] ?? null,
-                        'cpc'         => isset($item['cpc']) ? round((float) $item['cpc'], 2) : null,
-                        'competition' => $comp ? strtoupper($comp) : null,
-                        'kd'          => null,
-                        'intent'      => null,
-                    ];
+                $comp = $item['competition'] ?? null;
+                if (is_float($comp)) {
+                    $comp = $comp < 0.34 ? 'LOW' : ($comp < 0.67 ? 'MEDIUM' : 'HIGH');
                 }
+
+                $keywords[$kw] = [
+                    'keyword'     => $kw,
+                    'volume'      => $item['search_volume'] ?? null,
+                    'cpc'         => isset($item['cpc']) ? round((float) $item['cpc'], 2) : null,
+                    'competition' => $comp ? strtoupper($comp) : null,
+                    'kd'          => null,
+                    'intent'      => null,
+                    'is_seed'     => false,
+                ];
+                $ideaCount++;
             }
         } catch (\Throwable $e) {
             return response()->json(['error' => 'Keyword expansion error: ' . $e->getMessage()], 500);
@@ -154,6 +197,9 @@ class KeywordResearchController extends Controller
         } catch (\Throwable $e) {
             // intent stays null — non-fatal
         }
+
+        // Seeds first, then ideas
+        usort($keywords, fn($a, $b) => ($b['is_seed'] ? 1 : 0) - ($a['is_seed'] ? 1 : 0));
 
         return response()->json([
             'total'    => count($keywords),

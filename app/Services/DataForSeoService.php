@@ -45,9 +45,10 @@ class DataForSeoService
      * - Organic KW + Traffic → dataforseo_labs/bulk_traffic_estimation (up to 1000/call)
      * - MS score             → derived from organic ETV via log-normalisation (0–1000 scale)
      *
+     * Pass $locationCode and $languageCode to get location-specific metrics instead of global.
      * Returns array keyed by the ORIGINAL domain string as passed in.
      */
-    public function fetchBatch(array $domains): array
+    public function fetchBatch(array $domains, ?int $locationCode = null, ?string $languageCode = null): array
     {
         if (empty($domains)) {
             return [];
@@ -68,12 +69,16 @@ class DataForSeoService
         // ── Organic Keywords + Traffic + MS via bulk_traffic_estimation ──────
         foreach ($chunks as $chunk) {
             try {
+                $payload = ['targets' => $chunk];
+                if ($locationCode)  $payload['location_code']  = $locationCode;
+                if ($languageCode)  $payload['language_code']  = strtolower($languageCode);
+
                 $response = Http::withBasicAuth(
                     env('DATAFORSEO_LOGIN'),
                     env('DATAFORSEO_PASSWORD')
                 )->timeout(60)->post(
                     'https://api.dataforseo.com/v3/dataforseo_labs/google/bulk_traffic_estimation/live',
-                    [['targets' => $chunk]]
+                    [$payload]
                 );
 
                 if (! $response->successful()) continue;

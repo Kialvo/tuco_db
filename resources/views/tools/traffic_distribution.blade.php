@@ -1,11 +1,11 @@
 @extends('layouts.dashboard')
-@section('title', 'Traffic by Country')
+@section('title', 'Batch Analysis')
 
 @section('content')
     {{-- Page header --}}
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
-            <h1 class="text-base font-bold text-gray-800">Traffic by Country</h1>
+            <h1 class="text-base font-bold text-gray-800">Batch Analysis</h1>
             <p class="text-xs text-gray-500 mt-0.5">Top 3 traffic countries, MS, organic keywords and traffic for any list of domains.</p>
         </div>
     </div>
