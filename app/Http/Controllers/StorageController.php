@@ -85,6 +85,34 @@ class StorageController extends Controller
 
 
     /*======================================================================
+    | DOMAIN PREVIEW  (used by the slide-over drawer on Domains / New Entries)
+    ======================================================================*/
+    public function domainPreview(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $domain = trim($request->get('domain', ''));
+
+        $entries = Storage::whereHas('site', fn ($q) => $q->where('domain_name', $domain))
+            ->orderByDesc('publication_date')
+            ->limit(100)
+            ->get(['id', 'status', 'publication_date', 'campaign', 'anchor_text', 'article_url', 'profit', 'website_id']);
+
+        return response()->json([
+            'domain'  => $domain,
+            'total'   => $entries->count(),
+            'entries' => $entries->map(fn ($e) => [
+                'id'               => $e->id,
+                'status'           => $e->status,
+                'publication_date' => $e->publication_date,
+                'campaign'         => $e->campaign,
+                'anchor_text'      => $e->anchor_text,
+                'article_url'      => $e->article_url,
+                'profit'           => $e->profit,
+                'edit_url'         => route('storages.edit', $e->id),
+            ]),
+        ]);
+    }
+
+    /*======================================================================
     | DATATABLES JSON
     ======================================================================*/
     public function getData(Request $request)

@@ -792,8 +792,8 @@
                 $('#filterShowDeleted').prop('checked',false);
                 $('#storagesTableSearch').val('');
                 table.search('');
-                filtersApplied = false;                    // back to “no filters”
-                table.ajax.reload();                       // redraw table
+                filtersApplied = false;
+                table.ajax.reload();
                 $('#summaryRow .sum-val').text('—');
                 window.buildFilterChips(() => table.ajax.reload(refreshSummary));
             });
