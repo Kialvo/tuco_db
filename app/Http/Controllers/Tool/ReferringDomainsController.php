@@ -84,11 +84,13 @@ class ReferringDomainsController extends Controller
             $items = $task['result'][0]['items'] ?? [];
 
             $rows = array_map(function ($item) {
-                $etv = $item['full_domain_metrics']['organic']['etv'] ?? null;
-                // MS: log10-normalise ETV with multiplier 100 for better spread
-                // 100k ETV→507, 1M ETV→600, 10M ETV→700, 100M ETV→800, 1B ETV→900
-                $ms  = $etv !== null
-                    ? min(1000, (int) round(log10(max(1, (float) $etv) + 1) * 100))
+                $etv   = $item['full_domain_metrics']['organic']['etv']   ?? null;
+                $count = $item['full_domain_metrics']['organic']['count'] ?? null;
+                $ms    = $etv !== null
+                    ? min(1000, (int) round(
+                        log10(max(1, (float)($count ?? 0)) + 1) * 120 +
+                        log10(max(1, (float) $etv) + 1) * 60
+                    ))
                     : null;
                 return [
                     'domain'          => $item['domain'] ?? '',
