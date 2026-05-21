@@ -242,11 +242,15 @@ $(function () {
             const comp   = row.competition
                 ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${compColors[row.competition] ?? 'bg-gray-100 text-gray-600'}">${row.competition}</span>`
                 : '<span class="text-gray-300">—</span>';
+            const seedBadge = row.is_seed
+                ? '<span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">seed</span>'
+                : '';
+            const rowClass = row.is_seed ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50';
 
             body.append(`
-                <tr class="hover:bg-gray-50">
+                <tr class="${rowClass}">
                     <td class="py-2 px-4 text-gray-400">${i + 1}</td>
-                    <td class="py-2 px-4 font-medium text-gray-800">${row.keyword}</td>
+                    <td class="py-2 px-4 font-medium text-gray-800">${row.keyword}${seedBadge}</td>
                     <td class="py-2 px-4 text-center">${vol}</td>
                     <td class="py-2 px-4 text-center">${kd}</td>
                     <td class="py-2 px-4 text-center text-gray-600">${cpc}</td>
@@ -284,12 +288,13 @@ $(function () {
         const rows = sortRows(applyFilters());
         if (!rows.length) return;
 
-        const headers = ['Keyword', 'Volume', 'KD', 'CPC (€)', 'Intent', 'Competition'];
+        const headers = ['Keyword', 'Type', 'Volume', 'KD', 'CPC (€)', 'Intent', 'Competition'];
         const lines   = [headers.join(',')];
 
         rows.forEach(function (r) {
             lines.push([
                 '"' + r.keyword.replace(/"/g, '""') + '"',
+                r.is_seed ? 'seed' : 'idea',
                 r.volume      !== null ? r.volume      : '',
                 r.kd          !== null ? r.kd          : '',
                 r.cpc         !== null ? r.cpc.toFixed(2) : '',
