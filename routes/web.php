@@ -287,6 +287,8 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
         ->name('storages.stats');
 
 
+    Route::get('/storages/domain-preview', [StorageController::class, 'domainPreview'])->name('storages.domain_preview');
+
     Route::resource('storages', StorageController::class)->names([
         'index'   => 'storages.index',
         'show'    => 'storages.show',

@@ -670,6 +670,7 @@
     @include('websites.partials.note-modal')
     @include('websites.partials.bulk-modal')
     @include('websites.partials.outreach-modal')
+    @include('partials.domain_storage_drawer')
 
 @endsection
 
@@ -1049,7 +1050,14 @@
                         }
                     },
                     @endif
-                    { data: 'domain_name', name: 'domain_name' },
+                    {
+                        data: 'domain_name',
+                        name: 'domain_name',
+                        render: function(data) {
+                            if (!data) return '—';
+                            return `<a href="#" class="domain-storage-link text-green-700 hover:underline font-medium" data-domain="${data}" title="View storage entries for ${data}">${data}</a>`;
+                        }
+                    },
                     {
                         data: 'notes',
                         name: 'notes',

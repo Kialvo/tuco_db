@@ -271,6 +271,7 @@
     @include('new_entries.partials.contact-modal')
     @include('new_entries.partials.note-modal')
     @include('new_entries.partials.bulk-modal')
+    @include('partials.domain_storage_drawer')
 @endsection
 
 @push('scripts')
@@ -413,7 +414,13 @@
                         render: id => `<input type="checkbox" class="rowChk form-checkbox h-4 w-4 text-green-600" value="${id}">`
                     },
                     { data:'id' },
-                    { data:'domain_name' },
+                    {
+                        data: 'domain_name',
+                        render: function(data) {
+                            if (!data) return '—';
+                            return `<a href="#" class="domain-storage-link text-green-700 hover:underline font-medium" data-domain="${data}" title="View storage entries for ${data}">${data}</a>`;
+                        }
+                    },
                     {
                         data:'extra_notes',
                         render:d=>{
