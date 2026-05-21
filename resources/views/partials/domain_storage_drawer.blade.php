@@ -15,6 +15,7 @@
             <h2 id="drawerDomainName" class="text-sm font-bold text-gray-800 truncate"></h2>
             <p class="text-xs text-gray-500 mt-0.5">
                 <span id="drawerEntryCount">—</span> storage entries
+                <span id="drawerFilterCount" class="hidden"> &middot; <span id="drawerFilterNum"></span> shown</span>
             </p>
         </div>
         <button id="domainDrawerClose"
@@ -25,21 +26,21 @@
         </button>
     </div>
 
-    {{-- Domain search bar --}}
-    <div class="px-3 py-2.5 border-b border-gray-100 bg-white flex-shrink-0">
+    {{-- Filter bar (shown once entries load) --}}
+    <div id="drawerFilterBar" class="hidden px-3 py-2 border-b border-gray-100 bg-white flex-shrink-0">
         <div class="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-1.5
-                    focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 bg-white">
+                    focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500">
             <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor"
                  viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
             </svg>
-            <input id="drawerDomainSearch"
+            <input id="drawerFilter"
                    type="text"
-                   placeholder="Search another domain…"
+                   placeholder="Filter entries… (campaign, anchor, status, client…)"
                    autocomplete="off"
-                   class="flex-1 text-xs bg-transparent border-0 outline-none focus:ring-0 text-gray-700 placeholder-gray-400 min-w-0"/>
-            <button id="drawerDomainSearchClear"
-                    class="hidden flex-shrink-0 text-gray-300 hover:text-gray-500 transition">
+                   class="flex-1 text-xs bg-transparent border-0 outline-none focus:ring-0 text-gray-700 placeholder-gray-400"/>
+            <button id="drawerFilterClear"
+                    class="hidden flex-shrink-0 text-gray-300 hover:text-gray-600 transition">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -57,10 +58,8 @@
             </svg>
             <span class="text-sm">Loading entries…</span>
         </div>
-        {{-- Empty state --}}
-        <div id="drawerEmpty" class="hidden text-center py-16 text-gray-400 text-sm">
-            No storage entries found for this domain.
-        </div>
+        {{-- Empty / no results --}}
+        <div id="drawerEmpty" class="hidden text-center py-16 text-gray-400 text-sm"></div>
         {{-- Cards list --}}
         <div id="drawerCards"></div>
     </div>
@@ -95,12 +94,14 @@ $(function () {
     function openDomainDrawer(domain) {
         $('#drawerDomainName').text(domain);
         $('#drawerEntryCount').text('…');
-        $('#drawerDomainSearch').val('');
-        $('#drawerDomainSearchClear').addClass('hidden');
+        $('#drawerFilterCount').addClass('hidden');
         $('#drawerViewAll').attr('href', STORAGE_URL + '?domain=' + encodeURIComponent(domain));
         $('#drawerSpinner').removeClass('hidden');
         $('#drawerEmpty').addClass('hidden');
         $('#drawerCards').empty();
+        $('#drawerFilterBar').addClass('hidden');
+        $('#drawerFilter').val('');
+        $('#drawerFilterClear').addClass('hidden');
 
         $backdrop.removeClass('opacity-0 pointer-events-none').addClass('opacity-100');
         $drawer.removeClass('translate-x-full').addClass('translate-x-0');
@@ -112,13 +113,17 @@ $(function () {
                 $('#drawerEntryCount').text(res.total);
 
                 if (!res.total) {
-                    $('#drawerEmpty').removeClass('hidden');
+                    $('#drawerEmpty').text('No storage entries found for this domain.').removeClass('hidden');
                     return;
                 }
 
                 res.entries.forEach(function (e) {
                     $('#drawerCards').append(buildCard(e));
                 });
+
+                if (res.total > 1) {
+                    $('#drawerFilterBar').removeClass('hidden');
+                }
             })
             .fail(function () {
                 $('#drawerSpinner').addClass('hidden');
@@ -133,15 +138,43 @@ $(function () {
         $('body').removeClass('overflow-hidden');
     };
 
-    /* ── card toggle ── */
-    $(document).on('click', '.drawer-card-header', function () {
-        const $body = $(this).next('.drawer-card-body');
-        const $icon = $(this).find('.drawer-chevron');
-        $body.toggleClass('hidden');
-        $icon.toggleClass('rotate-180');
+    /* ── filter entries ── */
+    $('#drawerFilter').on('input', function () {
+        const q = $(this).val().toLowerCase().trim();
+        $('#drawerFilterClear').toggleClass('hidden', !q);
+
+        let visible = 0;
+        $('#drawerCards .drawer-card').each(function () {
+            const match = !q || $(this).data('search').indexOf(q) !== -1;
+            $(this).toggleClass('hidden', !match);
+            if (match) visible++;
+        });
+
+        const total = parseInt($('#drawerEntryCount').text(), 10);
+        if (q) {
+            $('#drawerFilterNum').text(visible);
+            $('#drawerFilterCount').removeClass('hidden');
+        } else {
+            $('#drawerFilterCount').addClass('hidden');
+        }
+
+        $('#drawerEmpty').toggleClass('hidden', visible > 0 || !q);
+        if (!visible && q) {
+            $('#drawerEmpty').text('No entries match "' + q + '"').removeClass('hidden');
+        }
     });
 
-    /* ── trigger ── */
+    $('#drawerFilterClear').on('click', function () {
+        $('#drawerFilter').val('').trigger('input').focus();
+    });
+
+    /* ── card expand/collapse ── */
+    $(document).on('click', '.drawer-card-header', function () {
+        $(this).next('.drawer-card-body').toggleClass('hidden');
+        $(this).find('.drawer-chevron').toggleClass('rotate-180');
+    });
+
+    /* ── open from table click ── */
     $(document).on('click', '.domain-storage-link', function (e) {
         e.preventDefault();
         const domain = $(this).data('domain');
@@ -154,31 +187,6 @@ $(function () {
         if (e.key === 'Escape') window.closeDomainDrawer();
     });
 
-    /* ── domain search bar ── */
-    let searchTimer = null;
-
-    $('#drawerDomainSearch').on('input', function () {
-        const val = $(this).val().trim();
-        $('#drawerDomainSearchClear').toggleClass('hidden', !val);
-        clearTimeout(searchTimer);
-        if (!val) return;
-        searchTimer = setTimeout(function () {
-            openDomainDrawer(val);
-        }, 420);
-    });
-
-    $('#drawerDomainSearch').on('keydown', function (e) {
-        if (e.key === 'Enter') {
-            const val = $(this).val().trim();
-            if (val) { clearTimeout(searchTimer); openDomainDrawer(val); }
-        }
-    });
-
-    $('#drawerDomainSearchClear').on('click', function () {
-        $('#drawerDomainSearch').val('').focus();
-        $(this).addClass('hidden');
-    });
-
     /* ══════════════════════════════════════════════
        Card builder
     ══════════════════════════════════════════════ */
@@ -186,20 +194,32 @@ $(function () {
         const profitNum  = parseFloat(e.profit);
         const profitCls  = !isNaN(profitNum) && profitNum < 0 ? 'text-red-600' : 'text-gray-800';
         const profitDisp = e.profit !== null && e.profit !== undefined
-            ? `<span class="font-semibold ${profitCls}">€ ${e.profit}</span>`
+            ? `<span class="font-semibold ${profitCls}">€ ${e.profit}</span>`
             : dash();
 
-        return `
-<div class="border border-gray-200 rounded-lg mb-2 overflow-hidden text-xs">
+        // searchable text — all meaningful fields concatenated, lowercase
+        const searchText = [
+            e.id, e.status, e.LB, e.client_name, e.contact_name,
+            e.campaign, e.anchor_text, e.target_url, e.article_url,
+            e.campaign_code, e.country_name, e.language_name,
+            e.copywriter_name, e.categories_list,
+            e.invoice_menford_nr, e.bill_publisher_name, e.invoice_company,
+            e.method_payment_to_us, e.method_payment_to_publisher,
+            e.publication_date, e.expiration_date,
+        ].filter(Boolean).join(' ').toLowerCase();
 
-    {{-- ── summary row (always visible, click to expand) ── --}}
+        return `
+<div class="drawer-card border border-gray-200 rounded-lg mb-2 overflow-hidden text-xs"
+     data-search="${esc(searchText)}">
+
     <div class="drawer-card-header flex items-center gap-2 px-3 py-2.5 bg-gray-50
                 hover:bg-gray-100 cursor-pointer select-none">
         <a href="${esc(e.edit_url)}" onclick="event.stopPropagation()"
            class="text-green-700 font-bold hover:underline flex-shrink-0">#${e.id}</a>
         ${statusBadge(e.status)}
-        <span class="flex-1 truncate text-gray-700 font-medium" title="${esc(e.campaign || '')}">${e.campaign ? esc(e.campaign) : dash()}</span>
-        <span class="text-gray-500 whitespace-nowrap flex-shrink-0">${fmtDate(e.publication_date)}</span>
+        <span class="flex-1 truncate text-gray-700 font-medium"
+              title="${esc(e.campaign || '')}">${e.campaign ? esc(e.campaign) : dash()}</span>
+        <span class="text-gray-500 whitespace-nowrap flex-shrink-0">${fmtDate(e.publication_date) || ''}</span>
         <span class="flex-shrink-0">${profitDisp}</span>
         <svg class="drawer-chevron w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform duration-200"
              fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -207,7 +227,6 @@ $(function () {
         </svg>
     </div>
 
-    {{-- ── expanded details ── --}}
     <div class="drawer-card-body hidden px-3 py-3 bg-white border-t border-gray-100 space-y-3">
 
         ${section('General', [
@@ -243,12 +262,12 @@ $(function () {
         ])}
 
         ${section('Timeline', [
-            ['CW Commission',   fmtDate(e.copywriter_commision_date)],
-            ['CW Submission',   fmtDate(e.copywriter_submission_date)],
+            ['CW Commission',     fmtDate(e.copywriter_commision_date)],
+            ['CW Submission',     fmtDate(e.copywriter_submission_date)],
             ['CW Period (days)',  e.copywriter_period],
-            ['Article Sent',    fmtDate(e.article_sent_to_publisher)],
-            ['Published',       fmtDate(e.publication_date)],
-            ['Expires',         fmtDate(e.expiration_date)],
+            ['Article Sent',      fmtDate(e.article_sent_to_publisher)],
+            ['Published',         fmtDate(e.publication_date)],
+            ['Expires',           fmtDate(e.expiration_date)],
             ['Pub Period (days)', e.publisher_period],
         ])}
 
@@ -283,7 +302,7 @@ $(function () {
 
     /* ── helpers ── */
     function section(title, rows) {
-        const filtered = rows.filter(([, v]) => v !== null && v !== undefined && v !== '' && v !== dash());
+        const filtered = rows.filter(([, v]) => v !== null && v !== undefined && v !== '');
         if (!filtered.length) return '';
         const items = filtered.map(([label, value]) =>
             `<div class="flex gap-1.5">
@@ -306,12 +325,12 @@ $(function () {
 
     function money(v) {
         if (v === null || v === undefined || v === '') return null;
-        return `€ ${v}`;
+        return `€ ${v}`;
     }
 
     function moneyRaw(v, currency) {
         if (v === null || v === undefined || v === '') return null;
-        const sym = currency && currency.toUpperCase() !== 'EUR' ? currency + ' ' : '€ ';
+        const sym = currency && currency.toUpperCase() !== 'EUR' ? currency + ' ' : '€ ';
         return `${sym}${v}`;
     }
 
