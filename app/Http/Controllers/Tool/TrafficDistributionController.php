@@ -93,63 +93,59 @@ class TrafficDistributionController extends Controller
             // organic_kw stays null — non-fatal
         }
 
-        // ── Call 2: domain_rank_overview for per-country traffic ─────────────
-        // Chunked at 100 tasks per POST (DataForSEO Labs limit)
-        $rankData = []; // keyed by domain
+        // ── Call 2: domain_rank_overview — one request per domain ───────────
+        // The live endpoint only accepts one task at a time.
+        $rankData = [];
+        @set_time_limit(0);
 
-        foreach (array_chunk($domains, 100) as $chunk) {
+        foreach ($domains as $domain) {
             try {
-                $rankTasks = array_map(fn ($d) => ['target' => $d], $chunk);
-
                 $rankResponse = Http::withBasicAuth($login, $password)
-                    ->timeout(120)
+                    ->timeout(30)
                     ->post(
                         'https://api.dataforseo.com/v3/dataforseo_labs/google/domain_rank_overview/live',
-                        $rankTasks
+                        [['target' => $domain]]
                     );
 
                 if (!$rankResponse->successful()) continue;
 
-                foreach ($rankResponse->json('tasks') ?? [] as $i => $task) {
-                    $domain = $chunk[$i] ?? null;
-                    if (!$domain) continue;
+                $task = $rankResponse->json('tasks.0') ?? [];
 
-                    if (($task['status_code'] ?? 0) !== 20000) {
-                        $rankData[$domain] = ['error' => $task['status_message'] ?? 'API error'];
-                        continue;
-                    }
-
-                    $items = $task['result'][0]['items'] ?? [];
-
-                    $byLocation = [];
-                    foreach ($items as $item) {
-                        $code = $item['location_code'] ?? null;
-                        $etv  = $item['metrics']['organic']['etv'] ?? 0;
-                        if ($code === null) continue;
-                        $byLocation[$code] = ($byLocation[$code] ?? 0) + (float) $etv;
-                    }
-
-                    $globalTotal = array_sum($byLocation);
-                    arsort($byLocation);
-
-                    $countries = [];
-                    if ($globalTotal > 0) {
-                        foreach (array_slice($byLocation, 0, 3, true) as $code => $etv) {
-                            $countries[] = [
-                                'name' => $this->locationName((int) $code),
-                                'pct'  => round($etv / $globalTotal * 100, 1),
-                            ];
-                        }
-                    }
-
-                    $rankData[$domain] = [
-                        'organic_traffic' => $globalTotal > 0 ? (int) $globalTotal : null,
-                        'countries'       => $countries,
-                    ];
-
+                if (($task['status_code'] ?? 0) !== 20000) {
+                    $rankData[$domain] = ['error' => $task['status_message'] ?? 'API error'];
+                    continue;
                 }
+
+                $items = $task['result'][0]['items'] ?? [];
+
+                $byLocation = [];
+                foreach ($items as $item) {
+                    $code = $item['location_code'] ?? null;
+                    $etv  = $item['metrics']['organic']['etv'] ?? 0;
+                    if ($code === null) continue;
+                    $byLocation[$code] = ($byLocation[$code] ?? 0) + (float) $etv;
+                }
+
+                $globalTotal = array_sum($byLocation);
+                arsort($byLocation);
+
+                $countries = [];
+                if ($globalTotal > 0) {
+                    foreach (array_slice($byLocation, 0, 3, true) as $code => $etv) {
+                        $countries[] = [
+                            'name' => $this->locationName((int) $code),
+                            'pct'  => round($etv / $globalTotal * 100, 1),
+                        ];
+                    }
+                }
+
+                $rankData[$domain] = [
+                    'organic_traffic' => $globalTotal > 0 ? (int) $globalTotal : null,
+                    'countries'       => $countries,
+                ];
+
             } catch (\Throwable $e) {
-                // chunk fails gracefully — affected domains get null data
+                // domain skipped — stays null in results
             }
         }
 
