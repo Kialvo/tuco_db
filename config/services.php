@@ -49,4 +49,8 @@ return [
         'redirect'      => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
     ],
 
+    'ai_orchestration' => [
+        'key' => env('AI_ORCHESTRATION_API_KEY'),
+    ],
+
 ];
