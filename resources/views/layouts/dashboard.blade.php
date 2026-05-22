@@ -28,6 +28,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
     {{-- SweetAlert dropped: window.Swal is provided by resources/js/swal-shim.js (loaded via Vite) --}}
 
     @stack('scripts')
@@ -78,6 +79,14 @@
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             }
         });
+
+        
     </script>
+<script
+  src="https://ai-orchestration-platform-codex-wid.vercel.app/embed/loader.js"
+  data-site-key="site_link_in_a_blink_staging_website_01bafb2d"
+  data-api-base-url="https://ai-orchestration-platform-codex-staging.up.railway.app"
+  async
+></script>
 </body>
 </html>
