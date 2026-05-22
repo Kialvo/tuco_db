@@ -13,6 +13,7 @@ use App\Models\OrderItem;
 use App\Models\Storage;
 use App\Models\User;
 use App\Models\Website;
+use App\Support\Ai\InternalAiOpenApiDocument;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,11 @@ class InternalAiController extends Controller
             'database' => $this->databaseStatus(),
             'timestamp' => now()->toIso8601String(),
         ]);
+    }
+
+    public function openapi(): JsonResponse
+    {
+        return response()->json(InternalAiOpenApiDocument::toArray());
     }
 
     public function overview(): JsonResponse

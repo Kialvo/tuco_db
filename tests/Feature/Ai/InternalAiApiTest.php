@@ -46,6 +46,23 @@ class InternalAiApiTest extends TestCase
             ->assertJsonPath('read_only', true);
     }
 
+    public function test_openapi_schema_describes_domain_country_and_language_filters(): void
+    {
+        $response = $this->getJson('/api/ai/internal/openapi.json', $this->headers())
+            ->assertOk()
+            ->assertJsonPath('openapi', '3.1.0')
+            ->assertJsonPath('components.securitySchemes.AiOrchestrationKey.name', 'X-AI-Orchestration-Key')
+            ->assertJsonPath('paths./api/ai/internal/domains/search.get.operationId', 'internalAiDomainsSearch');
+
+        $parameters = collect($response->json('paths./api/ai/internal/domains/search.get.parameters'));
+
+        $this->assertTrue($parameters->contains(fn (array $parameter) => $parameter['name'] === 'country' && $parameter['in'] === 'query'));
+        $this->assertTrue($parameters->contains(fn (array $parameter) => $parameter['name'] === 'country_id' && $parameter['schema']['type'] === 'integer'));
+        $this->assertTrue($parameters->contains(fn (array $parameter) => $parameter['name'] === 'language' && $parameter['in'] === 'query'));
+        $this->assertTrue($parameters->contains(fn (array $parameter) => $parameter['name'] === 'language_id' && $parameter['schema']['type'] === 'integer'));
+        $this->assertTrue($parameters->contains(fn (array $parameter) => $parameter['name'] === 'per_page' && $parameter['schema']['type'] === 'integer'));
+    }
+
     public function test_list_endpoints_paginate_and_cap_per_page(): void
     {
         foreach ([

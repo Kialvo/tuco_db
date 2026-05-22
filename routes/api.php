@@ -9,6 +9,7 @@ Route::prefix('ai/internal')
     ->middleware(['throttle:ai-internal', AiOrchestrationKeyMiddleware::class])
     ->group(function () {
         Route::get('/health', [InternalAiController::class, 'health'])->name('health');
+        Route::get('/openapi.json', [InternalAiController::class, 'openapi'])->name('openapi');
         Route::get('/overview', [InternalAiController::class, 'overview'])->name('overview');
         Route::get('/domains/search', [InternalAiController::class, 'domainsSearch'])->name('domains.search');
         Route::get('/new-entries/search', [InternalAiController::class, 'newEntriesSearch'])->name('new-entries.search');
