@@ -67,6 +67,11 @@
                            bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
                 <x-icon name="satellite" size="sm" /> Sync DataforSEO
             </button>
+            <button id="btnExportCsv"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           bg-green-50 text-green-700 hover:bg-green-100 border border-green-200">
+                <x-icon name="document-csv" size="sm" /> Export CSV
+            </button>
             <span class="ml-auto text-xs text-gray-500">
                 Selected: <span id="selCount" class="font-semibold text-gray-800">0</span>
             </span>
@@ -655,6 +660,25 @@
                 tbl.search('');
                 tbl.ajax.reload();
                 window.buildFilterChips(() => tbl.ajax.reload());
+            });
+
+            // EXPORT CSV
+            $('#btnExportCsv').on('click', function () {
+                const params = new URLSearchParams();
+                const domain  = $('#filterDomainName').val();
+                const status  = $('#filterStatus').val();
+                const country = $('#filterCountries').val();
+                const lang    = $('#filterLanguage').val();
+                const from    = $('#filterFirstFrom').val();
+                const to      = $('#filterFirstTo').val();
+                if (domain)  params.set('domain_name', domain);
+                if (status)  params.set('status', status);
+                if (country) params.set('country_ids', country);
+                if (lang)    params.set('language_id', lang);
+                if (from)    params.set('first_contact_from', from);
+                if (to)      params.set('first_contact_to', to);
+                const qs = params.toString();
+                window.location.href = "{{ route('new_entries.export.csv') }}" + (qs ? '?' + qs : '');
             });
 
             // NOTE modal

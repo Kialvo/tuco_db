@@ -241,6 +241,7 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     Route::post('/new-entries/bulk', [NewEntryController::class,'bulkUpdate'])->name('new_entries.bulkUpdate');
     Route::post('/new-entries/rollback', [NewEntryController::class,'rollback'])->name('new_entries.rollback');
     Route::post('/new-entries/dataforseo/sync-selected', [NewEntryController::class,'syncDataForSeoSelected'])->name('new_entries.dataforseo.sync-selected');
+    Route::get('/new-entries/export/csv', [NewEntryController::class,'exportCsv'])->name('new_entries.export.csv');
 
     /* ----------  FULL CRUD (resource) ----------
        parameters() keeps route-model binding variable singular (new_entry),

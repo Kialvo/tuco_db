@@ -62,6 +62,103 @@ class NewEntryController extends Controller
         ));
     }
 
+    public function exportCsv(Request $request)
+    {
+        $q = NewEntry::with(['country', 'language', 'contact', 'categories']);
+
+        if ($v = $request->domain_name)  $q->where('domain_name', 'like', "%$v%");
+        if ($v = $request->status)       $q->where('status', $v);
+        if ($v = $request->country_ids)  $q->where('country_id', $v);
+        if ($v = $request->language_id)  $q->where('language_id', $v);
+
+        $from   = $request->first_contact_from;
+        $to     = $request->first_contact_to;
+        $isDate = fn($s) => is_string($s) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $s);
+        if ($isDate($from) && $isDate($to))   $q->whereBetween('first_contact_date', [$from, $to]);
+        elseif ($isDate($from))               $q->whereDate('first_contact_date', '>=', $from);
+        elseif ($isDate($to))                 $q->whereDate('first_contact_date', '<=', $to);
+
+        $entries = $q->orderByDesc('id')->get();
+
+        $yesNo = static fn($v) => $v === null ? '' : ($v ? 'YES' : 'NO');
+
+        $headers = [
+            'ID', 'Domain', 'Extra Notes', 'Status', 'Country', 'Language', 'Publisher', 'Currency',
+            'Publisher Price', 'No Follow Price', 'Special Topic Price', 'Price',
+            'Sensitive Topic Price', 'Link Insertion Price', 'Banner €', 'Site-wide €',
+            'Kialvo Evaluation', 'Profit', 'Date Publisher Price',
+            'Linkbuilder', 'Type of Website', 'Categories',
+            'DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'AS',
+            'SEO Zoom', 'TF vs CF', 'Semrush Traffic', 'Ahrefs Keyword', 'Ahrefs Traffic',
+            'Keywords vs Traffic', 'MS', 'Organic Keywords', 'Organic Traffic', 'KW/Traffic Ratio',
+            'SEO Metrics Date',
+            'Betting', 'Trading', 'Permanent Link', 'More than 1 link',
+            'Copywriting', 'Sponsored Tag', 'Social Media Sharing', 'Post in Homepage',
+            'First Contact Date', 'Date Added',
+        ];
+
+        $handle = fopen('php://temp', 'r+');
+        fputcsv($handle, $headers);
+
+        foreach ($entries as $e) {
+            fputcsv($handle, [
+                $e->id,
+                $e->domain_name,
+                $e->extra_notes,
+                $e->status,
+                optional($e->country)->country_name,
+                optional($e->language)->name,
+                $e->contact_id ? optional($e->contact)->name : 'No Publisher',
+                $e->currency_code,
+                $e->publisher_price,
+                $e->no_follow_price,
+                $e->special_topic_price,
+                $e->price,
+                $e->sensitive_topic_price,
+                $e->link_insertion_price,
+                $e->banner_price,
+                $e->sitewide_link_price,
+                $e->kialvo_evaluation,
+                $e->profit,
+                $e->date_publisher_price,
+                $e->linkbuilder,
+                $e->type_of_website,
+                $e->categories->pluck('name')->join(', '),
+                $e->DA, $e->PA, $e->TF, $e->CF, $e->DR, $e->UR, $e->ZA, $e->as_metric,
+                $e->seozoom,
+                $e->TF_vs_CF,
+                $e->semrush_traffic,
+                $e->ahrefs_keyword,
+                $e->ahrefs_traffic,
+                $e->keyword_vs_traffic,
+                $e->ms,
+                $e->organic_keywords,
+                $e->organic_traffic,
+                $e->kw_traffic_ratio,
+                $e->seo_metrics_date,
+                $yesNo($e->betting),
+                $yesNo($e->trading),
+                $yesNo($e->permanent_link),
+                $yesNo($e->more_than_one_link),
+                $e->copywriting === null ? '' : ($e->copywriting ? 'PROVIDED' : 'NOT PROVIDED'),
+                $e->no_sponsored_tag === null ? '' : ($e->no_sponsored_tag ? 'NO' : 'YES'),
+                $yesNo($e->social_media_sharing),
+                $yesNo($e->post_in_homepage),
+                $e->first_contact_date,
+                $e->created_at?->format('Y-m-d H:i:s'),
+            ]);
+        }
+
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="new_entries_export_' . date('Y-m-d_His') . '.csv"',
+        ]);
+    }
+
     public function getData(Request $r)
     {
         $q = NewEntry::with(['country', 'language', 'contact', 'categories']);
