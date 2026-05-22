@@ -25,6 +25,10 @@
             <p class="text-xs text-gray-500 mt-0.5">Pre-publish queue and outreach pipeline.</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
+            <a href="#" id="btnExportCsv"
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
+                <x-icon name="download" size="sm" /> Export CSV
+            </a>
             <a href="{{ route('new_entries.import.index') }}"
                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
                 <x-icon name="upload" size="sm" /> Import CSV
@@ -66,11 +70,6 @@
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
                            bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
                 <x-icon name="satellite" size="sm" /> Sync DataforSEO
-            </button>
-            <button id="btnExportCsv"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                           bg-green-50 text-green-700 hover:bg-green-100 border border-green-200">
-                <x-icon name="document-csv" size="sm" /> Export CSV
             </button>
             <span class="ml-auto text-xs text-gray-500">
                 Selected: <span id="selCount" class="font-semibold text-gray-800">0</span>
