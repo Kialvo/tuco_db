@@ -136,7 +136,8 @@ class WebsiteController extends Controller
 
         $totalCount = Website::query()
             ->where(function ($q) {
-                $q->whereNull('status')->orWhereRaw('LOWER(status) <> ?', ['past']);
+                $q->whereNull('status')
+                  ->orWhereRaw('LOWER(status) NOT IN (?, ?)', ['past', 'blacklist']);
             })
             ->count();
 
@@ -653,7 +654,7 @@ class WebsiteController extends Controller
         if ($isGuestUser) {
             $query->where(function ($q) {
                 $q->whereNull('status')
-                  ->orWhereRaw('LOWER(status) <> ?', ['past']);
+                  ->orWhereRaw('LOWER(status) NOT IN (?, ?)', ['past', 'blacklist']);
             });
         } elseif ($v = $request->status) {
             $query->where('status', $v);

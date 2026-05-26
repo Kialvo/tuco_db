@@ -674,6 +674,13 @@
 
 @endsection
 
+@push('styles')
+<style>
+.blacklisted-row td                        { background-color: #fef2f2 !important; }
+.blacklisted-row:hover td                  { background-color: #fee2e2 !important; }
+</style>
+@endpush
+
 @push('scripts')
     {{-- ###############################################
      Bulk-edit metadata â€“ MUST load before buildBulkInput()
@@ -681,7 +688,7 @@
     <script>
         window.bulkMeta = {
             /* ========= SELECTS ========= */
-            status : {type:'select',options:{active:'Active',past:'Past'}},
+            status : {type:'select',options:{active:'Active',past:'Past',blacklist:'Blacklist'}},
             currency_code : {type:'select',options:{EUR:'EUR',USD:'USD'}},
             type_of_website : {type:'select',options:{
                     FORUM:'Forum',GENERALIST:'Generalist',VERTICAL:'Vertical',LOCAL:'Local'
@@ -867,6 +874,7 @@
             const STATUS_TONES = {
                 'active': 'bg-green-100 text-green-700 ring-green-200',
                 'past': 'bg-gray-100 text-gray-600 ring-gray-200',
+                'blacklist': 'bg-red-100 text-red-700 ring-red-200',
                 'negotiation': 'bg-blue-100 text-blue-700 ring-blue-200',
                 'waiting_for_first_answer': 'bg-blue-100 text-blue-700 ring-blue-200',
                 'read_but_never_answered': 'bg-amber-100 text-amber-700 ring-amber-200',
@@ -1227,6 +1235,11 @@
                 responsive: false,
                 autoWidth: false,
                 scrollX: true,
+                createdRow: function (row, data) {
+                    if (data.status && data.status.toLowerCase() === 'blacklist') {
+                        $(row).addClass('blacklisted-row');
+                    }
+                },
                 language: {
                     lengthMenu:   'Show _MENU_ websites',
                     info:         'Showing _START_ to _END_ of _TOTAL_ websites',

@@ -55,7 +55,7 @@
     $bulkMeta = [
         /* plain <select>s */
         'status' => ['type'=>'select','options'=>[
-            ''=>'-- Clear --','ACTIVE'=>'Active','INACTIVE'=>'Inactive','REJECTED'=>'Rejected']],
+            ''=>'-- Clear --','active'=>'Active','past'=>'Past','blacklist'=>'Blacklist']],
         'country_id'      => ['type'=>'select','options'=>$countries],
         'language_id'     => ['type'=>'select','options'=>$languages],
         'type_of_website' => ['type'=>'select','options'=>[

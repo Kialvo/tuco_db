@@ -31,6 +31,7 @@
     
     {{-- SweetAlert dropped: window.Swal is provided by resources/js/swal-shim.js (loaded via Vite) --}}
 
+    @stack('styles')
     @stack('scripts')
 </head>
 <body class="bg-gray-50 text-gray-800 antialiased h-screen overflow-hidden flex">
