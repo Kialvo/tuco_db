@@ -119,13 +119,15 @@
                               {{ $navActive('copy.*') ? 'nav-active' : 'text-gray-300' }}">
                         <x-icon name="document" size="sm" class="me-2 inline" /> Copy
                     </a>
-                    <a href="{{ route('storages.stats') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
-                              {{ $navActive('storages.stats') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="chart-line" size="sm" class="me-2 inline" /> Publication Stats
-                    </a>
                 </div>
             </div>
+
+            <a href="{{ route('storages.stats') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('storages.stats') ? 'nav-active' : 'text-gray-300' }}">
+                <x-icon name="chart-line" />
+                Publication Stats
+            </a>
 
             <a href="{{ route('admin.orders.index') }}"
                class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
