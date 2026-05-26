@@ -55,6 +55,7 @@
                 <option value="">— Any —</option>
                 <option value="active">Active</option>
                 <option value="past">Past</option>
+                <option value="blacklist">Blacklist</option>
             </select>
         </div>
 
