@@ -28,7 +28,7 @@
         'document'      => '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>',
         'warehouse'     => '<path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h-5m5 0h2M5 21h2m0 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"/>',
         'chart-line'    => '<path stroke-linecap="round" stroke-linejoin="round" d="M3 13a4 4 0 014-4h10a4 4 0 014 4v6H3v-6z M3 13l5-5 4 4 7-7"/>',
-        'chart-bar'     => '<path stroke-linecap="round" stroke-linejoin="round" d="M2 21h20M3 21v-3h4v3M9 21v-7h4v7M15 21v-11h4v11M3 19l5-5 4-3 5-5 3-4M17 6h3v3"/>',
+        'chart-bar'     => '<path stroke-linecap="round" stroke-linejoin="round" d="M2 21h20M3 17h4v4H3zM9 12h4v9H9zM15 7h4v14h-4zM3 19l5-4 5-4 5-5M16 6h4v4"/>',
         'wrench'        => '<path stroke-linecap="round" stroke-linejoin="round" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>',
         'search'        => '<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>',
         'broom'         => '<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.5L21 13l-4-4-1.5 1.5M14 9l-9 9v4h4l9-9-4-4z"/>',
