@@ -26,7 +26,7 @@ class NewEntryController extends Controller
         'DR','UR','DA','PA','TF','CF','ZA','as_metric',
         'seozoom','semrush_traffic','ahrefs_keyword','ahrefs_traffic','keyword_vs_traffic',
         'publisher_price','no_follow_price','special_topic_price',
-        'link_insertion_price','banner_price','sitewide_link_price',
+        'link_insertion_price','banner_price','sitewide_link_price','mention_price',
         'kialvo_evaluation','profit',
         'date_publisher_price',
         'seo_metrics_date',
@@ -118,6 +118,7 @@ class NewEntryController extends Controller
                 $e->link_insertion_price,
                 $e->banner_price,
                 $e->sitewide_link_price,
+                $e->mention_price,
                 $e->kialvo_evaluation,
                 $e->profit,
                 $e->date_publisher_price,
@@ -193,6 +194,10 @@ class NewEntryController extends Controller
                     });
             });
         }
+
+        /* mention_price range filter */
+        if ($v = $r->mention_price_min) $q->where('mention_price', '>=', $v);
+        if ($v = $r->mention_price_max) $q->where('mention_price', '<=', $v);
 
         if ($r->boolean('show_deleted')) {
             $q->onlyTrashed();

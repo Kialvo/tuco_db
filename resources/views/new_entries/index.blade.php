@@ -3,7 +3,7 @@
     $bulkEditable = [
         'status','country_id','language_id','linkbuilder','type_of_website',
         'contact_id','currency_code','publisher_price','no_follow_price',
-        'special_topic_price','link_insertion_price','banner_price','sitewide_link_price',
+        'special_topic_price','link_insertion_price','banner_price','sitewide_link_price','mention_price',
         'kialvo_evaluation','profit','date_publisher_price',
         'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
         'TF_vs_CF','semrush_traffic','ahrefs_keyword','ahrefs_traffic',
@@ -464,6 +464,7 @@
                     { data:'special_topic_price',  render:money,     className:'text-right' },
                     { data:'price',                render:money,     className:'text-right' },
                     { data:'sensitive_topic_price',render:money,     className:'text-right' },
+                    { data:'mention_price',        render:money,     className:'text-right' },
                     { data:'link_insertion_price', render:money,     className:'text-right' },
                     { data:'banner_price',         render:money,     className:'text-right' },
                     { data:'sitewide_link_price',  render:money,     className:'text-right' },

@@ -26,7 +26,7 @@ class WebsiteController extends Controller
         'DR','UR','DA','PA','TF','CF','ZA','as_metric',
         'seozoom','semrush_traffic','ahrefs_keyword','ahrefs_traffic','keyword_vs_traffic',
         'publisher_price','no_follow_price','special_topic_price',
-        'link_insertion_price','banner_price','sitewide_link_price',
+        'link_insertion_price','banner_price','sitewide_link_price','mention_price',
         'kialvo_evaluation','profit',
         'date_publisher_price',
         'seo_metrics_date',
@@ -117,7 +117,7 @@ class WebsiteController extends Controller
         $query = Website::with(['country', 'language', 'categories'])
             ->select([
                 'id', 'domain_name', 'notes', 'country_id', 'language_id', 'type_of_website',
-                'price', 'sensitive_topic_price',
+                'price', 'sensitive_topic_price', 'mention_price',
                 'DA', 'PA', 'TF', 'CF', 'DR', 'UR', 'ZA', 'as_metric', 'seozoom',
                 'semrush_traffic', 'ahrefs_keyword', 'ahrefs_traffic', 'keyword_vs_traffic',
                 'ms', 'organic_keywords', 'organic_traffic', 'kw_traffic_ratio',
@@ -214,6 +214,7 @@ class WebsiteController extends Controller
             ->addColumn('is_in_cart',  fn ($r) => $isGuestUser && isset($cartIds[$r->id]))
             ->addColumn('banner_price',        fn($r)=>$r->banner_price)
             ->addColumn('sitewide_link_price', fn($r)=>$r->sitewide_link_price)
+            ->addColumn('mention_price',       fn($r)=>$r->mention_price)
             ->addColumn('country_name',    fn ($r) => optional($r->country)->country_name)
             ->addColumn('country_iso',     fn ($r) => \App\Support\CountryCode::iso(optional($r->country)->country_name))
             ->addColumn('language_name',   fn ($r) => optional($r->language)->name)
@@ -512,6 +513,7 @@ class WebsiteController extends Controller
             'link_insertion_price' => 'Link Insertion Price',
             'banner_price' => 'Banner €',
             'sitewide_link_price' => 'Site-wide €',
+            'mention_price' => 'Mention Price €',
             'kialvo_evaluation' => 'Kialvo Evaluation',
             'profit' => 'Profit',
             'date_publisher_price' => 'Date Publisher Price',
@@ -571,6 +573,7 @@ class WebsiteController extends Controller
             'link_insertion_price' => $web->link_insertion_price,
             'banner_price' => $web->banner_price,
             'sitewide_link_price' => $web->sitewide_link_price,
+            'mention_price' => $web->mention_price,
             'kialvo_evaluation' => $web->kialvo_evaluation,
             'profit' => $web->profit,
             'date_publisher_price' => $web->date_publisher_price,
@@ -697,6 +700,7 @@ class WebsiteController extends Controller
 
         $rng($request->price_min,                  $request->price_max,              'price');
         $rng($request->sensitive_topic_price_min,  $request->sensitive_topic_price_max, 'sensitive_topic_price');
+        $rng($request->mention_price_min,          $request->mention_price_max,          'mention_price');
 
         if (! $isGuestUser) {
             $rng($request->kialvo_min,         $request->kialvo_max,             'kialvo_evaluation');
