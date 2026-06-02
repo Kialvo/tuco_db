@@ -288,6 +288,22 @@
                             </span>
                         </span>
                     </th>
+                    <th class="whitespace-nowrap px-4 py-2">
+                        <span class="inline-flex items-center gap-1">
+                            Mention Price
+                            <span class="relative inline-flex group cursor-help">
+                                <button type="button"
+                                        class="metric-info-btn text-green-600 text-[11px]"
+                                        data-info="Price for a no-link article containing a brand or company mention only."
+                                        aria-label="What is Mention Price?">
+                                    <x-icon name="info" size="sm" class="inline" />
+                                </button>
+                                <span class="metric-info-text pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden w-56 -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] normal-case whitespace-normal break-words font-normal leading-4 text-white shadow-lg group-hover:block group-focus-within:block">
+                                    Price for a no-link article containing a brand or company mention only.
+                                </span>
+                            </span>
+                        </span>
+                    </th>
                     <th class="whitespace-nowrap px-4 py-2">Link Insertion Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Banner &euro;</th>
                     <th class="whitespace-nowrap px-4 py-2">Site-wide &euro;</th>

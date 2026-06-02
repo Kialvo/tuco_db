@@ -111,6 +111,7 @@
                     <th class="px-4 py-2">Special Topic Price</th>
                     <th class="px-4 py-2">Price</th>
                     <th class="px-4 py-2">Sensitive Topic Price</th>
+                    <th class="px-4 py-2">Mention Price</th>
                     <th class="px-4 py-2">Link Insertion Price</th>
                     <th class="px-4 py-2">Banner &euro;</th>
                     <th class="px-4 py-2">Site-wide &euro;</th>
