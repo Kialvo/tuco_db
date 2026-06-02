@@ -35,7 +35,7 @@ class Website extends Model
         'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
         'notes','extra_notes',
 
-        'banner_price','sitewide_link_price',
+        'banner_price','sitewide_link_price','mention_price',
         'original_banner_price','original_sitewide_link_price',
 
         // dataforseo

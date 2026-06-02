@@ -6,7 +6,7 @@
         // id is NOT editable, everything else is:
         'status','country_id','language_id','linkbuilder','type_of_website',
         'contact_id','currency_code','publisher_price','no_follow_price',
-        'special_topic_price','link_insertion_price','banner_price','sitewide_link_price',
+        'special_topic_price','link_insertion_price','banner_price','sitewide_link_price','mention_price',
         'kialvo_evaluation','profit','date_publisher_price',
         'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
         'TF_vs_CF','semrush_traffic','ahrefs_keyword','ahrefs_traffic',
@@ -32,6 +32,7 @@
         'special_topic_price' => 'Special Topic Price',
         'price' => 'Price',
         'sensitive_topic_price' => 'Sensitive Topic Price',
+        'mention_price' => 'Mention Price',
         'link_insertion_price' => 'Link Insertion Price',
         'banner_price' => 'Banner EUR',
         'sitewide_link_price' => 'Site-wide EUR',
@@ -706,6 +707,7 @@
             link_insertion_price : {type:'number'},
             banner_price         : {type:'number'},
             sitewide_link_price  : {type:'number'},
+            mention_price        : {type:'number'},
             kialvo_evaluation    : {type:'number'},
             profit               : {type:'number'},
             DA:{type:'number'}, PA:{type:'number'}, TF:{type:'number'}, CF:{type:'number'},
@@ -950,6 +952,8 @@
                         d.price_max = $('#filterPriceMax').val();
                         d.sensitive_topic_price_min = $('#filterSensitiveTopicPriceMin').val();
                         d.sensitive_topic_price_max = $('#filterSensitiveTopicPriceMax').val();
+                        d.mention_price_min = $('#filterMentionPriceMin').val();
+                        d.mention_price_max = $('#filterMentionPriceMax').val();
                         d.kialvo_min = isGuestUser ? null : $('#filterKialvo_evaluationMin').val();
                         d.kialvo_max = isGuestUser ? null : $('#filterKialvo_evaluationMax').val();
                         d.profit_min = isGuestUser ? null : $('#filterProfitMin').val();
@@ -1112,6 +1116,7 @@
                     { data: 'special_topic_price', name: 'special_topic_price', className: 'text-right', visible: !isGuestUser, render: renderPrice },
                     { data: 'price',               name: 'price',               className: 'text-right', render: renderPrice },
                     { data: 'sensitive_topic_price', name: 'sensitive_topic_price', className: 'text-right', visible: true, render: renderPrice },
+                    { data: 'mention_price',        name: 'mention_price',        className: 'text-right', visible: true, render: renderPrice },
                     { data: 'link_insertion_price', name: 'link_insertion_price', className: 'text-right', visible: !isGuestUser, render: renderPrice },
                     { data: 'banner_price',        name: 'banner_price',        className: 'text-right', visible: !isGuestUser, render: renderPrice },
                     { data: 'sitewide_link_price', name: 'sitewide_link_price', className: 'text-right', visible: !isGuestUser, render: renderPrice },

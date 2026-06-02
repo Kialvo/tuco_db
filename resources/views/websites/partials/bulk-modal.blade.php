@@ -25,6 +25,7 @@
         'publisher_price'=>'Publisher €','link_insertion_price'=>'Link Insertion €',
         'no_follow_price'=>'No-follow €','special_topic_price'=>'Special-topic €',
         'banner_price'=>'Banner €','sitewide_link_price'=>'Site-wide €',
+        'mention_price'=>'Mention Price €',
 
         // KPI
         'kialvo_evaluation'=>'Kialvo Evaluation €','profit'=>'Profit €',

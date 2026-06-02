@@ -319,6 +319,18 @@
                        class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
                 @error('original_sitewide_link_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
             </div>
+
+            {{-- Mention Price --}}
+            <div>
+                <label class="block font-medium mb-1">
+                    Mention Price
+                    <span class="ml-1 text-xs text-gray-400 font-normal" title="Price for a no-link article containing a brand or company mention only">ⓘ</span>
+                </label>
+                <input type="number" step="0.01" name="mention_price"
+                       value="{{ old('mention_price', $website->mention_price ?? '') }}"
+                       class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500">
+                @error('mention_price') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+            </div>
         </div>
 
         <!-- Evaluations -->
