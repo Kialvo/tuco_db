@@ -904,7 +904,7 @@
                 if (!data) return '<span class="text-gray-300">—</span>';
                 const key = String(data).toLowerCase().replace(/\s+/g, '_');
                 const tone = STATUS_TONES[key] || 'bg-gray-100 text-gray-700 ring-gray-200';
-                const label = String(data).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                 return `<span class="inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${tone}">${label}</span>`;
             };
             const emDash = '<span class="text-gray-300">—</span>';

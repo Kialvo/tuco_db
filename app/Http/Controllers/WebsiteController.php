@@ -910,11 +910,11 @@ class WebsiteController extends Controller
      */
     public function store(Request $request)
     {
-
-
-        // 1) Validate all fields EXCEPT we do not rely on user input for 'automatic_evaluation'
-        // 1) Validate your form inputs
         $validated = $this->validateForm($request);
+
+        if (isset($validated['status'])) {
+            $validated['status'] = strtolower($validated['status']);
+        }
 
         foreach (['date_publisher_price',
                      'date_kialvo_evaluation',
@@ -1041,8 +1041,11 @@ class WebsiteController extends Controller
      */
     public function update(Request $request, Website $website)
     {
-        // 1) Validate your form inputs
         $validated = $this->validateForm($request);
+
+        if (isset($validated['status'])) {
+            $validated['status'] = strtolower($validated['status']);
+        }
 
         foreach ([
                      'date_publisher_price',
