@@ -135,10 +135,7 @@ class WebsiteController extends Controller
             : [];
 
         $totalCount = Website::query()
-            ->where(function ($q) {
-                $q->whereNull('status')
-                  ->orWhereRaw('LOWER(status) NOT IN (?, ?)', ['inactive', 'blacklist']);
-            })
+            ->whereRaw('LOWER(status) = ?', ['active'])
             ->count();
 
         $countries  = Country::orderBy('country_name')->get(['id', 'country_name']);
@@ -655,10 +652,7 @@ class WebsiteController extends Controller
         if ($v = $request->domain_name)     $query->where('domain_name', 'like', "%$v%");
         if ($v = $request->type_of_website) $query->where('type_of_website', $v);
         if ($isGuestUser) {
-            $query->where(function ($q) {
-                $q->whereNull('status')
-                  ->orWhereRaw('LOWER(status) NOT IN (?, ?)', ['inactive', 'blacklist']);
-            });
+            $query->whereRaw('LOWER(status) = ?', ['active']);
         } elseif ($v = $request->status) {
             $query->where('status', $v);
         }
