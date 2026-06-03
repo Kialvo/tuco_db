@@ -38,7 +38,7 @@
                 <select name="status" class="w-full border-gray-300 rounded">
                     <option value="">-- None --</option>
                     <option value="active"    {{ old('status', $website->status) === 'active'    ? 'selected' : '' }}>Active</option>
-                    <option value="past"      {{ old('status', $website->status) === 'past'      ? 'selected' : '' }}>Past</option>
+                    <option value="inactive"  {{ old('status', $website->status) === 'inactive'  ? 'selected' : '' }}>Inactive</option>
                     <option value="blacklist" {{ old('status', $website->status) === 'blacklist' ? 'selected' : '' }}>Blacklist</option>
                 </select>
                 @error('status')

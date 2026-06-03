@@ -705,7 +705,7 @@
     <script>
         window.bulkMeta = {
             /* ========= SELECTS ========= */
-            status : {type:'select',options:{active:'Active',past:'Past',blacklist:'Blacklist'}},
+            status : {type:'select',options:{active:'Active',inactive:'Inactive',blacklist:'Blacklist'}},
             currency_code : {type:'select',options:{EUR:'EUR',USD:'USD'}},
             type_of_website : {type:'select',options:{
                     FORUM:'Forum',GENERALIST:'Generalist',VERTICAL:'Vertical',LOCAL:'Local'
@@ -891,7 +891,7 @@
             };
             const STATUS_TONES = {
                 'active': 'bg-green-100 text-green-700 ring-green-200',
-                'past': 'bg-gray-100 text-gray-600 ring-gray-200',
+                'inactive': 'bg-gray-100 text-gray-600 ring-gray-200',
                 'blacklist': 'bg-red-100 text-red-700 ring-red-200',
                 'negotiation': 'bg-blue-100 text-blue-700 ring-blue-200',
                 'waiting_for_first_answer': 'bg-blue-100 text-blue-700 ring-blue-200',

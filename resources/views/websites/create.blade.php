@@ -46,7 +46,7 @@
                 >
                     <option value="">-- None --</option>
                     <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>
-                    <option value="past" {{ old('status') === 'past' ? 'selected' : '' }}>Past</option>
+                    <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                 </select>
                 @error('status')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
