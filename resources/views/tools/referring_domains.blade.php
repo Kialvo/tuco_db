@@ -6,7 +6,7 @@
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
             <h1 class="text-base font-bold text-gray-800">Referring Domains</h1>
-            <p class="text-xs text-gray-500 mt-0.5">Find all domains linking to a target domain.</p>
+            <p class="text-xs text-gray-500 mt-0.5">Top 200 dofollow referring domains sorted by authority.</p>
         </div>
     </div>
 
@@ -15,7 +15,7 @@
         {{-- ── Search bar ── --}}
         <div class="bg-white border border-gray-200 rounded-xl shadow-card p-6 mb-6 max-w-2xl">
             <p class="text-sm text-gray-500 mb-4">
-                Enter a domain to retrieve up to 100 domains that link to it, sorted by DataForSEO domain rank.
+                Enter a domain to retrieve its top 200 dofollow referring domains, sorted by Domain MS (authority score).
             </p>
             <div class="flex gap-3 mb-3">
                 <input type="text"
@@ -55,15 +55,8 @@
                     <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                         <th class="py-3 px-4 font-semibold text-left">#</th>
                         <th class="py-3 px-4 font-semibold text-left">Referring Domain</th>
-                        <th id="thRank" class="py-3 px-4 font-semibold text-center cursor-pointer select-none hover:text-gray-700">
-                            Rank <span id="rankArrow">↓</span>
-                        </th>
-                        <th id="thBacklinks" class="py-3 px-4 font-semibold text-center cursor-pointer select-none hover:text-gray-700">
-                            Backlinks <span id="backlinksArrow"></span>
-                        </th>
-                        <th class="py-3 px-4 font-semibold text-center">DoFollow</th>
-                        <th class="py-3 px-4 font-semibold text-center">First Seen</th>
-                        <th class="py-3 px-4 font-semibold text-center">Status</th>
+                        <th class="py-3 px-4 font-semibold text-center">Domain MS</th>
+                        <th class="py-3 px-4 font-semibold text-left">Backlink Type</th>
                     </tr>
                     </thead>
                     <tbody id="resultsBody" class="divide-y divide-gray-100">
@@ -97,22 +90,17 @@ $(function () {
 
     let lastRows   = [];
     let lastDomain = '';
-    let sortCol    = 'rank';
-    let sortAsc    = false;
 
     // ── CSV export ──
     $('#btnExportCsv').on('click', function () {
         if (!lastRows.length) return;
-        const headers = ['Referring Domain', 'Rank', 'Backlinks', 'DoFollow', 'First Seen', 'Status'];
+        const headers = ['Referring Domain', 'Domain MS', 'Backlink Type'];
         const lines   = [headers.join(',')];
         lastRows.forEach(function (row) {
             lines.push([
                 '"' + (row.domain || '').replace(/"/g, '""') + '"',
-                row.rank       !== null ? row.rank       : '',
-                row.backlinks  !== null ? row.backlinks  : '',
-                row.dofollow   !== null ? row.dofollow   : '',
-                row.first_seen !== null ? row.first_seen : '',
-                row.is_new ? 'New' : row.is_lost ? 'Lost' : 'Active',
+                row.ms !== null ? row.ms : '',
+                '"' + (row.backlink_type || '').replace(/"/g, '""') + '"',
             ].join(','));
         });
         const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
@@ -134,29 +122,11 @@ $(function () {
         }
     }
 
-    function sortVal(row, col) {
-        const v = row[col];
-        return v !== null && v !== undefined ? v : -1;
-    }
-
     function renderRows() {
-        const sorted = lastRows.slice().sort(function (a, b) {
-            const ka = sortVal(a, sortCol);
-            const kb = sortVal(b, sortCol);
-            return sortAsc ? ka - kb : kb - ka;
-        });
-
         resultsBody.empty();
-        sorted.forEach(function (row, i) {
-            const rank      = row.rank       !== null ? row.rank                          : '—';
-            const backlinks = row.backlinks  !== null ? row.backlinks.toLocaleString()    : '—';
-            const dofollow  = row.dofollow   !== null ? row.dofollow.toLocaleString()     : '—';
-            const firstSeen = row.first_seen !== null ? row.first_seen                    : '—';
-            let statusPill  = '';
-            if (row.is_new)       statusPill = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 ring-1 ring-green-200">New</span>';
-            else if (row.is_lost) statusPill = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 ring-1 ring-red-200">Lost</span>';
-            else                  statusPill = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 ring-1 ring-gray-200">Active</span>';
-
+        lastRows.forEach(function (row, i) {
+            const ms           = row.ms !== null ? row.ms : '—';
+            const backlinkType = row.backlink_type || '—';
             resultsBody.append(`
                 <tr class="hover:bg-gray-50">
                     <td class="py-2 px-4 text-gray-400">${i + 1}</td>
@@ -164,37 +134,12 @@ $(function () {
                         <a href="https://${row.domain}" target="_blank"
                            class="text-green-700 hover:underline">${row.domain}</a>
                     </td>
-                    <td class="py-2 px-4 text-center font-semibold">${rank}</td>
-                    <td class="py-2 px-4 text-center font-semibold">${backlinks}</td>
-                    <td class="py-2 px-4 text-center">${dofollow}</td>
-                    <td class="py-2 px-4 text-center text-gray-500">${firstSeen}</td>
-                    <td class="py-2 px-4 text-center">${statusPill}</td>
+                    <td class="py-2 px-4 text-center font-semibold">${ms}</td>
+                    <td class="py-2 px-4 text-gray-500">${backlinkType}</td>
                 </tr>
             `);
         });
     }
-
-    function updateSortHeaders() {
-        const arrow = sortAsc ? '↑' : '↓';
-        $('#rankArrow').text(sortCol === 'rank' ? arrow : '');
-        $('#backlinksArrow').text(sortCol === 'backlinks' ? arrow : '');
-    }
-
-    $('#thRank').on('click', function () {
-        if (!lastRows.length) return;
-        sortAsc = (sortCol === 'rank') ? !sortAsc : false;
-        sortCol = 'rank';
-        updateSortHeaders();
-        renderRows();
-    });
-
-    $('#thBacklinks').on('click', function () {
-        if (!lastRows.length) return;
-        sortAsc = (sortCol === 'backlinks') ? !sortAsc : false;
-        sortCol = 'backlinks';
-        updateSortHeaders();
-        renderRows();
-    });
 
     function doSearch() {
         const domain = domainInput.val().trim();
@@ -217,11 +162,8 @@ $(function () {
                 setLoading(false);
                 lastRows   = res.rows || [];
                 lastDomain = res.domain || '';
-                sortCol    = 'rank';
-                sortAsc    = false;
                 resultDomain.text(res.domain);
                 resultCount.text(res.total);
-                updateSortHeaders();
 
                 if (!res.rows || res.rows.length === 0) {
                     emptyState.removeClass('hidden');

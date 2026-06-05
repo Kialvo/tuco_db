@@ -32,7 +32,7 @@ class ReferringDomainsController extends Controller
         }
 
         try {
-            $raw  = $this->proxy->referringDomains($domain, 100);
+            $raw  = $this->proxy->backlinks($domain);
             $task = $raw['tasks'][0] ?? [];
 
             if (($task['status_code'] ?? 0) !== 20000) {
@@ -43,16 +43,13 @@ class ReferringDomainsController extends Controller
             $items = $task['result'][0]['items'] ?? [];
 
             $rows = array_map(function ($item) {
+                $platformTypes = $item['domain_from_platform_type'] ?? [];
                 return [
-                    'domain'     => $item['domain']     ?? '',
-                    'rank'       => $item['rank']        ?? null,
-                    'backlinks'  => $item['backlinks']   ?? null,
-                    'dofollow'   => $item['dofollow']    ?? null,
-                    'first_seen' => isset($item['first_seen'])
-                        ? substr($item['first_seen'], 0, 10)
-                        : null,
-                    'is_new'     => $item['is_new']  ?? false,
-                    'is_lost'    => $item['is_lost'] ?? false,
+                    'domain'        => $item['domain_from']      ?? '',
+                    'ms'            => $item['domain_from_rank'] ?? null,
+                    'backlink_type' => is_array($platformTypes)
+                        ? implode(', ', $platformTypes)
+                        : ($platformTypes ?: '—'),
                 ];
             }, $items);
 

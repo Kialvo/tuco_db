@@ -23,7 +23,7 @@ class DataForSeoProxyService
     /**
      * Call the Apps Script proxy with a given action and DataForSEO payload.
      *
-     * @param  string  $action   'referring_domains' | 'domain_summary'
+     * @param  string  $action   'referring_domains' | 'domain_summary' | 'backlinks'
      * @param  array   $payload  The DataForSEO request payload array
      * @return array             Parsed JSON response from DataForSEO (via proxy)
      *
@@ -74,6 +74,30 @@ class DataForSeoProxyService
     {
         return $this->call('domain_summary', [[
             'target' => $target,
+        ]]);
+    }
+
+    /**
+     * Fetch top 200 dofollow referring domains with real rank (MS) and platform type.
+     * Uses backlinks/backlinks/live with mode=one_per_domain.
+     *
+     * @param  string  $target  e.g. "example.com"
+     * @return array
+     */
+    public function backlinks(string $target): array
+    {
+        return $this->call('backlinks', [[
+            'target'                    => $target,
+            'mode'                      => 'one_per_domain',
+            'include_subdomains'        => true,
+            'exclude_internal_backlinks'=> true,
+            'include_indirect_links'    => false,
+            'backlinks_status_type'     => 'live',
+            'rank_scale'                => 'one_thousand',
+            'sort_field'                => 'rank',
+            'sort_order'                => 'desc',
+            'limit'                     => 200,
+            'filters'                   => [['dofollow', '=', true]],
         ]]);
     }
 }
