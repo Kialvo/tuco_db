@@ -53,4 +53,9 @@ return [
         'key' => env('AI_ORCHESTRATION_API_KEY'),
     ],
 
+    'dataforseo_proxy' => [
+        'url'    => env('DATAFORSEO_PROXY_URL'),
+        'secret' => env('DATAFORSEO_PROXY_SECRET'),
+    ],
+
 ];
