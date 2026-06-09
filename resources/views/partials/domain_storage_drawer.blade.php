@@ -256,7 +256,7 @@ $(function () {
             ['Copywriter €',     money(e.copy_nr)],
             ['Total Cost',       money(e.total_cost)],
             ['Menford',          money(e.menford)],
-            ['Client Copy',      money(e.client_copy)],
+            ['Contact Copy',     money(e.client_copy)],
             ['Total Revenues',   money(e.total_revenues)],
             ['Profit',           profitDisp],
         ])}

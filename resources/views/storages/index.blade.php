@@ -38,13 +38,13 @@
         'website_domain'                 => 'Domain',
         'status'                         => 'Status',
         'LB'                             => 'LB',
-        'client_name'                    => 'Client',
+        'client_name'                    => 'Contact',
         'contact_name'                   => 'Publisher',
         'copywriter_name'                => 'Copywriter',
         'copy_nr'                        => 'Copywriter Amount €',
-        'copywriter_commision_date'      => 'Copy Comm. Date',
-        'copywriter_submission_date'     => 'Copy Subm. Date',
-        'copywriter_period'              => 'Copy Period',
+        'copywriter_commision_date'      => 'Copywriter Comm. Date',
+        'copywriter_submission_date'     => 'Copywriter Subm. Date',
+        'copywriter_period'              => 'Copywriter Period',
         'language_name'                  => 'Language',
         'country_name'                   => 'Country',
         'publisher_currency'             => 'Publisher Currency',
@@ -52,7 +52,7 @@
         'publisher'                      => 'Publisher Agreed €',
         'total_cost'                     => 'Total Cost €',
         'menford'                        => 'Menford €',
-        'client_copy'                    => 'Client Copy €',
+        'client_copy'                    => 'Contact Copy €',
         'total_revenues'                 => 'Total Revenues €',
         'profit'                         => 'Profit €',
         'campaign'                       => 'Target Domain',
@@ -190,14 +190,14 @@
                     <th class="px-4 py-2">Domain</th>
                     <th class="px-4 py-2 min-w-[160px]">Status</th>
                     <th class="px-4 py-2">LB</th>
-                    <th class="px-4 py-2">Client</th>
+                    <th class="px-4 py-2">Contact</th>
                     <th class="px-4 py-2">Company</th>
                     <th class="px-4 py-2">Publisher</th>
                     <th class="px-4 py-2">Copywriter</th>
                     <th class="px-4 py-2">Copywriter Amount €</th>
-                    <th class="px-4 py-2">Copy Comm.<br>Date</th>
-                    <th class="px-4 py-2">Copy Subm.<br>Date</th>
-                    <th class="px-4 py-2">Copy Period</th>
+                    <th class="px-4 py-2">Copywriter Comm.<br>Date</th>
+                    <th class="px-4 py-2">Copywriter Subm.<br>Date</th>
+                    <th class="px-4 py-2">Copywriter Period</th>
                     <th class="px-4 py-2">Language</th>
                     <th class="px-4 py-2">Country</th>
                     <th class="px-4 py-2">Publisher Currency</th>
@@ -205,7 +205,7 @@
                     <th class="px-4 py-2">Publisher Agreed €</th>
                     <th class="px-4 py-2">Total Cost €</th>
                     <th class="px-4 py-2">Menford €</th>
-                    <th class="px-4 py-2">Client Copy €</th>
+                    <th class="px-4 py-2">Contact Copy €</th>
                     <th class="px-4 py-2">Total Revenues €</th>
                     <th class="px-4 py-2">Profit €</th>
                     <th class="px-4 py-2">Target Domain</th>
@@ -248,9 +248,9 @@
                     <td></td>                                            {{--  7 Publisher --}}
                     <td></td>                                            {{--  8 Copywriter --}}
                     <td data-col="copy_nr"            data-index="9"></td>  {{--  9 Copywriter Amount € --}}
-                    <td></td>                                            {{-- 10 Copy Comm. Date --}}
-                    <td></td>                                            {{-- 11 Copy Subm. Date --}}
-                    <td data-col="copywriter_period"  data-index="12"></td> {{-- 12 Copy Period --}}
+                    <td></td>                                            {{-- 10 Copywriter Comm. Date --}}
+                    <td></td>                                            {{-- 11 Copywriter Subm. Date --}}
+                    <td data-col="copywriter_period"  data-index="12"></td> {{-- 12 Copywriter Period --}}
                     <td></td>                                            {{-- 13 Language --}}
                     <td></td>                                            {{-- 14 Country --}}
                     <td></td>                                            {{-- 15 Publisher Currency --}}
@@ -258,7 +258,7 @@
                     <td data-col="publisher"          data-index="17"></td> {{-- 17 Publisher Agreed € --}}
                     <td data-col="total_cost"         data-index="18"></td> {{-- 18 Total Cost € --}}
                     <td data-col="menford"            data-index="19"></td> {{-- 19 Menford € --}}
-                    <td data-col="client_copy"        data-index="20"></td> {{-- 20 Client Copy € --}}
+                    <td data-col="client_copy"        data-index="20"></td> {{-- 20 Contact Copy € --}}
                     <td data-col="total_revenues"     data-index="21"></td> {{-- 21 Total Revenues € --}}
                     <td data-col="profit"             data-index="22"></td> {{-- 22 Profit € --}}
                     <td></td>                                            {{-- 23 Target Domain --}}

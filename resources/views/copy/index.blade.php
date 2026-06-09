@@ -1,11 +1,11 @@
 @extends('layouts.dashboard')
-@section('title', 'Copy Records')
+@section('title', 'Copywriters')
 
 @section('content')
     {{-- Page header --}}
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
-            <h1 class="text-base font-bold text-gray-800">Copy Records</h1>
+            <h1 class="text-base font-bold text-gray-800">Copywriters</h1>
             <p class="text-xs text-gray-500 mt-0.5">Reusable copy snippets used in storages.</p>
         </div>
         <div class="flex items-center gap-3 flex-wrap">

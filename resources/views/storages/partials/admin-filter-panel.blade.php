@@ -67,7 +67,7 @@
     </div>
 
     <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Client</label>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Contact</label>
         <select id="filterClient" class="fi">
             <option value="">— Any —</option>
             @foreach($clients as $cl)

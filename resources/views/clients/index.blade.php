@@ -1,13 +1,13 @@
 
 {{-- resources/views/clients/index.blade.php --}}
 @extends('layouts.dashboard')
-@section('title', 'Clients')
+@section('title', 'Contacts')
 
 @section('content')
     {{-- Page header --}}
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
-            <h1 class="text-base font-bold text-gray-800">Clients</h1>
+            <h1 class="text-base font-bold text-gray-800">Contacts</h1>
             <p class="text-xs text-gray-500 mt-0.5">Companies you publish for.</p>
         </div>
         <div class="flex items-center gap-3 flex-wrap">
