@@ -103,9 +103,9 @@
                     @error('LB') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
-                {{-- Client --}}
+                {{-- Contact --}}
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Client</label>
+                    <label class="block text-gray-700 font-medium mb-1">Contact</label>
                     <select name="client_id" id="clientSelect"
                             class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
@@ -173,13 +173,13 @@
 {{--                    @error('copy_nr') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror--}}
 {{--                </div>--}}
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Comm. Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copywriter Comm. Date</label>
                     <input type="text" name="copywriter_commision_date" value="{{ old('copywriter_commision_date') }}"
                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('copywriter_commision_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Subm. Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copywriter Subm. Date</label>
                     <input type="text" name="copywriter_submission_date" value="{{ old('copywriter_submission_date') }}"
                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('copywriter_submission_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
@@ -212,7 +212,7 @@
                     'publisher'         => 'Publisher Agreed Amount €',
                     'copy_nr' => 'Copywriter Amount €',
                     'menford'           => 'Menford €',
-                    'client_copy'       => 'Client Copy €',
+                    'client_copy'       => 'Contact Copy €',
                 ] as $field => $label)
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">{{ $label }}</label>

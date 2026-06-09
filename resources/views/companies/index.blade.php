@@ -23,7 +23,7 @@
                 <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                     <th class="py-3 px-4 font-semibold">ID</th>
                     <th class="py-3 px-4 font-semibold">Name</th>
-                    <th class="py-3 px-4 font-semibold">Clients</th>
+                    <th class="py-3 px-4 font-semibold">Contacts</th>
                     <th class="py-3 px-4 font-semibold">Action</th>
                 </tr>
                 </thead>

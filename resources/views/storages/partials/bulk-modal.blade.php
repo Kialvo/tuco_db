@@ -15,9 +15,9 @@
 
         // COPY DETAILS
         'copy_nr'                   => 'Copywriter Amount €',
-        'copywriter_commision_date' => 'Copy Comm. Date',
-        'copywriter_submission_date'=> 'Copy Subm. Date',
-        'copywriter_period'         => 'Copy Period (days)',
+        'copywriter_commision_date' => 'Copywriter Comm. Date',
+        'copywriter_submission_date'=> 'Copywriter Subm. Date',
+        'copywriter_period'         => 'Copywriter Period (days)',
 
         // PUBLISHER
         'publisher_currency'        => 'Publisher Currency',
@@ -27,7 +27,7 @@
         'publisher'                 => 'Publisher Agreed €',
         'total_cost'                => 'Total Cost €',
         'menford'                   => 'Menford €',
-        'client_copy'               => 'Client Copy €',
+        'client_copy'               => 'Contact Copy €',
         'total_revenues'            => 'Total Revenues €',
         'profit'                    => 'Profit €',
 

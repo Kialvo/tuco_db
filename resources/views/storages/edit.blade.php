@@ -113,9 +113,9 @@
                     @error('LB') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
-                {{-- Client --}}
+                {{-- Contact --}}
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Client</label>
+                    <label class="block text-gray-700 font-medium mb-1">Contact</label>
                     <select name="client_id" id="clientSelect"
                             class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
@@ -183,14 +183,14 @@
                     @error('copy_nr') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Comm. Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copywriter Comm. Date</label>
                     <input type="text" name="copywriter_commision_date"
                            value="{{ old('copywriter_commision_date', $storage->copywriter_commision_date ? \Carbon\Carbon::parse($storage->copywriter_commision_date)->format('d-m-Y') : '') }}"
                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('copywriter_commision_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copy Subm. Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copywriter Subm. Date</label>
                     <input type="text" name="copywriter_submission_date"
                            value="{{ old('copywriter_submission_date', $storage->copywriter_submission_date ? \Carbon\Carbon::parse($storage->copywriter_submission_date)->format('d-m-Y') : '') }}"
                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
@@ -198,7 +198,7 @@
                 </div>
                 <div>
                     <label class="block text-gray-600 font-medium mb-1">
-                        Copy Period (days) <span class="text-xs text-gray-400">(auto)</span>
+                        Copywriter Period (days) <span class="text-xs text-gray-400">(auto)</span>
                     </label>
                     <input type="number"
                            name="copywriter_period"
@@ -237,7 +237,7 @@
                     'publisher'       => 'Publisher Agreed Amount €',
                     'total_cost'      => 'Total Cost €',
                     'menford'         => 'Menford €',
-                    'client_copy'     => 'Client Copy €',
+                    'client_copy'     => 'Contact Copy €',
                     'total_revenues'  => 'Total Revenues €',
                     'profit'          => 'Profit €',
                 ];

@@ -92,35 +92,37 @@
                 </div>
             </div>
 
-            {{-- Storages group --}}
-            <div x-data="{ open: {{ $navActive('storages.*', 'clients.*', 'companies.*', 'copy.*') ? 'true' : 'false' }} }">
-                <div class="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/10 transition-all
-                            {{ $navActive('storages.*') ? 'nav-active' : 'text-gray-300' }}">
-                    <a href="{{ route('storages.index') }}" class="flex-1 inline-flex items-center gap-3 font-medium">
-                        <x-icon name="warehouse" /> Storages
-                    </a>
-                    <button @click="open = !open" class="focus:outline-none p-1">
-                        <x-icon ::name="open ? 'chevron-up' : 'chevron-down'" size="sm" />
-                    </button>
-                </div>
-                <div x-show="open" x-cloak class="space-y-0.5 mt-1 ps-6">
-                    <a href="{{ route('clients.index') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
-                              {{ $navActive('clients.*') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="building" size="sm" class="me-2 inline" /> Clients
-                    </a>
-                    <a href="{{ route('companies.index') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
-                              {{ $navActive('companies.*') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="building" size="sm" class="me-2 inline" /> Companies
-                    </a>
-                    <a href="{{ route('copy.index') }}"
-                       class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-all
-                              {{ $navActive('copy.*') ? 'nav-active' : 'text-gray-300' }}">
-                        <x-icon name="document" size="sm" class="me-2 inline" /> Copy
-                    </a>
-                </div>
-            </div>
+            {{-- Storages --}}
+            <a href="{{ route('storages.index') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('storages.*') ? 'nav-active' : 'text-gray-300' }}">
+                <x-icon name="warehouse" />
+                Storages
+            </a>
+
+            {{-- Contacts --}}
+            <a href="{{ route('clients.index') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('clients.*') ? 'nav-active' : 'text-gray-300' }}">
+                <x-icon name="address-book" />
+                Contacts
+            </a>
+
+            {{-- Companies --}}
+            <a href="{{ route('companies.index') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('companies.*') ? 'nav-active' : 'text-gray-300' }}">
+                <x-icon name="briefcase" />
+                Companies
+            </a>
+
+            {{-- Copywriters --}}
+            <a href="{{ route('copy.index') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('copy.*') ? 'nav-active' : 'text-gray-300' }}">
+                <x-icon name="document" />
+                Copywriters
+            </a>
 
             <a href="{{ route('storages.stats') }}"
                class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
