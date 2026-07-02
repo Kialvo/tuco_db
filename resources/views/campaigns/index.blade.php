@@ -1,0 +1,547 @@
+{{-- resources/views/campaigns/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'Campaigns')
+
+@php
+    $services   = config('linkbuilding.services');
+    $statusGrp  = config('linkbuilding.campaign_statuses');
+    $targetTypes = config('linkbuilding.target_types');
+@endphp
+
+@section('content')
+    {{-- Page header --}}
+    <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div>
+            <h1 class="text-base font-bold text-gray-800">Campaigns</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Link building campaigns &amp; publications.</p>
+        </div>
+        <button id="btnNewCampaign"
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+            <x-icon name="plus" size="sm" /> New Campaign
+        </button>
+    </div>
+
+    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+
+        {{-- Filters --}}
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+            <input type="text" id="f_search" placeholder="Search code or client…"
+                   class="border border-gray-300 rounded-lg text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500 min-w-[220px]">
+
+            <select id="f_company" class="text-sm min-w-[200px]"></select>
+
+            <select id="f_service" class="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
+                <option value="">All services</option>
+                @foreach($services as $s)
+                    <option value="{{ $s }}">{{ $s }}</option>
+                @endforeach
+            </select>
+
+            <select id="f_status" class="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500 max-w-[220px]">
+                <option value="">All statuses</option>
+                @foreach($statusGrp as $group => $statuses)
+                    <optgroup label="{{ $group }}">
+                        @foreach($statuses as $st)
+                            <option value="{{ $st }}">{{ $st }}</option>
+                        @endforeach
+                    </optgroup>
+                @endforeach
+            </select>
+
+            <button id="f_today" type="button"
+                    class="filter-toggle border border-gray-300 rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-600 hover:bg-gray-50">
+                📅 Today
+            </button>
+            <button id="f_group" type="button"
+                    class="filter-toggle border border-gray-300 rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-600 hover:bg-gray-50">
+                By client
+            </button>
+            <button id="f_clear" type="button"
+                    class="border border-red-200 text-red-600 rounded-lg text-xs font-semibold px-3 py-2 bg-white hover:bg-red-50 hidden">
+                ✕ Clear
+            </button>
+        </div>
+
+        {{-- DataTable --}}
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card p-4">
+            <table id="campaignsTable" class="text-sm text-gray-700" style="width:100%; table-layout:auto;">
+                <thead>
+                <tr class="border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
+                    <th class="py-3 px-3 font-semibold text-left">Code</th>
+                    <th class="py-3 px-3 font-semibold text-left">Company</th>
+                    <th class="py-3 px-3 font-semibold text-left">Service</th>
+                    <th class="py-3 px-3 font-semibold text-left">Status</th>
+                    <th class="py-3 px-3 font-semibold text-right">Value</th>
+                    <th class="py-3 px-3 font-semibold text-center">Pubs</th>
+                    <th class="py-3 px-3 font-semibold text-left">Target</th>
+                    <th class="py-3 px-3 font-semibold text-left">Budget&nbsp;Appr.</th>
+                    <th class="py-3 px-3 font-semibold text-left">Offer&nbsp;Ready</th>
+                    <th class="py-3 px-3 font-semibold text-left">Deadline</th>
+                    <th class="py-3 px-3 font-semibold text-left">Next&nbsp;Update</th>
+                    <th class="py-3 px-3 font-semibold text-left">Responsible</th>
+                    <th class="py-3 px-3 font-semibold text-center">💬</th>
+                    <th class="py-3 px-3 font-semibold text-center">Action</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- ═══════════ Campaign create/edit modal ═══════════ --}}
+    <div id="campaignModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-2xl relative max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+                <h2 id="campaignModalTitle" class="text-lg font-bold text-gray-800">New Campaign</h2>
+                <button type="button" class="js-close-campaign text-gray-400 hover:text-gray-600"><x-icon name="x" size="sm" /></button>
+            </div>
+            <div id="campaignErrors" class="hidden mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm"></div>
+            <form id="campaignForm" class="px-6 py-5 space-y-4">
+                <input type="hidden" id="c_id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Campaign Code <span class="text-red-500">*</span></label>
+                        <input type="text" id="c_code" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="e.g. IGMN_LB_006">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Company</label>
+                        <select id="c_company_id" class="w-full"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Primary Contact</label>
+                        <select id="c_contact_id" class="w-full"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Service</label>
+                        <select id="c_service" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
+                            <option value="">—</option>
+                            @foreach($services as $s)<option value="{{ $s }}">{{ $s }}</option>@endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Status <span class="text-red-500">*</span></label>
+                        <select id="c_status" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
+                            @foreach($statusGrp as $group => $statuses)
+                                <optgroup label="{{ $group }}">
+                                    @foreach($statuses as $st)<option value="{{ $st }}">{{ $st }}</option>@endforeach
+                                </optgroup>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Deal Value (€)</label>
+                        <input type="number" step="0.01" id="c_deal_value" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Target Type</label>
+                        <select id="c_target_type" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
+                            @foreach($targetTypes as $val => $lbl)<option value="{{ $val }}">{{ $lbl }}</option>@endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label id="c_target_label" class="block text-xs font-semibold text-gray-600 mb-1">Target Amount (€)</label>
+                        <input type="number" step="0.01" id="c_target_value" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="pt-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 border-t border-gray-100">Dates</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Budget Approval</label>
+                        <input type="text" id="c_budget_approval_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Offer Ready</label>
+                        <input type="text" id="c_offer_ready_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Deadline</label>
+                        <input type="text" id="c_deadline" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Completion</label>
+                        <input type="text" id="c_completion_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    </div>
+                </div>
+
+                <div class="pt-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 border-t border-gray-100">Progress</div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Live Count</label>
+                        <input type="number" step="0.01" id="c_live_count" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Next Update</label>
+                        <input type="text" id="c_next_update_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Responsible</label>
+                        <select id="c_responsible_user_id" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
+                            <option value="">—</option>
+                            @foreach($users as $u)<option value="{{ $u->id }}">{{ $u->name }}</option>@endforeach
+                        </select>
+                    </div>
+                </div>
+            </form>
+            <div class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
+                <button type="button" class="js-close-campaign px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button type="button" id="c_save" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Create Campaign</button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ═══════════ Comments modal ═══════════ --}}
+    <div id="commentsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-md relative">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h2 id="commentsTitle" class="text-lg font-bold text-gray-800">Comments</h2>
+                <button type="button" class="js-close-comments text-gray-400 hover:text-gray-600"><x-icon name="x" size="sm" /></button>
+            </div>
+            <div class="px-6 py-4">
+                <div id="commentsList" class="max-h-80 overflow-y-auto mb-4 divide-y divide-gray-100"></div>
+                <textarea id="commentBody" rows="3" placeholder="Write a comment…"
+                          class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                <div class="flex justify-end mt-3">
+                    <button type="button" id="commentAdd" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Add Comment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- floating status dropdown (populated by JS) --}}
+    <div id="statusMenu" class="hidden fixed z-[60] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto min-w-[220px] text-sm"></div>
+@endsection
+
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.3.1/css/rowGroup.dataTables.min.css">
+@endpush
+
+@push('scripts')
+<script src="https://cdn.datatables.net/rowgroup/1.3.1/js/dataTables.rowGroup.min.js"></script>
+<script>
+$(function () {
+    const csrf = $('meta[name="csrf-token"]').attr('content');
+    const CAMPAIGN_STATUSES = @json($statusGrp);
+
+    /* ─────────────── DataTable ─────────────── */
+    const table = $('#campaignsTable').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: "{{ route('crm.campaigns.data') }}",
+            type: "POST",
+            headers: { 'X-CSRF-TOKEN': csrf },
+            data: function (d) {
+                d.company_id = $('#f_company').val() || '';
+                d.status     = $('#f_status').val() || '';
+                d.service    = $('#f_service').val() || '';
+                d.today      = $('#f_today').hasClass('active') ? 1 : 0;
+            }
+        },
+        columns: [
+            { data: 'code_cell',            name: 'code' },
+            { data: 'company_name',         name: 'company_name', visible: false },
+            { data: 'service_badge',        name: 'service',              searchable: false },
+            { data: 'status_badge',         name: 'status',               searchable: false },
+            { data: 'deal',                 name: 'deal_value',           searchable: false, className: 'text-right whitespace-nowrap' },
+            { data: 'pubs',                 name: 'pubs', orderable: false, searchable: false, className: 'text-center whitespace-nowrap' },
+            { data: 'target',               name: 'target', orderable: false, searchable: false },
+            { data: 'budget_approval_date', name: 'budget_approval_date', searchable: false, className: 'text-gray-500 whitespace-nowrap' },
+            { data: 'offer_ready_date',     name: 'offer_ready_date',     searchable: false, className: 'text-gray-500 whitespace-nowrap' },
+            { data: 'deadline',             name: 'deadline',             searchable: false, className: 'text-gray-500 whitespace-nowrap' },
+            { data: 'next_update_date',     name: 'next_update_date',     searchable: false, className: 'text-gray-500 whitespace-nowrap' },
+            { data: 'responsible',          name: 'responsible', orderable: false, searchable: false },
+            { data: 'comments_btn',         name: 'comments_btn', orderable: false, searchable: false, className: 'text-center' },
+            { data: 'action',               name: 'action', orderable: false, searchable: false, className: 'text-center' },
+        ],
+        order: [[0, 'asc']],
+        autoWidth: false,
+        responsive: false,
+        scrollX: true,
+        rowGroup: { dataSrc: 'company_name', enable: false,
+            startRender: function (rows, group) {
+                return $('<tr/>').append(
+                    '<td colspan="14" class="bg-gray-50 font-semibold text-gray-700 py-2 px-3 border-t-2 border-gray-200">'
+                    + $('<div/>').text(group || '—').html()
+                    + ' <span class="ml-1 text-xs text-gray-400">(' + rows.count() + ')</span></td>'
+                );
+            }
+        },
+        dom: "<'dt-toolbar-top'l>" + "<'dt-scroll'rt>" + "<'dt-toolbar-bottom'ip>",
+        language: {
+            lengthMenu: "Show _MENU_ entries",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            infoEmpty: "No campaigns found",
+            zeroRecords: "No matching campaigns found"
+        }
+    });
+
+    table.on('init.dt', function () {
+        $('div.dt-length label').addClass('text-gray-600 flex items-center space-x-2')
+            .find('select').addClass('border border-gray-300 bg-white rounded-md px-3 py-1 text-gray-700 focus:ring-green-500 focus:border-green-500');
+        $('div.dt-pagination a').addClass('inline-block px-3 py-1 rounded hover:bg-gray-200 text-gray-700');
+        $('div.dt-info').addClass('text-gray-600');
+    });
+
+    /* ─────────────── Filters ─────────────── */
+    $('#f_company').select2({
+        placeholder: 'All companies', allowClear: true, minimumInputLength: 0, width: '200px',
+        ajax: { url: "{{ route('companies.search') }}", dataType: 'json', delay: 250,
+                data: p => ({ q: p.term }), processResults: d => ({ results: d.results }), cache: true }
+    });
+
+    function syncClear() {
+        const active = $('#f_search').val() || $('#f_company').val() || $('#f_service').val()
+            || $('#f_status').val() || $('#f_today').hasClass('active');
+        $('#f_clear').toggleClass('hidden', !active);
+    }
+
+    let searchTimer;
+    $('#f_search').on('keyup', function () {
+        clearTimeout(searchTimer);
+        const v = this.value;
+        searchTimer = setTimeout(() => { table.search(v).draw(); syncClear(); }, 300);
+    });
+    $('#f_company, #f_service, #f_status').on('change', () => { table.ajax.reload(); syncClear(); });
+    $('#f_today').on('click', function () { $(this).toggleClass('active bg-amber-50 text-amber-700 border-amber-300'); table.ajax.reload(); syncClear(); });
+
+    let grouped = false;
+    $('#f_group').on('click', function () {
+        grouped = !grouped;
+        $(this).toggleClass('active bg-green-50 text-green-700 border-green-300', grouped);
+        if (grouped) { table.order([1, 'asc']); table.rowGroup().enable(true).draw(); }
+        else { table.rowGroup().enable(false); table.order([0, 'asc']).draw(); }
+    });
+
+    $('#f_clear').on('click', function () {
+        $('#f_search').val('');
+        $('#f_company').val(null).trigger('change.select2');
+        $('#f_service').val('');
+        $('#f_status').val('');
+        $('#f_today').removeClass('active bg-amber-50 text-amber-700 border-amber-300');
+        table.search('').ajax.reload();
+        syncClear();
+    });
+
+    /* ─────────────── Campaign modal ─────────────── */
+    const campaignModal = $('#campaignModal');
+    let campaignMode = 'create';
+
+    function openCampaignModal() { campaignModal.removeClass('hidden').addClass('flex'); }
+    function closeCampaignModal() { campaignModal.addClass('hidden').removeClass('flex'); }
+    $('.js-close-campaign').on('click', closeCampaignModal);
+    campaignModal.on('click', e => { if (e.target === campaignModal[0]) closeCampaignModal(); });
+
+    // Select2 for modal company + contact
+    $('#c_company_id').select2({
+        placeholder: 'Search company…', allowClear: true, minimumInputLength: 0, width: '100%',
+        dropdownParent: campaignModal,
+        ajax: { url: "{{ route('companies.search') }}", dataType: 'json', delay: 250,
+                data: p => ({ q: p.term }), processResults: d => ({ results: d.results }), cache: true }
+    });
+    $('#c_contact_id').select2({ placeholder: 'Select company first…', width: '100%', dropdownParent: campaignModal });
+
+    function loadContacts(companyId, selectedId) {
+        const $c = $('#c_contact_id');
+        $c.empty();
+        if (!companyId) { $c.append(new Option('— select company first —', '')); $c.trigger('change'); return; }
+        $.get("{{ url('crm/companies') }}/" + companyId + "/contacts", function (res) {
+            $c.append(new Option('—', ''));
+            (res.results || []).forEach(o => $c.append(new Option(o.text, o.id, false, String(selectedId) === String(o.id))));
+            $c.trigger('change');
+        });
+    }
+    $('#c_company_id').on('change', function () { if (campaignMode) loadContacts($(this).val(), null); });
+
+    // Target label toggle
+    function updTargetLabel() {
+        $('#c_target_label').text($('#c_target_type').val() === 'budget' ? 'Target Amount (€)' : 'Nr. of Publications');
+    }
+    $('#c_target_type').on('change', updTargetLabel);
+
+    // flatpickr on date inputs
+    flatpickr('.js-date', { dateFormat: 'Y-m-d', allowInput: true });
+
+    const DATE_FIELDS = ['budget_approval_date','offer_ready_date','deadline','completion_date','next_update_date'];
+    function setDate(field, val) {
+        const el = document.getElementById('c_' + field);
+        if (el && el._flatpickr) { val ? el._flatpickr.setDate(val, true) : el._flatpickr.clear(); }
+        else if (el) { el.value = val || ''; }
+    }
+
+    function resetCampaignForm() {
+        $('#campaignErrors').addClass('hidden').empty();
+        $('#c_id').val('');
+        $('#c_code, #c_deal_value, #c_target_value, #c_live_count').val('');
+        $('#c_service, #c_status, #c_responsible_user_id').val('');
+        $('#c_target_type').val('budget'); updTargetLabel();
+        $('#c_company_id').val(null).trigger('change');
+        $('#c_contact_id').empty().append(new Option('— select company first —','')).trigger('change');
+        DATE_FIELDS.forEach(f => setDate(f, ''));
+    }
+
+    $('#btnNewCampaign').on('click', function () {
+        campaignMode = 'create';
+        resetCampaignForm();
+        $('#campaignModalTitle').text('New Campaign');
+        $('#c_save').text('Create Campaign');
+        openCampaignModal();
+    });
+
+    $(document).on('click', '.js-edit-campaign', function () {
+        const id = $(this).data('id');
+        campaignMode = 'edit';
+        resetCampaignForm();
+        $('#campaignModalTitle').text('Edit Campaign');
+        $('#c_save').text('Save Changes');
+        $.get("{{ url('crm/campaigns') }}/" + id + "/edit-ajax", function (res) {
+            const d = res.data;
+            $('#c_id').val(d.id);
+            $('#c_code').val(d.code);
+            $('#c_service').val(d.service || '');
+            $('#c_status').val(d.status);
+            $('#c_deal_value').val(d.deal_value || '');
+            $('#c_target_type').val(d.target_type || 'budget'); updTargetLabel();
+            $('#c_target_value').val(d.target_value || '');
+            $('#c_live_count').val(d.live_count || '');
+            $('#c_responsible_user_id').val(d.responsible_user_id || '');
+            DATE_FIELDS.forEach(f => setDate(f, d[f]));
+            // company + contact
+            if (d.company_id) {
+                $('#c_company_id').append(new Option(d.company_name || ('Company #' + d.company_id), d.company_id, true, true)).trigger('change');
+                loadContacts(d.company_id, d.contact_id);
+            }
+            openCampaignModal();
+        }).fail(() => alert('Unable to load campaign.'));
+    });
+
+    $('#c_save').on('click', function () {
+        $('#campaignErrors').addClass('hidden').empty();
+        const payload = {
+            code: $('#c_code').val(),
+            company_id: $('#c_company_id').val() || '',
+            contact_id: $('#c_contact_id').val() || '',
+            responsible_user_id: $('#c_responsible_user_id').val() || '',
+            service: $('#c_service').val() || '',
+            status: $('#c_status').val(),
+            deal_value: $('#c_deal_value').val() || 0,
+            target_type: $('#c_target_type').val(),
+            target_value: $('#c_target_value').val() || 0,
+            live_count: $('#c_live_count').val() || 0,
+            budget_approval_date: $('#c_budget_approval_date').val() || '',
+            offer_ready_date: $('#c_offer_ready_date').val() || '',
+            deadline: $('#c_deadline').val() || '',
+            completion_date: $('#c_completion_date').val() || '',
+            next_update_date: $('#c_next_update_date').val() || '',
+            _token: csrf
+        };
+        const id = $('#c_id').val();
+        const url = id ? "{{ url('crm/campaigns') }}/" + id : "{{ route('crm.campaigns.store') }}";
+        if (id) payload._method = 'PUT';
+
+        $.ajax({
+            url, method: 'POST', data: payload,
+            headers: { 'Accept': 'application/json' },
+            success: function () {
+                closeCampaignModal();
+                table.ajax.reload(null, false);
+                Swal.fire({ icon: 'success', title: 'Saved!', timer: 1500, showConfirmButton: false });
+            },
+            error: function (xhr) {
+                const errs = xhr.responseJSON?.errors ?? {};
+                const msg = Object.values(errs).flat().join('<br>') || 'An error occurred.';
+                $('#campaignErrors').html(msg).removeClass('hidden');
+            }
+        });
+    });
+
+    /* ─────────────── Delete campaign ─────────────── */
+    $(document).on('click', '.js-del-campaign', function () {
+        const id = $(this).data('id'), code = $(this).data('code');
+        Swal.fire({
+            icon: 'warning', title: 'Delete campaign?',
+            text: code + ' and its publications will be removed.',
+            showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#dc2626'
+        }).then(r => {
+            if (!r.isConfirmed) return;
+            $.ajax({
+                url: "{{ url('crm/campaigns') }}/" + id, method: 'POST',
+                data: { _method: 'DELETE', _token: csrf }, headers: { 'Accept': 'application/json' },
+                success: () => { table.ajax.reload(null, false); Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false }); }
+            });
+        });
+    });
+
+    /* ─────────────── Inline status dropdown ─────────────── */
+    const statusMenu = $('#statusMenu');
+    let statusTargetId = null;
+
+    function buildStatusMenu() {
+        let h = '';
+        $.each(CAMPAIGN_STATUSES, function (group, list) {
+            h += '<div class="px-3 pt-2 pb-1 text-[9px] uppercase tracking-wider text-gray-400 font-bold">' + group + '</div>';
+            list.forEach(s => { h += '<div class="js-status-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer" data-status="' + s.replace(/"/g,'&quot;') + '">' + s + '</div>'; });
+        });
+        statusMenu.html(h);
+    }
+    buildStatusMenu();
+
+    $(document).on('click', '.js-status-badge', function (e) {
+        e.stopPropagation();
+        statusTargetId = $(this).data('id');
+        const r = this.getBoundingClientRect();
+        statusMenu.css({ top: (r.bottom + 4) + 'px', left: r.left + 'px' }).removeClass('hidden');
+    });
+    $(document).on('click', '.js-status-opt', function () {
+        const status = $(this).data('status');
+        $.ajax({
+            url: "{{ url('crm/campaigns') }}/" + statusTargetId + "/status", method: 'PUT',
+            data: { status }, headers: { 'X-CSRF-TOKEN': csrf },
+            success: () => { statusMenu.addClass('hidden'); table.ajax.reload(null, false); }
+        });
+    });
+    $(document).on('click', () => statusMenu.addClass('hidden'));
+
+    /* ─────────────── Comments ─────────────── */
+    const commentsModal = $('#commentsModal');
+    let commentsCampaignId = null;
+
+    function closeComments() { commentsModal.addClass('hidden').removeClass('flex'); }
+    $('.js-close-comments').on('click', closeComments);
+    commentsModal.on('click', e => { if (e.target === commentsModal[0]) closeComments(); });
+
+    function renderComments(list) {
+        if (!list.length) { $('#commentsList').html('<p class="text-sm text-gray-400 py-2">No comments yet.</p>'); return; }
+        $('#commentsList').html(list.map(c =>
+            '<div class="py-2.5">'
+            + '<div class="text-[10px] text-gray-400 mb-0.5"><strong class="text-gray-600">' + $('<i/>').text(c.author).html() + '</strong> · ' + (c.date || '') + '</div>'
+            + '<div class="text-sm text-gray-800">' + $('<i/>').text(c.body).html() + '</div>'
+            + '</div>'
+        ).join(''));
+    }
+
+    $(document).on('click', '.js-comments-btn', function () {
+        commentsCampaignId = $(this).data('id');
+        $('#commentsTitle').text('Comments — ' + $(this).data('code'));
+        $('#commentBody').val('');
+        $('#commentsList').html('<p class="text-sm text-gray-400 py-2">Loading…</p>');
+        commentsModal.removeClass('hidden').addClass('flex');
+        $.get("{{ url('crm/campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
+    });
+
+    $('#commentAdd').on('click', function () {
+        const body = $('#commentBody').val().trim();
+        if (!body) return;
+        $.ajax({
+            url: "{{ url('crm/campaigns') }}/" + commentsCampaignId + "/comments", method: 'POST',
+            data: { body, _token: csrf }, headers: { 'Accept': 'application/json' },
+            success: function () {
+                $('#commentBody').val('');
+                $.get("{{ url('crm/campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
+                table.ajax.reload(null, false);
+            }
+        });
+    });
+});
+</script>
+@endpush

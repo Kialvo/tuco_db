@@ -32,5 +32,11 @@ class Client extends Model
 
         return $this->hasMany(Website::class);
     }
+
+    /* Link Building CRM — campaigns where this contact is the primary contact (additive) */
+    public function campaigns()
+    {
+        return $this->hasMany(Campaign::class, 'contact_id');
+    }
 }
 

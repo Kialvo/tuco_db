@@ -154,6 +154,22 @@ class ClientsController extends Controller
     }
 
     /*======================================================================
+    |  SHOW – CRM detail page (admin-only route). Contact profile + its
+    |  Link Building campaigns.
+    ======================================================================*/
+    public function show(Client $client)
+    {
+        $client->load('company:id,name');
+
+        $campaigns = $client->campaigns()
+            ->with(['company:id,name', 'responsibleUser:id,name'])
+            ->latest()
+            ->get();
+
+        return view('clients.show', compact('client', 'campaigns'));
+    }
+
+    /*======================================================================
     |  RESTORE (soft‑deleted rows)
     ======================================================================*/
     public function restore($id)
