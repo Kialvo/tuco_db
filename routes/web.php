@@ -27,6 +27,9 @@ use App\Http\Controllers\Admin\UserFavoritesController;
 use App\Http\Controllers\ContactsController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\PublicationController;
+use App\Http\Controllers\CampaignCommentController;
 use App\Http\Controllers\CopyController;
 
 use App\Http\Controllers\WebsiteController;
@@ -372,6 +375,39 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
         'update'  => 'admin.users.update',
         'destroy' => 'admin.users.destroy',
     ]);
+
+    /*--------------------------------------------------------------
+    | Link Building CRM (admin-only) — Campaigns + Publications
+    | New lb_* tables; references shared companies/clients/users.
+    --------------------------------------------------------------*/
+    // Campaigns — static/nested routes BEFORE the {campaign} show route
+    Route::match(['get', 'post'], 'crm/campaigns/data', [CampaignController::class, 'getData'])->name('crm.campaigns.data');
+    Route::get('crm/campaigns/{campaign}/edit-ajax',    [CampaignController::class, 'editAjax'])->name('crm.campaigns.editAjax');
+    Route::put('crm/campaigns/{campaign}/status',       [CampaignController::class, 'updateStatus'])->name('crm.campaigns.status');
+    Route::get('crm/companies/{company}/contacts',      [CampaignController::class, 'contactsForCompany'])->name('crm.company.contacts');
+
+    Route::get('crm/campaigns',               [CampaignController::class, 'index'])->name('crm.campaigns.index');
+    Route::post('crm/campaigns',              [CampaignController::class, 'store'])->name('crm.campaigns.store');
+    Route::get('crm/campaigns/{campaign}',    [CampaignController::class, 'show'])->name('crm.campaigns.show');
+    Route::put('crm/campaigns/{campaign}',    [CampaignController::class, 'update'])->name('crm.campaigns.update');
+    Route::delete('crm/campaigns/{campaign}', [CampaignController::class, 'destroy'])->name('crm.campaigns.destroy');
+
+    // Publications
+    Route::post('crm/campaigns/{campaign}/publications',   [PublicationController::class, 'store'])->name('crm.publications.store');
+    Route::get('crm/publications/{publication}/edit-ajax', [PublicationController::class, 'editAjax'])->name('crm.publications.editAjax');
+    Route::put('crm/publications/{publication}/status',    [PublicationController::class, 'updateStatus'])->name('crm.publications.status');
+    Route::get('crm/publications/{publication}',           [PublicationController::class, 'show'])->name('crm.publications.show');
+    Route::put('crm/publications/{publication}',           [PublicationController::class, 'update'])->name('crm.publications.update');
+    Route::delete('crm/publications/{publication}',        [PublicationController::class, 'destroy'])->name('crm.publications.destroy');
+
+    // Comments
+    Route::get('crm/campaigns/{campaign}/comments',  [CampaignCommentController::class, 'index'])->name('crm.campaigns.comments.index');
+    Route::post('crm/campaigns/{campaign}/comments', [CampaignCommentController::class, 'store'])->name('crm.campaigns.comments.store');
+    Route::delete('crm/comments/{comment}',          [CampaignCommentController::class, 'destroy'])->name('crm.campaigns.comments.destroy');
+
+    // Admin-only CRM detail pages for the shared entities
+    Route::get('crm/companies/{company}', [CompanyController::class, 'show'])->name('crm.companies.show');
+    Route::get('crm/clients/{client}',    [ClientsController::class, 'show'])->name('crm.clients.show');
 });
 
 /*======================================================================

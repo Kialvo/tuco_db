@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CompanyController extends Controller
 {
@@ -13,6 +14,26 @@ class CompanyController extends Controller
     public function index()
     {
         return view('companies.index');
+    }
+
+    /*======================================================================
+    |  SHOW – CRM detail page (admin-only route). Read-only reference of the
+    |  shared company record + its Link Building campaigns and contacts.
+    ======================================================================*/
+    public function show(Company $company)
+    {
+        $company->load('clients');
+
+        $campaigns = $company->campaigns()
+            ->with(['contact:id,first_name,last_name', 'responsibleUser:id,name'])
+            ->latest()
+            ->get();
+
+        $countryName = $company->country_id
+            ? DB::table('countries')->where('id', $company->country_id)->value('country_name')
+            : null;
+
+        return view('companies.show', compact('company', 'campaigns', 'countryName'));
     }
 
     /*======================================================================
