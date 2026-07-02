@@ -1,5 +1,5 @@
 @php
-    // â‘  Just list EVERY real db column once.
+    // ① Just list EVERY real db column once.
     //    If tomorrow you add a new column, drop its name here and
     //    (optionally) extend bulkMeta below with a prettier <select>.
     $bulkEditable = [
@@ -128,7 +128,7 @@
 @endsection
 
 @section('content')
-    <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
+    <div class="px-6 py-4 bg-gray-50 text-xs">
         @unless($isGuestUser)
             <div id="websiteExportPicker"
                  class="hidden fixed top-20 right-6 z-40 w-full max-w-3xl">
@@ -176,7 +176,7 @@
         <button id="toggleFiltersBtn" class="hidden" aria-hidden="true"></button>
 
 
-        {{-- â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ TABLE ACTION BAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ --}}
+        {{-- ───────────── TABLE ACTION BAR ───────────── --}}
         @unless($isGuestUser)
         <div id="actionBar"
              class="flex items-center flex-wrap gap-2 mb-3 px-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-card">
@@ -229,7 +229,7 @@
         </div>
 
         <!-- TABLE WRAPPER -->
-        <div class="bg-white border border-gray-200 rounded-xl shadow-card">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-card overflow-hidden">
 
             <table id="websitesTable" class="text-xs text-gray-700 w-full min-w-[1500px]">
                 <thead>
@@ -700,7 +700,7 @@
 
 @push('scripts')
     {{-- ###############################################
-     Bulk-edit metadata â€“ MUST load before buildBulkInput()
+     Bulk-edit metadata – MUST load before buildBulkInput()
 ############################################### --}}
     <script>
         window.bulkMeta = {
@@ -751,7 +751,7 @@
             category_ids:{type:'multiselect',options:@json($categories->pluck('name','id'))},
 
             /* ========= PSEUDO FIELD ========= */
-            recalculate_totals:{type:'noop'}   // shows the grey â€œNothing to fill inâ€ text
+            recalculate_totals:{type:'noop'}   // shows the grey "Nothing to fill in" text
         };
     </script>
 
@@ -936,6 +936,16 @@
                 return '<a href="' + safe + '" target="_blank" rel="noopener" class="text-green-600 hover:text-green-700 hover:underline break-all">' + safe + '</a>';
             };
             const decodeHtml = (value) => $('<textarea/>').html(value ?? '').text();
+            // Compute a default page length that fills the visible table height, so the grid has
+            // no empty band under the last row. Rows are biased to slightly overfill (~50px/row
+            // estimate vs taller wrapped rows) → internal scroll rather than a gap.
+            var _mainEl    = document.querySelector('main');
+            var _estAvail  = (_mainEl ? _mainEl.clientHeight : 800) - 170; // toolbars + header + padding
+            var _autoLen   = Math.max(10, Math.floor(_estAvail / 50));
+            var _lenVals   = [_autoLen];
+            [10, 25, 50, 100].forEach(function (n) { if (n !== _autoLen) _lenVals.push(n); });
+            var _lenLabels = _lenVals.map(function (n, i) { return i === 0 ? (n + ' (fit)') : String(n); });
+
             // Initialize the DataTable
             window.table =$('#websitesTable').DataTable({
 
@@ -1030,7 +1040,7 @@
                 },
                 columns: [
                     {
-                        data      : 'id',                     // re-use the rowâ€™s id
+                        data      : 'id',                     // re-use the row's id
                         orderable : false,
                         searchable: false,
                         className : 'text-center',
@@ -1256,6 +1266,10 @@
                 responsive: false,
                 autoWidth: false,
                 scrollX: true,
+                scrollY: '50vh',        // placeholder; fitDomainsTableHeight() sizes it to fill the viewport
+                scrollCollapse: false,  // keep the body at full height so the grid fills the screen
+                pageLength: _autoLen,           // default page size fills the visible height
+                lengthMenu: [_lenVals, _lenLabels],
                 createdRow: function (row, data) {
                     if (data.status && data.status.toLowerCase() === 'blacklist') {
                         $(row).addClass('blacklisted-row');
@@ -1269,14 +1283,37 @@
                 }
             });
 
-            // Sticky header (JS clone — CSS sticky blocked by DataTables' own overflow:hidden)
-            if (window.initDtStickyHeader) window.initDtStickyHeader(table);
+            // Native sticky header + fill-height: DataTables scrollX+scrollY keeps the header fixed
+            // and scrolls the body internally, so the old position:fixed clone (initDtStickyHeader)
+            // is no longer needed. Size the scroll body to fill down to the bottom of <main>.
+            function fitDomainsTableHeight() {
+                var wrap = document.getElementById('websitesTable_wrapper');
+                if (!wrap) return;
+                var body = wrap.querySelector('.dataTables_scrollBody');
+                if (!body) return;
+                var main = document.querySelector('main');
+                var bottomBar = wrap.querySelector('.dt-toolbar-bottom');
+                var mainBottom = main ? main.getBoundingClientRect().bottom : window.innerHeight;
+                var top = body.getBoundingClientRect().top;
+                var bottomH = bottomBar ? bottomBar.offsetHeight : 0;
+                var avail = mainBottom - top - bottomH - 16; // 16 = breathing room at the bottom
+                var h = Math.max(160, Math.round(avail));
+                body.style.height = h + 'px';
+                body.style.maxHeight = h + 'px';
+            }
+            fitDomainsTableHeight();
+            table.on('draw', fitDomainsTableHeight);
+            var _fitTO;
+            window.addEventListener('resize', function () {
+                clearTimeout(_fitTO);
+                _fitTO = setTimeout(function () { fitDomainsTableHeight(); table.columns.adjust(); }, 120);
+            });
 
             // Move search box into the DataTable header (next to "Show entries")
             $(table.table().container()).find('.dt-search').append($('#websitesTableSearchWrap'));
             function dt(v){ return v ? new Date(v).toLocaleDateString('en-GB') : ''; }
 
-            /* ---------- live â€œSelected: Nâ€ badge ---------- */
+            /* ---------- live "Selected: N" badge ---------- */
             function updateSelCount () {
                 $('#selCount').text($('.rowChk:checked').length);
             }
@@ -1300,9 +1337,9 @@
                 toggleActionButtons();
             });
 
-            /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
+            /*──────────────────────────────────────────────────────────────────*/
             /* BULK-EDIT  (identical to Storages, just hits the Websites route) */
-            /*â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€*/
+            /*──────────────────────────────────────────────────────────────────*/
             function buildBulkInput () {
                 const field = $('#bulkField').val();
                 const meta  = window.bulkMeta[field] || { type: 'text' };
@@ -1311,7 +1348,7 @@
                 wrap.empty();
 
                 if (field === 'recalculate_totals') {
-                    wrap.append('<p class="text-gray-500 text-xs">Nothing to fill in â€“ just click â€œSaveâ€.</p>');
+                    wrap.append('<p class="text-gray-500 text-xs">Nothing to fill in – just click "Save".</p>');
                     return;
                 }
 
@@ -1579,7 +1616,7 @@
                 $('#filterCountriesExclude').val(null).trigger('change');
                 $('#filterNoContact').prop('checked', false);
                 // Clear the Publisher filter (select2)
-                $('#filterContact').val(null).trigger('change');             // â† NEW
+                $('#filterContact').val(null).trigger('change');             // ← NEW
                 $('#filterBannerMin,#filterBannerMax,#filterSWMin,#filterSWMax').val('');
 
                 $('#filterCategories').val(null).trigger('change');
@@ -1750,9 +1787,9 @@
             });
 
 
-            // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ───────────────────────────────────────────────
             //  NOTE  MODAL
-            // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ───────────────────────────────────────────────
             $(document).on('click', '.note-link', function (e) {
                 e.preventDefault();
                 const note = $(this).data('note');
@@ -2026,7 +2063,7 @@
                     $('#boNoSpecialCount').text(r.data.no_special_count || 0);
 
                     if (r.data.skipped.length) {
-                        var lines = r.data.skipped.map(function(s){ return '<div>â€¢ #'+s.id+' '+s.domain+' â€” '+s.reason+'</div>'; });
+                        var lines = r.data.skipped.map(function(s){ return '<div>• #'+s.id+' '+s.domain+' — '+s.reason+'</div>'; });
                         $('#boSkippedList').html(lines.join(''));
                     } else {
                         $('#boSkippedList').html('<div class="text-green-700">All selected are eligible.</div>');
@@ -2061,7 +2098,7 @@
                 body: JSON.stringify({
                     ids: ids,
                     template_key: tplKey,
-                    language: lang,          // <â€” send language
+                    language: lang,          // <— send language
                     target_url: target_url,
                     brand: brand,
                     subject: subject,
@@ -2076,7 +2113,7 @@
 
                     var msg = 'Sent ' + r.data.sent + ' email(s)';
                     if (r.data.failed) msg += ', ' + r.data.failed + ' failed';
-                    toast(msg);                          // âœ… same toast style
+                    toast(msg);                          // ✅ same toast style
                     if (r.data.failed_details?.length) {
                         var lines = r.data.failed_details.map(s => '#'+s.id+' '+s.domain+': '+s.error).join('\n');
                         Swal.fire('Some emails failed', lines.substring(0, 1800), 'warning');
@@ -2084,7 +2121,7 @@
 
                     $('#chkAll').prop('checked', false);
                     if (window.table) window.table.ajax.reload(null, false);
-                    boCloseModal();                      // âœ… close modal
+                    boCloseModal();                      // ✅ close modal
                 })
                 .catch(err => oops(err.message || 'Send error'))
                 .finally(() => $('#boSend').prop('disabled', false).text('Send'));
