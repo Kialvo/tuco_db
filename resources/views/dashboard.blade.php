@@ -5,7 +5,7 @@
     @php
         $user = Auth::user();
         $stats = [
-            ['label' => 'Active domains',   'value' => \App\Models\Website::whereNull('deleted_at')->count(),         'href' => route('websites.index'),    'icon' => 'globe',         'tone' => 'green'],
+            ['label' => 'Total Domains',    'value' => \App\Models\Website::whereNull('deleted_at')->count(),         'href' => route('websites.index'),    'icon' => 'globe',         'tone' => 'green'],
             ['label' => 'New entries',      'value' => \App\Models\NewEntry::count(),                                'href' => route('new_entries.index'), 'icon' => 'folder-plus',   'tone' => 'amber'],
             ['label' => 'Storages',         'value' => \App\Models\Storage::count(),                                 'href' => route('storages.index'),    'icon' => 'warehouse',     'tone' => 'blue'],
             ['label' => 'Submitted orders', 'value' => \App\Models\Order::whereNotIn('status', ['draft','cancelled'])->count(), 'href' => route('admin.orders.index'),'icon' => 'orders',        'tone' => 'purple'],
@@ -32,7 +32,7 @@
                         <x-icon name="arrow-right" size="sm" class="text-gray-300 group-hover:text-green-600 transition" />
                     </div>
                     <div class="text-2xl font-bold text-gray-800">{{ number_format($s['value']) }}</div>
-                    <div class="text-xs text-gray-500 mt-0.5">{{ $s['label'] }}</div>
+                    <div class="text-xs text-gray-500 mt-0.5 uppercase tracking-wide">{{ $s['label'] }}</div>
                 </a>
             @endforeach
         </div>
