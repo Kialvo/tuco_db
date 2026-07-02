@@ -272,7 +272,7 @@ $(function () {
         resetPub();
         $('#pubModalTitle').text('Edit Publication');
         $('#p_save').text('Save Changes');
-        $.get("{{ url('crm/publications') }}/" + id + "/edit-ajax", function (res) {
+        $.get("{{ url('publications') }}/" + id + "/edit-ajax", function (res) {
             const d = res.data;
             $('#p_id').val(d.id);
             $('#p_site').val(d.site);
@@ -301,8 +301,8 @@ $(function () {
             _token: csrf
         };
         let url;
-        if (id) { url = "{{ url('crm/publications') }}/" + id; payload._method = 'PUT'; }
-        else { url = "{{ url('crm/campaigns') }}/" + CAMPAIGN_ID + "/publications"; }
+        if (id) { url = "{{ url('publications') }}/" + id; payload._method = 'PUT'; }
+        else { url = "{{ url('campaigns') }}/" + CAMPAIGN_ID + "/publications"; }
 
         $.ajax({
             url, method: 'POST', data: payload, headers: { 'Accept': 'application/json' },
@@ -320,7 +320,7 @@ $(function () {
         Swal.fire({ icon: 'warning', title: 'Delete publication?', showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#dc2626' })
             .then(r => {
                 if (!r.isConfirmed) return;
-                $.ajax({ url: "{{ url('crm/publications') }}/" + id, method: 'POST', data: { _method: 'DELETE', _token: csrf }, headers: { 'Accept': 'application/json' },
+                $.ajax({ url: "{{ url('publications') }}/" + id, method: 'POST', data: { _method: 'DELETE', _token: csrf }, headers: { 'Accept': 'application/json' },
                     success: () => location.reload() });
             });
     });
@@ -343,7 +343,7 @@ $(function () {
         menu.css({ top: (r.bottom + 4) + 'px', left: r.left + 'px' }).removeClass('hidden');
     });
     $(document).on('click', '.js-pub-opt', function () {
-        $.ajax({ url: "{{ url('crm/publications') }}/" + pubTargetId + "/status", method: 'PUT', data: { status: $(this).data('status') }, headers: { 'X-CSRF-TOKEN': csrf }, success: () => location.reload() });
+        $.ajax({ url: "{{ url('publications') }}/" + pubTargetId + "/status", method: 'PUT', data: { status: $(this).data('status') }, headers: { 'X-CSRF-TOKEN': csrf }, success: () => location.reload() });
     });
     $(document).on('click', () => menu.addClass('hidden'));
 
@@ -356,13 +356,13 @@ $(function () {
             + '<div class="text-sm text-gray-800">' + $('<i/>').text(c.body).html() + '</div></div>'
         ).join(''));
     }
-    function loadComments() { $.get("{{ url('crm/campaigns') }}/" + CAMPAIGN_ID + "/comments", res => renderComments(res.data || [])); }
+    function loadComments() { $.get("{{ url('campaigns') }}/" + CAMPAIGN_ID + "/comments", res => renderComments(res.data || [])); }
     loadComments();
 
     $('#commentAdd').on('click', function () {
         const body = $('#commentBody').val().trim();
         if (!body) return;
-        $.ajax({ url: "{{ url('crm/campaigns') }}/" + CAMPAIGN_ID + "/comments", method: 'POST', data: { body, _token: csrf }, headers: { 'Accept': 'application/json' },
+        $.ajax({ url: "{{ url('campaigns') }}/" + CAMPAIGN_ID + "/comments", method: 'POST', data: { body, _token: csrf }, headers: { 'Accept': 'application/json' },
             success: function () { $('#commentBody').val(''); loadComments(); } });
     });
 
