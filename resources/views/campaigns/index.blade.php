@@ -345,7 +345,7 @@ $(function () {
         const $c = $('#c_contact_id');
         $c.empty();
         if (!companyId) { $c.append(new Option('— select company first —', '')); $c.trigger('change'); return; }
-        $.get("{{ url('crm/companies') }}/" + companyId + "/contacts", function (res) {
+        $.get("{{ url('companies') }}/" + companyId + "/contacts", function (res) {
             $c.append(new Option('—', ''));
             (res.results || []).forEach(o => $c.append(new Option(o.text, o.id, false, String(selectedId) === String(o.id))));
             $c.trigger('change');
@@ -394,7 +394,7 @@ $(function () {
         resetCampaignForm();
         $('#campaignModalTitle').text('Edit Campaign');
         $('#c_save').text('Save Changes');
-        $.get("{{ url('crm/campaigns') }}/" + id + "/edit-ajax", function (res) {
+        $.get("{{ url('campaigns') }}/" + id + "/edit-ajax", function (res) {
             const d = res.data;
             $('#c_id').val(d.id);
             $('#c_code').val(d.code);
@@ -436,7 +436,7 @@ $(function () {
             _token: csrf
         };
         const id = $('#c_id').val();
-        const url = id ? "{{ url('crm/campaigns') }}/" + id : "{{ route('crm.campaigns.store') }}";
+        const url = id ? "{{ url('campaigns') }}/" + id : "{{ route('crm.campaigns.store') }}";
         if (id) payload._method = 'PUT';
 
         $.ajax({
@@ -465,7 +465,7 @@ $(function () {
         }).then(r => {
             if (!r.isConfirmed) return;
             $.ajax({
-                url: "{{ url('crm/campaigns') }}/" + id, method: 'POST',
+                url: "{{ url('campaigns') }}/" + id, method: 'POST',
                 data: { _method: 'DELETE', _token: csrf }, headers: { 'Accept': 'application/json' },
                 success: () => { table.ajax.reload(null, false); Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false }); }
             });
@@ -495,7 +495,7 @@ $(function () {
     $(document).on('click', '.js-status-opt', function () {
         const status = $(this).data('status');
         $.ajax({
-            url: "{{ url('crm/campaigns') }}/" + statusTargetId + "/status", method: 'PUT',
+            url: "{{ url('campaigns') }}/" + statusTargetId + "/status", method: 'PUT',
             data: { status }, headers: { 'X-CSRF-TOKEN': csrf },
             success: () => { statusMenu.addClass('hidden'); table.ajax.reload(null, false); }
         });
@@ -526,18 +526,18 @@ $(function () {
         $('#commentBody').val('');
         $('#commentsList').html('<p class="text-sm text-gray-400 py-2">Loading…</p>');
         commentsModal.removeClass('hidden').addClass('flex');
-        $.get("{{ url('crm/campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
+        $.get("{{ url('campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
     });
 
     $('#commentAdd').on('click', function () {
         const body = $('#commentBody').val().trim();
         if (!body) return;
         $.ajax({
-            url: "{{ url('crm/campaigns') }}/" + commentsCampaignId + "/comments", method: 'POST',
+            url: "{{ url('campaigns') }}/" + commentsCampaignId + "/comments", method: 'POST',
             data: { body, _token: csrf }, headers: { 'Accept': 'application/json' },
             success: function () {
                 $('#commentBody').val('');
-                $.get("{{ url('crm/campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
+                $.get("{{ url('campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
                 table.ajax.reload(null, false);
             }
         });
