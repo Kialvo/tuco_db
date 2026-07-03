@@ -3,8 +3,8 @@
 @section('title', 'Campaigns')
 
 @php
-    $services   = config('linkbuilding.services');
-    $statusGrp  = config('linkbuilding.campaign_statuses');
+    $services    = config('linkbuilding.services');
+    $statusGrp   = config('linkbuilding.campaign_statuses');
     $targetTypes = config('linkbuilding.target_types');
 @endphp
 
@@ -72,7 +72,6 @@
                     <th class="py-3 px-3 font-semibold text-left">Service</th>
                     <th class="py-3 px-3 font-semibold text-left">Status</th>
                     <th class="py-3 px-3 font-semibold text-right">Value</th>
-                    <th class="py-3 px-3 font-semibold text-center">Pubs</th>
                     <th class="py-3 px-3 font-semibold text-left">Target</th>
                     <th class="py-3 px-3 font-semibold text-left">Budget&nbsp;Appr.</th>
                     <th class="py-3 px-3 font-semibold text-left">Offer&nbsp;Ready</th>
@@ -141,6 +140,7 @@
                     <div>
                         <label id="c_target_label" class="block text-xs font-semibold text-gray-600 mb-1">Target Amount (€)</label>
                         <input type="number" step="0.01" id="c_target_value" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
+                        <p class="text-[10px] text-gray-400 mt-1">Progress is tracked automatically as publications go live.</p>
                     </div>
                 </div>
 
@@ -164,12 +164,8 @@
                     </div>
                 </div>
 
-                <div class="pt-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 border-t border-gray-100">Progress</div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Live Count</label>
-                        <input type="number" step="0.01" id="c_live_count" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
-                    </div>
+                <div class="pt-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 border-t border-gray-100">Assignment</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">Next Update</label>
                         <input type="text" id="c_next_update_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
@@ -208,8 +204,9 @@
         </div>
     </div>
 
-    {{-- floating status dropdown (populated by JS) --}}
+    {{-- floating dropdowns (populated by JS) --}}
     <div id="statusMenu" class="hidden fixed z-[60] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto min-w-[220px] text-sm"></div>
+    <div id="respMenu" class="hidden fixed z-[60] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto min-w-[200px] text-sm"></div>
 @endsection
 
 @push('styles')
@@ -222,6 +219,8 @@
 $(function () {
     const csrf = $('meta[name="csrf-token"]').attr('content');
     const CAMPAIGN_STATUSES = @json($statusGrp);
+    const TEAM = @json($users);
+    let grouped = false;
 
     /* ─────────────── DataTable ─────────────── */
     const table = $('#campaignsTable').DataTable({
@@ -244,12 +243,11 @@ $(function () {
             { data: 'service_badge',        name: 'service',              searchable: false },
             { data: 'status_badge',         name: 'status',               searchable: false },
             { data: 'deal',                 name: 'deal_value',           searchable: false, className: 'text-right whitespace-nowrap' },
-            { data: 'pubs',                 name: 'pubs', orderable: false, searchable: false, className: 'text-center whitespace-nowrap' },
             { data: 'target',               name: 'target', orderable: false, searchable: false },
-            { data: 'budget_approval_date', name: 'budget_approval_date', searchable: false, className: 'text-gray-500 whitespace-nowrap' },
-            { data: 'offer_ready_date',     name: 'offer_ready_date',     searchable: false, className: 'text-gray-500 whitespace-nowrap' },
-            { data: 'deadline',             name: 'deadline',             searchable: false, className: 'text-gray-500 whitespace-nowrap' },
-            { data: 'next_update_date',     name: 'next_update_date',     searchable: false, className: 'text-gray-500 whitespace-nowrap' },
+            { data: 'budget_approval_date', name: 'budget_approval_date', searchable: false, className: 'whitespace-nowrap' },
+            { data: 'offer_ready_date',     name: 'offer_ready_date',     searchable: false, className: 'whitespace-nowrap' },
+            { data: 'deadline',             name: 'deadline',             searchable: false, className: 'whitespace-nowrap' },
+            { data: 'next_update_date',     name: 'next_update_date',     searchable: false, className: 'whitespace-nowrap' },
             { data: 'responsible',          name: 'responsible', orderable: false, searchable: false },
             { data: 'comments_btn',         name: 'comments_btn', orderable: false, searchable: false, className: 'text-center' },
             { data: 'action',               name: 'action', orderable: false, searchable: false, className: 'text-center' },
@@ -261,7 +259,7 @@ $(function () {
         rowGroup: { dataSrc: 'company_name', enable: false,
             startRender: function (rows, group) {
                 return $('<tr/>').append(
-                    '<td colspan="14" class="bg-gray-50 font-semibold text-gray-700 py-2 px-3 border-t-2 border-gray-200">'
+                    '<td colspan="13" class="bg-gray-50 font-semibold text-gray-700 py-2 px-3 border-t-2 border-gray-200">'
                     + $('<div/>').text(group || '—').html()
                     + ' <span class="ml-1 text-xs text-gray-400">(' + rows.count() + ')</span></td>'
                 );
@@ -292,7 +290,7 @@ $(function () {
 
     function syncClear() {
         const active = $('#f_search').val() || $('#f_company').val() || $('#f_service').val()
-            || $('#f_status').val() || $('#f_today').hasClass('active');
+            || $('#f_status').val() || $('#f_today').hasClass('active') || grouped;
         $('#f_clear').toggleClass('hidden', !active);
     }
 
@@ -303,14 +301,19 @@ $(function () {
         searchTimer = setTimeout(() => { table.search(v).draw(); syncClear(); }, 300);
     });
     $('#f_company, #f_service, #f_status').on('change', () => { table.ajax.reload(); syncClear(); });
-    $('#f_today').on('click', function () { $(this).toggleClass('active bg-amber-50 text-amber-700 border-amber-300'); table.ajax.reload(); syncClear(); });
 
-    let grouped = false;
+    // Today and By-Client are INDEPENDENT toggles.
+    $('#f_today').on('click', function () {
+        $(this).toggleClass('active bg-amber-50 text-amber-700 border-amber-300');
+        table.ajax.reload();
+        syncClear();
+    });
     $('#f_group').on('click', function () {
         grouped = !grouped;
         $(this).toggleClass('active bg-green-50 text-green-700 border-green-300', grouped);
         if (grouped) { table.order([1, 'asc']); table.rowGroup().enable(true).draw(); }
         else { table.rowGroup().enable(false); table.order([0, 'asc']).draw(); }
+        syncClear();
     });
 
     $('#f_clear').on('click', function () {
@@ -319,8 +322,76 @@ $(function () {
         $('#f_service').val('');
         $('#f_status').val('');
         $('#f_today').removeClass('active bg-amber-50 text-amber-700 border-amber-300');
-        table.search('').ajax.reload();
+        grouped = false;
+        $('#f_group').removeClass('active bg-green-50 text-green-700 border-green-300');
+        table.rowGroup().enable(false);
+        table.search('').order([0, 'asc']);
+        table.ajax.reload();
         syncClear();
+    });
+
+    /* ─────────────── Inline editable cells ─────────────── */
+    $(document).on('click', '.js-cell-edit', function () {
+        const cell = $(this);
+        if (cell.hasClass('editing')) return;
+        const id = cell.data('id'), field = cell.data('field'), type = cell.data('type');
+        const cur = cell.attr('data-value') || '';
+        cell.addClass('editing');
+
+        let input;
+        if (type === 'date') {
+            input = $('<input type="date" class="border border-gray-300 rounded px-1 py-0.5 text-xs w-36">').val(cur);
+        } else {
+            const step = type === 'int' ? '1' : '0.01';
+            input = $('<input type="number" min="0" step="' + step + '" class="border border-gray-300 rounded px-1 py-0.5 text-xs w-24">').val(cur);
+        }
+        cell.empty().append(input);
+        input.trigger('focus');
+        input.on('click', ev => ev.stopPropagation());
+
+        let done = false;
+        function commit(save) {
+            if (done) return; done = true;
+            if (!save) { table.ajax.reload(null, false); return; }
+            $.ajax({
+                url: "{{ url('campaigns') }}/" + id + "/inline", method: 'PUT',
+                data: { field: field, value: input.val() }, headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                success: () => table.ajax.reload(null, false),
+                error: (xhr) => {
+                    table.ajax.reload(null, false);
+                    const msg = Object.values(xhr.responseJSON?.errors ?? {}).flat().join(' ') || 'Update failed.';
+                    Swal.fire({ icon: 'error', title: 'Invalid value', text: msg, timer: 2600, showConfirmButton: false });
+                }
+            });
+        }
+        input.on('keydown', function (ev) {
+            if (ev.key === 'Enter') { ev.preventDefault(); commit(true); }
+            else if (ev.key === 'Escape') { commit(false); }
+        });
+        input.on('blur', () => commit(true));
+    });
+
+    /* ─────────────── Responsible dropdown ─────────────── */
+    const respMenu = $('#respMenu');
+    let respTargetId = null;
+    (function buildResp() {
+        let h = '<div class="js-resp-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-gray-400" data-uid="">— Unassigned</div>';
+        TEAM.forEach(u => { h += '<div class="js-resp-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer" data-uid="' + u.id + '">' + $('<i/>').text(u.name).html() + '</div>'; });
+        respMenu.html(h);
+    })();
+    $(document).on('click', '.js-resp-edit', function (e) {
+        e.stopPropagation();
+        respTargetId = $(this).data('id');
+        const r = this.getBoundingClientRect();
+        respMenu.css({ top: (r.bottom + 4) + 'px', left: r.left + 'px' }).removeClass('hidden');
+    });
+    $(document).on('click', '.js-resp-opt', function () {
+        const uid = $(this).data('uid');
+        $.ajax({
+            url: "{{ url('campaigns') }}/" + respTargetId + "/inline", method: 'PUT',
+            data: { field: 'responsible_user_id', value: uid || '' }, headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            success: () => { respMenu.addClass('hidden'); table.ajax.reload(null, false); }
+        });
     });
 
     /* ─────────────── Campaign modal ─────────────── */
@@ -332,7 +403,6 @@ $(function () {
     $('.js-close-campaign').on('click', closeCampaignModal);
     campaignModal.on('click', e => { if (e.target === campaignModal[0]) closeCampaignModal(); });
 
-    // Select2 for modal company + contact
     $('#c_company_id').select2({
         placeholder: 'Search company…', allowClear: true, minimumInputLength: 0, width: '100%',
         dropdownParent: campaignModal,
@@ -353,16 +423,14 @@ $(function () {
     }
     $('#c_company_id').on('change', function () { if (campaignMode) loadContacts($(this).val(), null); });
 
-    // Target label toggle
     function updTargetLabel() {
         $('#c_target_label').text($('#c_target_type').val() === 'budget' ? 'Target Amount (€)' : 'Nr. of Publications');
     }
     $('#c_target_type').on('change', updTargetLabel);
 
-    // flatpickr on date inputs
     flatpickr('.js-date', { dateFormat: 'Y-m-d', allowInput: true });
 
-    const DATE_FIELDS = ['budget_approval_date','offer_ready_date','deadline','completion_date','next_update_date'];
+    const DATE_FIELDS = ['budget_approval_date', 'offer_ready_date', 'deadline', 'completion_date', 'next_update_date'];
     function setDate(field, val) {
         const el = document.getElementById('c_' + field);
         if (el && el._flatpickr) { val ? el._flatpickr.setDate(val, true) : el._flatpickr.clear(); }
@@ -372,11 +440,11 @@ $(function () {
     function resetCampaignForm() {
         $('#campaignErrors').addClass('hidden').empty();
         $('#c_id').val('');
-        $('#c_code, #c_deal_value, #c_target_value, #c_live_count').val('');
+        $('#c_code, #c_deal_value, #c_target_value').val('');
         $('#c_service, #c_status, #c_responsible_user_id').val('');
         $('#c_target_type').val('budget'); updTargetLabel();
         $('#c_company_id').val(null).trigger('change');
-        $('#c_contact_id').empty().append(new Option('— select company first —','')).trigger('change');
+        $('#c_contact_id').empty().append(new Option('— select company first —', '')).trigger('change');
         DATE_FIELDS.forEach(f => setDate(f, ''));
     }
 
@@ -403,10 +471,8 @@ $(function () {
             $('#c_deal_value').val(d.deal_value || '');
             $('#c_target_type').val(d.target_type || 'budget'); updTargetLabel();
             $('#c_target_value').val(d.target_value || '');
-            $('#c_live_count').val(d.live_count || '');
             $('#c_responsible_user_id').val(d.responsible_user_id || '');
             DATE_FIELDS.forEach(f => setDate(f, d[f]));
-            // company + contact
             if (d.company_id) {
                 $('#c_company_id').append(new Option(d.company_name || ('Company #' + d.company_id), d.company_id, true, true)).trigger('change');
                 loadContacts(d.company_id, d.contact_id);
@@ -427,7 +493,6 @@ $(function () {
             deal_value: $('#c_deal_value').val() || 0,
             target_type: $('#c_target_type').val(),
             target_value: $('#c_target_value').val() || 0,
-            live_count: $('#c_live_count').val() || 0,
             budget_approval_date: $('#c_budget_approval_date').val() || '',
             offer_ready_date: $('#c_offer_ready_date').val() || '',
             deadline: $('#c_deadline').val() || '',
@@ -440,8 +505,7 @@ $(function () {
         if (id) payload._method = 'PUT';
 
         $.ajax({
-            url, method: 'POST', data: payload,
-            headers: { 'Accept': 'application/json' },
+            url, method: 'POST', data: payload, headers: { 'Accept': 'application/json' },
             success: function () {
                 closeCampaignModal();
                 table.ajax.reload(null, false);
@@ -476,15 +540,14 @@ $(function () {
     const statusMenu = $('#statusMenu');
     let statusTargetId = null;
 
-    function buildStatusMenu() {
+    (function buildStatusMenu() {
         let h = '';
         $.each(CAMPAIGN_STATUSES, function (group, list) {
             h += '<div class="px-3 pt-2 pb-1 text-[9px] uppercase tracking-wider text-gray-400 font-bold">' + group + '</div>';
-            list.forEach(s => { h += '<div class="js-status-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer" data-status="' + s.replace(/"/g,'&quot;') + '">' + s + '</div>'; });
+            list.forEach(s => { h += '<div class="js-status-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer" data-status="' + s.replace(/"/g, '&quot;') + '">' + s + '</div>'; });
         });
         statusMenu.html(h);
-    }
-    buildStatusMenu();
+    })();
 
     $(document).on('click', '.js-status-badge', function (e) {
         e.stopPropagation();
@@ -500,7 +563,9 @@ $(function () {
             success: () => { statusMenu.addClass('hidden'); table.ajax.reload(null, false); }
         });
     });
-    $(document).on('click', () => statusMenu.addClass('hidden'));
+
+    // Close floating menus on any outside click
+    $(document).on('click', function () { statusMenu.addClass('hidden'); respMenu.addClass('hidden'); });
 
     /* ─────────────── Comments ─────────────── */
     const commentsModal = $('#commentsModal');

@@ -16,7 +16,8 @@ class CampaignController extends Controller
     public function index()
     {
         return view('campaigns.index', [
-            'users' => User::orderBy('name')->get(['id', 'name']),
+            // Internal team only (not the ~500 marketplace guests)
+            'users' => User::whereIn('role', ['admin', 'editor'])->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -31,11 +32,7 @@ class CampaignController extends Controller
             ->leftJoin('companies', 'companies.id', '=', 'lb_campaigns.company_id')
             ->select('lb_campaigns.*', 'companies.name as company_name')
             ->with(['contact:id,first_name,last_name', 'responsibleUser:id,name'])
-            ->withCount([
-                'publications',
-                'publications as published_count' => fn ($sub) => $sub->where('status', 'Published'),
-                'comments',
-            ]);
+            ->withCount(['comments']);
 
         // Filters
         if ($request->filled('company_id')) {
@@ -55,19 +52,18 @@ class CampaignController extends Controller
             ->addColumn('code_cell', fn (Campaign $c) => $this->codeCell($c))
             ->addColumn('service_badge', fn (Campaign $c) => $this->serviceBadge($c->service))
             ->addColumn('status_badge', fn (Campaign $c) => $this->statusBadge($c))
-            ->addColumn('deal', fn (Campaign $c) => '€' . number_format((float) $c->deal_value, 0))
-            ->addColumn('pubs', fn (Campaign $c) => $this->pubsCell($c))
+            ->addColumn('deal', fn (Campaign $c) => $this->editableCell($c->id, 'deal_value', 'money', (string) (float) $c->deal_value, '€' . number_format((float) $c->deal_value, 0)))
             ->addColumn('target', fn (Campaign $c) => $this->targetCell($c))
-            ->editColumn('budget_approval_date', fn (Campaign $c) => $c->budget_approval_date?->format('d/m/Y') ?? '—')
-            ->editColumn('offer_ready_date', fn (Campaign $c) => $c->offer_ready_date?->format('d/m/Y') ?? '—')
-            ->editColumn('deadline', fn (Campaign $c) => $c->deadline?->format('d/m/Y') ?? '—')
-            ->editColumn('next_update_date', fn (Campaign $c) => $c->next_update_date?->format('d/m/Y') ?? '—')
+            ->editColumn('budget_approval_date', fn (Campaign $c) => $this->dateCell($c, 'budget_approval_date'))
+            ->editColumn('offer_ready_date', fn (Campaign $c) => $this->dateCell($c, 'offer_ready_date'))
+            ->editColumn('deadline', fn (Campaign $c) => $this->dateCell($c, 'deadline'))
+            ->editColumn('next_update_date', fn (Campaign $c) => $this->dateCell($c, 'next_update_date'))
             ->addColumn('responsible', fn (Campaign $c) => $this->responsibleCell($c))
             ->addColumn('comments_btn', fn (Campaign $c) => $this->commentsBtn($c))
             ->addColumn('action', fn (Campaign $c) => $this->actionCell($c))
             ->filterColumn('company_name', fn ($query, $keyword) => $query->where('companies.name', 'like', "%{$keyword}%"))
             ->orderColumn('company_name', 'companies.name $1')
-            ->rawColumns(['code_cell', 'service_badge', 'status_badge', 'pubs', 'target', 'responsible', 'comments_btn', 'action'])
+            ->rawColumns(['code_cell', 'service_badge', 'status_badge', 'deal', 'target', 'budget_approval_date', 'offer_ready_date', 'deadline', 'next_update_date', 'responsible', 'comments_btn', 'action'])
             ->make(true);
     }
 
@@ -80,7 +76,7 @@ class CampaignController extends Controller
             'company',
             'contact',
             'responsibleUser',
-            'publications' => fn ($q) => $q->orderBy('status_group')->orderBy('id'),
+            'publications' => fn ($q) => $q->withCount('comments')->orderBy('status_group')->orderBy('id'),
             'comments.user:id,name',
         ]);
 
@@ -204,7 +200,6 @@ class CampaignController extends Controller
             'deal_value'           => 'nullable|numeric|min:0',
             'target_type'          => ['required', Rule::in(array_keys(config('linkbuilding.target_types')))],
             'target_value'         => 'nullable|numeric|min:0',
-            'live_count'           => 'nullable|numeric|min:0',
             'budget_approval_date' => 'nullable|date',
             'offer_ready_date'     => 'nullable|date',
             'deadline'             => 'nullable|date',
@@ -212,11 +207,43 @@ class CampaignController extends Controller
             'next_update_date'     => 'nullable|date',
         ]);
 
+        // live_count is auto-derived from Published publications (Campaign::recomputeProgress)
         $data['deal_value']   = $data['deal_value']   ?? 0;
         $data['target_value'] = $data['target_value'] ?? 0;
-        $data['live_count']   = $data['live_count']   ?? 0;
 
         return $data;
+    }
+
+    /*======================================================================
+    |  INLINE FIELD UPDATE (dashboard editable cells + responsible dropdown)
+    ======================================================================*/
+    public function inlineUpdate(Request $request, Campaign $campaign)
+    {
+        // Server-side allowlist — never trust the client field name.
+        $allowed = [
+            'deadline'             => 'nullable|date',
+            'next_update_date'     => 'nullable|date',
+            'budget_approval_date' => 'nullable|date',
+            'offer_ready_date'     => 'nullable|date',
+            'completion_date'      => 'nullable|date',
+            'deal_value'           => 'nullable|numeric|min:0',
+            'target_value'         => 'nullable|numeric|min:0',
+            'responsible_user_id'  => 'nullable|exists:users,id',
+        ];
+
+        $field = (string) $request->input('field');
+        abort_unless(array_key_exists($field, $allowed), 422, 'Field not editable');
+
+        $validated = $request->validate(['value' => $allowed[$field]]);
+        $value = $validated['value'] ?? null;
+
+        if (in_array($field, ['deal_value', 'target_value'], true)) {
+            $value = $value ?? 0;
+        }
+
+        $campaign->update([$field => $value]);
+
+        return response()->json(['status' => 'success', 'field' => $field, 'value' => $value]);
     }
 
     private function badge(string $text, string $tone, string $extra = ''): string
@@ -260,39 +287,70 @@ class CampaignController extends Controller
             . '</div>';
     }
 
-    private function pubsCell(Campaign $c): string
+    private function editableCell(int $id, string $field, string $type, ?string $rawValue, string $display): string
     {
-        return '<span class="font-semibold text-gray-700">' . (int) $c->published_count . '</span>'
-            . '<span class="text-gray-400"> / ' . (int) $c->publications_count . '</span>';
+        return '<span class="js-cell-edit cursor-pointer rounded px-1 -mx-1 hover:bg-yellow-50 hover:ring-1 hover:ring-yellow-200" '
+            . 'data-id="' . $id . '" data-field="' . $field . '" data-type="' . $type . '" data-value="' . e((string) ($rawValue ?? '')) . '" title="Click to edit">'
+            . $display . '</span>';
+    }
+
+    private function dateCell(Campaign $c, string $field): string
+    {
+        $date    = $c->{$field};
+        $display = $date ? $date->format('d/m/Y') : '<span class="text-gray-300">—</span>';
+
+        return $this->editableCell($c->id, $field, 'date', $date?->format('Y-m-d'), $display);
     }
 
     private function targetCell(Campaign $c): string
     {
-        $p = $c->progress;
-        if (! $p['has']) {
-            return '<span class="text-gray-300">—</span>';
-        }
-        $bar = ['green' => 'bg-green-500', 'amber' => 'bg-amber-400', 'red' => 'bg-red-400'][$p['tone']] ?? 'bg-gray-300';
-        $txt = ['green' => 'text-green-600', 'amber' => 'text-amber-600', 'red' => 'text-red-600'][$p['tone']] ?? 'text-gray-400';
+        $isBudget = $c->target_type === 'budget';
+        $live     = (float) $c->live_count;
+        $target   = (float) $c->target_value;
 
-        return '<div class="min-w-[120px]">'
-            . '<div class="text-xs text-gray-600">' . e($p['label']) . '</div>'
-            . '<div class="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-1.5 ' . $bar . ' rounded-full" style="width:' . $p['pct'] . '%"></div></div>'
-            . '<div class="text-[10px] mt-0.5 font-semibold ' . $txt . '">' . e($p['missing']) . '</div>'
-            . '</div>';
+        // First number = auto (live_count). Second number = editable (target_value).
+        $first  = $isBudget ? '€' . number_format($live, 0) : (string) (int) $live;
+        $second = $this->editableCell(
+            $c->id,
+            'target_value',
+            $isBudget ? 'money' : 'int',
+            $isBudget ? (string) $target : (string) (int) $target,
+            $isBudget ? '€' . number_format($target, 0) : (string) (int) $target
+        );
+        $suffix = $isBudget ? '' : ' pubs';
+        $label  = '<span class="font-semibold text-gray-700">' . $first . '</span> / ' . $second . $suffix;
+
+        if ($target > 0) {
+            $pct     = (int) min(100, round($live / $target * 100));
+            $tone    = $pct >= 100 ? 'green' : ($pct >= 60 ? 'amber' : 'red');
+            $bar     = ['green' => 'bg-green-500', 'amber' => 'bg-amber-400', 'red' => 'bg-red-400'][$tone];
+            $txt     = ['green' => 'text-green-600', 'amber' => 'text-amber-600', 'red' => 'text-red-600'][$tone];
+            $missVal = $target - $live;
+            $miss    = $missVal <= 0
+                ? 'Target reached'
+                : ($isBudget ? '€' . number_format($missVal, 0) . ' missing' : (int) $missVal . ' pub' . ($missVal != 1 ? 's' : '') . ' missing');
+            $barHtml = '<div class="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-1.5 ' . $bar . ' rounded-full" style="width:' . $pct . '%"></div></div>'
+                . '<div class="text-[10px] mt-0.5 font-semibold ' . $txt . '">' . e($miss) . '</div>';
+        } else {
+            $barHtml = '<div class="text-[10px] mt-0.5 text-gray-400">no target set</div>';
+        }
+
+        return '<div class="min-w-[130px]"><div class="text-xs text-gray-600">' . $label . '</div>' . $barHtml . '</div>';
     }
 
     private function responsibleCell(Campaign $c): string
     {
-        if (! $c->responsibleUser) {
-            return '<span class="text-gray-300">—</span>';
-        }
-        $name = $c->responsibleUser->name;
+        $name  = $c->responsibleUser?->name;
+        $inner = $name
+            ? '<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 text-[9px] font-bold">' . e($this->initials($name)) . '</span>'
+              . '<span class="text-xs text-gray-700">' . e($name) . '</span>'
+            : '<span class="text-xs text-gray-400">Unassigned</span>';
 
-        return '<div class="inline-flex items-center gap-1.5">'
-            . '<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 text-[9px] font-bold">' . e($this->initials($name)) . '</span>'
-            . '<span class="text-xs text-gray-700">' . e($name) . '</span>'
-            . '</div>';
+        return '<button type="button" class="js-resp-edit inline-flex items-center gap-1.5 rounded px-1 py-0.5 hover:bg-gray-50" '
+            . 'data-id="' . $c->id . '" data-uid="' . ($c->responsible_user_id ?? '') . '" title="Assign responsible">'
+            . $inner
+            . '<svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>'
+            . '</button>';
     }
 
     private function commentsBtn(Campaign $c): string

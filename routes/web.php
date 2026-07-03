@@ -30,6 +30,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\PublicationController;
 use App\Http\Controllers\CampaignCommentController;
+use App\Http\Controllers\PublicationCommentController;
 use App\Http\Controllers\CopyController;
 
 use App\Http\Controllers\WebsiteController;
@@ -388,6 +389,7 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
     Route::match(['get', 'post'], 'campaigns/data', [CampaignController::class, 'getData'])->name('crm.campaigns.data');
     Route::get('campaigns/{campaign}/edit-ajax',    [CampaignController::class, 'editAjax'])->name('crm.campaigns.editAjax');
     Route::put('campaigns/{campaign}/status',       [CampaignController::class, 'updateStatus'])->name('crm.campaigns.status');
+    Route::put('campaigns/{campaign}/inline',       [CampaignController::class, 'inlineUpdate'])->name('crm.campaigns.inline');
     Route::get('companies/{company}/contacts',      [CampaignController::class, 'contactsForCompany'])->name('crm.company.contacts');
 
     Route::get('campaigns',               [CampaignController::class, 'index'])->name('crm.campaigns.index');
@@ -400,6 +402,10 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
     Route::post('campaigns/{campaign}/publications',   [PublicationController::class, 'store'])->name('crm.publications.store');
     Route::get('publications/{publication}/edit-ajax', [PublicationController::class, 'editAjax'])->name('crm.publications.editAjax');
     Route::put('publications/{publication}/status',    [PublicationController::class, 'updateStatus'])->name('crm.publications.status');
+    Route::put('publications/{publication}/inline',    [PublicationController::class, 'inlineUpdate'])->name('crm.publications.inline');
+    Route::get('publications/{publication}/comments',             [PublicationCommentController::class, 'index'])->name('crm.publications.comments.index');
+    Route::post('publications/{publication}/comments',            [PublicationCommentController::class, 'store'])->name('crm.publications.comments.store');
+    Route::delete('publications/{publication}/comments/{comment}', [PublicationCommentController::class, 'destroy'])->name('crm.publications.comments.destroy');
     Route::get('publications/{publication}',           [PublicationController::class, 'show'])->name('crm.publications.show');
     Route::put('publications/{publication}',           [PublicationController::class, 'update'])->name('crm.publications.update');
     Route::delete('publications/{publication}',        [PublicationController::class, 'destroy'])->name('crm.publications.destroy');
