@@ -60,6 +60,35 @@ class PublicationController extends Controller
     }
 
     /*======================================================================
+    |  INLINE FIELD UPDATE (editable cells in the publications table)
+    ======================================================================*/
+    public function inlineUpdate(Request $request, Publication $publication)
+    {
+        $allowed = [
+            'price'                => 'nullable|numeric|min:0',
+            'live_url'             => 'nullable|url|max:500',
+            'live_date'            => 'nullable|date',
+            'date_to_copywriter'   => 'nullable|date',
+            'date_from_copywriter' => 'nullable|date',
+            'date_to_blog'         => 'nullable|date',
+        ];
+
+        $field = (string) $request->input('field');
+        abort_unless(array_key_exists($field, $allowed), 422, 'Field not editable');
+
+        $validated = $request->validate(['value' => $allowed[$field]]);
+        $value = $validated['value'] ?? null;
+        if ($field === 'price') {
+            $value = $value ?? 0;
+        }
+
+        // Campaign progress recomputes automatically via Publication saved event.
+        $publication->update([$field => $value]);
+
+        return response()->json(['status' => 'success', 'field' => $field, 'value' => $value]);
+    }
+
+    /*======================================================================
     |  SHOW – detail page
     ======================================================================*/
     public function show(Publication $publication)

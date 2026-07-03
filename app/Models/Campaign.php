@@ -72,6 +72,20 @@ class Campaign extends Model
         return $this->hasMany(CampaignComment::class, 'lb_campaign_id');
     }
 
+    /**
+     * Recompute the target's "first number" (live_count) from Published publications.
+     * Auto target type => count of Published; budget type => sum of their price.
+     * Called automatically on any Publication save/delete/restore (Publication::booted()).
+     */
+    public function recomputeProgress(): void
+    {
+        $this->live_count = $this->target_type === 'budget'
+            ? (float) $this->publications()->where('status', 'Published')->sum('price')
+            : $this->publications()->where('status', 'Published')->count();
+
+        $this->saveQuietly();
+    }
+
     /* ---------------------------------------------------------------- Config helpers */
 
     /** Grouped statuses from config. */

@@ -45,6 +45,11 @@ class Publication extends Model
         static::saving(function (Publication $p) {
             $p->status_group = in_array($p->status, static::productionStatuses(), true) ? 2 : 1;
         });
+
+        // Keep the parent campaign's progress (live_count) in sync with Published pubs
+        static::saved(fn (Publication $p)    => optional($p->campaign)->recomputeProgress());
+        static::deleted(fn (Publication $p)  => optional($p->campaign)->recomputeProgress());
+        static::restored(fn (Publication $p) => optional($p->campaign)->recomputeProgress());
     }
 
     /* ---------------------------------------------------------------- Relations */
@@ -52,6 +57,11 @@ class Publication extends Model
     public function campaign()
     {
         return $this->belongsTo(Campaign::class, 'lb_campaign_id');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(PublicationComment::class, 'lb_publication_id');
     }
 
     /* ---------------------------------------------------------------- Config helpers */
