@@ -222,6 +222,15 @@ $(function () {
     const TEAM = @json($users);
     let grouped = false;
 
+    // Position a fixed dropdown near a trigger, flipping up if it would overflow the viewport bottom.
+    function positionMenu($menu, rect) {
+        $menu.removeClass('hidden');
+        const mh = $menu.outerHeight(), mw = $menu.outerWidth();
+        const top = (rect.bottom + mh > window.innerHeight - 8) ? Math.max(8, rect.top - mh - 4) : rect.bottom + 4;
+        const left = Math.max(8, Math.min(rect.left, window.innerWidth - mw - 8));
+        $menu.css({ top: top + 'px', left: left + 'px' });
+    }
+
     /* ─────────────── DataTable ─────────────── */
     const table = $('#campaignsTable').DataTable({
         processing: true,
@@ -267,8 +276,8 @@ $(function () {
         },
         dom: "<'dt-toolbar-top'l>" + "<'dt-scroll'rt>" + "<'dt-toolbar-bottom'ip>",
         language: {
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            lengthMenu: "Show _MENU_ campaigns",
+            info: "Showing _START_ to _END_ of _TOTAL_ campaigns",
             infoEmpty: "No campaigns found",
             zeroRecords: "No matching campaigns found"
         }
@@ -383,7 +392,7 @@ $(function () {
         e.stopPropagation();
         respTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
-        respMenu.css({ top: (r.bottom + 4) + 'px', left: r.left + 'px' }).removeClass('hidden');
+        positionMenu(respMenu, r);
     });
     $(document).on('click', '.js-resp-opt', function () {
         const uid = $(this).data('uid');
@@ -553,7 +562,7 @@ $(function () {
         e.stopPropagation();
         statusTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
-        statusMenu.css({ top: (r.bottom + 4) + 'px', left: r.left + 'px' }).removeClass('hidden');
+        positionMenu(statusMenu, r);
     });
     $(document).on('click', '.js-status-opt', function () {
         const status = $(this).data('status');
