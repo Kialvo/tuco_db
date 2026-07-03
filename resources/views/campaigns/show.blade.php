@@ -158,17 +158,6 @@
         @endif
     </div>
 
-    {{-- Campaign comments --}}
-    <div class="bg-white border border-gray-200 rounded-xl shadow-card">
-        <div class="px-5 py-3 border-b border-gray-100 text-xs font-bold uppercase tracking-wide text-gray-600">Comments</div>
-        <div class="px-5 py-4">
-            <div id="commentsList" class="divide-y divide-gray-100 mb-4 max-h-72 overflow-y-auto"></div>
-            <textarea id="commentBody" rows="2" placeholder="Write a comment…" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></textarea>
-            <div class="flex justify-end mt-2">
-                <button id="commentAdd" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Add Comment</button>
-            </div>
-        </div>
-    </div>
 </div>
 
 {{-- ═══════════ Publication modal ═══════════ --}}
@@ -327,6 +316,15 @@ $(function () {
     const CAMPAIGN_ID = {{ $campaign->id }};
     const PUB_STATUSES = @json($pubStatusGrp);
 
+    // Position a fixed dropdown near a trigger, flipping up if it would overflow the viewport bottom.
+    function positionMenu($menu, rect) {
+        $menu.removeClass('hidden');
+        const mh = $menu.outerHeight(), mw = $menu.outerWidth();
+        const top = (rect.bottom + mh > window.innerHeight - 8) ? Math.max(8, rect.top - mh - 4) : rect.bottom + 4;
+        const left = Math.max(8, Math.min(rect.left, window.innerWidth - mw - 8));
+        $menu.css({ top: top + 'px', left: left + 'px' });
+    }
+
     flatpickr('.js-date', { dateFormat: 'Y-m-d', allowInput: true });
 
     /* ── New/Edit Publication modal ── */
@@ -468,7 +466,7 @@ $(function () {
         e.stopPropagation();
         pubTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
-        menu.css({ top: (r.bottom + 4) + 'px', left: r.left + 'px' }).removeClass('hidden');
+        positionMenu(menu, r);
     });
     $(document).on('click', '.js-pub-opt', function () {
         $.ajax({ url: "{{ url('publications') }}/" + pubTargetId + "/status", method: 'PUT', data: { status: $(this).data('status') }, headers: { 'X-CSRF-TOKEN': csrf }, success: () => location.reload() });
@@ -529,22 +527,6 @@ $(function () {
                 $('#campaignErrors').html(Object.values(errs).flat().join('<br>') || 'An error occurred.').removeClass('hidden');
             }
         });
-    });
-
-    /* ── Campaign comments (card) ── */
-    function renderComments(list) {
-        if (!list.length) { $('#commentsList').html('<p class="text-sm text-gray-400 py-2">No comments yet.</p>'); return; }
-        $('#commentsList').html(list.map(c =>
-            '<div class="py-2.5"><div class="text-[10px] text-gray-400 mb-0.5"><strong class="text-gray-600">' + $('<i/>').text(c.author).html() + '</strong> · ' + (c.date || '') + '</div><div class="text-sm text-gray-800">' + $('<i/>').text(c.body).html() + '</div></div>'
-        ).join(''));
-    }
-    function loadComments() { $.get("{{ url('campaigns') }}/" + CAMPAIGN_ID + "/comments", res => renderComments(res.data || [])); }
-    loadComments();
-    $('#commentAdd').on('click', function () {
-        const body = $('#commentBody').val().trim();
-        if (!body) return;
-        $.ajax({ url: "{{ url('campaigns') }}/" + CAMPAIGN_ID + "/comments", method: 'POST', data: { body, _token: csrf }, headers: { 'Accept': 'application/json' },
-            success: function () { $('#commentBody').val(''); loadComments(); } });
     });
 
     /* ── Publication comments modal ── */
