@@ -27,6 +27,10 @@ use App\Http\Controllers\Admin\UserFavoritesController;
 use App\Http\Controllers\ContactsController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\PublicationController;
+use App\Http\Controllers\CampaignCommentController;
+use App\Http\Controllers\PublicationCommentController;
 use App\Http\Controllers\CopyController;
 
 use App\Http\Controllers\WebsiteController;
@@ -102,7 +106,7 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     Route::get('/clients/{id}/edit-ajax',           [ClientsController::class, 'editAjax'])->name('clients.editAjax');
     Route::get('/clients/ajax/{id}',                [ClientsController::class, 'showAjax'])->name('clients.showAjax');
 
-    Route::resource('clients', ClientsController::class)->names([
+    Route::resource('clients', ClientsController::class)->except(['show'])->names([
         'index'   => 'clients.index',
         'create'  => 'clients.create',
         'store'   => 'clients.store',
@@ -372,6 +376,51 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
         'update'  => 'admin.users.update',
         'destroy' => 'admin.users.destroy',
     ]);
+
+    /*--------------------------------------------------------------
+    | Link Building CRM (admin-only) — Campaigns + Publications
+    | Root-level URLs (no /crm prefix) to match the rest of the app.
+    | Route NAMES keep the crm. namespace so they never collide with
+    | the existing companies/clients route names and the sidebar
+    | active-state stays correct. New lb_ tables; references shared
+    | companies/clients/users.
+    --------------------------------------------------------------*/
+    // Campaigns — static/nested routes BEFORE the {campaign} show route
+    Route::match(['get', 'post'], 'campaigns/data', [CampaignController::class, 'getData'])->name('crm.campaigns.data');
+    Route::get('campaigns/websites-search', [PublicationController::class, 'websitesSearch'])->name('crm.publications.websitesSearch');
+    Route::get('campaigns/{campaign}/edit-ajax',    [CampaignController::class, 'editAjax'])->name('crm.campaigns.editAjax');
+    Route::put('campaigns/{campaign}/status',       [CampaignController::class, 'updateStatus'])->name('crm.campaigns.status');
+    Route::put('campaigns/{campaign}/inline',       [CampaignController::class, 'inlineUpdate'])->name('crm.campaigns.inline');
+    Route::get('companies/{company}/contacts',      [CampaignController::class, 'contactsForCompany'])->name('crm.company.contacts');
+
+    Route::get('campaigns',               [CampaignController::class, 'index'])->name('crm.campaigns.index');
+    Route::post('campaigns',              [CampaignController::class, 'store'])->name('crm.campaigns.store');
+    Route::get('campaigns/{campaign}',    [CampaignController::class, 'show'])->name('crm.campaigns.show');
+    Route::put('campaigns/{campaign}',    [CampaignController::class, 'update'])->name('crm.campaigns.update');
+    Route::delete('campaigns/{campaign}', [CampaignController::class, 'destroy'])->name('crm.campaigns.destroy');
+
+    // Publications (Phase 3: {storage} binds to the storage row — the
+    // publication IS a storage row; URLs keep the /publications prefix)
+    Route::post('campaigns/{campaign}/publications',   [PublicationController::class, 'store'])->name('crm.publications.store');
+    Route::get('campaigns/{campaign}/storage-search',  [PublicationController::class, 'searchStorages'])->name('crm.publications.storageSearch');
+    Route::post('campaigns/{campaign}/link-publications', [PublicationController::class, 'linkExisting'])->name('crm.publications.link');
+    Route::get('publications/{storage}/edit-ajax',     [PublicationController::class, 'editAjax'])->name('crm.publications.editAjax');
+    Route::put('publications/{storage}/status',        [PublicationController::class, 'updateStatus'])->name('crm.publications.status');
+    Route::put('publications/{storage}/inline',        [PublicationController::class, 'inlineUpdate'])->name('crm.publications.inline');
+    Route::get('publications/{storage}/comments',              [PublicationCommentController::class, 'index'])->name('crm.publications.comments.index');
+    Route::post('publications/{storage}/comments',             [PublicationCommentController::class, 'store'])->name('crm.publications.comments.store');
+    Route::delete('publications/{storage}/comments/{comment}', [PublicationCommentController::class, 'destroy'])->name('crm.publications.comments.destroy');
+    Route::put('publications/{storage}',                [PublicationController::class, 'update'])->name('crm.publications.update');
+    Route::delete('publications/{storage}',             [PublicationController::class, 'destroy'])->name('crm.publications.destroy');
+
+    // Comments (nested under campaigns so Apache only needs to whitelist "campaigns")
+    Route::get('campaigns/{campaign}/comments',             [CampaignCommentController::class, 'index'])->name('crm.campaigns.comments.index');
+    Route::post('campaigns/{campaign}/comments',            [CampaignCommentController::class, 'store'])->name('crm.campaigns.comments.store');
+    Route::delete('campaigns/{campaign}/comments/{comment}', [CampaignCommentController::class, 'destroy'])->name('crm.campaigns.comments.destroy');
+
+    // Admin-only CRM detail pages for the shared entities (root-level URLs)
+    Route::get('companies/{company}', [CompanyController::class, 'show'])->name('crm.companies.show');
+    Route::get('clients/{client}',    [ClientsController::class, 'show'])->name('crm.clients.show');
 });
 
 /*======================================================================

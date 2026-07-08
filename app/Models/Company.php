@@ -15,4 +15,10 @@ class Company extends Model
     {
         return $this->hasMany(Client::class);
     }
+
+    /* Link Building CRM — campaigns for this company (additive; reads lb_campaigns) */
+    public function campaigns()
+    {
+        return $this->hasMany(Campaign::class);
+    }
 }
