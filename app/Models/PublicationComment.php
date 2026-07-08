@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Link Building CRM per-publication comment (table: lb_publication_comments).
- * Author = Linkinablink user.
+ * Phase 3: attached to the storage row (the publication). Author = Linkinablink user.
  */
 class PublicationComment extends Model
 {
@@ -16,14 +16,14 @@ class PublicationComment extends Model
     protected $table = 'lb_publication_comments';
 
     protected $fillable = [
-        'lb_publication_id',
+        'storage_id',
         'user_id',
         'body',
     ];
 
-    public function publication()
+    public function storage()
     {
-        return $this->belongsTo(Publication::class, 'lb_publication_id');
+        return $this->belongsTo(Storage::class, 'storage_id');
     }
 
     public function user()

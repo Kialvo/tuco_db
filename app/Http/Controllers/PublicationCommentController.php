@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Publication;
 use App\Models\PublicationComment;
+use App\Models\Storage;
 use Illuminate\Http\Request;
 
+/**
+ * Phase 3 — comments hang off the storage row (the publication).
+ * Route parameter stays {storage}; URLs keep the /publications prefix.
+ */
 class PublicationCommentController extends Controller
 {
     /*======================================================================
     |  INDEX – comments for a publication (JSON, oldest first)
     ======================================================================*/
-    public function index(Publication $publication)
+    public function index(Storage $storage)
     {
-        $comments = $publication->comments()
+        $comments = $storage->publicationComments()
             ->with('user:id,name')
             ->orderBy('created_at')
             ->get()
@@ -31,13 +35,13 @@ class PublicationCommentController extends Controller
     /*======================================================================
     |  STORE
     ======================================================================*/
-    public function store(Request $request, Publication $publication)
+    public function store(Request $request, Storage $storage)
     {
         $data = $request->validate([
             'body' => 'required|string|max:5000',
         ]);
 
-        $comment = $publication->comments()->create([
+        $comment = $storage->publicationComments()->create([
             'user_id' => auth()->id(),
             'body'    => $data['body'],
         ]);
@@ -53,7 +57,7 @@ class PublicationCommentController extends Controller
                 'date'   => $comment->created_at?->format('d/m/Y'),
                 'own'    => true,
             ],
-            'count'   => $publication->comments()->count(),
+            'count'   => $storage->publicationComments()->count(),
         ]);
     }
 
@@ -66,12 +70,12 @@ class PublicationCommentController extends Controller
             abort(403);
         }
 
-        $publicationId = $comment->lb_publication_id;
+        $storageId = $comment->storage_id;
         $comment->delete();
 
         return response()->json([
             'status' => 'success',
-            'count'  => PublicationComment::where('lb_publication_id', $publicationId)->count(),
+            'count'  => PublicationComment::where('storage_id', $storageId)->count(),
         ]);
     }
 }

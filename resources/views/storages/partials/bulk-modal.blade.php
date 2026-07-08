@@ -35,7 +35,8 @@
         'campaign'                  => 'Target Domain',
         'anchor_text'               => 'Anchor Text',
         'target_url'                => 'Target URL',
-        'campaign_code'             => 'Campaign Code',
+        // campaign_code removed: it mirrors the Campaign link (lb_campaign_id)
+        // and is managed via the Campaign dropdown / Campaigns module
 
         // PUBLICATION
         'article_sent_to_publisher' => 'Sent to Publisher',
@@ -79,14 +80,7 @@
         /* drop-downs ---------------------------------------*/
         'status' => [
             'type'    => 'select',
-            'options' => [
-                ''                       => '-- None --',
-                'article_published'      => 'Article Published',
-                'requirements_not_met'   => 'Requirements not met',
-                'already_used_by_client' => 'Already used by client',
-                'out_of_topic'           => 'Out of topic',
-                'high_price'             => 'High Price',
-            ],
+            'options' => ['' => '-- None --'] + \App\Support\PublicationStatus::labels(),
         ],
         'publisher_currency' => [
             'type'    => 'select',

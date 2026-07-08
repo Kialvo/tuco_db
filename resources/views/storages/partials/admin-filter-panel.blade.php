@@ -27,12 +27,13 @@
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Status</label>
         <select id="filterStatus" class="fi">
             <option value="">— Any —</option>
-            <option value="article_published">Article Published</option>
-            <option value="publisher_refused">Publisher Refused</option>
-            <option value="requirements_not_met">Requirements not met</option>
-            <option value="already_used_by_client">Already used by client</option>
-            <option value="out_of_topic">Out of topic</option>
-            <option value="high_price">High Price</option>
+            @foreach(\App\Support\PublicationStatus::grouped() as $group => $statuses)
+                <optgroup label="{{ $group }}">
+                    @foreach($statuses as $slug => $label)
+                        <option value="{{ $slug }}">{{ $label }}</option>
+                    @endforeach
+                </optgroup>
+            @endforeach
         </select>
     </div>
 

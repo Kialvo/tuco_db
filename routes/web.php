@@ -387,6 +387,7 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
     --------------------------------------------------------------*/
     // Campaigns — static/nested routes BEFORE the {campaign} show route
     Route::match(['get', 'post'], 'campaigns/data', [CampaignController::class, 'getData'])->name('crm.campaigns.data');
+    Route::get('campaigns/websites-search', [PublicationController::class, 'websitesSearch'])->name('crm.publications.websitesSearch');
     Route::get('campaigns/{campaign}/edit-ajax',    [CampaignController::class, 'editAjax'])->name('crm.campaigns.editAjax');
     Route::put('campaigns/{campaign}/status',       [CampaignController::class, 'updateStatus'])->name('crm.campaigns.status');
     Route::put('campaigns/{campaign}/inline',       [CampaignController::class, 'inlineUpdate'])->name('crm.campaigns.inline');
@@ -398,17 +399,19 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
     Route::put('campaigns/{campaign}',    [CampaignController::class, 'update'])->name('crm.campaigns.update');
     Route::delete('campaigns/{campaign}', [CampaignController::class, 'destroy'])->name('crm.campaigns.destroy');
 
-    // Publications
+    // Publications (Phase 3: {storage} binds to the storage row — the
+    // publication IS a storage row; URLs keep the /publications prefix)
     Route::post('campaigns/{campaign}/publications',   [PublicationController::class, 'store'])->name('crm.publications.store');
-    Route::get('publications/{publication}/edit-ajax', [PublicationController::class, 'editAjax'])->name('crm.publications.editAjax');
-    Route::put('publications/{publication}/status',    [PublicationController::class, 'updateStatus'])->name('crm.publications.status');
-    Route::put('publications/{publication}/inline',    [PublicationController::class, 'inlineUpdate'])->name('crm.publications.inline');
-    Route::get('publications/{publication}/comments',             [PublicationCommentController::class, 'index'])->name('crm.publications.comments.index');
-    Route::post('publications/{publication}/comments',            [PublicationCommentController::class, 'store'])->name('crm.publications.comments.store');
-    Route::delete('publications/{publication}/comments/{comment}', [PublicationCommentController::class, 'destroy'])->name('crm.publications.comments.destroy');
-    Route::get('publications/{publication}',           [PublicationController::class, 'show'])->name('crm.publications.show');
-    Route::put('publications/{publication}',           [PublicationController::class, 'update'])->name('crm.publications.update');
-    Route::delete('publications/{publication}',        [PublicationController::class, 'destroy'])->name('crm.publications.destroy');
+    Route::get('campaigns/{campaign}/storage-search',  [PublicationController::class, 'searchStorages'])->name('crm.publications.storageSearch');
+    Route::post('campaigns/{campaign}/link-publications', [PublicationController::class, 'linkExisting'])->name('crm.publications.link');
+    Route::get('publications/{storage}/edit-ajax',     [PublicationController::class, 'editAjax'])->name('crm.publications.editAjax');
+    Route::put('publications/{storage}/status',        [PublicationController::class, 'updateStatus'])->name('crm.publications.status');
+    Route::put('publications/{storage}/inline',        [PublicationController::class, 'inlineUpdate'])->name('crm.publications.inline');
+    Route::get('publications/{storage}/comments',              [PublicationCommentController::class, 'index'])->name('crm.publications.comments.index');
+    Route::post('publications/{storage}/comments',             [PublicationCommentController::class, 'store'])->name('crm.publications.comments.store');
+    Route::delete('publications/{storage}/comments/{comment}', [PublicationCommentController::class, 'destroy'])->name('crm.publications.comments.destroy');
+    Route::put('publications/{storage}',                [PublicationController::class, 'update'])->name('crm.publications.update');
+    Route::delete('publications/{storage}',             [PublicationController::class, 'destroy'])->name('crm.publications.destroy');
 
     // Comments (nested under campaigns so Apache only needs to whitelist "campaigns")
     Route::get('campaigns/{campaign}/comments',             [CampaignCommentController::class, 'index'])->name('crm.campaigns.comments.index');

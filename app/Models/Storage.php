@@ -49,6 +49,7 @@ class Storage extends Model
         'anchor_text',
         'target_url',
         'campaign_code',
+        'lb_campaign_id',
         'article_sent_to_publisher',
         'publication_date',
         'expiration_date',
@@ -65,7 +66,34 @@ class Storage extends Model
         'payment_to_publisher_date',
         'method_payment_to_publisher',
         'files',
+        'website',   // legacy free-text publisher domain (used when no websites match)
     ];
+
+    /* --------------------------------------------------------------------
+     | Model events — keep the linked campaign's progress in sync
+     |--------------------------------------------------------------------*/
+    protected static function booted(): void
+    {
+        // NOTE: in the `saved` event getOriginal() still returns pre-save
+        // values (syncOriginal runs after), so we can catch re-links too.
+        static::saved(function (Storage $s) {
+            $ids = array_unique(array_filter([
+                $s->lb_campaign_id,
+                $s->getOriginal('lb_campaign_id'),
+            ]));
+            foreach ($ids as $id) {
+                Campaign::withTrashed()->find($id)?->recomputeProgress();
+            }
+        });
+
+        $recompute = function (Storage $s) {
+            if ($s->lb_campaign_id) {
+                Campaign::withTrashed()->find($s->lb_campaign_id)?->recomputeProgress();
+            }
+        };
+        static::deleted($recompute);
+        static::restored($recompute);
+    }
 
     /* --------------------------------------------------------------------
      | Relationships
@@ -73,6 +101,21 @@ class Storage extends Model
     public function site()
     {
         return $this->belongsTo(Website::class, 'website_id');
+    }
+
+    /**
+     * Link Building CRM campaign this row is a publication of.
+     * Named lbCampaign because `campaign` is already a COLUMN (Target Domain).
+     * withTrashed so rows linked to a soft-deleted campaign still display.
+     */
+    public function lbCampaign()
+    {
+        return $this->belongsTo(Campaign::class, 'lb_campaign_id')->withTrashed();
+    }
+
+    public function publicationComments()
+    {
+        return $this->hasMany(PublicationComment::class, 'storage_id');
     }
 
 
@@ -106,6 +149,30 @@ class Storage extends Model
         // Many‑to‑many (pivot: category_storage)
         return $this->belongsToMany(Category::class, 'category_storage')
             ->using(CategoryStorage::class)->withTimestamps();
+    }
+
+    /* --------------------------------------------------------------------
+     | Accessors — unified publication status + display helpers
+     |--------------------------------------------------------------------*/
+
+    /** Human label for the status slug (null for empty/legacy '0'). */
+    public function getStatusLabelAttribute(): ?string
+    {
+        return \App\Support\PublicationStatus::label($this->status);
+    }
+
+    /** 1 = Site Evaluation, 2 = Production (derived from the slug). */
+    public function getStatusGroupAttribute(): int
+    {
+        return \App\Support\PublicationStatus::group($this->status);
+    }
+
+    /** Publisher domain shown in the Campaigns view (website relation, legacy fallbacks). */
+    public function getPublisherDomainAttribute(): ?string
+    {
+        return $this->site?->domain_name
+            ?: ($this->attributes['website'] ?? null)
+            ?: ($this->attributes['domain_name'] ?? null);
     }
 
     /**

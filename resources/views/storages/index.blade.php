@@ -396,27 +396,22 @@
                     containerCssClass:'text-xs',dropdownCssClass:'text-xs'});
 
             /* helpers */
-            const STATUS_TONES = {
-                'active': 'bg-green-100 text-green-700 ring-green-200',
-                'past': 'bg-gray-100 text-gray-600 ring-gray-200',
-                'paid': 'bg-green-100 text-green-700 ring-green-200',
-                'unpaid': 'bg-amber-100 text-amber-700 ring-amber-200',
-                'pending': 'bg-blue-100 text-blue-700 ring-blue-200',
-                'cancelled': 'bg-red-100 text-red-700 ring-red-200',
-                'completed': 'bg-green-100 text-green-700 ring-green-200',
-                'article_published': 'bg-green-100 text-green-700 ring-green-200',
-                'high_price': 'bg-amber-100 text-amber-700 ring-amber-200',
-                'low_price': 'bg-red-100 text-red-700 ring-red-200',
-                'already_used_by_client': 'bg-blue-100 text-blue-700 ring-blue-200',
-                'in_progress': 'bg-blue-100 text-blue-700 ring-blue-200',
-                'draft': 'bg-gray-100 text-gray-500 ring-gray-200',
-                'rejected': 'bg-red-100 text-red-700 ring-red-200',
+            // Unified 12-status list (shared with Campaigns): slug => label
+            const STATUS_LABELS = @json(\App\Support\PublicationStatus::labels());
+            const TONE_RING = {
+                green:  'bg-green-100 text-green-700 ring-green-200',
+                amber:  'bg-amber-100 text-amber-700 ring-amber-200',
+                red:    'bg-red-100 text-red-700 ring-red-200',
+                blue:   'bg-blue-100 text-blue-700 ring-blue-200',
+                purple: 'bg-purple-100 text-purple-700 ring-purple-200',
+                gray:   'bg-gray-100 text-gray-600 ring-gray-200',
             };
+            const STATUS_TONES = @json(collect(\App\Support\PublicationStatus::all())->map(fn($d) => $d['tone']));
             const renderStatusPill = function (data) {
-                if (!data) return '<span class="text-gray-300">—</span>';
+                if (!data || data === '0') return '<span class="text-gray-300">—</span>';
                 const key = String(data).toLowerCase().replace(/\s+/g, '_');
-                const tone = STATUS_TONES[key] || 'bg-gray-100 text-gray-700 ring-gray-200';
-                const label = String(data).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                const tone = TONE_RING[STATUS_TONES[key]] || 'bg-gray-100 text-gray-700 ring-gray-200';
+                const label = STATUS_LABELS[key] || String(data).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                 return `<span class="inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${tone}">${label}</span>`;
             };
 
@@ -516,7 +511,14 @@
                     {data:'anchor_text',name:'anchor_text'},
                     {data:'target_url',name:'target_url',orderable:false,searchable:false,
                         render:d=>d?`<a href="#" class="url-link underline text-blue-600" data-url="${d}">link</a>`:''},
-                    {data:'campaign_code',name:'campaign_code'},
+                    {data:'campaign_code',name:'campaign_code',
+                        render:(d,t,r)=>{
+                            if (r.lb_campaign_id) {
+                                const code = (r.lb_campaign && r.lb_campaign.code) ? r.lb_campaign.code : d;
+                                return `<a href="{{ url('campaigns') }}/${r.lb_campaign_id}" class="text-green-600 font-medium underline">${code ?? ''}</a>`;
+                            }
+                            return d ? `<span class="text-gray-400" title="Legacy code (not linked to a campaign)">${d}</span>` : '';
+                        }},
                     {data:'article_sent_to_publisher',name:'article_sent_to_publisher',render:dt},
                     {data:'publication_date',name:'publication_date',render:dt},
                     {data:'expiration_date',name:'expiration_date',render:dt},
