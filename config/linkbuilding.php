@@ -48,31 +48,34 @@ return [
         ],
     ],
 
-    // Publication statuses grouped (Group 1 vs Group 2)
+    /*
+    |----------------------------------------------------------------------
+    | Unified publication statuses (Phase 3) — shared by Campaigns AND Storage.
+    | The DB (storage.status) stores the SLUG key; the UI shows the label.
+    | Slugs match the values historically used by the Storage module so the
+    | 10k+ existing rows keep working without a rewrite.
+    |----------------------------------------------------------------------
+    */
     'publication_statuses' => [
-        'Group 1 – Site Evaluation' => [
-            'Waiting Client Approval',
-            'Accepted',
-            'Refused by Client – Metrics Too Low',
-            'Refused by Client – Too Expensive',
-            'Refused by Client – Out of Topic',
-        ],
-        'Group 2 – Production' => [
-            'Waiting Copywriter',
-            'Waiting Client Article Approval',
-            'Waiting Blog Publication',
-            'Published',
-            'Publisher disappeared',
-        ],
+        // Group 1 – Site Evaluation
+        'waiting_client_approval'         => ['label' => 'Waiting Client Approval',             'group' => 1, 'tone' => 'amber'],
+        'accepted'                        => ['label' => 'Accepted',                            'group' => 1, 'tone' => 'green'],
+        'requirements_not_met'            => ['label' => 'Refused by Client – Metrics too low', 'group' => 1, 'tone' => 'red'],
+        'high_price'                      => ['label' => 'Refused by Client – High Price',      'group' => 1, 'tone' => 'red'],
+        'out_of_topic'                    => ['label' => 'Refused by Client – Out of Topic',    'group' => 1, 'tone' => 'red'],
+        'already_used_by_client'          => ['label' => 'Refused by Client – Already Used',    'group' => 1, 'tone' => 'red'],
+        // Group 2 – Production
+        'waiting_copywriter'              => ['label' => 'Waiting Copywriter',                  'group' => 2, 'tone' => 'purple'],
+        'waiting_client_article_approval' => ['label' => 'Waiting Client Article Approval',     'group' => 2, 'tone' => 'amber'],
+        'waiting_blog_publication'        => ['label' => 'Waiting Blog Publication',            'group' => 2, 'tone' => 'blue'],
+        'article_published'               => ['label' => 'Article Published',                   'group' => 2, 'tone' => 'green'],
+        'publisher_disappeared'           => ['label' => 'Publisher Disappeared',               'group' => 2, 'tone' => 'red'],
+        'publisher_refused'               => ['label' => 'Publisher Refused',                   'group' => 2, 'tone' => 'red'],
     ],
 
-    // Flat list of Group 2 statuses — used to derive publications.status_group (2 = production, else 1)
-    'production_statuses' => [
-        'Waiting Copywriter',
-        'Waiting Client Article Approval',
-        'Waiting Blog Publication',
-        'Published',
-        'Publisher disappeared',
+    'publication_status_groups' => [
+        1 => 'Group 1 – Site Evaluation',
+        2 => 'Group 2 – Production',
     ],
 
     'target_types' => [
@@ -101,19 +104,6 @@ return [
         'Changed their mind'                              => 'gray',
         'Disappeared'                                     => 'gray',
         'Refused by Client'                               => 'gray',
-    ],
-
-    'publication_status_tones' => [
-        'Waiting Client Approval'              => 'amber',
-        'Accepted'                             => 'green',
-        'Refused by Client – Metrics Too Low'  => 'red',
-        'Refused by Client – Too Expensive'    => 'red',
-        'Refused by Client – Out of Topic'     => 'red',
-        'Waiting Copywriter'                   => 'purple',
-        'Waiting Client Article Approval'      => 'amber',
-        'Waiting Blog Publication'             => 'blue',
-        'Published'                            => 'green',
-        'Publisher disappeared'                => 'red',
     ],
 
     'service_tones' => [

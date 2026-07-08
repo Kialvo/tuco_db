@@ -62,9 +62,13 @@ class Campaign extends Model
         return $this->belongsTo(User::class, 'responsible_user_id');
     }
 
+    /**
+     * Publications of this campaign = storage rows linked via storage.lb_campaign_id
+     * (Phase 3: the storage row IS the publication — single source of truth).
+     */
     public function publications()
     {
-        return $this->hasMany(Publication::class, 'lb_campaign_id');
+        return $this->hasMany(Storage::class, 'lb_campaign_id');
     }
 
     public function comments()
@@ -73,15 +77,15 @@ class Campaign extends Model
     }
 
     /**
-     * Recompute the target's "first number" (live_count) from Published publications.
-     * Auto target type => count of Published; budget type => sum of their price.
-     * Called automatically on any Publication save/delete/restore (Publication::booted()).
+     * Recompute the target's "first number" (live_count) from published publications.
+     * Budget target => sum of their total_revenues; otherwise count of published.
+     * Called automatically on any linked Storage save/delete/restore (Storage::booted()).
      */
     public function recomputeProgress(): void
     {
         $this->live_count = $this->target_type === 'budget'
-            ? (float) $this->publications()->where('status', 'Published')->sum('price')
-            : $this->publications()->where('status', 'Published')->count();
+            ? (float) $this->publications()->where('status', 'article_published')->sum('total_revenues')
+            : $this->publications()->where('status', 'article_published')->count();
 
         $this->saveQuietly();
     }

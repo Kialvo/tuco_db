@@ -79,18 +79,19 @@
                     @enderror
                 </div>
 
-                {{-- Status --}}
+                {{-- Status (unified 12-status list shared with Campaigns) --}}
                 <div>
                     <label class="block text-gray-700 font-medium mb-1">Status</label>
                     <select name="status"
                             class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
-                        <option value="article_published"      {{ old('status')=='article_published'      ? 'selected' : '' }}>Article Published</option>
-                        <option value="publisher_refused"      {{ old('status')=='publisher_refused'      ? 'selected' : '' }}>Publisher Refused</option>
-                        <option value="requirements_not_met"    {{ old('status')=='requirements_not_met'   ? 'selected' : '' }}>Requirements not met</option>
-                        <option value="already_used_by_client"  {{ old('status')=='already_used_by_client' ? 'selected' : '' }}>Already used by client</option>
-                        <option value="out_of_topic"            {{ old('status')=='out_of_topic'           ? 'selected' : '' }}>Out of topic</option>
-                        <option value="high_price"              {{ old('status')=='high_price'             ? 'selected' : '' }}>High Price</option>
+                        @foreach(\App\Support\PublicationStatus::grouped() as $group => $statuses)
+                            <optgroup label="{{ $group }}">
+                                @foreach($statuses as $slug => $label)
+                                    <option value="{{ $slug }}" {{ old('status')==$slug ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
                     </select>
                     @error('status') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
@@ -245,10 +246,15 @@
                     @error('target_url') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Campaign Code</label>
-                    <input type="text" name="campaign_code" value="{{ old('campaign_code') }}"
-                           class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
-                    @error('campaign_code') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <label class="block text-gray-700 font-medium mb-1">Campaign</label>
+                    <select name="lb_campaign_id" id="campaignSelect"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
+                        <option value="">-- No campaign --</option>
+                        @foreach($campaigns as $camp)
+                            <option value="{{ $camp->id }}" {{ old('lb_campaign_id') == $camp->id ? 'selected' : '' }}>{{ $camp->code }}</option>
+                        @endforeach
+                    </select>
+                    @error('lb_campaign_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
 
@@ -397,7 +403,7 @@
     <script>
         $(document).ready(function() {
 
-            $('#categorySelect, #clientSelect, #copywriterSelect, #websiteSelect, #contactSelect').select2({
+            $('#categorySelect, #clientSelect, #copywriterSelect, #websiteSelect, #contactSelect, #campaignSelect').select2({
                 placeholder:'Select',
                 closeOnSelect:false,
                 width:'resolve',

@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use AmrShawky\Currency\Facade\Currency;
+use App\Models\Campaign;
 use App\Models\Contact;
 use App\Models\RollbackStorage;
 use App\Models\Storage;
+use App\Services\StorageCalculator;
 use App\Models\Country;
 use App\Models\Language;
 use App\Models\Client;
@@ -36,8 +38,9 @@ class StorageController extends Controller
         'publisher_currency','publisher_amount',
         // PRICES & COSTS
         'publisher','total_cost','menford','client_copy','total_revenues','profit',
-        // CAMPAIGN & LINKS
-        'campaign','anchor_text','target_url','campaign_code',
+        // CAMPAIGN & LINKS  (campaign_code removed: it now mirrors lb_campaign_id
+        // and is managed through the Campaign dropdown / Campaigns module only)
+        'campaign','anchor_text','target_url',
         // PUBLICATION
         'article_sent_to_publisher','publication_date','expiration_date','article_url',
         // INVOICING / PAYMENTS
@@ -113,7 +116,7 @@ class StorageController extends Controller
                 // identity
                 'id'                          => $e->id,
                 'edit_url'                    => route('storages.edit', $e->id),
-                'status'                      => $e->status,
+                'status'                      => \App\Support\PublicationStatus::label($e->status) ?? $e->status,
                 'LB'                          => $e->LB,
                 'created_at'                  => $e->created_at?->format('d/m/Y'),
                 // relations
@@ -173,6 +176,9 @@ class StorageController extends Controller
             // Website (site) + its contact
             'site:id,domain_name,contact_id',
             'site.contact:id,name,email,phone',
+
+            // Linked Link-Building campaign (Phase 3)
+            'lbCampaign:id,code',
 
             // Direct contacts via pivot
             'contacts:id,name,email,phone',
@@ -551,6 +557,9 @@ class StorageController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Link Building campaigns for the Campaign dropdown (Phase 3)
+        $campaigns = Campaign::orderBy('code')->get(['id', 'code']);
+
         return view('storages.create', compact(
             'countries',
             'languages',
@@ -559,6 +568,7 @@ class StorageController extends Controller
             'categories',
             'websites',
             'contacts',
+            'campaigns',
         ));
     }
 
@@ -612,6 +622,7 @@ class StorageController extends Controller
 
         $this->convertUsdFieldsToEur($validated, $this->priceFields());
         $this->applyAutoCalculations($validated);
+        $this->applyCampaignLink($validated);
 
         $storage = Storage::create($validated);
 
@@ -658,6 +669,7 @@ class StorageController extends Controller
 
         $this->convertUsdFieldsToEur($validated, $this->priceFields());
         $this->applyAutoCalculations($validated);
+        $this->applyCampaignLink($validated, $storage);
 
         $storage->update($validated);
 
@@ -726,6 +738,9 @@ class StorageController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Link Building campaigns for the Campaign dropdown (Phase 3)
+        $campaigns = Campaign::orderBy('code')->get(['id', 'code']);
+
         return view('storages.edit', compact(
             'storage',
             'countries',
@@ -735,6 +750,7 @@ class StorageController extends Controller
             'categories',
             'websites',
             'contacts',
+            'campaigns',
         ));
     }
 
@@ -1175,7 +1191,7 @@ class StorageController extends Controller
             'campaign'                    => 'nullable|string|max:255',
             'anchor_text'                 => 'nullable|string',
             'target_url'                  => 'nullable|url|max:255',
-            'campaign_code'               => 'nullable|string|max:255',
+            'lb_campaign_id'              => 'nullable|integer|exists:lb_campaigns,id',
             'article_sent_to_publisher'   => 'nullable|date_format:d/m/Y',
             'publication_date'            => 'nullable|date_format:d/m/Y',
             'expiration_date'             => 'nullable|date_format:d/m/Y',
@@ -1201,6 +1217,28 @@ class StorageController extends Controller
         ]);
     }
 
+
+    /**
+     * Resolve the Campaign dropdown (lb_campaign_id) into the mirrored
+     * campaign_code string. Careful with legacy data: an unlinked row that
+     * still carries an old free-text code must keep it untouched unless the
+     * user actively links/unlinks.
+     */
+    private function applyCampaignLink(array &$validated, ?Storage $storage = null): void
+    {
+        $campaignId = $validated['lb_campaign_id'] ?? null;
+
+        if ($campaignId) {
+            $validated['campaign_code'] = Campaign::withTrashed()->find($campaignId)?->code;
+        } elseif ($storage && $storage->lb_campaign_id) {
+            // was linked, dropdown cleared → explicit unlink
+            $validated['lb_campaign_id'] = null;
+            $validated['campaign_code']  = null;
+        } else {
+            // never linked → leave any legacy campaign_code text alone
+            unset($validated['lb_campaign_id']);
+        }
+    }
 
     /** every column that stores a date (no timestamps) */
     private const DATE_COLS = [
@@ -1289,7 +1327,7 @@ class StorageController extends Controller
         return [
             'id'                          => $s->id,
             'website_domain'              => optional($s->site)->domain_name,
-            'status'                       => $s->status,
+            'status'                       => \App\Support\PublicationStatus::label($s->status) ?? $s->status,
             'LB'                           => $s->LB,
             'client_name'                 => $s->client
                 ? trim($s->client->first_name . ' ' . $s->client->last_name)
@@ -1344,29 +1382,8 @@ class StorageController extends Controller
     ======================================================================*/
     private function applyAutoCalculations(array &$data): void
     {
-        /* ---------------- prices / profit -------------------------------- */
-        $publisher = (float) ($data['publisher_amount'] ?? $data['publisher'] ?? 0);
-        $copywriterAmount = (float) ($data['copy_nr']      ?? 0);
-        $data['total_cost'] = $publisher + $copywriterAmount;
-
-        $menford    = (float) ($data['menford']     ?? 0);
-        $clientCopy = (float) ($data['client_copy'] ?? 0);
-        $data['total_revenues'] = $menford + $clientCopy;
-
-        $data['profit'] = $data['total_revenues'] - $data['total_cost'];
-
-        /* ---------------- Copy period  (submission − commission) --------- */
-        if (!empty($data['copywriter_commision_date']) && !empty($data['copywriter_submission_date'])) {
-            $from = Carbon::parse($data['copywriter_commision_date']);
-            $to   = Carbon::parse($data['copywriter_submission_date']);
-            $data['copywriter_period'] = $from->diffInDays($to);     // int
-        }
-
-        /* ---------------- Publisher period  (publication − sent) --------- */
-        if (!empty($data['article_sent_to_publisher']) && !empty($data['publication_date'])) {
-            $from = Carbon::parse($data['article_sent_to_publisher']);
-            $to   = Carbon::parse($data['publication_date']);
-            $data['publisher_period'] = $from->diffInDays($to);      // int
-        }
+        // Extracted to a shared service so the Campaigns module applies
+        // the exact same math when writing publications (Phase 3).
+        StorageCalculator::apply($data);
     }
 }

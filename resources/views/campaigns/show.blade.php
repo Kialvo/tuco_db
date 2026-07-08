@@ -1,20 +1,27 @@
 {{-- resources/views/campaigns/show.blade.php --}}
+{{-- Phase 3: each publication row IS a `storage` row linked via storage.lb_campaign_id --}}
 @extends('layouts.dashboard')
 @section('title', $campaign->code)
 
 @php
-    $tone         = config('linkbuilding.tone_classes');
-    $campTone     = fn($s) => $tone[config('linkbuilding.campaign_status_tones')[$s] ?? 'gray'] ?? 'bg-gray-100 text-gray-700';
-    $svcTone      = fn($s) => $tone[config('linkbuilding.service_tones')[$s] ?? 'gray'] ?? 'bg-gray-100 text-gray-700';
-    $pubTone      = fn($s) => $tone[config('linkbuilding.publication_status_tones')[$s] ?? 'gray'] ?? 'bg-gray-100 text-gray-700';
-    $pubStatusGrp = config('linkbuilding.publication_statuses');
-    $fd           = fn($d) => $d ? $d->format('d/m/Y') : '—';
-    $prog         = $campaign->progress;
-    $g1           = $campaign->publications->where('status_group', 1);
-    $g2           = $campaign->publications->where('status_group', 2);
-    $published    = $campaign->publications->where('status', 'Published')->count();
+    use App\Support\PublicationStatus;
+    use Illuminate\Support\Carbon;
 
-    // inline-editable publication cell
+    $tone     = config('linkbuilding.tone_classes');
+    $campTone = fn($s) => $tone[config('linkbuilding.campaign_status_tones')[$s] ?? 'gray'] ?? 'bg-gray-100 text-gray-700';
+    $svcTone  = fn($s) => $tone[config('linkbuilding.service_tones')[$s] ?? 'gray'] ?? 'bg-gray-100 text-gray-700';
+    $pubTone  = fn($slug) => $tone[PublicationStatus::tone($slug)] ?? 'bg-gray-100 text-gray-700';
+
+    $fd  = fn($d) => $d ? $d->format('d/m/Y') : '—';                                  // campaign date casts
+    $fds = fn($v) => $v ? Carbon::parse($v)->format('d/m/Y') : '—';                   // storage raw datetimes
+    $ymd = fn($v) => $v ? Carbon::parse($v)->format('Y-m-d') : '';
+
+    $prog      = $campaign->progress;
+    $g1        = $campaign->publications->filter(fn($p) => PublicationStatus::group($p->status) === 1);
+    $g2        = $campaign->publications->filter(fn($p) => PublicationStatus::group($p->status) === 2);
+    $published = $campaign->publications->where('status', 'article_published')->count();
+
+    // inline-editable publication cell (data-field = storage column)
     $editable = function ($p, $field, $type, $rawValue, $display) {
         return '<span class="js-pub-edit cursor-pointer rounded px-1 -mx-1 hover:bg-yellow-50 hover:ring-1 hover:ring-yellow-200" '
             . 'data-id="' . $p->id . '" data-field="' . $field . '" data-type="' . $type . '" data-value="' . e((string) ($rawValue ?? '')) . '" title="Click to edit">'
@@ -52,6 +59,9 @@
             @endif
             <button id="btnEditCampaign" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                 <x-icon name="pencil" size="sm" /> Edit
+            </button>
+            <button id="btnLinkPub" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-green-700 bg-white border border-green-300 rounded-lg hover:bg-green-50">
+                <x-icon name="link" size="sm" /> Link Existing
             </button>
             <button id="btnNewPub" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
                 <x-icon name="plus" size="sm" /> New Publication
@@ -95,7 +105,7 @@
         @if($campaign->publications->isEmpty())
             <div class="text-center py-10 text-gray-400">
                 <div class="text-sm">No publications yet</div>
-                <div class="text-xs mt-1">Click “New Publication” to add one.</div>
+                <div class="text-xs mt-1">Create one from scratch or link an existing Storage entry.</div>
             </div>
         @else
             <div class="overflow-x-auto">
@@ -110,42 +120,43 @@
                         <th class="text-left py-2.5 px-3 font-semibold">Sent&nbsp;to&nbsp;Blog</th>
                         <th class="text-left py-2.5 px-3 font-semibold">Live&nbsp;URL</th>
                         <th class="text-left py-2.5 px-3 font-semibold">Live&nbsp;Date</th>
-                        <th class="text-left py-2.5 px-3 font-semibold">Notes</th>
                         <th class="py-2.5 px-3 text-right font-semibold">Actions</th>
                     </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach([['GROUP 1 – Site Evaluation', $g1], ['GROUP 2 – Production', $g2]] as [$label, $rows])
                             @if($rows->count())
-                                <tr><td colspan="10" class="bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-400 px-3 py-1.5">{{ $label }}</td></tr>
+                                <tr><td colspan="9" class="bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-400 px-3 py-1.5">{{ $label }}</td></tr>
                                 @foreach($rows as $p)
                                     <tr class="hover:bg-gray-50">
                                         <td class="py-2.5 px-3 font-medium">
-                                            <a href="{{ route('crm.publications.show', $p->id) }}" class="text-green-600 hover:underline">{{ $p->site }}</a>
+                                            <a href="{{ route('storages.edit', $p->id) }}" class="text-green-600 hover:underline" title="Open full Storage record">{{ $p->publisher_domain ?: '—' }}</a>
                                         </td>
                                         <td class="py-2.5 px-3">
                                             <button type="button" class="js-pub-status inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold {{ $pubTone($p->status) }}" data-id="{{ $p->id }}">
-                                                {{ $p->status }}
+                                                {{ $p->status_label ?? '—' }}
                                                 <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                                             </button>
                                         </td>
-                                        <td class="py-2.5 px-3 text-right whitespace-nowrap">{!! $editable($p, 'price', 'money', (float)$p->price, '€'.number_format((float)$p->price, 0)) !!}</td>
-                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'date_to_copywriter', 'date', optional($p->date_to_copywriter)->format('Y-m-d'), $fd($p->date_to_copywriter)) !!}</td>
-                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'date_from_copywriter', 'date', optional($p->date_from_copywriter)->format('Y-m-d'), $fd($p->date_from_copywriter)) !!}</td>
-                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'date_to_blog', 'date', optional($p->date_to_blog)->format('Y-m-d'), $fd($p->date_to_blog)) !!}</td>
-                                        <td class="py-2.5 px-3">{!! $editable($p, 'live_url', 'text', $p->live_url, $p->live_url ? '<span class="text-green-600 text-xs">'.e(\Illuminate\Support\Str::of($p->live_url)->replace(['https://','http://'],'')->limit(24)).'</span>' : '<span class="text-gray-300">—</span>') !!}</td>
-                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'live_date', 'date', optional($p->live_date)->format('Y-m-d'), $fd($p->live_date)) !!}</td>
-                                        <td class="py-2.5 px-3"><span class="block max-w-[150px] truncate text-gray-500 text-xs" title="{{ $p->notes }}">{{ $p->notes ?: '—' }}</span></td>
+                                        <td class="py-2.5 px-3 text-right whitespace-nowrap">{!! $editable($p, 'price', 'money', (float)$p->total_revenues, '€'.number_format((float)$p->total_revenues, 0)) !!}</td>
+                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'copywriter_commision_date', 'date', $ymd($p->copywriter_commision_date), $fds($p->copywriter_commision_date)) !!}</td>
+                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'copywriter_submission_date', 'date', $ymd($p->copywriter_submission_date), $fds($p->copywriter_submission_date)) !!}</td>
+                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'article_sent_to_publisher', 'date', $ymd($p->article_sent_to_publisher), $fds($p->article_sent_to_publisher)) !!}</td>
+                                        <td class="py-2.5 px-3">{!! $editable($p, 'article_url', 'text', $p->article_url, $p->article_url ? '<span class="text-green-600 text-xs">'.e(\Illuminate\Support\Str::of($p->article_url)->replace(['https://','http://'],'')->limit(24)).'</span>' : '<span class="text-gray-300">—</span>') !!}</td>
+                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'publication_date', 'date', $ymd($p->publication_date), $fds($p->publication_date)) !!}</td>
                                         <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                                            <button type="button" class="js-pub-comments inline-flex items-center justify-center h-7 px-1.5 rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600" data-id="{{ $p->id }}" data-site="{{ $p->site }}" title="Comments">
+                                            <button type="button" class="js-pub-comments inline-flex items-center justify-center h-7 px-1.5 rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600" data-id="{{ $p->id }}" data-site="{{ $p->publisher_domain }}" title="Comments">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                                                 @if($p->comments_count)<span class="ml-0.5 text-[9px] font-bold text-blue-700">{{ $p->comments_count }}</span>@endif
                                             </button>
-                                            <button type="button" class="js-edit-pub inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700" data-id="{{ $p->id }}" title="Edit">
+                                            <a href="{{ route('storages.edit', $p->id) }}" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700" title="More details (Storage record)">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                            </a>
+                                            <button type="button" class="js-edit-pub inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700" data-id="{{ $p->id }}" title="Quick edit">
                                                 <x-icon name="pencil" size="sm" />
                                             </button>
-                                            <button type="button" class="js-del-pub inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700" data-id="{{ $p->id }}" title="Delete">
-                                                <x-icon name="trash" size="sm" />
+                                            <button type="button" class="js-unlink-pub inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700" data-id="{{ $p->id }}" data-site="{{ $p->publisher_domain }}" title="Unlink from campaign">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5M4 4l16 16"/></svg>
                                             </button>
                                         </td>
                                     </tr>
@@ -160,7 +171,7 @@
 
 </div>
 
-{{-- ═══════════ Publication modal ═══════════ --}}
+{{-- ═══════════ Publication modal (create / quick edit) ═══════════ --}}
 <div id="pubModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
     <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-lg relative max-h-[92vh] overflow-y-auto">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
@@ -172,55 +183,78 @@
             <input type="hidden" id="p_id">
             <div>
                 <label class="block text-xs font-semibold text-gray-600 mb-1">Publisher / Website <span class="text-red-500">*</span></label>
-                <input type="text" id="p_site" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="e.g. techblog.com">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Status</label>
-                <select id="p_status" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
-                    @foreach($pubStatusGrp as $group => $statuses)
-                        <optgroup label="{{ $group }}">
-                            @foreach($statuses as $st)<option value="{{ $st }}">{{ $st }}</option>@endforeach
-                        </optgroup>
-                    @endforeach
-                </select>
+                <select id="p_site" class="block w-full border border-gray-300 rounded-md text-sm" style="width:100%"></select>
+                <p class="text-[11px] text-gray-400 mt-1">Search the Domains catalog, or type a new domain and press Enter.</p>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Price (€)</label>
-                    <input type="number" step="0.01" id="p_price" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Status <span class="text-red-500">*</span></label>
+                    <select id="p_status" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
+                        @foreach(PublicationStatus::grouped() as $group => $statuses)
+                            <optgroup label="{{ $group }}">
+                                @foreach($statuses as $slug => $lbl)<option value="{{ $slug }}">{{ $lbl }}</option>@endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Price (€) <span class="text-red-500">*</span></label>
+                    <input type="number" step="0.01" min="0" id="p_price" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Live URL</label>
+                    <input type="text" id="p_article_url" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="https://…">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Live Date</label>
-                    <input type="text" id="p_live_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    <input type="text" id="p_publication_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
                 </div>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Live URL</label>
-                <input type="text" id="p_live_url" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="https://…">
             </div>
             <div class="pt-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 border-t border-gray-100">Production Dates</div>
             <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Sent to Copy</label>
-                    <input type="text" id="p_date_to_copywriter" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    <input type="text" id="p_copywriter_commision_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Copy Received</label>
-                    <input type="text" id="p_date_from_copywriter" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    <input type="text" id="p_copywriter_submission_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Sent to Blog</label>
-                    <input type="text" id="p_date_to_blog" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                    <input type="text" id="p_article_sent_to_publisher" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
                 </div>
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
-                <textarea id="p_notes" rows="2" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></textarea>
-            </div>
+            <p class="text-[11px] text-gray-400">All other fields (accounting, invoicing, copywriter…) are edited on the full Storage record — use “More details” on the row after saving.</p>
         </form>
         <div class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
             <button type="button" class="js-close-pub px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
             <button type="button" id="p_save" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Add Publication</button>
+        </div>
+    </div>
+</div>
+
+{{-- ═══════════ Link-existing modal ═══════════ --}}
+<div id="linkModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-xl relative">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h2 class="text-lg font-bold text-gray-800">Link existing Storage publications</h2>
+            <button type="button" class="js-close-link text-gray-400 hover:text-gray-600"><x-icon name="x" size="sm" /></button>
+        </div>
+        <div id="linkErrors" class="hidden mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm"></div>
+        <div class="px-6 py-5 space-y-3">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Search Storage by domain, article URL or ID</label>
+            <select id="linkSelect" class="block w-full border border-gray-300 rounded-md text-sm" multiple="multiple" style="width:100%"></select>
+            <label class="inline-flex items-center gap-2 text-xs text-gray-500 mt-1">
+                <input type="checkbox" id="linkIncludeAssigned" class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                Also show rows already assigned to another campaign (linking will move them here)
+            </label>
+        </div>
+        <div class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
+            <button type="button" class="js-close-link px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" id="linkSave" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Link Selected</button>
         </div>
     </div>
 </div>
@@ -314,7 +348,7 @@
 $(function () {
     const csrf = $('meta[name="csrf-token"]').attr('content');
     const CAMPAIGN_ID = {{ $campaign->id }};
-    const PUB_STATUSES = @json($pubStatusGrp);
+    const PUB_STATUSES = @json(PublicationStatus::grouped()); {{-- group label => {slug: label} --}}
 
     // Position a fixed dropdown near a trigger, flipping up if it would overflow the viewport bottom.
     function positionMenu($menu, rect) {
@@ -327,9 +361,34 @@ $(function () {
 
     flatpickr('.js-date', { dateFormat: 'Y-m-d', allowInput: true });
 
+    /* ── Publisher select2 (Domains catalog search + free-text tags) ── */
+    function initSiteSelect() {
+        $('#p_site').select2({
+            dropdownParent: $('#pubModal'),
+            width: '100%',
+            placeholder: 'Search domain…',
+            allowClear: true,
+            tags: true,
+            createTag: p => {
+                const term = $.trim(p.term);
+                return term === '' ? null : { id: term, text: term + ' (new)', newTag: true };
+            },
+            ajax: {
+                url: "{{ route('crm.publications.websitesSearch') }}",
+                dataType: 'json',
+                delay: 250,
+                data: p => ({ q: p.term }),
+                processResults: data => ({
+                    results: data.results.map(r => ({ id: 'w' + r.id, text: r.text }))
+                })
+            }
+        });
+    }
+    initSiteSelect();
+
     /* ── New/Edit Publication modal ── */
     const pubModal = $('#pubModal');
-    const PUB_DATE_FIELDS = ['live_date', 'date_to_copywriter', 'date_from_copywriter', 'date_to_blog'];
+    const PUB_DATE_FIELDS = ['publication_date', 'copywriter_commision_date', 'copywriter_submission_date', 'article_sent_to_publisher'];
     function setPubDate(f, v) {
         const el = document.getElementById('p_' + f);
         if (el && el._flatpickr) { v ? el._flatpickr.setDate(v, true) : el._flatpickr.clear(); }
@@ -343,7 +402,8 @@ $(function () {
     function resetPub() {
         $('#pubErrors').addClass('hidden').empty();
         $('#p_id').val('');
-        $('#p_site,#p_price,#p_live_url,#p_notes').val('');
+        $('#p_price,#p_article_url').val('');
+        $('#p_site').empty().val(null).trigger('change');
         $('#p_status').prop('selectedIndex', 0);
         PUB_DATE_FIELDS.forEach(f => setPubDate(f, ''));
     }
@@ -355,7 +415,7 @@ $(function () {
         openPub();
     });
 
-    $('.js-edit-pub').on('click', function () {
+    $(document).on('click', '.js-edit-pub', function () {
         const id = $(this).data('id');
         resetPub();
         $('#pubModalTitle').text('Edit Publication');
@@ -363,11 +423,15 @@ $(function () {
         $.get("{{ url('publications') }}/" + id + "/edit-ajax", function (res) {
             const d = res.data;
             $('#p_id').val(d.id);
-            $('#p_site').val(d.site);
-            $('#p_status').val(d.status);
+            // preselect publisher: existing website (w<id>) or legacy free text
+            if (d.website_id) {
+                $('#p_site').append(new Option(d.site || ('website #' + d.website_id), 'w' + d.website_id, true, true)).trigger('change');
+            } else if (d.site) {
+                $('#p_site').append(new Option(d.site, d.site, true, true)).trigger('change');
+            }
+            $('#p_status').val(d.status || '');
             $('#p_price').val(d.price || '');
-            $('#p_live_url').val(d.live_url || '');
-            $('#p_notes').val(d.notes || '');
+            $('#p_article_url').val(d.article_url || '');
             PUB_DATE_FIELDS.forEach(f => setPubDate(f, d[f]));
             openPub();
         }).fail(() => alert('Unable to load publication.'));
@@ -376,18 +440,20 @@ $(function () {
     $('#p_save').on('click', function () {
         $('#pubErrors').addClass('hidden').empty();
         const id = $('#p_id').val();
+        const siteVal = $('#p_site').val() || '';
         const payload = {
-            site: $('#p_site').val(),
             status: $('#p_status').val(),
             price: $('#p_price').val() || 0,
-            live_url: $('#p_live_url').val() || '',
-            live_date: $('#p_live_date').val() || '',
-            date_to_copywriter: $('#p_date_to_copywriter').val() || '',
-            date_from_copywriter: $('#p_date_from_copywriter').val() || '',
-            date_to_blog: $('#p_date_to_blog').val() || '',
-            notes: $('#p_notes').val() || '',
+            article_url: $('#p_article_url').val() || '',
+            publication_date: $('#p_publication_date').val() || '',
+            copywriter_commision_date: $('#p_copywriter_commision_date').val() || '',
+            copywriter_submission_date: $('#p_copywriter_submission_date').val() || '',
+            article_sent_to_publisher: $('#p_article_sent_to_publisher').val() || '',
             _token: csrf
         };
+        if (/^w\d+$/.test(siteVal)) { payload.website_id = siteVal.slice(1); }
+        else { payload.site = siteVal; }
+
         let url;
         if (id) { url = "{{ url('publications') }}/" + id; payload._method = 'PUT'; }
         else { url = "{{ url('campaigns') }}/" + CAMPAIGN_ID + "/publications"; }
@@ -402,15 +468,79 @@ $(function () {
         });
     });
 
-    /* ── Delete publication ── */
-    $('.js-del-pub').on('click', function () {
-        const id = $(this).data('id');
-        Swal.fire({ icon: 'warning', title: 'Delete publication?', showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#dc2626' })
-            .then(r => {
-                if (!r.isConfirmed) return;
-                $.ajax({ url: "{{ url('publications') }}/" + id, method: 'POST', data: { _method: 'DELETE', _token: csrf }, headers: { 'Accept': 'application/json' },
-                    success: () => location.reload() });
-            });
+    /* ── Unlink publication (storage row survives in Storage) ── */
+    $(document).on('click', '.js-unlink-pub', function () {
+        const id = $(this).data('id'), site = $(this).data('site') || 'this publication';
+        Swal.fire({
+            icon: 'warning',
+            title: 'Unlink from campaign?',
+            text: site + ' stays in Storage — it is only removed from this campaign.',
+            showCancelButton: true, confirmButtonText: 'Unlink', confirmButtonColor: '#dc2626'
+        }).then(r => {
+            if (!r.isConfirmed) return;
+            $.ajax({ url: "{{ url('publications') }}/" + id, method: 'POST', data: { _method: 'DELETE', _token: csrf }, headers: { 'Accept': 'application/json' },
+                success: () => location.reload() });
+        });
+    });
+
+    /* ── Link-existing modal ── */
+    const linkModal = $('#linkModal');
+    function initLinkSelect() {
+        $('#linkSelect').select2({
+            dropdownParent: linkModal,
+            width: '100%',
+            placeholder: 'Type to search Storage…',
+            multiple: true,
+            ajax: {
+                url: "{{ url('campaigns') }}/" + CAMPAIGN_ID + "/storage-search",
+                dataType: 'json',
+                delay: 250,
+                data: p => ({ q: p.term, include_assigned: $('#linkIncludeAssigned').is(':checked') ? 1 : 0 }),
+                processResults: data => ({ results: data.results })
+            },
+            templateResult: r => {
+                if (!r.id) return r.text;
+                const parts = [
+                    '<div class="text-sm font-medium">' + $('<i/>').text(r.domain || 'no domain').html()
+                        + ' <span class="text-gray-400 font-normal">#' + r.id + '</span></div>',
+                    '<div class="text-xs text-gray-500">' + $('<i/>').text(r.status || '—').html()
+                        + ' · €' + (r.price || 0)
+                        + (r.pub_date ? ' · ' + r.pub_date : '')
+                        + (r.campaign ? ' · <span class="text-amber-600">in ' + $('<i/>').text(r.campaign).html() + '</span>' : '')
+                        + '</div>'
+                ];
+                return $('<div>' + parts.join('') + '</div>');
+            }
+        });
+    }
+    initLinkSelect();
+    $('#linkIncludeAssigned').on('change', function () {
+        $('#linkSelect').empty().val(null).trigger('change');   // re-query with the new scope
+    });
+
+    $('#btnLinkPub').on('click', function () {
+        $('#linkErrors').addClass('hidden').empty();
+        $('#linkSelect').empty().val(null).trigger('change');
+        linkModal.removeClass('hidden').addClass('flex');
+    });
+    $('.js-close-link').on('click', () => linkModal.addClass('hidden').removeClass('flex'));
+    linkModal.on('click', e => { if (e.target === linkModal[0]) linkModal.addClass('hidden').removeClass('flex'); });
+
+    $('#linkSave').on('click', function () {
+        const ids = $('#linkSelect').val() || [];
+        if (!ids.length) {
+            $('#linkErrors').text('Select at least one Storage entry.').removeClass('hidden');
+            return;
+        }
+        $.ajax({
+            url: "{{ url('campaigns') }}/" + CAMPAIGN_ID + "/link-publications",
+            method: 'POST', data: { ids: ids, _token: csrf }, headers: { 'Accept': 'application/json' },
+            success: () => location.reload(),
+            error: function (xhr) {
+                const errs = xhr.responseJSON?.errors ?? {};
+                $('#linkErrors').html(Object.values(errs).flat().join('<br>') || 'An error occurred.').removeClass('hidden');
+            }
+        });
     });
 
     /* ── Inline publication field edit ── */
@@ -451,18 +581,20 @@ $(function () {
         input.on('blur', () => commit(true));
     });
 
-    /* ── Inline publication status ── */
+    /* ── Inline publication status (unified slug list) ── */
     const menu = $('#pubStatusMenu');
     let pubTargetId = null;
     (function build() {
         let h = '';
-        $.each(PUB_STATUSES, function (group, list) {
+        $.each(PUB_STATUSES, function (group, items) {
             h += '<div class="px-3 pt-2 pb-1 text-[9px] uppercase tracking-wider text-gray-400 font-bold">' + group + '</div>';
-            list.forEach(s => { h += '<div class="js-pub-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer" data-status="' + s.replace(/"/g, '&quot;') + '">' + s + '</div>'; });
+            $.each(items, function (slug, label) {
+                h += '<div class="js-pub-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer" data-status="' + slug + '">' + label + '</div>';
+            });
         });
         menu.html(h);
     })();
-    $('.js-pub-status').on('click', function (e) {
+    $(document).on('click', '.js-pub-status', function (e) {
         e.stopPropagation();
         pubTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
@@ -543,7 +675,7 @@ $(function () {
     }
     $(document).on('click', '.js-pub-comments', function () {
         pubCommentsId = $(this).data('id');
-        $('#pubCommentsTitle').text('Comments — ' + $(this).data('site'));
+        $('#pubCommentsTitle').text('Comments — ' + ($(this).data('site') || '#' + pubCommentsId));
         $('#pubCommentBody').val('');
         $('#pubCommentsList').html('<p class="text-sm text-gray-400 py-2">Loading…</p>');
         pubCommentsModal.removeClass('hidden').addClass('flex');

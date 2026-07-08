@@ -76,7 +76,10 @@ class CampaignController extends Controller
             'company',
             'contact',
             'responsibleUser',
-            'publications' => fn ($q) => $q->withCount('comments')->orderBy('status_group')->orderBy('id'),
+            // publications = linked storage rows (Phase 3)
+            'publications' => fn ($q) => $q->with('site:id,domain_name')
+                ->withCount(['publicationComments as comments_count'])
+                ->orderBy('id'),
             'comments.user:id,name',
         ]);
 
@@ -101,9 +104,15 @@ class CampaignController extends Controller
 
     public function update(Request $request, Campaign $campaign)
     {
-        $data = $this->validated($request);
+        $data = $this->validated($request, $campaign);
 
         $campaign->update($data);
+
+        // Cascade a code rename to the mirrored campaign_code on linked storage rows
+        if ($campaign->wasChanged('code')) {
+            \App\Models\Storage::where('lb_campaign_id', $campaign->id)
+                ->update(['campaign_code' => $campaign->code]);
+        }
 
         if ($request->expectsJson()) {
             return response()->json(['status' => 'success', 'id' => $campaign->id]);
@@ -156,11 +165,11 @@ class CampaignController extends Controller
     }
 
     /*======================================================================
-    |  DESTROY – soft delete (also soft-deletes publications)
+    |  DESTROY – soft delete. Linked storage rows are accounting data and
+    |  are left untouched (they keep their code; the campaign page is gone).
     ======================================================================*/
     public function destroy(Campaign $campaign)
     {
-        $campaign->publications()->delete();
         $campaign->delete();
 
         if (request()->expectsJson()) {
@@ -188,10 +197,13 @@ class CampaignController extends Controller
     /*======================================================================
     |  Helpers
     ======================================================================*/
-    private function validated(Request $request): array
+    private function validated(Request $request, ?Campaign $campaign = null): array
     {
         $data = $request->validate([
-            'code'                 => 'required|string|max:100',
+            'code'                 => [
+                'required', 'string', 'max:100',
+                Rule::unique('lb_campaigns', 'code')->ignore($campaign?->id),
+            ],
             'company_id'           => 'nullable|exists:companies,id',
             'contact_id'           => 'nullable|exists:clients,id',
             'responsible_user_id'  => 'nullable|exists:users,id',
