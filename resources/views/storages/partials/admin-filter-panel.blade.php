@@ -105,8 +105,13 @@
     </div>
 
     <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Campaign Code</label>
-        <input type="text" id="filterCampaignCode" placeholder="code" class="fi">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Campaign</label>
+        <select id="filterCampaignId" class="fi">
+            <option value="">— Any —</option>
+            @foreach($campaigns as $camp)
+                <option value="{{ $camp->id }}">{{ $camp->code }}</option>
+            @endforeach
+        </select>
     </div>
 
     <div>

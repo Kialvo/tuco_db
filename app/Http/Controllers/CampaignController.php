@@ -50,7 +50,7 @@ class CampaignController extends Controller
 
         return datatables()->eloquent($q)
             ->addColumn('code_cell', fn (Campaign $c) => $this->codeCell($c))
-            ->addColumn('service_badge', fn (Campaign $c) => $this->serviceBadge($c->service))
+            ->addColumn('service_badge', fn (Campaign $c) => $this->serviceBadge($c))
             ->addColumn('status_badge', fn (Campaign $c) => $this->statusBadge($c))
             ->addColumn('deal', fn (Campaign $c) => $this->editableCell($c->id, 'deal_value', 'money', (string) (float) $c->deal_value, '€' . number_format((float) $c->deal_value, 0)))
             ->addColumn('target', fn (Campaign $c) => $this->targetCell($c))
@@ -241,6 +241,7 @@ class CampaignController extends Controller
             'deal_value'           => 'nullable|numeric|min:0',
             'target_value'         => 'nullable|numeric|min:0',
             'responsible_user_id'  => 'nullable|exists:users,id',
+            'service'              => ['nullable', Rule::in(config('linkbuilding.services'))],
         ];
 
         $field = (string) $request->input('field');
@@ -264,13 +265,19 @@ class CampaignController extends Controller
         return '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ' . $cls . ' ' . $extra . '">' . e($text) . '</span>';
     }
 
-    private function serviceBadge(?string $service): string
+    private function serviceBadge(Campaign $c): string
     {
-        if (! $service) {
-            return '<span class="text-gray-300">—</span>';
-        }
-        $tone = config('linkbuilding.service_tones')[$service] ?? 'gray';
-        return $this->badge($service, $tone);
+        $service = $c->service;
+        $tone    = config('linkbuilding.service_tones')[$service] ?? 'gray';
+        $cls     = $service
+            ? (config('linkbuilding.tone_classes')[$tone] ?? 'bg-gray-100 text-gray-700')
+            : 'bg-gray-50 text-gray-400';
+
+        return '<button type="button" class="js-service-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ' . $cls . '" '
+            . 'data-id="' . $c->id . '" data-service="' . e($service ?? '') . '">'
+            . e($service ?: '—')
+            . '<svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>'
+            . '</button>';
     }
 
     private function statusBadge(Campaign $c): string

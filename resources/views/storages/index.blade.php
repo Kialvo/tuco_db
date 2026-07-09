@@ -188,6 +188,7 @@
 
                     <th class="px-4 py-2">ID</th>
                     <th class="px-4 py-2">Domain</th>
+                    <th class="px-4 py-2">Campaign Code</th>
                     <th class="px-4 py-2 min-w-[160px]">Status</th>
                     <th class="px-4 py-2">LB</th>
                     <th class="px-4 py-2">Contact</th>
@@ -211,7 +212,6 @@
                     <th class="px-4 py-2">Target Domain</th>
                     <th class="px-4 py-2">Anchor Text</th>
                     <th class="px-4 py-2">Target URL</th>
-                    <th class="px-4 py-2">Campaign Code</th>
                     <th class="px-4 py-2">Sent to Publisher</th>
                     <th class="px-4 py-2">Publication Date</th>
                     <th class="px-4 py-2">Expiration Date</th>
@@ -241,30 +241,30 @@
                     <td></td>                                            {{--  0 checkbox --}}
                     <td class="text-right text-[10px] uppercase tracking-wider font-semibold text-gray-400">Total</td>  {{--  1 ID column repurposed as label --}}
                     <td></td>                                            {{--  2 Domain --}}
-                    <td></td>                                            {{--  3 Status --}}
-                    <td></td>                                            {{--  4 LB --}}
-                    <td></td>                                            {{--  5 Client --}}
-                    <td></td>                                            {{--  6 Company --}}
-                    <td></td>                                            {{--  7 Publisher --}}
-                    <td></td>                                            {{--  8 Copywriter --}}
-                    <td data-col="copy_nr"            data-index="9"></td>  {{--  9 Copywriter Amount € --}}
-                    <td></td>                                            {{-- 10 Copywriter Comm. Date --}}
-                    <td></td>                                            {{-- 11 Copywriter Subm. Date --}}
-                    <td data-col="copywriter_period"  data-index="12"></td> {{-- 12 Copywriter Period --}}
-                    <td></td>                                            {{-- 13 Language --}}
-                    <td></td>                                            {{-- 14 Country --}}
-                    <td></td>                                            {{-- 15 Publisher Currency --}}
-                    <td data-col="publisher_amount"   data-index="16"></td> {{-- 16 Publisher Amount € --}}
-                    <td data-col="publisher"          data-index="17"></td> {{-- 17 Publisher Agreed € --}}
-                    <td data-col="total_cost"         data-index="18"></td> {{-- 18 Total Cost € --}}
-                    <td data-col="menford"            data-index="19"></td> {{-- 19 Menford € --}}
-                    <td data-col="client_copy"        data-index="20"></td> {{-- 20 Contact Copy € --}}
-                    <td data-col="total_revenues"     data-index="21"></td> {{-- 21 Total Revenues € --}}
-                    <td data-col="profit"             data-index="22"></td> {{-- 22 Profit € --}}
-                    <td></td>                                            {{-- 23 Target Domain --}}
-                    <td></td>                                            {{-- 24 Anchor Text --}}
-                    <td></td>                                            {{-- 25 Target URL --}}
-                    <td></td>                                            {{-- 26 Campaign Code --}}
+                    <td></td>                                            {{--  3 Campaign Code --}}
+                    <td></td>                                            {{--  4 Status --}}
+                    <td></td>                                            {{--  5 LB --}}
+                    <td></td>                                            {{--  6 Client --}}
+                    <td></td>                                            {{--  7 Company --}}
+                    <td></td>                                            {{--  8 Publisher --}}
+                    <td></td>                                            {{--  9 Copywriter --}}
+                    <td data-col="copy_nr"            data-index="10"></td>  {{-- 10 Copywriter Amount € --}}
+                    <td></td>                                            {{-- 11 Copywriter Comm. Date --}}
+                    <td></td>                                            {{-- 12 Copywriter Subm. Date --}}
+                    <td data-col="copywriter_period"  data-index="13"></td> {{-- 13 Copywriter Period --}}
+                    <td></td>                                            {{-- 14 Language --}}
+                    <td></td>                                            {{-- 15 Country --}}
+                    <td></td>                                            {{-- 16 Publisher Currency --}}
+                    <td data-col="publisher_amount"   data-index="17"></td> {{-- 17 Publisher Amount € --}}
+                    <td data-col="publisher"          data-index="18"></td> {{-- 18 Publisher Agreed € --}}
+                    <td data-col="total_cost"         data-index="19"></td> {{-- 19 Total Cost € --}}
+                    <td data-col="menford"            data-index="20"></td> {{-- 20 Menford € --}}
+                    <td data-col="client_copy"        data-index="21"></td> {{-- 21 Contact Copy € --}}
+                    <td data-col="total_revenues"     data-index="22"></td> {{-- 22 Total Revenues € --}}
+                    <td data-col="profit"             data-index="23"></td> {{-- 23 Profit € --}}
+                    <td></td>                                            {{-- 24 Target Domain --}}
+                    <td></td>                                            {{-- 25 Anchor Text --}}
+                    <td></td>                                            {{-- 26 Target URL --}}
                     <td></td>                                            {{-- 27 Sent to Publisher --}}
                     <td></td>                                            {{-- 28 Publication Date --}}
                     <td></td>                                            {{-- 29 Expiration Date --}}
@@ -391,7 +391,7 @@
         $(function(){
 
             /* Select2 */
-            $('#filterLanguage,#filterCountry,#filterClient,#filterContact,#filterCopy,#filterCategories')
+            $('#filterLanguage,#filterCountry,#filterClient,#filterContact,#filterCopy,#filterCategories,#filterCampaignId')
                 .select2({width:'resolve',dropdownAutoWidth:true,placeholder:'Select',allowClear:true,
                     containerCssClass:'text-xs',dropdownCssClass:'text-xs'});
 
@@ -441,7 +441,7 @@
 
 
                         d.campaign         =$('#filterCampaign').val();
-                        d.campaign_code    =$('#filterCampaignCode').val();
+                        d.lb_campaign_id   =$('#filterCampaignId').val();
                         d.invoice_menford_nr=$('#filterInvoiceMenfordNr').val();
                         d.bill_publisher_name=$('#filterBillPublisherName').val();
                         d.target_url       =$('#filterTargetUrl').val();
@@ -458,6 +458,14 @@
                     },
                     {data:'id',name:'id'},
                     {data:'website_domain',name:'site.domain_name'},
+                    {data:'campaign_code',name:'campaign_code',
+                        render:(d,t,r)=>{
+                            if (r.lb_campaign_id) {
+                                const code = (r.lb_campaign && r.lb_campaign.code) ? r.lb_campaign.code : d;
+                                return `<a href="{{ url('campaigns') }}/${r.lb_campaign_id}" class="text-green-600 font-medium underline">${code ?? ''}</a>`;
+                            }
+                            return d ? `<span class="text-gray-400" title="Legacy code (not linked to a campaign)">${d}</span>` : '';
+                        }},
                     {data:'status',name:'status', render: renderStatusPill},
                     {data:'LB',name:'LB'},
                     {data:'client_name',name:'client.first_name',
@@ -511,14 +519,6 @@
                     {data:'anchor_text',name:'anchor_text'},
                     {data:'target_url',name:'target_url',orderable:false,searchable:false,
                         render:d=>d?`<a href="#" class="url-link underline text-blue-600" data-url="${d}">link</a>`:''},
-                    {data:'campaign_code',name:'campaign_code',
-                        render:(d,t,r)=>{
-                            if (r.lb_campaign_id) {
-                                const code = (r.lb_campaign && r.lb_campaign.code) ? r.lb_campaign.code : d;
-                                return `<a href="{{ url('campaigns') }}/${r.lb_campaign_id}" class="text-green-600 font-medium underline">${code ?? ''}</a>`;
-                            }
-                            return d ? `<span class="text-gray-400" title="Legacy code (not linked to a campaign)">${d}</span>` : '';
-                        }},
                     {data:'article_sent_to_publisher',name:'article_sent_to_publisher',render:dt},
                     {data:'publication_date',name:'publication_date',render:dt},
                     {data:'expiration_date',name:'expiration_date',render:dt},
@@ -641,7 +641,7 @@
 // NEW
                     website_domain    : $('#filterWebsiteDomain').val(),
                     campaign          : $('#filterCampaign').val(),
-                    campaign_code     : $('#filterCampaignCode').val(),
+                    lb_campaign_id    : $('#filterCampaignId').val(),
                     invoice_menford_nr: $('#filterInvoiceMenfordNr').val(),
                     bill_publisher_name:$('#filterBillPublisherName').val(),
                     target_url        : $('#filterTargetUrl').val(),
@@ -813,7 +813,7 @@
                     company         :$('#filterCompany').val(),
                     website_domain  :$('#filterWebsiteDomain').val(),
                     campaign        :$('#filterCampaign').val(),
-                    campaign_code   :$('#filterCampaignCode').val(),
+                    lb_campaign_id  :$('#filterCampaignId').val(),
                     invoice_menford_nr:$('#filterInvoiceMenfordNr').val(),
                     bill_publisher_name:$('#filterBillPublisherName').val(),
                     target_url      :$('#filterTargetUrl').val(),

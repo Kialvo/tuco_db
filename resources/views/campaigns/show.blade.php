@@ -61,7 +61,7 @@
                 <x-icon name="pencil" size="sm" /> Edit
             </button>
             <button id="btnLinkPub" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-green-700 bg-white border border-green-300 rounded-lg hover:bg-green-50">
-                <x-icon name="link" size="sm" /> Link Existing
+                <x-icon name="link" size="sm" /> Add Existing Publication
             </button>
             <button id="btnNewPub" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
                 <x-icon name="plus" size="sm" /> New Publication
@@ -240,7 +240,7 @@
 <div id="linkModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
     <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-xl relative">
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 class="text-lg font-bold text-gray-800">Link existing Storage publications</h2>
+            <h2 class="text-lg font-bold text-gray-800">Add Existing Publication</h2>
             <button type="button" class="js-close-link text-gray-400 hover:text-gray-600"><x-icon name="x" size="sm" /></button>
         </div>
         <div id="linkErrors" class="hidden mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm"></div>
@@ -254,7 +254,7 @@
         </div>
         <div class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
             <button type="button" class="js-close-link px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-            <button type="button" id="linkSave" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Link Selected</button>
+            <button type="button" id="linkSave" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Add Selected</button>
         </div>
     </div>
 </div>
@@ -271,7 +271,7 @@
             <input type="hidden" id="c_company_id_hidden">
             <input type="hidden" id="c_contact_id_hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label class="block text-xs font-semibold text-gray-600 mb-1">Campaign Code</label><input type="text" id="c_code" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></div>
+                <div><label class="block text-xs font-semibold text-gray-600 mb-1">Campaign Code <span class="text-red-500">*</span></label><input type="text" id="c_code" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Service</label>
                     <select id="c_service" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
@@ -280,7 +280,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">Status</label>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Status <span class="text-red-500">*</span></label>
                     <select id="c_status" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
                         @foreach($campaign::statusGroups() as $group => $statuses)
                             <optgroup label="{{ $group }}">@foreach($statuses as $st)<option value="{{ $st }}">{{ $st }}</option>@endforeach</optgroup>
@@ -437,13 +437,39 @@ $(function () {
         }).fail(() => alert('Unable to load publication.'));
     });
 
+    // Client-side required check: red border + message, no request sent.
+    function markInvalid($el, bad) {
+        ($el.hasClass('select2-hidden-accessible') ? $el.next('.select2').find('.select2-selection') : $el)
+            .toggleClass('border-red-500 ring-1 ring-red-300', bad);
+    }
+    function requireFields(pairs, $errorBox) {
+        const missing = [];
+        pairs.forEach(([$el, label]) => {
+            const bad = !(($el.val() || '').toString().trim());
+            markInvalid($el, bad);
+            if (bad) missing.push(label);
+        });
+        if (missing.length) {
+            $errorBox.html('Required: ' + missing.join(', ') + '.').removeClass('hidden');
+            return false;
+        }
+        $errorBox.addClass('hidden').empty();
+        return true;
+    }
+
     $('#p_save').on('click', function () {
         $('#pubErrors').addClass('hidden').empty();
+        if (!requireFields([
+            [$('#p_site'), 'Publisher / Website'],
+            [$('#p_status'), 'Status'],
+            [$('#p_price'), 'Price'],
+        ], $('#pubErrors'))) return;
+
         const id = $('#p_id').val();
         const siteVal = $('#p_site').val() || '';
         const payload = {
             status: $('#p_status').val(),
-            price: $('#p_price').val() || 0,
+            price: $('#p_price').val(),
             article_url: $('#p_article_url').val() || '',
             publication_date: $('#p_publication_date').val() || '',
             copywriter_commision_date: $('#p_copywriter_commision_date').val() || '',
@@ -634,6 +660,10 @@ $(function () {
 
     $('#c_save').on('click', function () {
         $('#campaignErrors').addClass('hidden').empty();
+        if (!requireFields([
+            [$('#c_code'), 'Campaign Code'],
+            [$('#c_status'), 'Status'],
+        ], $('#campaignErrors'))) return;
         const payload = {
             code: $('#c_code').val(),
             company_id: $('#c_company_id_hidden').val() || '',
