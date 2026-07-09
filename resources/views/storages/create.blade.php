@@ -27,7 +27,7 @@
 
                 {{-- Website --}}
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Domain</label>
+                    <label class="block text-gray-700 font-medium mb-1">Domain <span class="text-red-500">*</span></label>
                     <select name="website_id" id="websiteSelect"
                             class="w-full border border-gray-300 rounded px-2 py-1
                focus:ring-green-500 focus:border-green-500">
@@ -81,7 +81,7 @@
 
                 {{-- Status (unified 12-status list shared with Campaigns) --}}
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Status</label>
+                    <label class="block text-gray-700 font-medium mb-1">Status <span class="text-red-500">*</span></label>
                     <select name="status"
                             class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                         <option value="">-- None --</option>
@@ -216,7 +216,7 @@
                     'client_copy'       => 'Contact Copy €',
                 ] as $field => $label)
                     <div>
-                        <label class="block text-gray-700 font-medium mb-1">{{ $label }}</label>
+                        <label class="block text-gray-700 font-medium mb-1">{{ $label }} @if($field === 'menford')<span class="text-red-500">*</span>@endif</label>
                         <input type="number" step="0.01" name="{{ $field }}" value="{{ old($field) }}"
                                @if($field === 'copy_nr') placeholder="Price < 30€" @endif
                                class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
@@ -246,10 +246,10 @@
                     @error('target_url') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Campaign</label>
+                    <label class="block text-gray-700 font-medium mb-1">Campaign <span class="text-red-500">*</span></label>
                     <select name="lb_campaign_id" id="campaignSelect"
                             class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
-                        <option value="">-- No campaign --</option>
+                        <option value="">-- Select campaign --</option>
                         @foreach($campaigns as $camp)
                             <option value="{{ $camp->id }}" {{ old('lb_campaign_id') == $camp->id ? 'selected' : '' }}>{{ $camp->code }}</option>
                         @endforeach

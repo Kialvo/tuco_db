@@ -76,6 +76,9 @@ class StorageController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Link Building campaigns for the searchable Campaign filter (Phase 3.1)
+        $campaigns = Campaign::orderBy('code')->get(['id', 'code']);
+
         return view('storages.index', compact(
             'countries',
             'languages',
@@ -83,6 +86,7 @@ class StorageController extends Controller
             'contacts',
             'copies',
             'categories',
+            'campaigns',
         ));
     }
 
@@ -223,6 +227,9 @@ class StorageController extends Controller
             });
         }
         if ($request->filled('status'))             $query->where('status',             $request->status);
+
+        // Campaign filter (Phase 3.1: exact FK match from the searchable dropdown)
+        if ($request->filled('lb_campaign_id'))     $query->where('lb_campaign_id',     $request->lb_campaign_id);
 
         // LIKE-based text filters
         if ($request->filled('campaign'))           $query->where('campaign',           'like', '%'.$request->campaign.'%');            // Target Domain
@@ -575,6 +582,21 @@ class StorageController extends Controller
 
     public function store(Request $request)
     {
+        // Phase 3.1: creating a publication requires Domain, Status, Price
+        // (= Menford €, what total_revenues derives from) and a Campaign.
+        // CREATE only — updates of legacy rows stay unrestricted (validateForm).
+        $request->validate([
+            'website_id'     => 'required|integer|exists:websites,id',
+            'status'         => ['required', \Illuminate\Validation\Rule::in(\App\Support\PublicationStatus::slugs())],
+            'menford'        => 'required|numeric|min:0',
+            'lb_campaign_id' => 'required|integer|exists:lb_campaigns,id',
+        ], [
+            'website_id.required'     => 'The Domain field is required.',
+            'status.required'         => 'The Status field is required.',
+            'menford.required'        => 'The Menford € (price) field is required.',
+            'lb_campaign_id.required' => 'The Campaign field is required.',
+        ]);
+
         $validated = $this->validateForm($request);
 
         // Prevent duplicate storage rows by Article URL.
@@ -1136,6 +1158,9 @@ class StorageController extends Controller
 
 
         if ($request->filled('status'))        $query->where('status',        $request->status);
+
+        // Campaign filter (Phase 3.1: exact FK match from the searchable dropdown)
+        if ($request->filled('lb_campaign_id'))     $query->where('lb_campaign_id',     $request->lb_campaign_id);
 
         // LIKE filters
         if ($request->filled('campaign'))           $query->where('campaign',           'like', '%'.$request->campaign.'%');
