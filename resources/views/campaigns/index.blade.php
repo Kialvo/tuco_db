@@ -120,6 +120,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">Status <span class="text-red-500">*</span></label>
                         <select id="c_status" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
+                            <option value="" disabled>— select status —</option>
                             @foreach($statusGrp as $group => $statuses)
                                 <optgroup label="{{ $group }}">
                                     @foreach($statuses as $st)<option value="{{ $st }}">{{ $st }}</option>@endforeach
@@ -206,6 +207,7 @@
 
     {{-- floating dropdowns (populated by JS) --}}
     <div id="statusMenu" class="hidden fixed z-[60] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto min-w-[220px] text-sm"></div>
+    <div id="serviceMenu" class="hidden fixed z-[60] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto min-w-[220px] text-sm"></div>
     <div id="respMenu" class="hidden fixed z-[60] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto min-w-[200px] text-sm"></div>
 @endsection
 
@@ -219,6 +221,7 @@
 $(function () {
     const csrf = $('meta[name="csrf-token"]').attr('content');
     const CAMPAIGN_STATUSES = @json($statusGrp);
+    const SERVICES = @json($services);
     const TEAM = @json($users);
     let grouped = false;
 
@@ -490,8 +493,32 @@ $(function () {
         }).fail(() => alert('Unable to load campaign.'));
     });
 
+    // Client-side required check: red border + message, no request sent.
+    function markInvalid($el, bad) {
+        ($el.hasClass('select2-hidden-accessible') ? $el.next('.select2').find('.select2-selection') : $el)
+            .toggleClass('border-red-500 ring-1 ring-red-300', bad);
+    }
+    function requireFields(pairs, $errorBox) {
+        const missing = [];
+        pairs.forEach(([$el, label]) => {
+            const bad = !(($el.val() || '').toString().trim());
+            markInvalid($el, bad);
+            if (bad) missing.push(label);
+        });
+        if (missing.length) {
+            $errorBox.html('Required: ' + missing.join(', ') + '.').removeClass('hidden');
+            return false;
+        }
+        $errorBox.addClass('hidden').empty();
+        return true;
+    }
+
     $('#c_save').on('click', function () {
         $('#campaignErrors').addClass('hidden').empty();
+        if (!requireFields([
+            [$('#c_code'), 'Campaign Code'],
+            [$('#c_status'), 'Status'],
+        ], $('#campaignErrors'))) return;
         const payload = {
             code: $('#c_code').val(),
             company_id: $('#c_company_id').val() || '',
@@ -573,8 +600,35 @@ $(function () {
         });
     });
 
+    /* ─────────────── Inline service dropdown ─────────────── */
+    const serviceMenu = $('#serviceMenu');
+    let serviceTargetId = null;
+
+    (function buildServiceMenu() {
+        let h = '<div class="js-service-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-gray-400" data-service="">— None</div>';
+        SERVICES.forEach(s => {
+            h += '<div class="js-service-opt px-3 py-1.5 hover:bg-gray-50 cursor-pointer" data-service="' + s.replace(/"/g, '&quot;') + '">' + s + '</div>';
+        });
+        serviceMenu.html(h);
+    })();
+
+    $(document).on('click', '.js-service-badge', function (e) {
+        e.stopPropagation();
+        serviceTargetId = $(this).data('id');
+        const r = this.getBoundingClientRect();
+        positionMenu(serviceMenu, r);
+    });
+    $(document).on('click', '.js-service-opt', function () {
+        const service = $(this).data('service');
+        $.ajax({
+            url: "{{ url('campaigns') }}/" + serviceTargetId + "/inline", method: 'PUT',
+            data: { field: 'service', value: service || '' }, headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            success: () => { serviceMenu.addClass('hidden'); table.ajax.reload(null, false); }
+        });
+    });
+
     // Close floating menus on any outside click
-    $(document).on('click', function () { statusMenu.addClass('hidden'); respMenu.addClass('hidden'); });
+    $(document).on('click', function () { statusMenu.addClass('hidden'); serviceMenu.addClass('hidden'); respMenu.addClass('hidden'); });
 
     /* ─────────────── Comments ─────────────── */
     const commentsModal = $('#commentsModal');
