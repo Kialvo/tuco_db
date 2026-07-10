@@ -1,0 +1,14 @@
+{
+  "baseUrl": "http://localhost:8000",
+  "storageStatePath": ".readability-auth.json",
+  "themes": ["light"],
+  "urls": [
+    { "path": "/storages/stats", "label": "storages-stats" },
+    { "path": "/dashboard", "label": "dashboard" },
+    { "path": "/contacts", "label": "contacts" },
+    { "path": "/companies", "label": "companies" },
+    { "path": "/clients", "label": "clients" },
+    { "path": "/websites", "label": "websites" },
+    { "path": "/campaigns", "label": "campaigns" }
+  ]
+}
