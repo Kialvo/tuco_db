@@ -59,6 +59,16 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     Route::get('/dashboard', fn () => view('dashboard'))->name('dashboard');
 
     /*--------------------------------------------------------------
+    | Notifications bell (org-wide hub, scoped to source_app='tuco').
+    | Staff only — the controller 403s guests. NOTE for deploy: if the
+    | Apache proxy whitelists path prefixes, add `notifications`.
+    --------------------------------------------------------------*/
+    Route::get('notifications',          [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('notifications/read',   [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::delete('notifications/{id}',  [\App\Http\Controllers\NotificationController::class, 'destroy'])->whereNumber('id')->name('notifications.destroy');
+    Route::delete('notifications',       [\App\Http\Controllers\NotificationController::class, 'clearAll'])->name('notifications.clearAll');
+
+    /*--------------------------------------------------------------
 | IMPORT
 --------------------------------------------------------------*/
     Route::prefix('new-entries/import')->name('new_entries.import.')->group(function () {

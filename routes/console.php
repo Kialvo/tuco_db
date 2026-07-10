@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('dataforseo:sync')->monthly();
 Schedule::command('orders:advance-in-progress')->hourly();
+Schedule::command('lb:notify-due')->dailyAt('07:00');
