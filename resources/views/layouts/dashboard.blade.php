@@ -38,25 +38,39 @@
 
     @include('layouts.partials.sidebar')
 
-    @hasSection('filters')
-        {{-- Three-column: sidebar (already rendered) + sticky filter aside + main --}}
-        <aside class="w-[268px] bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden">
-            @yield('filters')
-        </aside>
-        <div class="flex-1 flex flex-col overflow-hidden">
-            @hasSection('pageHeader')
-                @yield('pageHeader')
+    <div class="flex-1 flex flex-col overflow-hidden">
+        {{-- Global topbar (staff only — renders nothing for guests) --}}
+        @include('layouts.partials.topbar')
+
+        <div class="flex-1 flex overflow-hidden">
+            @hasSection('filters')
+                {{-- Three-column: sidebar + sticky filter aside + main --}}
+                <aside class="w-[268px] bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden">
+                    @yield('filters')
+                </aside>
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    @hasSection('pageHeader')
+                        @yield('pageHeader')
+                    @endif
+                    <main class="flex-1 overflow-auto">
+                        @yield('content')
+                    </main>
+                </div>
+            @else
+                {{-- Two-column: sidebar + main (existing behaviour) --}}
+                <main class="flex-1 overflow-auto">
+                    @yield('content')
+                </main>
             @endif
-            <main class="flex-1 overflow-auto">
-                @yield('content')
-            </main>
         </div>
-    @else
-        {{-- Two-column: sidebar + main (existing behaviour) --}}
-        <main class="flex-1 overflow-auto">
-            @yield('content')
-        </main>
-    @endif
+    </div>
+
+    {{-- CRM-style conversation slide-over (staff only) --}}
+    @auth
+        @if(in_array(auth()->user()->role, ['admin', 'editor']))
+            @include('layouts.partials.conversation-pane')
+        @endif
+    @endauth
 
     {{-- Cart drawer for guest users --}}
     @auth

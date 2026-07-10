@@ -28,11 +28,11 @@ class CampaignController extends Controller
     {
         // NOTE: select() must come BEFORE withCount() — withCount appends its
         // count sub-selects, whereas a later select() would wipe them out.
+        // (conversation counts are fetched client-side from conversations/counts)
         $q = Campaign::query()
             ->leftJoin('companies', 'companies.id', '=', 'lb_campaigns.company_id')
             ->select('lb_campaigns.*', 'companies.name as company_name')
-            ->with(['contact:id,first_name,last_name', 'responsibleUser:id,name'])
-            ->withCount(['comments']);
+            ->with(['contact:id,first_name,last_name', 'responsibleUser:id,name']);
 
         // Filters
         if ($request->filled('company_id')) {
@@ -76,11 +76,9 @@ class CampaignController extends Controller
             'company',
             'contact',
             'responsibleUser',
-            // publications = linked storage rows (Phase 3)
-            'publications' => fn ($q) => $q->with('site:id,domain_name')
-                ->withCount(['publicationComments as comments_count'])
-                ->orderBy('id'),
-            'comments.user:id,name',
+            // publications = linked storage rows (Phase 3); conversation
+            // counts are decorated client-side (conversations/counts)
+            'publications' => fn ($q) => $q->with('site:id,domain_name')->orderBy('id'),
         ]);
 
         return view('campaigns.show', ['campaign' => $campaign]);
@@ -374,14 +372,10 @@ class CampaignController extends Controller
 
     private function commentsBtn(Campaign $c): string
     {
-        $cnt   = (int) $c->comments_count;
-        $badge = $cnt
-            ? '<span class="ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-blue-100 text-blue-700 text-[9px] font-bold">' . $cnt . '</span>'
-            : '';
-
+        // Counts (blue = messages, red = unread) are decorated client-side
+        // from conversations/counts + the notifications entity map.
         return '<button type="button" class="js-comments-btn inline-flex items-center gap-1 text-gray-400 hover:text-blue-600 text-xs" data-id="' . $c->id . '" data-code="' . e($c->code) . '">'
             . '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>'
-            . $badge
             . '</button>';
     }
 

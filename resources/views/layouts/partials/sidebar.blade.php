@@ -212,10 +212,7 @@
                 </div>
             </div>
         @endif
-        @if($user && !$isGuest)
-            {{-- Org-wide notification bell — internal staff only, never guests --}}
-            @include('layouts.partials.notification-bell')
-        @endif
+        {{-- Notification bell moved to the global topbar (layouts/partials/topbar.blade.php) --}}
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit"
