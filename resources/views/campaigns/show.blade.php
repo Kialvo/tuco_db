@@ -349,6 +349,7 @@ $(function () {
     const csrf = $('meta[name="csrf-token"]').attr('content');
     const CAMPAIGN_ID = {{ $campaign->id }};
     const PUB_STATUSES = @json(PublicationStatus::grouped()); {{-- group label => {slug: label} --}}
+    const STAFF = @json(\App\Models\User::whereIn('role', ['admin', 'editor'])->orderBy('name')->get(['id', 'name']));
 
     // Position a fixed dropdown near a trigger, flipping up if it would overflow the viewport bottom.
     function positionMenu($menu, rect) {
@@ -700,17 +701,52 @@ $(function () {
     function renderPubComments(list) {
         if (!list.length) { $('#pubCommentsList').html('<p class="text-sm text-gray-400 py-2">No comments yet.</p>'); return; }
         $('#pubCommentsList').html(list.map(c =>
-            '<div class="py-2.5"><div class="text-[10px] text-gray-400 mb-0.5"><strong class="text-gray-600">' + $('<i/>').text(c.author).html() + '</strong> · ' + (c.date || '') + '</div><div class="text-sm text-gray-800">' + $('<i/>').text(c.body).html() + '</div></div>'
+            '<div class="py-2.5"><div class="text-[10px] text-gray-400 mb-0.5"><strong class="text-gray-600">' + $('<i/>').text(c.author).html() + '</strong> · ' + (c.date || '') + '</div><div class="text-sm text-gray-800">' + tucoMentions.render(c.body) + '</div></div>'
         ).join(''));
     }
-    $(document).on('click', '.js-pub-comments', function () {
-        pubCommentsId = $(this).data('id');
-        $('#pubCommentsTitle').text('Comments — ' + ($(this).data('site') || '#' + pubCommentsId));
+
+    // Type @ in the composer to tag a teammate (stored as @[Name:id] tokens).
+    tucoMentions.attach($('#pubCommentBody'), STAFF);
+
+    /* ── per-thread unread bubbles on the publication 💬 buttons ── */
+    function refreshPubBubbles() {
+        $.getJSON("{{ route('notifications.index') }}?unread=1&entityType=publication", d => {
+            const map = d.unread || {};
+            $('.js-pub-comments').each(function () {
+                const id = String($(this).data('id'));
+                $(this).find('.notif-bubble').remove();
+                if (map[id]) {
+                    $(this).append('<span class="notif-bubble ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold">' + map[id] + '</span>');
+                }
+            });
+        });
+    }
+    refreshPubBubbles();
+
+    function openPubThread(id, site) {
+        pubCommentsId = id;
+        $('#pubCommentsTitle').text('Comments — ' + (site || '#' + id));
         $('#pubCommentBody').val('');
         $('#pubCommentsList').html('<p class="text-sm text-gray-400 py-2">Loading…</p>');
         pubCommentsModal.removeClass('hidden').addClass('flex');
-        $.get("{{ url('publications') }}/" + pubCommentsId + "/comments", res => renderPubComments(res.data || []));
+        $.get("{{ url('publications') }}/" + id + "/comments", res => renderPubComments(res.data || []));
+        // Opening the thread reads all its notifications: bubble + bell drop together.
+        $.ajax({ url: "{{ route('notifications.read') }}", method: 'PATCH',
+            data: { entity_type: 'publication', entity_id: String(id) },
+            success: () => { refreshPubBubbles(); $(document).trigger('tuco:notif-refresh'); } });
+    }
+
+    $(document).on('click', '.js-pub-comments', function () {
+        openPubThread($(this).data('id'), $(this).data('site'));
     });
+
+    // Deep link from a notification: ?pubthread=<storageId> auto-opens the thread.
+    (function () {
+        const pubId = new URLSearchParams(window.location.search).get('pubthread');
+        if (!pubId) return;
+        const $btn = $('.js-pub-comments[data-id="' + pubId + '"]');
+        openPubThread(pubId, $btn.data('site'));
+    })();
     $('#pubCommentAdd').on('click', function () {
         const body = $('#pubCommentBody').val().trim();
         if (!body) return;

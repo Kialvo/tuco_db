@@ -35,6 +35,19 @@ class NotificationController extends Controller
     public function index(Request $request)
     {
         if ($request->query('unread') === '1') {
+            // ?unread=1&entityType=campaign → per-entity unread map for the
+            // 💬 bubbles (mirrors the CRM's getUnreadByEntityType).
+            if ($entityType = $request->query('entityType')) {
+                $map = $this->scoped($request)->unread()
+                    ->where('entity_type', $entityType)
+                    ->whereNotNull('entity_id')
+                    ->selectRaw('entity_id, COUNT(*) as cnt')
+                    ->groupBy('entity_id')
+                    ->pluck('cnt', 'entity_id');
+
+                return response()->json(['unread' => $map]);
+            }
+
             return response()->json(['count' => $this->scoped($request)->unread()->count()]);
         }
 
@@ -64,8 +77,10 @@ class NotificationController extends Controller
     public function markRead(Request $request)
     {
         $data = $request->validate([
-            'id'  => 'nullable|integer',
-            'all' => 'nullable|boolean',
+            'id'          => 'nullable|integer',
+            'all'         => 'nullable|boolean',
+            'entity_type' => 'nullable|string|max:30',
+            'entity_id'   => 'nullable|string|max:255',
         ]);
 
         $query = $this->scoped($request)->unread();
@@ -74,8 +89,13 @@ class NotificationController extends Controller
             $query->update(['read_at' => now()]);
         } elseif (! empty($data['id'])) {
             $query->where('id', $data['id'])->update(['read_at' => now()]);
+        } elseif (! empty($data['entity_type']) && ! empty($data['entity_id'])) {
+            // Whole-thread read (opening a 💬 modal) — CRM's markReadByEntity.
+            $query->where('entity_type', $data['entity_type'])
+                ->where('entity_id', $data['entity_id'])
+                ->update(['read_at' => now()]);
         } else {
-            return response()->json(['error' => 'Pass id or all'], 400);
+            return response()->json(['error' => 'Pass id, all, or entity_type+entity_id'], 400);
         }
 
         return response()->json(['status' => 'success']);

@@ -643,19 +643,54 @@ $(function () {
         $('#commentsList').html(list.map(c =>
             '<div class="py-2.5">'
             + '<div class="text-[10px] text-gray-400 mb-0.5"><strong class="text-gray-600">' + $('<i/>').text(c.author).html() + '</strong> · ' + (c.date || '') + '</div>'
-            + '<div class="text-sm text-gray-800">' + $('<i/>').text(c.body).html() + '</div>'
+            + '<div class="text-sm text-gray-800">' + tucoMentions.render(c.body) + '</div>'
             + '</div>'
         ).join(''));
     }
 
-    $(document).on('click', '.js-comments-btn', function () {
-        commentsCampaignId = $(this).data('id');
-        $('#commentsTitle').text('Comments — ' + $(this).data('code'));
+    // Type @ in the composer to tag a teammate (stored as @[Name:id] tokens).
+    tucoMentions.attach($('#commentBody'), TEAM);
+
+    /* ── per-thread unread bubbles on the 💬 buttons ── */
+    function refreshThreadBubbles() {
+        $.getJSON("{{ route('notifications.index') }}?unread=1&entityType=campaign", d => {
+            const map = d.unread || {};
+            $('.js-comments-btn').each(function () {
+                const id = String($(this).data('id'));
+                $(this).find('.notif-bubble').remove();
+                if (map[id]) {
+                    $(this).append('<span class="notif-bubble ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold">' + map[id] + '</span>');
+                }
+            });
+        });
+    }
+    table.on('draw', refreshThreadBubbles);
+
+    function openThread(id, code) {
+        commentsCampaignId = id;
+        $('#commentsTitle').text('Comments — ' + (code || ('#' + id)));
         $('#commentBody').val('');
         $('#commentsList').html('<p class="text-sm text-gray-400 py-2">Loading…</p>');
         commentsModal.removeClass('hidden').addClass('flex');
-        $.get("{{ url('campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
+        $.get("{{ url('campaigns') }}/" + id + "/comments", res => renderComments(res.data || []));
+        // Opening the thread reads all its notifications: bubble + bell drop together.
+        $.ajax({ url: "{{ route('notifications.read') }}", method: 'PATCH',
+            data: { entity_type: 'campaign', entity_id: String(id) },
+            success: () => { refreshThreadBubbles(); $(document).trigger('tuco:notif-refresh'); } });
+    }
+
+    $(document).on('click', '.js-comments-btn', function () {
+        openThread($(this).data('id'), $(this).data('code'));
     });
+
+    // Deep link from a notification: /campaigns?thread=<id> auto-opens the modal.
+    (function () {
+        const threadId = new URLSearchParams(window.location.search).get('thread');
+        if (!threadId) return;
+        $.get("{{ url('campaigns') }}/" + threadId + "/edit-ajax")
+            .done(res => openThread(threadId, res.data?.code))
+            .fail(() => openThread(threadId, null));
+    })();
 
     $('#commentAdd').on('click', function () {
         const body = $('#commentBody').val().trim();

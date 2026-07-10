@@ -54,16 +54,39 @@ class PublicationCommentController extends Controller
         $author   = $request->user();
         $campaign = $storage->lbCampaign;
         if ($campaign) {
-            $participantIds = $storage->publicationComments()->whereNot('user_id', $author->id)->distinct()->pluck('user_id');
+            // Deep link: the campaign page auto-opens this publication's thread modal.
+            $link  = route('crm.campaigns.show', $campaign->id) . '?pubthread=' . $storage->id;
+            $label = trim(($campaign->code ?? '') . ' — ' . ($storage->publisher_domain ?? '#' . $storage->id), ' —');
+
+            // 1) @mentions → "mentioned you" (staff only, never the author)
+            $mentioned = User::whereIn('id', \App\Support\Mentions::extractUserIds($data['body']))
+                ->whereIn('role', ['admin', 'editor'])
+                ->get();
             NotificationHub::notify([
-                'type'           => 'comment',
-                'recipients'     => User::whereIn('id', $participantIds->push($campaign->responsible_user_id)->filter()->unique())->get(),
+                'type'           => 'mention',
+                'recipients'     => $mentioned,
                 'exclude'        => $author,
                 'entity_type'    => 'publication',
                 'entity_id'      => (string) $storage->id,
-                'entity_label'   => trim(($campaign->code ?? '') . ' — ' . ($storage->publisher_domain ?? '#' . $storage->id), ' —'),
+                'entity_label'   => $label,
+                'body'           => 'mentioned you on a publication',
+                'link'           => $link,
+                'from_user_name' => $author->name,
+            ]);
+
+            // 2) Responsible + participants — skipping anyone already mentioned.
+            $participantIds = $storage->publicationComments()->whereNot('user_id', $author->id)->distinct()->pluck('user_id');
+            NotificationHub::notify([
+                'type'           => 'comment',
+                'recipients'     => User::whereIn('id', $participantIds->push($campaign->responsible_user_id)->filter()->unique())
+                    ->whereNotIn('id', $mentioned->pluck('id'))
+                    ->get(),
+                'exclude'        => $author,
+                'entity_type'    => 'publication',
+                'entity_id'      => (string) $storage->id,
+                'entity_label'   => $label,
                 'body'           => 'commented on a publication',
-                'link'           => route('crm.campaigns.show', $campaign->id),
+                'link'           => $link,
                 'from_user_name' => $author->name,
             ]);
         }

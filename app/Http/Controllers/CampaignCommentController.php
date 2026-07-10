@@ -46,18 +46,39 @@ class CampaignCommentController extends Controller
 
         $comment->load('user:id,name');
 
-        // Notify the responsible user + prior thread participants (never the author).
+        // Deep link: the dashboard auto-opens this campaign's thread modal.
         $author = $request->user();
+        $link   = route('crm.campaigns.index') . '?thread=' . $campaign->id;
+
+        // 1) @mentions → "mentioned you" (staff only, never the author)
+        $mentioned = User::whereIn('id', \App\Support\Mentions::extractUserIds($data['body']))
+            ->whereIn('role', ['admin', 'editor'])
+            ->get();
+        NotificationHub::notify([
+            'type'           => 'mention',
+            'recipients'     => $mentioned,
+            'exclude'        => $author,
+            'entity_type'    => 'campaign',
+            'entity_id'      => (string) $campaign->id,
+            'entity_label'   => $campaign->code,
+            'body'           => 'mentioned you on ' . $campaign->code,
+            'link'           => $link,
+            'from_user_name' => $author->name,
+        ]);
+
+        // 2) Responsible + prior thread participants — skipping anyone already mentioned.
         $participantIds = $campaign->comments()->whereNot('user_id', $author->id)->distinct()->pluck('user_id');
         NotificationHub::notify([
             'type'           => 'comment',
-            'recipients'     => User::whereIn('id', $participantIds->push($campaign->responsible_user_id)->filter()->unique())->get(),
+            'recipients'     => User::whereIn('id', $participantIds->push($campaign->responsible_user_id)->filter()->unique())
+                ->whereNotIn('id', $mentioned->pluck('id'))
+                ->get(),
             'exclude'        => $author,
             'entity_type'    => 'campaign',
             'entity_id'      => (string) $campaign->id,
             'entity_label'   => $campaign->code,
             'body'           => 'commented on ' . $campaign->code,
-            'link'           => route('crm.campaigns.show', $campaign->id),
+            'link'           => $link,
             'from_user_name' => $author->name,
         ]);
 
