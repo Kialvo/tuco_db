@@ -10,7 +10,7 @@
         </div>
     </div>
 
-    <div class="px-6 py-6 pb-10 bg-gray-50 min-h-screen">
+    <div class="px-6 py-6 pb-10 bg-gray-50 min-h-full">
         {{-- ── Input card ── --}}
         <div class="bg-white border border-gray-200 rounded-xl shadow-card p-6 mb-6 max-w-2xl">
             <p class="text-sm text-gray-500 mb-4">

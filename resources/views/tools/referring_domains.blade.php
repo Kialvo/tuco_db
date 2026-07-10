@@ -10,7 +10,7 @@
         </div>
     </div>
 
-    <div class="px-6 py-6 pb-10 bg-gray-50 min-h-screen">
+    <div class="px-6 py-6 pb-10 bg-gray-50 min-h-full">
 
         {{-- ── Search bar ── --}}
         <div class="bg-white border border-gray-200 rounded-xl shadow-card p-6 mb-6 max-w-2xl">

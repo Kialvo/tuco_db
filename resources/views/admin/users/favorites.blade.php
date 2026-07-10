@@ -63,7 +63,7 @@
         </a>
     </div>
 
-    <div class="px-6 py-6 bg-gray-50 min-h-screen text-sm">
+    <div class="px-6 py-6 bg-gray-50 min-h-full text-sm">
 
         <div id="favoritesTableSearchWrap" class="table-search-wrap mb-2">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm

@@ -12,7 +12,7 @@
 @endphp
 
 @section('content')
-<div class="px-6 py-6 bg-gray-50 min-h-screen">
+<div class="px-6 py-6 bg-gray-50 min-h-full">
     <a href="{{ route('clients.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-600 mb-4">
         <x-icon name="arrow-left" size="sm" /> Back to Contacts
     </a>

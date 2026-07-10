@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="px-6 py-6 bg-gray-50 min-h-full">
         <!-- ───── DataTable wrapper ───── -->
         <div class="bg-white border border-gray-200 rounded-xl shadow-card p-4 max-w-5xl mx-auto">
             <table id="clientsTable" class="text-sm text-gray-700" style="width:100%; table-layout:auto;">

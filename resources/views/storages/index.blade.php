@@ -92,7 +92,7 @@
         ];
     @endphp
 
-    <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
+    <div class="px-6 py-4 bg-gray-50 min-h-full text-xs">
         {{-- Hidden no-op placeholder so legacy JS that targets #toggleFiltersBtn doesn't error --}}
         <button id="toggleFiltersBtn" class="hidden" aria-hidden="true"></button>
         <div class="relative flex flex-col gap-3 mb-4">
