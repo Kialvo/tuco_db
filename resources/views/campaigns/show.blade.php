@@ -346,10 +346,16 @@
 @push('scripts')
 <script>
 $(function () {
+    @php
+        // NOTE: computed here, NOT inline in @json(...) — the @json directive
+        // splits its argument on commas (flags/depth params) and mangles
+        // multi-comma expressions into invalid PHP.
+        $staffUsers = \App\Models\User::whereIn('role', ['admin', 'editor'])->orderBy('name')->get(['id', 'name']);
+    @endphp
     const csrf = $('meta[name="csrf-token"]').attr('content');
     const CAMPAIGN_ID = {{ $campaign->id }};
     const PUB_STATUSES = @json(PublicationStatus::grouped()); {{-- group label => {slug: label} --}}
-    const STAFF = @json(\App\Models\User::whereIn('role', ['admin', 'editor'])->orderBy('name')->get(['id', 'name']));
+    const STAFF = @json($staffUsers);
 
     // Position a fixed dropdown near a trigger, flipping up if it would overflow the viewport bottom.
     function positionMenu($menu, rect) {
