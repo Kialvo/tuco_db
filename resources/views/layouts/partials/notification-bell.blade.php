@@ -90,7 +90,18 @@ window.tucoMentions = (function () {
             else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pick(active); }
             else if (e.key === 'Escape') { e.stopPropagation(); close(); }
         });
-        $dd.on('mousedown', '.mention-opt', function (e) { e.preventDefault(); pick($(this).data('i')); });
+        // Selection happens on CLICK, not mousedown: picking on mousedown hid
+        // the dropdown instantly, so the browser's follow-up click event hit
+        // whatever sat underneath — often the modal backdrop, which closed
+        // the whole comments modal. mousedown only prevents the textarea blur;
+        // the click is swallowed (preventDefault + stopPropagation) so it can
+        // never reach backdrop/document close handlers.
+        $dd.on('mousedown', '.mention-opt', function (e) { e.preventDefault(); });
+        $dd.on('click', '.mention-opt', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            pick($(this).data('i'));
+        });
         $ta.on('blur', () => setTimeout(close, 150));
     }
 
