@@ -84,6 +84,28 @@ class Storage extends Model
             foreach ($ids as $id) {
                 Campaign::withTrashed()->find($id)?->recomputeProgress();
             }
+
+            // Notify the campaign responsible when a linked publication
+            // transitions TO Article Published (never the actor themself).
+            if ($s->lb_campaign_id
+                && $s->wasChanged('status')
+                && $s->status === 'article_published') {
+                $campaign    = Campaign::with('responsibleUser')->find($s->lb_campaign_id);
+                $responsible = $campaign?->responsibleUser;
+                if ($responsible) {
+                    \App\Services\NotificationHub::notify([
+                        'type'           => 'publication_published',
+                        'recipients'     => [$responsible],
+                        'exclude'        => auth()->user(),
+                        'entity_type'    => 'publication',
+                        'entity_id'      => (string) $s->id,
+                        'entity_label'   => trim($campaign->code . ' — ' . ($s->publisher_domain ?? '#' . $s->id)),
+                        'body'           => 'Publication went live (Article Published)',
+                        'link'           => route('crm.campaigns.show', $campaign->id),
+                        'from_user_name' => auth()->user()?->name,
+                    ]);
+                }
+            }
         });
 
         $recompute = function (Storage $s) {

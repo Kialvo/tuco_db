@@ -212,6 +212,10 @@
                 </div>
             </div>
         @endif
+        @if($user && !$isGuest)
+            {{-- Org-wide notification bell — internal staff only, never guests --}}
+            @include('layouts.partials.notification-bell')
+        @endif
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit"

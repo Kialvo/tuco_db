@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Campaign;
 use App\Models\CampaignComment;
+use App\Models\User;
+use App\Services\NotificationHub;
 use Illuminate\Http\Request;
 
 class CampaignCommentController extends Controller
@@ -43,6 +45,21 @@ class CampaignCommentController extends Controller
         ]);
 
         $comment->load('user:id,name');
+
+        // Notify the responsible user + prior thread participants (never the author).
+        $author = $request->user();
+        $participantIds = $campaign->comments()->whereNot('user_id', $author->id)->distinct()->pluck('user_id');
+        NotificationHub::notify([
+            'type'           => 'comment',
+            'recipients'     => User::whereIn('id', $participantIds->push($campaign->responsible_user_id)->filter()->unique())->get(),
+            'exclude'        => $author,
+            'entity_type'    => 'campaign',
+            'entity_id'      => (string) $campaign->id,
+            'entity_label'   => $campaign->code,
+            'body'           => 'commented on ' . $campaign->code,
+            'link'           => route('crm.campaigns.show', $campaign->id),
+            'from_user_name' => $author->name,
+        ]);
 
         return response()->json([
             'status'  => 'success',

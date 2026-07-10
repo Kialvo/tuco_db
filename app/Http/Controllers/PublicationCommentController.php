@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\PublicationComment;
 use App\Models\Storage;
+use App\Models\User;
+use App\Services\NotificationHub;
 use Illuminate\Http\Request;
 
 /**
@@ -47,6 +49,24 @@ class PublicationCommentController extends Controller
         ]);
 
         $comment->load('user:id,name');
+
+        // Notify the campaign's responsible + prior thread participants (never the author).
+        $author   = $request->user();
+        $campaign = $storage->lbCampaign;
+        if ($campaign) {
+            $participantIds = $storage->publicationComments()->whereNot('user_id', $author->id)->distinct()->pluck('user_id');
+            NotificationHub::notify([
+                'type'           => 'comment',
+                'recipients'     => User::whereIn('id', $participantIds->push($campaign->responsible_user_id)->filter()->unique())->get(),
+                'exclude'        => $author,
+                'entity_type'    => 'publication',
+                'entity_id'      => (string) $storage->id,
+                'entity_label'   => trim(($campaign->code ?? '') . ' — ' . ($storage->publisher_domain ?? '#' . $storage->id), ' —'),
+                'body'           => 'commented on a publication',
+                'link'           => route('crm.campaigns.show', $campaign->id),
+                'from_user_name' => $author->name,
+            ]);
+        }
 
         return response()->json([
             'status'  => 'success',
