@@ -26,6 +26,74 @@
 
 @push('scripts')
 <script>
+/* ── Shared @mention utilities (loaded on every staff page via the bell) ──
+   Wire format matches the Menford CRM: tokens `@[Name:id]` stored inside the
+   comment body. tucoMentions.render() escapes text and highlights tokens;
+   tucoMentions.attach() adds an @-autocomplete dropdown to a textarea. */
+window.tucoMentions = (function () {
+    const esc = s => $('<i/>').text(s ?? '').html();
+
+    function render(text) {
+        const re = /@\[([^\]]+):(\d+)\]/g;
+        let out = '', last = 0, m;
+        while ((m = re.exec(text ?? '')) !== null) {
+            out += esc(text.slice(last, m.index));
+            out += '<span class="inline-block bg-green-100 text-green-700 font-semibold rounded px-1">@' + esc(m[1]) + '</span>';
+            last = m.index + m[0].length;
+        }
+        return out + esc((text ?? '').slice(last));
+    }
+
+    function attach($ta, users) {
+        const $dd = $('<div class="hidden absolute z-[80] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto text-sm min-w-[200px]"></div>');
+        $ta.parent().css('position', 'relative').append($dd);
+        let matches = [], active = 0, fragStart = -1;
+
+        function close() { $dd.addClass('hidden'); matches = []; }
+        function renderDd() {
+            $dd.html(matches.map((u, i) =>
+                '<div class="mention-opt px-3 py-1.5 cursor-pointer ' + (i === active ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50') + '" data-i="' + i + '">' + esc(u.name) + '</div>'
+            ).join(''));
+            const pos = $ta.position();
+            $dd.css({ left: pos.left, top: pos.top + $ta.outerHeight() + 2 }).removeClass('hidden');
+        }
+        function check() {
+            const upToCaret = $ta.val().slice(0, $ta[0].selectionStart);
+            const m = upToCaret.match(/(^|\s)@([\w.\- ]{0,20})$/);
+            if (!m) { close(); return; }
+            fragStart = upToCaret.length - m[2].length - 1;
+            const q = m[2].toLowerCase().trim();
+            matches = users.filter(u => u.name.toLowerCase().includes(q)).slice(0, 8);
+            active = 0;
+            matches.length ? renderDd() : close();
+        }
+        function pick(i) {
+            const u = matches[i];
+            if (!u) return;
+            const v = $ta.val(), caret = $ta[0].selectionStart;
+            const token = '@[' + u.name + ':' + u.id + '] ';
+            $ta.val(v.slice(0, fragStart) + token + v.slice(caret));
+            const p = fragStart + token.length;
+            $ta[0].setSelectionRange(p, p);
+            close();
+            $ta.trigger('focus');
+        }
+
+        $ta.on('input click', check);
+        $ta.on('keydown', function (e) {
+            if ($dd.hasClass('hidden')) return;
+            if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, matches.length - 1); renderDd(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); renderDd(); }
+            else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pick(active); }
+            else if (e.key === 'Escape') { e.stopPropagation(); close(); }
+        });
+        $dd.on('mousedown', '.mention-opt', function (e) { e.preventDefault(); pick($(this).data('i')); });
+        $ta.on('blur', () => setTimeout(close, 150));
+    }
+
+    return { render, attach };
+})();
+
 $(function () {
     const LIST_URL = "{{ route('notifications.index') }}";
     const READ_URL = "{{ route('notifications.read') }}";
@@ -50,14 +118,17 @@ $(function () {
         return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
     }
 
+    const BASE_TITLE = document.title.replace(/^\(\d+\+?\)\s*/, '');
     function setCount(n) {
         count = Math.max(0, n);
         $badge.toggleClass('hidden', count === 0).toggleClass('flex', count > 0)
               .text(count > 99 ? '99+' : count);
         $('#notifMarkAll').toggleClass('hidden', count === 0);
+        // Live "(N)" prefix in the browser tab title, CRM-style.
+        document.title = count > 0 ? '(' + (count > 99 ? '99+' : count) + ') ' + BASE_TITLE : BASE_TITLE;
     }
 
-    /* ── polling (15s, visibility-aware — mirrors the SOPs bell) ── */
+    /* ── polling (5s, visibility-aware — matches the CRM/SOPs cadence) ── */
     let timer = null;
     function fetchCount() {
         $.getJSON(LIST_URL + '?unread=1', d => {
@@ -66,11 +137,13 @@ $(function () {
             setCount(next);
         });
     }
-    function start() { if (timer) return; fetchCount(); timer = setInterval(fetchCount, 15000); }
+    function start() { if (timer) return; fetchCount(); timer = setInterval(fetchCount, 5000); }
     function stop()  { if (timer) { clearInterval(timer); timer = null; } }
     if (document.visibilityState === 'visible') start();
     $(window).on('focus', start);
     $(document).on('visibilitychange', () => document.visibilityState === 'visible' ? start() : stop());
+    // Pages fire this after thread-level mark-read so the badge drops instantly.
+    $(document).on('tuco:notif-refresh', fetchCount);
 
     /* ── render ── */
     function render() {

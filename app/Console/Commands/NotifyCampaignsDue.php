@@ -64,7 +64,7 @@ class NotifyCampaignsDue extends Command
                 'entity_id'      => (string) $campaign->id,
                 'entity_label'   => $campaign->code,
                 'body'           => $campaign->code . ' is due for an update today',
-                'link'           => route('crm.campaigns.show', $campaign->id),
+                'link'           => route('crm.campaigns.index') . '?thread=' . $campaign->id,
                 'from_user_name' => 'Linkinablink',
             ]);
             $sent++;

@@ -101,7 +101,7 @@ class Storage extends Model
                         'entity_id'      => (string) $s->id,
                         'entity_label'   => trim($campaign->code . ' — ' . ($s->publisher_domain ?? '#' . $s->id)),
                         'body'           => 'Publication went live (Article Published)',
-                        'link'           => route('crm.campaigns.show', $campaign->id),
+                        'link'           => route('crm.campaigns.show', $campaign->id) . '?pubthread=' . $s->id,
                         'from_user_name' => auth()->user()?->name,
                     ]);
                 }
