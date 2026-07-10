@@ -1,40 +1,40 @@
-{{-- Notification bell (internal staff only) — reads the org-wide hub scoped
-     to source_app='tuco' for the logged-in user's email. Rendered inside the
-     sidebar's user block; the panel opens to the right of the sidebar. --}}
-<button type="button" id="notifBellBtn"
-        class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white transition-all">
-    <span class="relative flex-shrink-0">
+{{-- Notification bell (topbar, internal staff only) — reads the org-wide hub
+     scoped to source_app='tuco' for the logged-in user's email. --}}
+<div class="relative" id="notifWrap">
+    <button type="button" id="notifBellBtn" aria-label="Notifications" title="Notifications"
+            class="relative flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-800">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
-        <span id="notifBadge" class="hidden absolute -right-2 -top-2 h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white leading-none"></span>
-    </span>
-    Notifications
-</button>
+        <span id="notifBadge" class="hidden absolute -right-1 -top-1 h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white leading-none"></span>
+    </button>
 
-<div id="notifPanel" class="hidden fixed z-[70] w-[360px] rounded-xl border border-gray-200 bg-white shadow-2xl">
-    <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-        <span class="text-[13px] font-bold text-gray-800">Notifications</span>
-        <div class="flex items-center gap-3">
-            <button type="button" id="notifMarkAll" class="hidden text-[11px] font-semibold text-green-600 hover:underline">Mark all read</button>
-            <button type="button" id="notifClearAll" class="hidden text-[11px] font-semibold text-gray-400 hover:text-red-600">Clear all</button>
+    <div id="notifPanel" class="hidden absolute right-0 top-[calc(100%+6px)] z-[70] w-[360px] rounded-xl border border-gray-200 bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+            <span class="text-[13px] font-bold text-gray-800">Notifications</span>
+            <div class="flex items-center gap-3">
+                <button type="button" id="notifMarkAll" class="hidden text-[11px] font-semibold text-green-600 hover:underline">Mark all read</button>
+                <button type="button" id="notifClearAll" class="hidden text-[11px] font-semibold text-gray-400 hover:text-red-600">Clear all</button>
+            </div>
         </div>
+        <div id="notifList" class="max-h-[420px] overflow-y-auto slim-scroll"></div>
     </div>
-    <div id="notifList" class="max-h-[420px] overflow-y-auto slim-scroll"></div>
 </div>
 
 {{-- INLINE script, deliberately NOT @push('scripts'): the layout's
-     @stack('scripts') sits in <head> and renders BEFORE the sidebar is
-     included, so anything this partial pushes is silently dropped. Inline
+     @stack('scripts') sits in <head> and renders BEFORE this partial is
+     included, so anything pushed here would be silently dropped. Inline
      works because jQuery loads in <head>. --}}
 <script>
 /* ── Shared @mention utilities (loaded on every staff page via the bell) ──
-   Wire format matches the Menford CRM: tokens `@[Name:id]` stored inside the
-   comment body. tucoMentions.render() escapes text and highlights tokens;
-   tucoMentions.attach() adds an @-autocomplete dropdown to a textarea. */
+   Wire format matches the Menford CRM: tokens `@[Name:id]` exist ONLY in
+   storage. The composer always shows clean `@Name` text; serialize() converts
+   names → tokens at submit time (longest names first, so "Simone DS" wins
+   over "Simone"); deserialize() converts back for editing. */
 window.tucoMentions = (function () {
     const esc = s => $('<i/>').text(s ?? '').html();
+    const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     function render(text) {
         const re = /@\[([^\]]+):(\d+)\]/g;
@@ -47,36 +47,56 @@ window.tucoMentions = (function () {
         return out + esc((text ?? '').slice(last));
     }
 
+    // "@Super Admin hi" → "@[Super Admin:1] hi" (submit time)
+    function serialize(text, users) {
+        let out = text ?? '';
+        [...users].sort((a, b) => b.name.length - a.name.length).forEach(u => {
+            out = out.replace(new RegExp('@' + escRe(u.name) + '(?=\\s|$|[.,!?;:])', 'g'), '@[' + u.name + ':' + u.id + ']');
+        });
+        return out;
+    }
+
+    // "@[Super Admin:1] hi" → "@Super Admin hi" (edit prefill)
+    function deserialize(body) {
+        return (body ?? '').replace(/@\[([^\]]+):\d+\]/g, '@$1');
+    }
+
+    /* @-autocomplete on a textarea. Inserts clean `@Name ` — no tokens. */
     function attach($ta, users) {
-        const $dd = $('<div class="hidden absolute z-[80] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto text-sm min-w-[200px]"></div>');
+        const $dd = $('<div class="hidden absolute z-[90] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto text-sm min-w-[200px]"></div>');
         $ta.parent().css('position', 'relative').append($dd);
-        let matches = [], active = 0, fragStart = -1;
+        let matches = [], active = 0, fragStart = -1, fragLen = 0;
 
         function close() { $dd.addClass('hidden'); matches = []; }
         function renderDd() {
             $dd.html(matches.map((u, i) =>
-                '<div class="mention-opt px-3 py-1.5 cursor-pointer ' + (i === active ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50') + '" data-i="' + i + '">' + esc(u.name) + '</div>'
+                '<div class="mention-opt flex items-center gap-2 px-3 py-1.5 cursor-pointer ' + (i === active ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50') + '" data-i="' + i + '">'
+                + '<span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-[10px] font-bold text-green-700">' + esc(u.name.slice(0, 1).toUpperCase()) + '</span>'
+                + esc(u.name) + '</div>'
             ).join(''));
             const pos = $ta.position();
             $dd.css({ left: pos.left, top: pos.top + $ta.outerHeight() + 2 }).removeClass('hidden');
         }
         function check() {
             const upToCaret = $ta.val().slice(0, $ta[0].selectionStart);
-            const m = upToCaret.match(/(^|\s)@([\w.\- ]{0,20})$/);
-            if (!m) { close(); return; }
-            fragStart = upToCaret.length - m[2].length - 1;
-            const q = m[2].toLowerCase().trim();
-            matches = users.filter(u => u.name.toLowerCase().includes(q)).slice(0, 8);
+            const atIndex = upToCaret.lastIndexOf('@');
+            if (atIndex === -1) { close(); return; }
+            const frag = upToCaret.slice(atIndex + 1);
+            if (!/^[a-zA-Z]*$/.test(frag)) { close(); return; }
+            fragStart = atIndex; fragLen = frag.length;
+            const q = frag.toLowerCase();
+            matches = users.filter(u => u.name.toLowerCase().startsWith(q)).slice(0, 8);
             active = 0;
             matches.length ? renderDd() : close();
         }
         function pick(i) {
             const u = matches[i];
             if (!u) return;
-            const v = $ta.val(), caret = $ta[0].selectionStart;
-            const token = '@[' + u.name + ':' + u.id + '] ';
-            $ta.val(v.slice(0, fragStart) + token + v.slice(caret));
-            const p = fragStart + token.length;
+            const v = $ta.val();
+            // Insert the clean display name — serialize() tokenizes at submit.
+            const insert = '@' + u.name + ' ';
+            $ta.val(v.slice(0, fragStart) + insert + v.slice(fragStart + 1 + fragLen));
+            const p = fragStart + insert.length;
             $ta[0].setSelectionRange(p, p);
             close();
             $ta.trigger('focus');
@@ -85,18 +105,15 @@ window.tucoMentions = (function () {
         $ta.on('input click', check);
         $ta.on('keydown', function (e) {
             if ($dd.hasClass('hidden')) return;
-            if (e.key === 'ArrowDown') { e.preventDefault(); active = Math.min(active + 1, matches.length - 1); renderDd(); }
-            else if (e.key === 'ArrowUp') { e.preventDefault(); active = Math.max(active - 1, 0); renderDd(); }
+            if (e.key === 'ArrowDown') { e.preventDefault(); active = (active + 1) % matches.length; renderDd(); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); active = (active - 1 + matches.length) % matches.length; renderDd(); }
             else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pick(active); }
             else if (e.key === 'Escape') { e.stopPropagation(); close(); }
         });
-        // Selection happens on CLICK, not mousedown: picking on mousedown hid
-        // the dropdown instantly, so the browser's follow-up click event hit
-        // whatever sat underneath — often the modal backdrop, which closed
-        // the whole comments modal. mousedown only prevents the textarea blur;
-        // the click is swallowed (preventDefault + stopPropagation) so it can
-        // never reach backdrop/document close handlers.
-        $dd.on('mousedown', '.mention-opt', function (e) { e.preventDefault(); });
+        // mousedown only prevents the textarea blur; selection happens on
+        // click (stopPropagation) so the follow-up click can never hit a
+        // modal/pane backdrop underneath and close it.
+        $dd.on('mousedown', '.mention-opt', e => e.preventDefault());
         $dd.on('click', '.mention-opt', function (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -105,7 +122,7 @@ window.tucoMentions = (function () {
         $ta.on('blur', () => setTimeout(close, 150));
     }
 
-    return { render, attach };
+    return { render, serialize, deserialize, attach };
 })();
 
 $(function () {
@@ -138,11 +155,10 @@ $(function () {
         $badge.toggleClass('hidden', count === 0).toggleClass('flex', count > 0)
               .text(count > 99 ? '99+' : count);
         $('#notifMarkAll').toggleClass('hidden', count === 0);
-        // Live "(N)" prefix in the browser tab title, CRM-style.
         document.title = count > 0 ? '(' + (count > 99 ? '99+' : count) + ') ' + BASE_TITLE : BASE_TITLE;
     }
 
-    /* ── polling (5s, visibility-aware — matches the CRM/SOPs cadence) ── */
+    /* ── polling (3s, visibility-aware — exact CRM cadence) ── */
     let timer = null;
     function fetchCount() {
         $.getJSON(LIST_URL + '?unread=1', d => {
@@ -151,7 +167,7 @@ $(function () {
             setCount(next);
         });
     }
-    function start() { if (timer) return; fetchCount(); timer = setInterval(fetchCount, 5000); }
+    function start() { if (timer) return; fetchCount(); timer = setInterval(fetchCount, 3000); }
     function stop()  { if (timer) { clearInterval(timer); timer = null; } }
     if (document.visibilityState === 'visible') start();
     $(window).on('focus', start);
@@ -190,21 +206,14 @@ $(function () {
         $.getJSON(LIST_URL, d => { items = d.notifications ?? []; render(); if (cb) cb(); });
     }
 
-    /* ── open/close (panel opens right of the sidebar, above the button) ── */
-    function position() {
-        const r = $btn[0].getBoundingClientRect();
-        const ph = $panel.outerHeight();
-        const top = Math.max(8, Math.min(r.top - ph + r.height, window.innerHeight - ph - 8));
-        $panel.css({ left: (r.right + 10) + 'px', top: top + 'px' });
-    }
+    /* ── open/close ── */
     $btn.on('click', function (e) {
         e.stopPropagation();
         if (open) { $panel.addClass('hidden'); open = false; return; }
         open = true;
         $list.html('<p class="px-4 py-6 text-center text-[13px] text-gray-400">Loading…</p>');
         $panel.removeClass('hidden');
-        position();
-        fetchList(position);
+        fetchList();
     });
     $panel.on('click', e => e.stopPropagation());
     $(document).on('click', () => { if (open) { $panel.addClass('hidden'); open = false; } });

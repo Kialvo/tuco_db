@@ -29,8 +29,7 @@ use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\PublicationController;
-use App\Http\Controllers\CampaignCommentController;
-use App\Http\Controllers\PublicationCommentController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CopyController;
 
 use App\Http\Controllers\WebsiteController;
@@ -417,16 +416,21 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
     Route::get('publications/{storage}/edit-ajax',     [PublicationController::class, 'editAjax'])->name('crm.publications.editAjax');
     Route::put('publications/{storage}/status',        [PublicationController::class, 'updateStatus'])->name('crm.publications.status');
     Route::put('publications/{storage}/inline',        [PublicationController::class, 'inlineUpdate'])->name('crm.publications.inline');
-    Route::get('publications/{storage}/comments',              [PublicationCommentController::class, 'index'])->name('crm.publications.comments.index');
-    Route::post('publications/{storage}/comments',             [PublicationCommentController::class, 'store'])->name('crm.publications.comments.store');
-    Route::delete('publications/{storage}/comments/{comment}', [PublicationCommentController::class, 'destroy'])->name('crm.publications.comments.destroy');
     Route::put('publications/{storage}',                [PublicationController::class, 'update'])->name('crm.publications.update');
     Route::delete('publications/{storage}',             [PublicationController::class, 'destroy'])->name('crm.publications.destroy');
 
-    // Comments (nested under campaigns so Apache only needs to whitelist "campaigns")
-    Route::get('campaigns/{campaign}/comments',             [CampaignCommentController::class, 'index'])->name('crm.campaigns.comments.index');
-    Route::post('campaigns/{campaign}/comments',            [CampaignCommentController::class, 'store'])->name('crm.campaigns.comments.store');
-    Route::delete('campaigns/{campaign}/comments/{comment}', [CampaignCommentController::class, 'destroy'])->name('crm.campaigns.comments.destroy');
+    // Conversations (CRM-style updates + replies on campaigns/publications).
+    // ⚠️ Deploy: add `conversations` to the Apache proxy whitelist.
+    Route::get('conversations/counts/{type}',             [ConversationController::class, 'counts'])->name('crm.conversations.counts');
+    Route::post('conversations/updates/{update}/replies', [ConversationController::class, 'storeReply'])->name('crm.conversations.replies.store');
+    Route::patch('conversations/updates/{update}',        [ConversationController::class, 'updateUpdate'])->name('crm.conversations.updates.update');
+    Route::delete('conversations/updates/{update}',       [ConversationController::class, 'destroyUpdate'])->name('crm.conversations.updates.destroy');
+    Route::patch('conversations/replies/{reply}',         [ConversationController::class, 'updateReply'])->name('crm.conversations.replies.update');
+    Route::delete('conversations/replies/{reply}',        [ConversationController::class, 'destroyReply'])->name('crm.conversations.replies.destroy');
+    Route::get('conversations/{type}/{id}',               [ConversationController::class, 'show'])->whereIn('type', ConversationController::TYPES)->name('crm.conversations.show');
+    Route::post('conversations/{type}/{id}',              [ConversationController::class, 'store'])->whereIn('type', ConversationController::TYPES)->name('crm.conversations.store');
+
+    // (campaign/publication comment routes replaced by conversations/* above)
 
     // Admin-only CRM detail pages for the shared entities (root-level URLs)
     Route::get('companies/{company}', [CompanyController::class, 'show'])->name('crm.companies.show');
