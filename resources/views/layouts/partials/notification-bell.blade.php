@@ -24,7 +24,10 @@
     <div id="notifList" class="max-h-[420px] overflow-y-auto slim-scroll"></div>
 </div>
 
-@push('scripts')
+{{-- INLINE script, deliberately NOT @push('scripts'): the layout's
+     @stack('scripts') sits in <head> and renders BEFORE the sidebar is
+     included, so anything this partial pushes is silently dropped. Inline
+     works because jQuery loads in <head>. --}}
 <script>
 /* ── Shared @mention utilities (loaded on every staff page via the bell) ──
    Wire format matches the Menford CRM: tokens `@[Name:id]` stored inside the
@@ -243,4 +246,3 @@ $(function () {
     });
 });
 </script>
-@endpush
