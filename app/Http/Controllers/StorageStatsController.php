@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Storage;
+use App\Support\Statistics;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,7 @@ use Throwable;
 class StorageStatsController extends Controller
 {
     private const WINDOW_OPTIONS = ['all', '12', '24', '36', '60'];
+
     private const GRANULARITY_OPTIONS = ['monthly', 'quarterly'];
 
     public function index(Request $request)
@@ -58,6 +60,27 @@ class StorageStatsController extends Controller
             ->orderBy($monthExpr)
             ->get();
 
+        // Raw per-row period values (days) for the SAME filtered set, keyed by
+        // publication month, so we can compute a MEDIAN per bucket in PHP —
+        // MySQL/MariaDB has no MEDIAN() aggregate. Nulls/blanks are skipped
+        // per-metric (a row may have one period but not the other).
+        $rawPeriodRows = (clone $baseQuery)
+            ->when($dateFrom, fn ($q) => $q->whereDate('publication_date', '>=', $dateFrom->toDateString()))
+            ->when($dateTo, fn ($q) => $q->whereDate('publication_date', '<=', $dateTo->toDateString()))
+            ->selectRaw("DATE_FORMAT(publication_date, '%Y-%m') as month_key, copywriter_period, publisher_period")
+            ->get();
+
+        $copyPeriodByMonth = [];
+        $publisherPeriodByMonth = [];
+        foreach ($rawPeriodRows as $row) {
+            if (is_numeric($row->copywriter_period)) {
+                $copyPeriodByMonth[$row->month_key][] = (float) $row->copywriter_period;
+            }
+            if (is_numeric($row->publisher_period)) {
+                $publisherPeriodByMonth[$row->month_key][] = (float) $row->publisher_period;
+            }
+        }
+
         [$seriesStart, $seriesEnd] = $this->resolveSeriesBounds(
             $dateFrom,
             $dateTo,
@@ -81,12 +104,18 @@ class StorageStatsController extends Controller
         $publishedSeries = array_map(static fn (array $point) => (int) $point['published'], $seriesPoints);
         $profitSeries = array_map(static fn (array $point) => (float) $point['profit'], $seriesPoints);
 
+        // Median-days series, aligned to the same labels/order as above.
+        $copyMedianSeries = Statistics::medianSeries($windowedPoints, $copyPeriodByMonth, $granularity);
+        $publisherMedianSeries = Statistics::medianSeries($windowedPoints, $publisherPeriodByMonth, $granularity);
+
         return view('storages.stats', [
             'labels' => $labels,
             'publishedSeries' => $publishedSeries,
             'profitSeries' => $profitSeries,
             'totalPublished' => array_sum($publishedSeries),
             'totalNetProfit' => array_sum($profitSeries),
+            'copyMedianSeries' => $copyMedianSeries,
+            'publisherMedianSeries' => $publisherMedianSeries,
             'window' => $window,
             'granularity' => $granularity,
             'dateFrom' => $dateFrom?->toDateString(),
