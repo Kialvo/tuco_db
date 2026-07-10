@@ -187,23 +187,7 @@
         </div>
     </div>
 
-    {{-- ═══════════ Comments modal ═══════════ --}}
-    <div id="commentsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
-        <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-md relative">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                <h2 id="commentsTitle" class="text-lg font-bold text-gray-800">Comments</h2>
-                <button type="button" class="js-close-comments text-gray-400 hover:text-gray-600"><x-icon name="x" size="sm" /></button>
-            </div>
-            <div class="px-6 py-4">
-                <div id="commentsList" class="max-h-80 overflow-y-auto mb-4 divide-y divide-gray-100"></div>
-                <textarea id="commentBody" rows="3" placeholder="Write a comment…"
-                          class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></textarea>
-                <div class="flex justify-end mt-3">
-                    <button type="button" id="commentAdd" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Add Comment</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    {{-- Comments now open in the CRM-style conversation pane (layout partial) --}}
 
     {{-- floating dropdowns (populated by JS) --}}
     <div id="statusMenu" class="hidden fixed z-[60] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto min-w-[220px] text-sm"></div>
@@ -224,6 +208,11 @@ $(function () {
     const SERVICES = @json($services);
     const TEAM = @json($users);
     let grouped = false;
+
+    // Only one floating quick-edit menu may be visible at a time: badge
+    // clicks stopPropagation (so the document-level closer never fires for
+    // them) — every open call must close the others first.
+    function closeFloatingMenus() { $('#statusMenu, #serviceMenu, #respMenu').addClass('hidden'); }
 
     // Position a fixed dropdown near a trigger, flipping up if it would overflow the viewport bottom.
     function positionMenu($menu, rect) {
@@ -393,6 +382,7 @@ $(function () {
     })();
     $(document).on('click', '.js-resp-edit', function (e) {
         e.stopPropagation();
+        closeFloatingMenus();
         respTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
         positionMenu(respMenu, r);
@@ -587,6 +577,7 @@ $(function () {
 
     $(document).on('click', '.js-status-badge', function (e) {
         e.stopPropagation();
+        closeFloatingMenus();
         statusTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
         positionMenu(statusMenu, r);
@@ -614,6 +605,7 @@ $(function () {
 
     $(document).on('click', '.js-service-badge', function (e) {
         e.stopPropagation();
+        closeFloatingMenus();
         serviceTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
         positionMenu(serviceMenu, r);
@@ -628,48 +620,61 @@ $(function () {
     });
 
     // Close floating menus on any outside click
-    $(document).on('click', function () { statusMenu.addClass('hidden'); serviceMenu.addClass('hidden'); respMenu.addClass('hidden'); });
+    $(document).on('click', closeFloatingMenus);
 
-    /* ─────────────── Comments ─────────────── */
-    const commentsModal = $('#commentsModal');
-    let commentsCampaignId = null;
+    /* ─────────────── Conversations (CRM-style pane) ─────────────── */
+    // 💬 badge = total messages (updates + replies) + red unread bubble.
+    function refreshConvBadges() {
+        $.getJSON("{{ route('crm.conversations.counts', 'campaign') }}", d => {
+            const counts = d.counts || {};
+            $('.js-comments-btn').each(function () {
+                const id = String($(this).data('id'));
+                $(this).find('.conv-count').remove();
+                if (counts[id]) {
+                    $(this).append('<span class="conv-count ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-blue-100 text-blue-700 text-[9px] font-bold">' + counts[id] + '</span>');
+                }
+            });
+        });
+        $.getJSON("{{ route('notifications.index') }}?unread=1&entityType=campaign", d => {
+            const map = d.unread || {};
+            $('.js-comments-btn').each(function () {
+                const id = String($(this).data('id'));
+                $(this).find('.notif-bubble').remove();
+                if (map[id]) {
+                    $(this).append('<span class="notif-bubble ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold">' + map[id] + '</span>');
+                }
+            });
+        });
+    }
+    table.on('draw', refreshConvBadges);
+    $(document).on('tuco:conv-closed tuco:conv-opened', refreshConvBadges);
 
-    function closeComments() { commentsModal.addClass('hidden').removeClass('flex'); }
-    $('.js-close-comments').on('click', closeComments);
-    commentsModal.on('click', e => { if (e.target === commentsModal[0]) closeComments(); });
-
-    function renderComments(list) {
-        if (!list.length) { $('#commentsList').html('<p class="text-sm text-gray-400 py-2">No comments yet.</p>'); return; }
-        $('#commentsList').html(list.map(c =>
-            '<div class="py-2.5">'
-            + '<div class="text-[10px] text-gray-400 mb-0.5"><strong class="text-gray-600">' + $('<i/>').text(c.author).html() + '</strong> · ' + (c.date || '') + '</div>'
-            + '<div class="text-sm text-gray-800">' + $('<i/>').text(c.body).html() + '</div>'
-            + '</div>'
-        ).join(''));
+    function openThread(id, code) {
+        tucoConversations.open({
+            type: 'campaign',
+            id: id,
+            label: code || ('#' + id),
+            detailsUrl: "{{ url('campaigns') }}/" + id,
+            detailsLabel: 'CAMPAIGN DETAILS'
+        });
     }
 
     $(document).on('click', '.js-comments-btn', function () {
-        commentsCampaignId = $(this).data('id');
-        $('#commentsTitle').text('Comments — ' + $(this).data('code'));
-        $('#commentBody').val('');
-        $('#commentsList').html('<p class="text-sm text-gray-400 py-2">Loading…</p>');
-        commentsModal.removeClass('hidden').addClass('flex');
-        $.get("{{ url('campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
+        openThread($(this).data('id'), $(this).data('code'));
     });
 
-    $('#commentAdd').on('click', function () {
-        const body = $('#commentBody').val().trim();
-        if (!body) return;
-        $.ajax({
-            url: "{{ url('campaigns') }}/" + commentsCampaignId + "/comments", method: 'POST',
-            data: { body, _token: csrf }, headers: { 'Accept': 'application/json' },
-            success: function () {
-                $('#commentBody').val('');
-                $.get("{{ url('campaigns') }}/" + commentsCampaignId + "/comments", res => renderComments(res.data || []));
-                table.ajax.reload(null, false);
-            }
-        });
-    });
+    // Deep link from a notification: /campaigns?thread=<id> auto-opens the
+    // pane, then removes the param so a refresh doesn't reopen it (CRM-style).
+    (function () {
+        const params = new URLSearchParams(window.location.search);
+        const threadId = params.get('thread');
+        if (!threadId) return;
+        params.delete('thread');
+        history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
+        $.get("{{ url('campaigns') }}/" + threadId + "/edit-ajax")
+            .done(res => openThread(threadId, res.data?.code))
+            .fail(() => openThread(threadId, null));
+    })();
 });
 </script>
 @endpush

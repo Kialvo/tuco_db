@@ -212,6 +212,7 @@
                 </div>
             </div>
         @endif
+        {{-- Notification bell moved to the global topbar (layouts/partials/topbar.blade.php) --}}
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit"

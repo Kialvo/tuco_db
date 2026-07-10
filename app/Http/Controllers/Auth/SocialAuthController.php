@@ -53,6 +53,8 @@ class SocialAuthController extends Controller
                 'role'              => 'guest',
                 'email_verified_at' => now(),
             ]);
+
+            \App\Services\NotificationHub::userRegistered($user);
         }
 
         Auth::login($user, true);

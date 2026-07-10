@@ -145,9 +145,8 @@
                                         <td class="py-2.5 px-3">{!! $editable($p, 'article_url', 'text', $p->article_url, $p->article_url ? '<span class="text-green-600 text-xs">'.e(\Illuminate\Support\Str::of($p->article_url)->replace(['https://','http://'],'')->limit(24)).'</span>' : '<span class="text-gray-300">—</span>') !!}</td>
                                         <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'publication_date', 'date', $ymd($p->publication_date), $fds($p->publication_date)) !!}</td>
                                         <td class="py-2.5 px-3 text-right whitespace-nowrap">
-                                            <button type="button" class="js-pub-comments inline-flex items-center justify-center h-7 px-1.5 rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600" data-id="{{ $p->id }}" data-site="{{ $p->publisher_domain }}" title="Comments">
+                                            <button type="button" class="js-pub-comments inline-flex items-center justify-center h-7 px-1.5 rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600" data-id="{{ $p->id }}" data-site="{{ $p->publisher_domain }}" title="Conversation">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                                                @if($p->comments_count)<span class="ml-0.5 text-[9px] font-bold text-blue-700">{{ $p->comments_count }}</span>@endif
                                             </button>
                                             <a href="{{ route('storages.edit', $p->id) }}" class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700" title="More details (Storage record)">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
@@ -322,22 +321,7 @@
     </div>
 </div>
 
-{{-- ═══════════ Publication comments modal ═══════════ --}}
-<div id="pubCommentsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
-    <div class="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-md relative">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 id="pubCommentsTitle" class="text-lg font-bold text-gray-800">Comments</h2>
-            <button type="button" class="js-close-pubcomments text-gray-400 hover:text-gray-600"><x-icon name="x" size="sm" /></button>
-        </div>
-        <div class="px-6 py-4">
-            <div id="pubCommentsList" class="max-h-80 overflow-y-auto mb-4 divide-y divide-gray-100"></div>
-            <textarea id="pubCommentBody" rows="3" placeholder="Write a comment…" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></textarea>
-            <div class="flex justify-end mt-3">
-                <button type="button" id="pubCommentAdd" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Add Comment</button>
-            </div>
-        </div>
-    </div>
-</div>
+{{-- Publication comments now open in the CRM-style conversation pane (layout partial) --}}
 
 {{-- floating publication status menu --}}
 <div id="pubStatusMenu" class="hidden fixed z-[60] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-72 overflow-y-auto min-w-[240px] text-sm"></div>
@@ -691,32 +675,58 @@ $(function () {
         });
     });
 
-    /* ── Publication comments modal ── */
-    const pubCommentsModal = $('#pubCommentsModal');
-    let pubCommentsId = null;
-    function closePubComments() { pubCommentsModal.addClass('hidden').removeClass('flex'); }
-    $('.js-close-pubcomments').on('click', closePubComments);
-    pubCommentsModal.on('click', e => { if (e.target === pubCommentsModal[0]) closePubComments(); });
-    function renderPubComments(list) {
-        if (!list.length) { $('#pubCommentsList').html('<p class="text-sm text-gray-400 py-2">No comments yet.</p>'); return; }
-        $('#pubCommentsList').html(list.map(c =>
-            '<div class="py-2.5"><div class="text-[10px] text-gray-400 mb-0.5"><strong class="text-gray-600">' + $('<i/>').text(c.author).html() + '</strong> · ' + (c.date || '') + '</div><div class="text-sm text-gray-800">' + $('<i/>').text(c.body).html() + '</div></div>'
-        ).join(''));
+    /* ── Publication conversations (CRM-style pane) ── */
+    // 💬 badges: blue = total messages (updates + replies), red = unread.
+    function refreshPubBadges() {
+        $.getJSON("{{ route('crm.conversations.counts', 'publication') }}", d => {
+            const counts = d.counts || {};
+            $('.js-pub-comments').each(function () {
+                const id = String($(this).data('id'));
+                $(this).find('.conv-count').remove();
+                if (counts[id]) {
+                    $(this).append('<span class="conv-count ml-0.5 text-[9px] font-bold text-blue-700">' + counts[id] + '</span>');
+                }
+            });
+        });
+        $.getJSON("{{ route('notifications.index') }}?unread=1&entityType=publication", d => {
+            const map = d.unread || {};
+            $('.js-pub-comments').each(function () {
+                const id = String($(this).data('id'));
+                $(this).find('.notif-bubble').remove();
+                if (map[id]) {
+                    $(this).append('<span class="notif-bubble ml-0.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold">' + map[id] + '</span>');
+                }
+            });
+        });
     }
+    refreshPubBadges();
+    $(document).on('tuco:conv-closed tuco:conv-opened', refreshPubBadges);
+
+    function openPubThread(id, site) {
+        tucoConversations.open({
+            type: 'publication',
+            id: id,
+            label: '{{ $campaign->code }} — ' + (site || '#' + id),
+            detailsUrl: "{{ url('storages') }}/" + id + "/edit",
+            detailsLabel: 'PUBLICATION DETAILS'
+        });
+    }
+
     $(document).on('click', '.js-pub-comments', function () {
-        pubCommentsId = $(this).data('id');
-        $('#pubCommentsTitle').text('Comments — ' + ($(this).data('site') || '#' + pubCommentsId));
-        $('#pubCommentBody').val('');
-        $('#pubCommentsList').html('<p class="text-sm text-gray-400 py-2">Loading…</p>');
-        pubCommentsModal.removeClass('hidden').addClass('flex');
-        $.get("{{ url('publications') }}/" + pubCommentsId + "/comments", res => renderPubComments(res.data || []));
+        openPubThread($(this).data('id'), $(this).data('site'));
     });
-    $('#pubCommentAdd').on('click', function () {
-        const body = $('#pubCommentBody').val().trim();
-        if (!body) return;
-        $.ajax({ url: "{{ url('publications') }}/" + pubCommentsId + "/comments", method: 'POST', data: { body, _token: csrf }, headers: { 'Accept': 'application/json' },
-            success: function () { $('#pubCommentBody').val(''); $.get("{{ url('publications') }}/" + pubCommentsId + "/comments", res => renderPubComments(res.data || [])); } });
-    });
+
+    // Deep link from a notification: ?pubthread=<storageId> auto-opens the
+    // pane, then removes the param so refresh doesn't reopen (CRM-style).
+    (function () {
+        const params = new URLSearchParams(window.location.search);
+        const pubId = params.get('pubthread');
+        if (!pubId) return;
+        params.delete('pubthread');
+        history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
+        const $btn = $('.js-pub-comments[data-id="' + pubId + '"]');
+        openPubThread(pubId, $btn.data('site'));
+    })();
 
     @if(session('success'))
     Swal.fire({ icon: 'success', title: '{{ session('success') }}', timer: 1500, showConfirmButton: false });

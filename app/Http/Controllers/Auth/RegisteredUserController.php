@@ -35,6 +35,8 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
+        \App\Services\NotificationHub::userRegistered($user);
+
         return redirect()->route('login')
             ->with('status', 'Registration successful! Please check your email to verify your account before logging in.');
     }
