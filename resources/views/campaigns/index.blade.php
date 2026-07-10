@@ -209,6 +209,11 @@ $(function () {
     const TEAM = @json($users);
     let grouped = false;
 
+    // Only one floating quick-edit menu may be visible at a time: badge
+    // clicks stopPropagation (so the document-level closer never fires for
+    // them) — every open call must close the others first.
+    function closeFloatingMenus() { $('#statusMenu, #serviceMenu, #respMenu').addClass('hidden'); }
+
     // Position a fixed dropdown near a trigger, flipping up if it would overflow the viewport bottom.
     function positionMenu($menu, rect) {
         $menu.removeClass('hidden');
@@ -377,6 +382,7 @@ $(function () {
     })();
     $(document).on('click', '.js-resp-edit', function (e) {
         e.stopPropagation();
+        closeFloatingMenus();
         respTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
         positionMenu(respMenu, r);
@@ -571,6 +577,7 @@ $(function () {
 
     $(document).on('click', '.js-status-badge', function (e) {
         e.stopPropagation();
+        closeFloatingMenus();
         statusTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
         positionMenu(statusMenu, r);
@@ -598,6 +605,7 @@ $(function () {
 
     $(document).on('click', '.js-service-badge', function (e) {
         e.stopPropagation();
+        closeFloatingMenus();
         serviceTargetId = $(this).data('id');
         const r = this.getBoundingClientRect();
         positionMenu(serviceMenu, r);
@@ -612,7 +620,7 @@ $(function () {
     });
 
     // Close floating menus on any outside click
-    $(document).on('click', function () { statusMenu.addClass('hidden'); serviceMenu.addClass('hidden'); respMenu.addClass('hidden'); });
+    $(document).on('click', closeFloatingMenus);
 
     /* ─────────────── Conversations (CRM-style pane) ─────────────── */
     // 💬 badge = total messages (updates + replies) + red unread bubble.
