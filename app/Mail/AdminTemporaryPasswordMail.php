@@ -12,7 +12,11 @@ class AdminTemporaryPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public string $mailer = 'auth';
+    // Send through the dedicated 'auth' mailer (config/mail.php).
+    // NOTE: no type declaration — the parent Mailable declares $mailer
+    // untyped, and PHP fatals if a child adds a type to an inherited
+    // untyped property ("Type of ...::$mailer must not be defined").
+    public $mailer = 'auth';
 
     public function __construct(
         public string $userName,
