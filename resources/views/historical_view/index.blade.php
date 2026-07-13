@@ -20,7 +20,7 @@
         <button id="toggleFiltersBtn" class="hidden" aria-hidden="true"></button>
 
 
-        {{-- â”€â”€â”€â”€â”€ TABLE â”€â”€â”€â”€â”€ --}}
+        {{-- ───── TABLE ───── --}}
         <div id="historicalTableSearchWrap" class="table-search-wrap">
             <div class="flex items-center w-72 border border-gray-300 rounded-md bg-white shadow-sm
                         focus-within:ring-1 focus-within:ring-green-500 focus-within:border-green-500">
@@ -167,7 +167,7 @@
     <script>
         $(function () {
 
-            /* â•â•â• helpers â•â•â• */
+            /* ═══ helpers ═══ */
             const statusMap = [
                 {value:'never_opened',            label:'Never Opened',           tone:'bg-gray-100 text-gray-500 ring-gray-200'},
                 {value:'read_but_never_answered', label:'Read but never answered',tone:'bg-amber-100 text-amber-700 ring-amber-200'},
@@ -261,7 +261,7 @@
                      "<'dt-scroll'rt>" +
                      "<'dt-toolbar-bottom'ip>",
                 ajax:{
-                    url:"{{ route('historical_view.data') }}",       // â† route changed
+                    url:"{{ route('historical_view.data') }}",       // ← route changed
                     type:"POST",
                     headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')},
                     data:d=>{
@@ -281,7 +281,7 @@
                             return `<a href="#" class="note-link text-green-700" data-note="${safe}">
                             <x-icon name="comment" size="sm" class="inline" /></a>`;
                         }},
-                    {data:'status', render:(d,t)=> t==='display' ? statusPill(d) : (statusLabel(d) || '')},        // â† plain text
+                    {data:'status', render:(d,t)=> t==='display' ? statusPill(d) : (statusLabel(d) || '')},        // ← plain text
                     {data:'country_name',
                         render: function (data, type, row) {
                             if (! data) return '<span class="text-gray-300">—</span>';
