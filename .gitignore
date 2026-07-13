@@ -21,3 +21,8 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Readability audit artifacts (see scripts/README-audit.md)
+.readability-auth.json
+audit-*-report.json
+audit-readability-screenshots/

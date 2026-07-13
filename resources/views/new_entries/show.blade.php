@@ -48,7 +48,7 @@
         };
     @endphp
 
-    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="px-6 py-6 bg-gray-50 min-h-full">
         <div class="max-w-5xl mx-auto space-y-5">
 
             {{-- ─── SUMMARY HEADER CARD ─── --}}

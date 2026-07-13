@@ -10,7 +10,7 @@
         </div>
     </div>
 
-    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="px-6 py-6 bg-gray-50 min-h-full">
     <div class="bg-white border border-gray-200 p-6 rounded-xl shadow-card w-full max-w-4xl">
         <form id="searchForm" class="space-y-4">
 

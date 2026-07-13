@@ -114,6 +114,18 @@
                 <p class="mt-1 text-sm text-slate-500">Profit progression across the same selected periods.</p>
                 <div id="netProfitPerMonthChart" class="mt-4 h-[390px]"></div>
             </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-900">Copy Delivery Time</h2>
+                <p class="mt-1 text-sm text-slate-500">Median days from copy commission to delivery, per {{ $granularity === 'quarterly' ? 'quarter' : 'month' }}.</p>
+                <div id="copyDeliveryTimeChart" class="mt-4 h-[390px]"></div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-900">Publisher Publication Time</h2>
+                <p class="mt-1 text-sm text-slate-500">Median days from article sent to publisher until publication, per {{ $granularity === 'quarterly' ? 'quarter' : 'month' }}.</p>
+                <div id="publisherPublicationTimeChart" class="mt-4 h-[390px]"></div>
+            </section>
         </div>
     </div>
 @endsection
@@ -125,6 +137,8 @@
             const labels = @json($labels);
             const publishedSeries = @json($publishedSeries);
             const profitSeries = @json($profitSeries);
+            const copyMedianSeries = @json($copyMedianSeries);
+            const publisherMedianSeries = @json($publisherMedianSeries);
             const granularity = @json($granularity);
             const totalPoints = labels.length;
             const maxVisibleTicks = granularity === 'quarterly' ? 10 : 14;
@@ -275,6 +289,71 @@
                     }
                 }
             }).render();
+
+            const renderMedianDaysChart = function (selector, seriesName, data, color) {
+                new ApexCharts(document.querySelector(selector), {
+                    ...commonOptions,
+                    chart: {
+                        ...commonOptions.chart,
+                        type: 'line',
+                        height: 390
+                    },
+                    series: [{
+                        name: seriesName,
+                        data: data
+                    }],
+                    colors: [color],
+                    stroke: {
+                        curve: 'straight',
+                        width: 3,
+                        lineCap: 'round'
+                    },
+                    markers: { size: 3, hover: { sizeOffset: 2 } },
+                    dataLabels: { enabled: false },
+                    // Median can be null for periods with no data — show a gap, not a fake 0.
+                    fill: { opacity: 1 },
+                    xaxis: {
+                        ...commonOptions.xaxis,
+                        tickAmount: Math.min(totalPoints, 12),
+                    },
+                    yaxis: {
+                        min: 0,
+                        forceNiceScale: true,
+                        title: { text: 'Median days' },
+                        labels: {
+                            style: { colors: '#64748b', fontSize: '11px' },
+                            formatter: function (value) {
+                                return Math.round(value).toString();
+                            }
+                        }
+                    },
+                    annotations: {
+                        yaxis: [{
+                            y: 2,
+                            borderColor: '#ef4444',
+                            strokeDashArray: 4,
+                            label: {
+                                text: 'Target 2d',
+                                borderColor: '#ef4444',
+                                style: { color: '#fff', background: '#ef4444', fontSize: '10px' }
+                            }
+                        }]
+                    },
+                    tooltip: {
+                        theme: 'light',
+                        y: {
+                            formatter: function (value) {
+                                if (value === null) return 'No data';
+                                const rounded = Math.round(value * 10) / 10;
+                                return rounded + ' day' + (rounded === 1 ? '' : 's');
+                            }
+                        }
+                    }
+                }).render();
+            };
+
+            renderMedianDaysChart('#copyDeliveryTimeChart', 'Copy Delivery Time', copyMedianSeries, '#6366f1');
+            renderMedianDaysChart('#publisherPublicationTimeChart', 'Publisher Publication Time', publisherMedianSeries, '#0ea5e9');
 
             const form = document.getElementById('statsFiltersForm');
             if (form) {

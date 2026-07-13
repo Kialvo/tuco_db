@@ -15,7 +15,7 @@
 @endsection
 
 @section('content')
-    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="px-6 py-6 bg-gray-50 min-h-full">
         <div class="form-card max-w-2xl mx-auto">
             @if ($errors->any())
                 <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">

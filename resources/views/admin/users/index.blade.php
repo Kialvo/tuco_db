@@ -14,7 +14,7 @@
         </button>
     </div>
 
-    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="px-6 py-6 bg-gray-50 min-h-full">
 
         {{-- Tabs --}}
         <div class="flex gap-2 mb-4 border-b border-gray-200">

@@ -16,7 +16,7 @@
 @endsection
 
 @section('content')
-    <div class="px-6 py-6 bg-gray-50 min-h-screen">
+    <div class="px-6 py-6 bg-gray-50 min-h-full">
     <div class="form-card max-w-6xl">
 
         <form method="POST" action="{{ route('storages.update', $storage->id) }}" class="space-y-4">

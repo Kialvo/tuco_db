@@ -11,7 +11,7 @@
         </div>
     </div>
 
-    <div class="px-6 py-6 bg-gray-50 min-h-screen text-sm">
+    <div class="px-6 py-6 bg-gray-50 min-h-full text-sm">
         <div class="bg-white border border-gray-200 rounded-xl shadow-card p-5">
             <form id="importForm"
                   method="POST"
