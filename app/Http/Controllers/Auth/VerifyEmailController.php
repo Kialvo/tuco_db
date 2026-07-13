@@ -23,6 +23,11 @@ class VerifyEmailController extends Controller
 
         if ($user->markEmailAsVerified()) {
             event(new Verified($user));
+
+            // Admins hear about a new registration only once it's a real,
+            // verified human — bots never reach this point. (Google signups
+            // notify at creation in SocialAuthController: pre-verified.)
+            \App\Services\NotificationHub::userRegistered($user);
         }
 
         return redirect()->intended(route($defaultRoute, absolute: false).'?verified=1');
