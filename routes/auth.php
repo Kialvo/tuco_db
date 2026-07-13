@@ -19,7 +19,10 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    // Throttled: bots were registering 20-30 fake guests/day through this
+    // previously unlimited endpoint. 5/hour/IP is invisible to humans.
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->middleware('throttle:5,60');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

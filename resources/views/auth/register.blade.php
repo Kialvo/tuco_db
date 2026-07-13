@@ -5,6 +5,17 @@
     <form method="POST" action="{{ route('register') }}" class="space-y-4">
         @csrf
 
+        {{-- Bot traps (see RegisteredUserController::looksLikeBot):
+             1) decoy field rendered off-screen — humans never see or fill it,
+                naive bots auto-fill every input in the DOM;
+             2) encrypted render timestamp — submits faster than a human can
+                type (< 3s) are silently dropped. --}}
+        <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+            <label for="website">Website</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <input type="hidden" name="form_time" value="{{ encrypt(now()->timestamp) }}">
+
         <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1.5">Full name</label>
             <input id="name" name="name" type="text" required autofocus autocomplete="name"
