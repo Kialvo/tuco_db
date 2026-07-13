@@ -54,7 +54,7 @@ php artisan serve --port=8000 # app at http://localhost:8000
 - NEVER create or merge a PR without Fabrizio's explicit, per-PR approval.
 - NEVER delete a teammate's remote branch (e.g. Marvin's).
 - NEVER edit or delete an already-shipped migration; add a new dated one (`php artisan make:migration`) + mirror new columns in the model `$fillable`/`$casts` and any DataTables/import mapping. Do NOT commit "fixes" to the broken fresh-migrate chain.
-- NEVER run a destructive DB command (`migrate:fresh`, `migrate:rollback`, truncate/drop) without showing the full command and waiting for approval — `migrate:fresh` wipes all data.
+- **Database access is READ-ONLY — Claude may only run `SELECT`/read queries.** NEVER write to any database it connects to: no `INSERT`/`UPDATE`/`DELETE`/`REPLACE`, no DDL (`ALTER`/`CREATE`/`DROP`/`TRUNCATE`), no `php artisan migrate`/`migrate:*`/`db:seed`/`db:wipe`, no writes via `tinker` (`->save()`/`->update()`/`->delete()`, `DB::insert`/`update`/`delete`/`statement`). The local `.env` can point at real production/backup data, so writes are **never** permitted — not even with approval. This supersedes the old "destructive DB command with approval" allowance.
 - NEVER assume push = live (see Deployment). NEVER hardcode secrets — add keys to `.env.example` (empty) and read via `config()`.
 
 ## Deployment
