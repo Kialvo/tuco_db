@@ -46,7 +46,7 @@
 @endsection
 
 @section('content')
-    <div class="px-6 py-4 bg-gray-50 min-h-screen text-xs">
+    <div class="px-6 py-4 bg-gray-50 min-h-full text-xs">
         {{-- Hidden no-op placeholder so existing JS that targets #toggleFiltersBtn doesn't error --}}
         <button id="toggleFiltersBtn" class="hidden" aria-hidden="true"></button>
 
@@ -518,7 +518,7 @@
 
                     { data:'action', orderable:false, searchable:false }
                 ],
-                // IMPORTANT: order by the ID column (index 1) â€” first col is the checkbox
+                // IMPORTANT: order by the ID column (index 1) — first col is the checkbox
                 order: [[1, 'desc']],
                 responsive:false,
                 autoWidth:false,
@@ -563,7 +563,7 @@
                     data: { status: newVal },
                     success: () => {
                         Swal.fire({ toast:true, position:'top-end', timer:2500, showConfirmButton:false,
-                            icon:'success', title:`Status changed to â€œ${(statusMap.find(s=>s.value===newVal)||{}).label || newVal}â€`});
+                            icon:'success', title:`Status changed to “${(statusMap.find(s=>s.value===newVal)||{}).label || newVal}”`});
                         tbl.ajax.reload(null, false);
                     },
                     error: () => {
@@ -740,7 +740,7 @@
                 wrap.empty();
 
                 if(field==='recalculate_totals'){
-                    wrap.append('<p class="text-gray-500 text-xs">Nothing to fill in â€“ just click â€œSaveâ€.</p>');
+                    wrap.append('<p class="text-gray-500 text-xs">Nothing to fill in – just click “Save”.</p>');
                     return;
                 }
                 if(meta.type==='date'){
