@@ -53,6 +53,21 @@ class User extends Authenticatable implements MustVerifyEmail
         }
     }
 
+    /**
+     * Password-reset link through the same dedicated 'auth' mailer as the
+     * verification email (Resend API), with the same loud failure logging.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        try {
+            $this->notify(new \App\Notifications\ResetPasswordViaAuthMailer($token));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error(
+                '[reset-email] send FAILED for ' . $this->email . ': ' . $e->getMessage()
+            );
+        }
+    }
+
     public function hasRole(string $role): bool
     {
         return strtolower((string) $this->role) === strtolower($role);

@@ -49,15 +49,18 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        /*
+        | Auth emails (verification, password reset, admin temp password) go
+        | through the Resend API (key: services.resend.key / RESEND_KEY;
+        | domain linkinablink.com verified in the Resend dashboard).
+        | Switched from Banahosting SMTP on 2026-07-14 after the shared host
+        | silently delivered mail for locally-parked domains (menford.com,
+        | passioneinter.com) to dead local mailboxes. The AUTH_MAIL_* SMTP
+        | env vars stay in .env as a dormant rollback: restore transport
+        | smtp + host/port/encryption/username/password to roll back.
+        */
         'auth' => [
-            'transport' => 'smtp',
-            'host'     => env('AUTH_MAIL_HOST', '127.0.0.1'),
-            'port'     => env('AUTH_MAIL_PORT', 465),
-            'encryption' => env('AUTH_MAIL_ENCRYPTION', 'ssl'),
-            'username' => env('AUTH_MAIL_USERNAME'),
-            'password' => env('AUTH_MAIL_PASSWORD'),
-            'timeout'  => null,
-            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'transport' => 'resend',
             'from' => [
                 'address' => env('AUTH_MAIL_FROM_ADDRESS', env('MAIL_FROM_ADDRESS')),
                 'name'    => env('AUTH_MAIL_FROM_NAME', env('MAIL_FROM_NAME')),
