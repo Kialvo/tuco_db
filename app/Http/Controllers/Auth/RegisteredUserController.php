@@ -51,24 +51,25 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Honeypot + minimum-fill-time check (bots fill the off-screen decoy
-     * field and/or submit faster than any human can type the form).
+     * Honeypot check: bots fill the off-screen decoy field, humans never
+     * see it. Every gated attempt is LOGGED so a false positive is visible
+     * in laravel.log instead of a silent mystery (lesson from 2026-07-14:
+     * the old <3s time-gate + a "website"-named decoy flagged a real user
+     * whose browser autofilled the form).
      */
     private function looksLikeBot(Request $request): bool
     {
-        // 1) decoy field filled
-        if (trim((string) $request->input('website', '')) !== '') {
-            return true;
+        if (trim((string) $request->input('contact_ref', '')) === '') {
+            return false;
         }
 
-        // 2) submitted less than 3 seconds after the form was rendered,
-        //    or with a missing/tampered timestamp
-        try {
-            $renderedAt = (int) decrypt((string) $request->input('form_time'));
-        } catch (\Throwable) {
-            return true;
-        }
+        \Illuminate\Support\Facades\Log::notice('[register bot-gate] honeypot tripped', [
+            'ip'           => $request->ip(),
+            'email_domain' => str_contains((string) $request->input('email'), '@')
+                ? substr(strrchr((string) $request->input('email'), '@'), 1)
+                : null,
+        ]);
 
-        return (now()->timestamp - $renderedAt) < 3;
+        return true;
     }
 }

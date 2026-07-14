@@ -36,6 +36,23 @@ class User extends Authenticatable implements MustVerifyEmail
         'role' => 'guest',
     ];
 
+    /**
+     * Verification email goes through the dedicated 'auth' mailer, and a
+     * transport failure is logged LOUDLY instead of 500ing the register
+     * flow or vanishing silently (2026-07-14: verification mails from the
+     * default gmail sender never reached a menford.com inbox).
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        try {
+            $this->notify(new \App\Notifications\VerifyEmailViaAuthMailer());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error(
+                '[verify-email] send FAILED for ' . $this->email . ': ' . $e->getMessage()
+            );
+        }
+    }
+
     public function hasRole(string $role): bool
     {
         return strtolower((string) $this->role) === strtolower($role);
