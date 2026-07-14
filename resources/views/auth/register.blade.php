@@ -5,16 +5,17 @@
     <form method="POST" action="{{ route('register') }}" class="space-y-4">
         @csrf
 
-        {{-- Bot traps (see RegisteredUserController::looksLikeBot):
-             1) decoy field rendered off-screen — humans never see or fill it,
-                naive bots auto-fill every input in the DOM;
-             2) encrypted render timestamp — submits faster than a human can
-                type (< 3s) are silently dropped. --}}
+        {{-- Bot trap (see RegisteredUserController::looksLikeBot): decoy field
+             rendered off-screen — humans never see it, naive bots fill every
+             input in the DOM. Non-semantic name + autocomplete="one-time-code"
+             so browser autofill NEVER touches it (the previous name="website"
+             got autofilled by Chrome and flagged a real user as a bot; the
+             companion <3s time-gate was removed for the same reason —
+             password managers submit legitimately fast). --}}
         <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
-            <label for="website">Website</label>
-            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+            <label for="contact_ref">Leave this field empty</label>
+            <input id="contact_ref" name="contact_ref" type="text" tabindex="-1" autocomplete="one-time-code">
         </div>
-        <input type="hidden" name="form_time" value="{{ encrypt(now()->timestamp) }}">
 
         <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1.5">Full name</label>
