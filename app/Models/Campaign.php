@@ -45,6 +45,21 @@ class Campaign extends Model
         'live_count'           => 'decimal:2',
     ];
 
+    /* ---------------------------------------------------------------- Events */
+
+    protected static function booted(): void
+    {
+        // live_count's UNIT depends on target_type (€ sum vs pub count).
+        // Storage events keep it fresh on publication changes; this keeps it
+        // fresh when the campaign itself switches unit (edit modal) — the
+        // gap that froze a € sum under a "pubs" label (campaign #6).
+        static::saved(function (Campaign $c) {
+            if ($c->wasChanged('target_type')) {
+                $c->recomputeProgress();   // saveQuietly() inside → no event loop
+            }
+        });
+    }
+
     /* ---------------------------------------------------------------- Relations */
 
     public function company()

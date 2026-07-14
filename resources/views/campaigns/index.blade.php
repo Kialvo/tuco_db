@@ -133,8 +133,9 @@
                         <input type="number" step="0.01" id="c_deal_value" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Target Type</label>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Target Type <span class="text-red-500">*</span></label>
                         <select id="c_target_type" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
+                            <option value="" disabled>— select target type —</option>
                             @foreach($targetTypes as $val => $lbl)<option value="{{ $val }}">{{ $lbl }}</option>@endforeach
                         </select>
                     </div>
@@ -426,7 +427,8 @@ $(function () {
     $('#c_company_id').on('change', function () { if (campaignMode) loadContacts($(this).val(), null); });
 
     function updTargetLabel() {
-        $('#c_target_label').text($('#c_target_type').val() === 'budget' ? 'Target Amount (€)' : 'Nr. of Publications');
+        const t = $('#c_target_type').val();
+        $('#c_target_label').text(t === 'budget' ? 'Target Amount (€)' : t === 'publications' ? 'Nr. of Publications' : 'Target');
     }
     $('#c_target_type').on('change', updTargetLabel);
 
@@ -444,7 +446,10 @@ $(function () {
         $('#c_id').val('');
         $('#c_code, #c_deal_value, #c_target_value').val('');
         $('#c_service, #c_status, #c_responsible_user_id').val('');
-        $('#c_target_type').val('budget'); updTargetLabel();
+        // No silent default: picking budget vs publications decides the
+        // progress unit — an unnoticed 'budget' default froze campaign #6's
+        // € sum under a "pubs" label.
+        $('#c_target_type').val(''); updTargetLabel();
         $('#c_company_id').val(null).trigger('change');
         $('#c_contact_id').empty().append(new Option('— select company first —', '')).trigger('change');
         DATE_FIELDS.forEach(f => setDate(f, ''));
@@ -508,6 +513,7 @@ $(function () {
         if (!requireFields([
             [$('#c_code'), 'Campaign Code'],
             [$('#c_status'), 'Status'],
+            [$('#c_target_type'), 'Target Type'],
         ], $('#campaignErrors'))) return;
         const payload = {
             code: $('#c_code').val(),
