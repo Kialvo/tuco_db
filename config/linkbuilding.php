@@ -61,6 +61,7 @@ return [
         'waiting_client_approval'         => ['label' => 'Waiting Client Approval',             'group' => 1, 'tone' => 'amber'],
         'accepted'                        => ['label' => 'Accepted',                            'group' => 1, 'tone' => 'green'],
         'waiting_blog_price_confirmation' => ['label' => 'Waiting Blog Price Confirmation',     'group' => 1, 'tone' => 'amber'],
+        'potential_substitute'            => ['label' => 'Potential Substitute',                'group' => 1, 'tone' => 'sky'],
         'requirements_not_met'            => ['label' => 'Refused by Client – Metrics too low', 'group' => 1, 'tone' => 'red'],
         'high_price'                      => ['label' => 'Refused by Client – High Price',      'group' => 1, 'tone' => 'red'],
         'out_of_topic'                    => ['label' => 'Refused by Client – Out of Topic',    'group' => 1, 'tone' => 'red'],
