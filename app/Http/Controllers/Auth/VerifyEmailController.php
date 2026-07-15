@@ -3,22 +3,33 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
+/**
+ * PUBLIC email verification (no login required — the signed URL + email
+ * hash are the proof of ownership, checked manually here so failures can
+ * render a friendly "link expired" page instead of Laravel's raw 403).
+ * Route keeps the stock name/path, so links in already-sent emails work.
+ */
 class VerifyEmailController extends Controller
 {
-    /**
-     * Mark the authenticated user's email address as verified.
-     */
-    public function __invoke(EmailVerificationRequest $request): RedirectResponse
+    public function __invoke(Request $request, string $id, string $hash)
     {
-        $user = $request->user();
-        $defaultRoute = $user->isGuest() ? 'websites.index' : 'dashboard';
+        $user = User::find($id);
+
+        $valid = $user
+            && $request->hasValidSignature()
+            && hash_equals(sha1($user->getEmailForVerification()), $hash);
+
+        if (! $valid) {
+            // Expired, tampered, or unknown — friendly page with a resend form.
+            return response()->view('auth.verification-failed', ['sent' => false], 410);
+        }
 
         if ($user->hasVerifiedEmail()) {
-            return redirect()->intended(route($defaultRoute, absolute: false).'?verified=1');
+            return view('auth.verification-result', ['user' => $user, 'already' => true]);
         }
 
         if ($user->markEmailAsVerified()) {
@@ -30,6 +41,6 @@ class VerifyEmailController extends Controller
             \App\Services\NotificationHub::userRegistered($user);
         }
 
-        return redirect()->intended(route($defaultRoute, absolute: false).'?verified=1');
+        return view('auth.verification-result', ['user' => $user, 'already' => false]);
     }
 }

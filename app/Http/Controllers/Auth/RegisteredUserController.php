@@ -46,8 +46,14 @@ class RegisteredUserController extends Controller
         // (VerifyEmailController), not here — bots never verify, so the
         // notification hub only ever hears about real humans.
 
-        return redirect()->route('login')
-            ->with('status', 'Registration successful! Please check your email to verify your account before logging in.');
+        // Log the user straight in and land on the "Verify your email" page
+        // (with its Resend button). Safe: every app page is fenced by the
+        // `verified` middleware, so an unverified session can't do anything
+        // else. This restores Breeze's standard post-register flow.
+        \Illuminate\Support\Facades\Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect()->route('verification.notice');
     }
 
     /**
