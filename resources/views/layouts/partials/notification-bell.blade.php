@@ -187,7 +187,9 @@ $(function () {
             return `
             <div class="notif-row group relative border-b border-gray-50 last:border-0 ${n.link ? 'cursor-pointer' : ''}" data-id="${n.id}">
                 <div class="flex items-start gap-3 px-4 py-3 ${unread ? 'bg-green-50/60' : ''} hover:bg-gray-50">
-                    <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100 text-[10px] font-bold text-green-700">${esc(initialsOf(n.from_user_name))}</span>
+                    ${n.from_user_photo
+                        ? `<img src="${esc(n.from_user_photo)}" alt="" class="mt-0.5 h-7 w-7 shrink-0 rounded-full object-cover border border-gray-200">`
+                        : `<span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100 text-[10px] font-bold text-green-700">${esc(initialsOf(n.from_user_name))}</span>`}
                     <div class="min-w-0 flex-1">
                         ${n.entity_label ? `<div class="truncate text-[12px] font-semibold text-gray-800">${esc(n.entity_label)}</div>` : ''}
                         <p class="mt-0.5 text-[12px] text-gray-600" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${n.from_user_name ? '<strong>' + esc(n.from_user_name) + '</strong> ' : ''}${esc(n.body)}</p>

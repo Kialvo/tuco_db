@@ -32,7 +32,7 @@ class CampaignController extends Controller
         $q = Campaign::query()
             ->leftJoin('companies', 'companies.id', '=', 'lb_campaigns.company_id')
             ->select('lb_campaigns.*', 'companies.name as company_name')
-            ->with(['contact:id,first_name,last_name', 'responsibleUser:id,name']);
+            ->with(['contact:id,first_name,last_name', 'responsibleUser:id,name,avatar_url']);
 
         // Filters
         if ($request->filled('company_id')) {
@@ -357,10 +357,13 @@ class CampaignController extends Controller
 
     private function responsibleCell(Campaign $c): string
     {
-        $name  = $c->responsibleUser?->name;
+        $name   = $c->responsibleUser?->name;
+        $avatar = $c->responsibleUser?->avatar;
+        $circle = $avatar
+            ? '<img src="' . e($avatar) . '" alt="" class="w-5 h-5 rounded-full object-cover border border-gray-200">'
+            : '<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 text-[9px] font-bold">' . e($this->initials((string) $name)) . '</span>';
         $inner = $name
-            ? '<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 text-[9px] font-bold">' . e($this->initials($name)) . '</span>'
-              . '<span class="text-xs text-gray-700">' . e($name) . '</span>'
+            ? $circle . '<span class="text-xs text-gray-700">' . e($name) . '</span>'
             : '<span class="text-xs text-gray-400">Unassigned</span>';
 
         return '<button type="button" class="js-resp-edit inline-flex items-center gap-1.5 rounded px-1 py-0.5 hover:bg-gray-50" '

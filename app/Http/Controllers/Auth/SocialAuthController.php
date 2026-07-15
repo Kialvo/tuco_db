@@ -41,7 +41,9 @@ class SocialAuthController extends Controller
         if ($user) {
             $user->fill([
                 'google_id'         => $googleUser->getId(),
-                'avatar_url'        => $googleUser->getAvatar(),
+                // Google's photo only fills an EMPTY slot — a custom photo
+                // uploaded on /profile must survive future Google logins.
+                'avatar_url'        => $user->avatar_url ?: $googleUser->getAvatar(),
                 'email_verified_at' => $user->email_verified_at ?? now(),
             ])->save();
         } else {

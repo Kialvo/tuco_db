@@ -67,7 +67,7 @@ class ConversationController extends Controller
 
     private function serializeAuthor(?User $u): array
     {
-        return ['id' => $u?->id, 'name' => $u?->name ?? 'Unknown'];
+        return ['id' => $u?->id, 'name' => $u?->name ?? 'Unknown', 'avatar' => $u?->avatar];
     }
 
     private function serializeReply(LbUpdateReply $r, int $meId): array
@@ -114,7 +114,7 @@ class ConversationController extends Controller
         abort_unless(in_array($type, self::TYPES, true), 404);
 
         $updates = LbUpdate::forEntity($type, $id)
-            ->with(['author:id,name', 'replies' => fn ($q) => $q->with('author:id,name')->orderBy('created_at')])
+            ->with(['author:id,name,avatar_url', 'replies' => fn ($q) => $q->with('author:id,name,avatar_url')->orderBy('created_at')])
             ->orderBy('created_at')
             ->get();
 
@@ -169,7 +169,7 @@ class ConversationController extends Controller
             ]);
         }
 
-        $update->load('author:id,name');
+        $update->load('author:id,name,avatar_url');
 
         return response()->json(['status' => 'success', 'update' => $this->serializeUpdate($update, $me->id)]);
     }
@@ -218,7 +218,7 @@ class ConversationController extends Controller
             ]);
         }
 
-        $reply->load('author:id,name');
+        $reply->load('author:id,name,avatar_url');
 
         return response()->json(['status' => 'success', 'reply' => $this->serializeReply($reply, $me->id)]);
     }

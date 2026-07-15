@@ -62,6 +62,16 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     | Staff only — the controller 403s guests. NOTE for deploy: if the
     | Apache proxy whitelists path prefixes, add `notifications`.
     --------------------------------------------------------------*/
+    /*--------------------------------------------------------------
+    | My Profile (all verified users incl. guests — whitelisted in
+    | RestrictGuestToDomainsMiddleware). ⚠️ Deploy: Apache whitelist
+    | needs the `profile` prefix; run `php artisan storage:link`.
+    --------------------------------------------------------------*/
+    Route::get('profile',           [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('profile',         [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::post('profile/photo',    [\App\Http\Controllers\ProfileController::class, 'updatePhoto'])->name('profile.photo');
+    Route::delete('profile/photo',  [\App\Http\Controllers\ProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
+
     Route::get('notifications',          [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('notifications/read',   [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.read');
     Route::delete('notifications/{id}',  [\App\Http\Controllers\NotificationController::class, 'destroy'])->whereNumber('id')->name('notifications.destroy');

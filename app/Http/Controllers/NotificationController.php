@@ -51,21 +51,30 @@ class NotificationController extends Controller
             return response()->json(['count' => $this->scoped($request)->unread()->count()]);
         }
 
+        // Sender photos: the shared hub table has no photo column for tuco
+        // rows (the CRM computes photos by joining crm_users), so we resolve
+        // cosmetically by matching from_user_name against staff avatars.
+        $avatars = \App\Models\User::whereIn('role', ['admin', 'editor'])
+            ->whereNotNull('avatar_url')
+            ->get(['name', 'avatar_url'])
+            ->keyBy('name');
+
         $rows = $this->scoped($request)
             ->orderByRaw('read_at IS NOT NULL ASC')
             ->orderByDesc('created_at')
             ->limit(30)
             ->get()
             ->map(fn (CrmNotification $n) => [
-                'id'             => $n->id,
-                'type'           => $n->type,
-                'source_app'     => $n->source_app,
-                'entity_label'   => $n->entity_label,
-                'body'           => $n->body,
-                'link'           => $n->link,
-                'from_user_name' => $n->from_user_name,
-                'read_at'        => $n->read_at ? Carbon::parse($n->read_at)->toIso8601String() : null,
-                'created_at'     => Carbon::parse($n->created_at)->toIso8601String(),
+                'id'              => $n->id,
+                'type'            => $n->type,
+                'source_app'      => $n->source_app,
+                'entity_label'    => $n->entity_label,
+                'body'            => $n->body,
+                'link'            => $n->link,
+                'from_user_name'  => $n->from_user_name,
+                'from_user_photo' => $avatars->get($n->from_user_name)?->avatar,
+                'read_at'         => $n->read_at ? Carbon::parse($n->read_at)->toIso8601String() : null,
+                'created_at'      => Carbon::parse($n->created_at)->toIso8601String(),
             ]);
 
         return response()->json(['notifications' => $rows]);

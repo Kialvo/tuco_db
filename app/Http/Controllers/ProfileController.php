@@ -2,59 +2,74 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
+/**
+ * My Profile — name, photo, password (CRM parity). Available to every
+ * verified user, guests included (whitelisted in
+ * RestrictGuestToDomainsMiddleware). Email is READ-ONLY here: it's the
+ * cross-app identity key (notification hub recipient_email + crm_users
+ * matching) — email changes stay an admin action in Manage Users.
+ */
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
+        return view('profile.edit', ['user' => $request->user()]);
+    }
+
+    /*======================================================================
+    | Name (email deliberately not accepted)
+    ======================================================================*/
+    public function update(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
         ]);
+
+        $request->user()->update($data);
+
+        return back()->with('status', 'profile-updated');
     }
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    /*======================================================================
+    | Photo — public disk avatars/. An upload overrides any Google avatar
+    | and sticks (SocialAuthController only fills an EMPTY avatar_url).
+    ======================================================================*/
+    public function updatePhoto(Request $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
-    }
-
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
-    {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
+        $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         $user = $request->user();
 
-        Auth::logout();
+        $this->deleteLocalAvatar($user->avatar_url);
 
-        $user->delete();
+        $path = $request->file('photo')->store('avatars', 'public');
+        $user->update(['avatar_url' => $path]);
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        return back()->with('status', 'photo-updated');
+    }
 
-        return Redirect::to('/');
+    public function destroyPhoto(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        $this->deleteLocalAvatar($user->avatar_url);
+        $user->update(['avatar_url' => null]);
+
+        return back()->with('status', 'photo-removed');
+    }
+
+    /** Delete a previous LOCAL upload; external URLs (Google) are left alone. */
+    private function deleteLocalAvatar(?string $value): void
+    {
+        if ($value && ! str_starts_with($value, 'http')) {
+            Storage::disk('public')->delete($value);
+        }
     }
 }
