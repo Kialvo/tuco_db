@@ -49,13 +49,24 @@ Route::middleware('guest')->group(function () {
         ->name('auth.google.callback');
 });
 
+/*
+| Email-link verification is PUBLIC (works logged-in or logged-out): the
+| signed URL + email hash prove ownership, validated in the controller so
+| expired/tampered links render a friendly page instead of a raw 403.
+| Same path + route name as stock Breeze → already-sent emails keep working.
+*/
+Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
+    ->middleware('throttle:6,1')
+    ->name('verification.verify');
+
+// Guest resend from the "link expired" page — enumeration-safe, throttled.
+Route::post('verification/resend-public', [EmailVerificationNotificationController::class, 'storePublic'])
+    ->middleware('throttle:3,10')
+    ->name('verification.resend.public');
+
 Route::middleware(['auth', ForcePasswordChangeMiddleware::class, RestrictGuestToDomainsMiddleware::class])->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
         ->name('verification.notice');
-
-    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1'])
-        ->name('verification.verify');
 
     Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
         ->middleware('throttle:3,1')
