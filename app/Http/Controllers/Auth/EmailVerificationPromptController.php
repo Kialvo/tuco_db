@@ -17,8 +17,18 @@ class EmailVerificationPromptController extends Controller
         $user = $request->user();
         $defaultRoute = $user->isGuest() ? 'websites.index' : 'dashboard';
 
-        return $user->hasVerifiedEmail()
-                    ? redirect()->intended(route($defaultRoute, absolute: false))
-                    : view('auth.verify-email');
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->intended(route($defaultRoute, absolute: false));
+        }
+
+        // Server-side truth for the Resend cooldown: seconds until the next
+        // send is allowed (0 = button active). The blade counts down from
+        // this — new tabs/incognito can't reset it.
+        $key = EmailVerificationNotificationController::limiterKey($user->id);
+        $secondsLeft = \Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 1)
+            ? \Illuminate\Support\Facades\RateLimiter::availableIn($key)
+            : 0;
+
+        return view('auth.verify-email', ['secondsLeft' => $secondsLeft]);
     }
 }

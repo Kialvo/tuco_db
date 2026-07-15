@@ -14,7 +14,11 @@
 
     <form method="POST" action="{{ route('verification.send') }}" id="resendForm" class="space-y-3">
         @csrf
-        <button type="submit" id="resendBtn"
+        {{-- Disabled state comes from the SERVER ($secondsLeft, per-user rate
+             limiter): registration counts as the first send, so this lands
+             greyed out. The JS below only animates the number — early POSTs
+             are rejected server-side regardless. --}}
+        <button type="submit" id="resendBtn" @if(($secondsLeft ?? 0) > 0) disabled @endif
                 class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
             <span id="resendBtnLabel">Resend verification email</span>
         </button>
@@ -32,33 +36,30 @@
 
     <script>
         (function () {
-            const COOLDOWN = 60;
-            const KEY = 'verifyEmailCooldownUntil';
+            // Countdown seconds come from the server's rate limiter — the
+            // single source of truth. No sessionStorage: a new tab or
+            // incognito window shows exactly the same remaining time.
             const form  = document.getElementById('resendForm');
             const btn   = document.getElementById('resendBtn');
             const label = document.getElementById('resendBtnLabel');
-            let t = null;
-            const start = (until) => {
-                if (t) clearInterval(t);
+            let remaining = {{ (int) ($secondsLeft ?? 0) }};
+
+            if (remaining > 0) {
                 const tick = () => {
-                    const r = Math.ceil((until - Date.now()) / 1000);
-                    if (r <= 0) {
+                    if (remaining <= 0) {
                         btn.disabled = false;
                         label.textContent = 'Resend verification email';
-                        sessionStorage.removeItem(KEY);
                         clearInterval(t);
                         return;
                     }
                     btn.disabled = true;
-                    label.textContent = `Resend in ${r}s`;
+                    label.textContent = `Resend in ${remaining}s`;
+                    remaining--;
                 };
-                tick(); t = setInterval(tick, 1000);
-            };
-            const stored = parseInt(sessionStorage.getItem(KEY), 10);
-            if (stored && stored > Date.now()) start(stored);
-            @if (session('status') == 'verification-link-sent')
-                { const u = Date.now() + COOLDOWN*1000; sessionStorage.setItem(KEY, u.toString()); start(u); }
-            @endif
+                tick();
+                const t = setInterval(tick, 1000);
+            }
+
             form.addEventListener('submit', (e) => { if (btn.disabled) e.preventDefault(); });
         })();
     </script>

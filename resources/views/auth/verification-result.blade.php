@@ -13,16 +13,11 @@
             <span class="font-semibold">{{ $user->email }}</span> is confirmed.
         </p>
 
-        @if(auth()->id() === $user->id)
-            <a href="{{ route($user->isGuest() ? 'websites.index' : 'dashboard') }}"
-               class="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
-                Continue to the platform
-            </a>
-        @else
-            <a href="{{ route('login') }}"
-               class="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
-                Log in
-            </a>
-        @endif
+        {{-- Always via login — the email link never grants a session
+             (the verifying session is invalidated in the controller). --}}
+        <a href="{{ route('login') }}"
+           class="inline-flex w-full items-center justify-center rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
+            Log in
+        </a>
     </div>
 </x-guest-layout>
