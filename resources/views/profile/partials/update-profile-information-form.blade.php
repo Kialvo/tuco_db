@@ -1,12 +1,8 @@
 <section>
     <header>
         <h2 class="text-base font-bold text-gray-800">Profile information</h2>
-        <p class="mt-1 text-sm text-gray-500">Update your account's profile information and email address.</p>
+        <p class="mt-1 text-sm text-gray-500">Update your display name. Your email identifies you across our apps and can only be changed by an administrator.</p>
     </header>
-
-    <form id="send-verification" method="post" action="{{ route('verification.send') }}">
-        @csrf
-    </form>
 
     <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-4">
         @csrf
@@ -21,24 +17,13 @@
 
         <div>
             <label for="email" class="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
-            <input id="email" name="email" type="email" value="{{ old('email', $user->email) }}" required autocomplete="username"
-                   class="fi py-2.5">
-            @error('email')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
-
-            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <p class="text-sm mt-2 text-gray-700">
-                    Your email address is unverified.
-                    <button form="send-verification" class="font-medium text-green-600 hover:text-green-700">
-                        Click here to re-send the verification email.
-                    </button>
-                </p>
-
-                @if (session('status') === 'verification-link-sent')
-                    <p class="mt-2 font-medium text-sm text-green-600">
-                        A new verification link has been sent to your email address.
-                    </p>
-                @endif
-            @endif
+            <div class="flex items-center gap-2 flex-wrap">
+                <input id="email" type="email" value="{{ $user->email }}" disabled
+                       class="fi py-2.5 flex-1 bg-gray-50 text-gray-500 cursor-not-allowed">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $user->isAdmin() ? 'bg-purple-100 text-purple-700' : ($user->isGuest() ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700') }}">
+                    {{ ucfirst($user->role) }}
+                </span>
+            </div>
         </div>
 
         <div class="flex items-center gap-3 pt-2">

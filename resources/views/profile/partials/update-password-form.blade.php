@@ -1,13 +1,19 @@
+@php $hasPassword = $user->password !== null; @endphp
 <section>
     <header>
-        <h2 class="text-base font-bold text-gray-800">Update password</h2>
-        <p class="mt-1 text-sm text-gray-500">Use a long, random password to keep your account secure.</p>
+        <h2 class="text-base font-bold text-gray-800">{{ $hasPassword ? 'Update password' : 'Set a password' }}</h2>
+        <p class="mt-1 text-sm text-gray-500">
+            {{ $hasPassword
+                ? 'Use a long, random password to keep your account secure.'
+                : 'Your account was created with Google. Setting a password lets you also log in with email + password — Google login keeps working.' }}
+        </p>
     </header>
 
     <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-4">
         @csrf
         @method('put')
 
+        @if($hasPassword)
         <div>
             <label for="update_password_current_password" class="block text-sm font-medium text-gray-700 mb-1.5">Current password</label>
             <input id="update_password_current_password" name="current_password" type="password" autocomplete="current-password"
@@ -16,6 +22,7 @@
                 <p class="text-red-600 text-xs mt-1">{{ $errors->updatePassword->first('current_password') }}</p>
             @endif
         </div>
+        @endif
 
         <div>
             <label for="update_password_password" class="block text-sm font-medium text-gray-700 mb-1.5">New password</label>

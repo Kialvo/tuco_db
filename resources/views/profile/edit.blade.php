@@ -10,15 +10,15 @@
 
         <div class="space-y-6">
             <section class="bg-white rounded-xl border border-gray-200 shadow-card p-6">
+                @include('profile.partials.update-photo-form')
+            </section>
+
+            <section class="bg-white rounded-xl border border-gray-200 shadow-card p-6">
                 @include('profile.partials.update-profile-information-form')
             </section>
 
             <section class="bg-white rounded-xl border border-gray-200 shadow-card p-6">
                 @include('profile.partials.update-password-form')
-            </section>
-
-            <section class="bg-white rounded-xl border border-red-200 shadow-card p-6">
-                @include('profile.partials.delete-user-form')
             </section>
         </div>
     </div>

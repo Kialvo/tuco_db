@@ -58,7 +58,13 @@ window.tucoConversations = (function () {
     function initialsOf(name) {
         return (name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
     }
-    function avatar(name, size) {
+    function avatar(author, size) {
+        // author: {name, avatar} object or a plain name string (fallback)
+        const name = typeof author === 'string' ? author : (author?.name ?? '?');
+        const url  = typeof author === 'object' && author ? author.avatar : null;
+        if (url) {
+            return `<img src="${esc(url)}" alt="" class="shrink-0 rounded-full object-cover border border-gray-200" style="width:${size}px;height:${size}px">`;
+        }
         return `<span class="inline-flex shrink-0 items-center justify-center rounded-full bg-green-100 text-[10px] font-bold text-green-700" style="width:${size}px;height:${size}px">${esc(initialsOf(name))}</span>`;
     }
     const editedTag = '<span class="text-[10px] italic text-gray-400">(edited)</span>';
@@ -67,7 +73,7 @@ window.tucoConversations = (function () {
     function replyHtml(r) {
         return `
         <div class="flex gap-2" data-reply="${r.id}">
-            ${avatar(r.author.name, 24)}
+            ${avatar(r.author, 24)}
             <div class="flex-1 min-w-0">
                 <div class="flex items-baseline gap-2 flex-wrap">
                     <span class="text-[12px] font-semibold text-gray-800">${esc(r.author.name)}</span>
@@ -87,7 +93,7 @@ window.tucoConversations = (function () {
         return `
         <div class="space-y-2 conv-update" data-update="${u.id}">
             <div class="flex gap-3">
-                ${avatar(u.author.name, 32)}
+                ${avatar(u.author, 32)}
                 <div class="flex-1 min-w-0">
                     <div class="flex items-baseline gap-2 flex-wrap">
                         <span class="text-[13px] font-semibold text-gray-800">${esc(u.author.name)}</span>

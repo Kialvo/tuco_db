@@ -32,6 +32,11 @@ class RestrictGuestToDomainsMiddleware
         'password.force.update',
         'password.update',
         'password.confirm',
+        // My Profile (name/photo/password) — everyone owns theirs
+        'profile.edit',
+        'profile.update',
+        'profile.photo',
+        'profile.photo.destroy',
     ];
 
     public function handle(Request $request, Closure $next): Response

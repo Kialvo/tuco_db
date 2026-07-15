@@ -37,6 +37,22 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
+     * Display URL for the avatar: external URLs (Google) pass through,
+     * local uploads (avatars/… on the public disk) get the storage URL,
+     * null → initials fallback in the views.
+     */
+    public function getAvatarAttribute(): ?string
+    {
+        if (! $this->avatar_url) {
+            return null;
+        }
+
+        return str_starts_with($this->avatar_url, 'http')
+            ? $this->avatar_url
+            : asset('storage/' . $this->avatar_url);
+    }
+
+    /**
      * Verification email goes through the dedicated 'auth' mailer, and a
      * transport failure is logged LOUDLY instead of 500ing the register
      * flow or vanishing silently (2026-07-14: verification mails from the

@@ -202,15 +202,19 @@
     {{-- User + Logout --}}
     <div class="p-3 border-t border-sidebar-border">
         @if($user)
-            <div class="flex items-center gap-2.5 px-2 mb-2">
-                <div class="w-7 h-7 rounded-full bg-green-500/25 flex items-center justify-center text-green-400 text-xs font-bold flex-shrink-0">
-                    {{ $initials }}
-                </div>
+            <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-2 mb-2 rounded-lg py-1 hover:bg-white/10" title="My Profile">
+                @if($user->avatar)
+                    <img src="{{ $user->avatar }}" alt="" class="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-white/20">
+                @else
+                    <div class="w-7 h-7 rounded-full bg-green-500/25 flex items-center justify-center text-green-400 text-xs font-bold flex-shrink-0">
+                        {{ $initials }}
+                    </div>
+                @endif
                 <div class="min-w-0">
                     <div class="text-white text-xs font-medium truncate">{{ $user->name }}</div>
                     <div class="text-gray-400 text-xs truncate">{{ $user->email }}</div>
                 </div>
-            </div>
+            </a>
         @endif
         {{-- Notification bell moved to the global topbar (layouts/partials/topbar.blade.php) --}}
         <form method="POST" action="{{ route('logout') }}">
