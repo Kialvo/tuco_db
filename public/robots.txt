@@ -1,2 +1,8 @@
 User-agent: *
 Disallow:
+
+# The marketing site (linkinablink.com root, /privacy-policy, /cookie-policy) is a
+# separate Next.js codebase on Vercel, proxied through this server. Its sitemap is
+# declared here because this app serves /robots.txt for the shared apex — a robots.txt
+# shipped from the marketing repo would never reach the live domain.
+Sitemap: https://linkinablink.com/sitemap.xml
