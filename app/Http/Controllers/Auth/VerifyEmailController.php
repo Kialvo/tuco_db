@@ -41,6 +41,15 @@ class VerifyEmailController extends Controller
             \App\Services\NotificationHub::userRegistered($user);
         }
 
+        // The email link NEVER grants access: if this browser still holds
+        // the temporary post-registration session for this user, kill it —
+        // the only door into the platform is the login page.
+        if (auth()->id() === $user->id) {
+            \Illuminate\Support\Facades\Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
         return view('auth.verification-result', ['user' => $user, 'already' => false]);
     }
 }

@@ -42,6 +42,12 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
+        // Registration just sent the first verification email — start the
+        // per-user 60s resend cooldown so the Verify page lands with the
+        // Resend button greyed out (server-enforced, see
+        // EmailVerificationNotificationController).
+        \Illuminate\Support\Facades\RateLimiter::hit('verify-send:' . $user->id, 60);
+
         // NOTE: admins are notified when the email gets VERIFIED
         // (VerifyEmailController), not here — bots never verify, so the
         // notification hub only ever hears about real humans.
