@@ -17,65 +17,100 @@
                 </div>
 
                 <form id="statsFiltersForm" method="GET" action="{{ route('storages.stats') }}"
-                      class="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:w-auto xl:grid-cols-[220px_180px_170px_170px_auto_auto]">
-                    <label class="flex flex-col gap-1">
-                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Time Window</span>
-                        <select name="window"
-                                class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                            @foreach($windowOptions as $value => $label)
-                                <option value="{{ $value }}" @selected($window === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </label>
+                      x-data="statsRangePicker({
+                          window: @js($window),
+                          dateFrom: @js($dateFrom ?? ''),
+                          dateTo: @js($dateTo ?? ''),
+                          hasCustomRange: @js($hasCustomRange),
+                          windowOptions: @js($windowOptions),
+                      })"
+                      class="flex w-full flex-wrap items-end gap-3 xl:w-auto xl:flex-nowrap">
+
+                    {{-- Params submitted with the form; kept in sync by the picker. --}}
+                    <input type="hidden" name="window" :value="window">
+                    <input type="hidden" name="date_from" :value="dateFrom">
+                    <input type="hidden" name="date_to" :value="dateTo">
+
+                    {{-- Date-range dropdown (ported from menford-analytics DateRangePicker). --}}
+                    <div class="relative flex flex-col gap-1"
+                         @keydown.escape.window="open = false"
+                         @click.outside="open = false">
+                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Date Range</span>
+                        <button type="button"
+                                @click="open = !open"
+                                :aria-expanded="open.toString()"
+                                class="inline-flex h-[42px] min-w-[240px] items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 text-sm font-medium text-green-700 shadow-sm transition hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-200">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0" aria-hidden="true">
+                                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="flex-1 text-left" x-text="displayLabel"></span>
+                            <x-icon name="chevron-down" size="sm" class="shrink-0 transition-transform"
+                                    ::class="open ? 'rotate-180' : ''" />
+                        </button>
+
+                        <div x-show="open" x-cloak x-transition
+                             role="dialog" aria-label="Select date range"
+                             class="absolute left-0 top-full z-30 mt-2 w-72 origin-top-left rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                            {{-- Presets (reuse the tested `window` slicing logic). --}}
+                            <div class="space-y-1">
+                                <template x-for="preset in presets" :key="preset.key">
+                                    <button type="button"
+                                            @click="applyPreset(preset)"
+                                            class="w-full rounded-lg px-3 py-2 text-left text-sm transition"
+                                            :class="isActivePreset(preset) ? 'bg-green-50 font-medium text-green-700' : 'text-slate-700 hover:bg-slate-50'"
+                                            x-text="preset.label"></button>
+                                </template>
+                            </div>
+
+                            {{-- Custom range. --}}
+                            <div class="mt-2 border-t border-slate-200 pt-2">
+                                <button type="button"
+                                        @click="showCustom = !showCustom"
+                                        class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">
+                                    Custom range
+                                    <x-icon name="chevron-down" size="sm" class="transition-transform"
+                                            ::class="showCustom ? 'rotate-180' : ''" />
+                                </button>
+
+                                <div x-show="showCustom" x-cloak class="mt-2 space-y-2 px-1">
+                                    <div>
+                                        <label class="mb-1 block text-xs text-slate-500">Start date</label>
+                                        <input type="date" x-model="customStart" :max="customEnd || null"
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
+                                    </div>
+                                    <div>
+                                        <label class="mb-1 block text-xs text-slate-500">End date</label>
+                                        <input type="date" x-model="customEnd" :min="customStart || null"
+                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
+                                    </div>
+                                    <button type="button"
+                                            :disabled="!customStart || !customEnd || customStart > customEnd"
+                                            @click="applyCustom()"
+                                            class="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40">
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <label class="flex flex-col gap-1">
                         <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Granularity</span>
                         <select name="granularity"
-                                class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
+                                @change="$el.form.submit()"
+                                class="h-[42px] rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
                             @foreach($granularityOptions as $value => $label)
                                 <option value="{{ $value }}" @selected($granularity === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </label>
 
-                    <label class="flex flex-col gap-1">
-                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">From</span>
-                        <input type="text"
-                               name="date_from"
-                               value="{{ $dateFrom }}"
-                               placeholder="YYYY-MM-DD"
-                               autocomplete="off"
-                               class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                    </label>
-
-                    <label class="flex flex-col gap-1">
-                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">To</span>
-                        <input type="text"
-                               name="date_to"
-                               value="{{ $dateTo }}"
-                               placeholder="YYYY-MM-DD"
-                               autocomplete="off"
-                               class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                    </label>
-
-                    <button type="submit"
-                            class="inline-flex h-[42px] items-center justify-center self-end rounded-xl bg-green-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300">
-                        Apply
-                    </button>
-
                     <a href="{{ route('storages.stats') }}"
                        class="inline-flex h-[42px] items-center justify-center gap-2 self-end rounded-xl border border-pink-200 bg-pink-50 px-4 text-sm font-semibold text-pink-700 transition hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-200">
                         <x-icon name="rotate" size="sm" class="inline" />
                         Reset
                     </a>
-
-                    <p class="text-xs text-slate-500 sm:col-span-2 lg:col-span-3 xl:col-span-6">
-                        @if($hasCustomRange)
-                            Custom dates are active. The preset window is ignored until you switch the window or reset the filters.
-                        @else
-                            Pick a custom date range for the charts or keep using the preset window.
-                        @endif
-                    </p>
                 </form>
             </div>
         </div>
@@ -354,55 +389,72 @@
 
             renderMedianDaysChart('#copyDeliveryTimeChart', 'Copy Delivery Time', copyMedianSeries, '#6366f1');
             renderMedianDaysChart('#publisherPublicationTimeChart', 'Publisher Publication Time', publisherMedianSeries, '#0ea5e9');
-
-            const form = document.getElementById('statsFiltersForm');
-            if (form) {
-                const windowSelect = form.querySelector('select[name="window"]');
-                const granularitySelect = form.querySelector('select[name="granularity"]');
-                const dateInputs = form.querySelectorAll('input[name="date_from"], input[name="date_to"]');
-
-                dateInputs.forEach(function (input) {
-                    if (typeof flatpickr === 'function') {
-                        flatpickr(input, {
-                            dateFormat: 'Y-m-d',
-                            allowInput: true
-                        });
-                    }
-                });
-
-                if (windowSelect) {
-                    windowSelect.addEventListener('change', function () {
-                        dateInputs.forEach(function (input) {
-                            if (input._flatpickr) {
-                                input._flatpickr.clear();
-                            } else {
-                                input.value = '';
-                            }
-                        });
-
-                        form.submit();
-                    });
-                }
-
-                if (granularitySelect) {
-                    granularitySelect.addEventListener('change', function () {
-                        form.submit();
-                    });
-                }
-
-                const dateFromInput = form.querySelector('input[name="date_from"]');
-                const dateToInput = form.querySelector('input[name="date_to"]');
-
-                if (dateFromInput && dateToInput) {
-                    [dateFromInput, dateToInput].forEach(function (input) {
-                        input.addEventListener('keydown', function (event) {
-                            if (event.key === 'Enter') {
-                                form.submit();
-                            }
-                        });
-                    });
-                }
-            }
         });
+
+        // Date-range picker, ported from menford-analytics' DateRangePicker.tsx.
+        // Presets drive the existing `window` param (reusing the controller's tested
+        // month-window slicing); the custom range drives `date_from`/`date_to`.
+        function statsRangePicker(config) {
+            return {
+                open: false,
+                showCustom: config.hasCustomRange,
+                window: config.window,
+                dateFrom: config.dateFrom || '',
+                dateTo: config.dateTo || '',
+                customStart: config.dateFrom || '',
+                customEnd: config.dateTo || '',
+                windowOptions: config.windowOptions,
+                hasCustomRange: config.hasCustomRange,
+
+                get presets() {
+                    // Friendly order; only keep windows the controller actually offers.
+                    return ['12', '24', '36', '60', 'all']
+                        .filter((key) => this.windowOptions[key])
+                        .map((key) => ({ key: key, label: this.windowOptions[key] }));
+                },
+
+                get displayLabel() {
+                    if (this.hasCustomRange && this.dateFrom && this.dateTo) {
+                        return this.formatLabel(this.dateFrom) + ' – ' + this.formatLabel(this.dateTo);
+                    }
+                    if (this.hasCustomRange && this.dateFrom) return 'From ' + this.formatLabel(this.dateFrom);
+                    if (this.hasCustomRange && this.dateTo) return 'Up to ' + this.formatLabel(this.dateTo);
+                    return this.windowOptions[this.window] || 'Select range';
+                },
+
+                formatLabel(dateStr) {
+                    if (!dateStr) return '';
+                    const d = new Date(dateStr + 'T00:00:00');
+                    if (isNaN(d.getTime())) return dateStr;
+                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                },
+
+                isActivePreset(preset) {
+                    return !this.hasCustomRange && this.window === preset.key;
+                },
+
+                submit() {
+                    this.$nextTick(() => document.getElementById('statsFiltersForm').submit());
+                },
+
+                applyPreset(preset) {
+                    this.window = preset.key;
+                    this.dateFrom = '';
+                    this.dateTo = '';
+                    this.open = false;
+                    this.submit();
+                },
+
+                applyCustom() {
+                    if (!this.customStart || !this.customEnd || this.customStart > this.customEnd) return;
+                    this.dateFrom = this.customStart;
+                    this.dateTo = this.customEnd;
+                    this.window = 'all'; // ignored by the controller while a custom range is set
+                    this.open = false;
+                    this.showCustom = false;
+                    this.submit();
+                },
+            };
+        }
     </script>
 @endpush
