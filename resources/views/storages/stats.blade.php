@@ -1,5 +1,9 @@
 @extends('layouts.dashboard')
 
+@section('subnav')
+    @include('layouts.partials.stats-sidebar')
+@endsection
+
 @section('content')
     <div class="mx-auto max-w-7xl space-y-6 py-2">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

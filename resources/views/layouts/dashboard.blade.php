@@ -43,6 +43,13 @@
         @include('layouts.partials.topbar')
 
         <div class="flex-1 flex overflow-hidden">
+            @hasSection('subnav')
+                {{-- Secondary section menu (e.g. Stats) — sits between the main sidebar and content --}}
+                <aside class="w-56 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-y-auto">
+                    @yield('subnav')
+                </aside>
+            @endif
+
             @hasSection('filters')
                 {{-- Three-column: sidebar + sticky filter aside + main --}}
                 <aside class="w-[268px] bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden">
