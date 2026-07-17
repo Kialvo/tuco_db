@@ -58,4 +58,12 @@ return [
         'secret' => env('DATAFORSEO_PROXY_SECRET'),
     ],
 
+    // Team alerts fired when a new user completes registration
+    // (NotificationHub::userRegistered). Discord silently skips when the
+    // webhook URL is not set.
+    'admin_alerts' => [
+        'new_user_email'      => env('NEW_USER_ALERT_EMAIL', 'networkmenford@gmail.com'),
+        'discord_webhook_url' => env('DISCORD_NEW_USER_WEBHOOK_URL'),
+    ],
+
 ];
