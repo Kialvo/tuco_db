@@ -39,6 +39,11 @@ class SocialAuthController extends Controller
         }
 
         if ($user) {
+            // A manual, never-verified account adopting Google completes its
+            // registration NOW — notify below. Accounts that already have a
+            // google_id were notified at creation; don't double-alert them.
+            $completedViaGoogle = is_null($user->email_verified_at) && ! $user->google_id;
+
             $user->fill([
                 'google_id'         => $googleUser->getId(),
                 // Google's photo only fills an EMPTY slot — a custom photo
@@ -46,6 +51,10 @@ class SocialAuthController extends Controller
                 'avatar_url'        => $user->avatar_url ?: $googleUser->getAvatar(),
                 'email_verified_at' => $user->email_verified_at ?? now(),
             ])->save();
+
+            if ($completedViaGoogle) {
+                \App\Services\NotificationHub::userRegistered($user);
+            }
         } else {
             $user = User::create([
                 'name'              => $googleUser->getName() ?: $googleUser->getNickname() ?: $googleUser->getEmail(),
