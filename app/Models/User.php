@@ -20,6 +20,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'avatar_url',
         'must_change_password',
+        // Set by trusted flows only (Google OAuth callback, admin Add User)
+        // — both mass-assign it and silently lost it before 2026-07-17,
+        // leaving those accounts stuck unverified at the verify wall.
+        'email_verified_at',
     ];
 
     protected $hidden = [
