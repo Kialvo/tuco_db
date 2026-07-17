@@ -96,6 +96,36 @@ class NotificationHub
             'link'           => route('admin.users.index'),
             'from_user_name' => 'Linkinablink',
         ]);
+
+        static::newUserAlerts($newUser);
+    }
+
+    /**
+     * External alerts for a completed registration: email to the team inbox
+     * + Discord webhook (config: services.admin_alerts). Each channel is
+     * independently non-fatal — an outage must never break the verification
+     * page that fires this.
+     */
+    public static function newUserAlerts(User $newUser): void
+    {
+        try {
+            \Illuminate\Support\Facades\Mail::to(config('services.admin_alerts.new_user_email'))
+                ->send(new \App\Mail\NewUserRegisteredAdminMail($newUser));
+        } catch (\Throwable $e) {
+            Log::warning('[NotificationHub] new-user email alert failed: ' . $e->getMessage());
+        }
+
+        try {
+            if ($url = config('services.admin_alerts.discord_webhook_url')) {
+                \Illuminate\Support\Facades\Http::timeout(5)->post($url, [
+                    'content' => "There's a new user on Linkinablink. Here are their details:\n"
+                        . '**Name:** ' . $newUser->name . "\n"
+                        . '**Email:** ' . $newUser->email,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[NotificationHub] new-user discord alert failed: ' . $e->getMessage());
+        }
     }
 
     /** Normalize a recipient (User model or raw address) to a lowercase email. */
