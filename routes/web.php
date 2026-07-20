@@ -319,8 +319,8 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
         ->name('stats.production');
 
     /* ───── STATS section (secondary sidebar) ───── */
-    Route::get('/stats/database', [StatsController::class, 'database'])
-        ->name('stats.database');
+    Route::get('/stats/publishers', [StatsController::class, 'publishers'])
+        ->name('stats.publishers');
 
     Route::get('/stats/campaigns', [StatsController::class, 'campaigns'])
         ->name('stats.campaigns');

@@ -8,7 +8,7 @@ class StatsController extends Controller
      * Database Statistics — website status split (donut) + active domains.
      * Read-only. Further metrics/charts wired in a later pass.
      */
-    public function database()
+    public function publishers()
     {
         // Model query auto-excludes soft-deleted (SoftDeletes); status is
         // lowercase-normalized on write, so the keys are stable slugs.
@@ -89,7 +89,7 @@ class StatsController extends Controller
 
         $languageChart = ['labels' => $langLabels, 'series' => $langSeries];
 
-        return view('stats.database', compact(
+        return view('stats.publishers', compact(
             'statusChart', 'activeDomains', 'countryChart', 'typeChart', 'languageChart'
         ));
     }

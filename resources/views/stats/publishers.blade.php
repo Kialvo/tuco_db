@@ -1,6 +1,6 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Database Statistics')
+@section('title', 'Publisher Statistics')
 
 @section('subnav')
     @include('layouts.partials.stats-sidebar')

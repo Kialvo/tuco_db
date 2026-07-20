@@ -5,7 +5,7 @@
         ['route' => 'stats.financial', 'label' => 'Financial Stats',  'icon' => 'chart-line'],
         ['route' => 'stats.campaigns', 'label' => 'Campaigns Stats',  'icon' => 'briefcase'],
         ['route' => 'stats.production', 'label' => 'Production Stats',  'icon' => 'chart-bar'],
-        ['route' => 'stats.database',  'label' => 'Database Stats',    'icon' => 'database'],
+        ['route' => 'stats.publishers', 'label' => 'Publisher Stats',   'icon' => 'database'],
         ['label' => 'Sales Stats',     'icon' => 'euro',       'soon' => true],
     ];
 @endphp
