@@ -9,9 +9,9 @@
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                    <h1 class="text-2xl font-semibold text-slate-900">Production Statistics</h1>
+                    <h1 class="text-2xl font-semibold text-slate-900">Financial Statistics</h1>
                     <p class="mt-2 text-sm text-slate-600">
-                        Trend and profitability for storages with status <strong>article_published</strong>.
+                        Net profit for storages with status <strong>article_published</strong>.
                     </p>
                     @if($rangeLabel)
                         <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -20,7 +20,7 @@
                     @endif
                 </div>
 
-                <form id="statsFiltersForm" method="GET" action="{{ route('stats.production') }}"
+                <form id="statsFiltersForm" method="GET" action="{{ route('stats.financial') }}"
                       x-data="statsRangePicker({
                           window: @js($window),
                           dateFrom: @js($dateFrom ?? ''),
@@ -99,18 +99,7 @@
                         </div>
                     </div>
 
-                    <label class="flex flex-col gap-1">
-                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Granularity</span>
-                        <select name="granularity"
-                                @change="$el.form.submit()"
-                                class="h-[42px] rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                            @foreach($granularityOptions as $value => $label)
-                                <option value="{{ $value }}" @selected($granularity === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-
-                    <a href="{{ route('stats.production') }}"
+                    <a href="{{ route('stats.financial') }}"
                        class="inline-flex h-[42px] items-center justify-center gap-2 self-end rounded-xl border border-pink-200 bg-pink-50 px-4 text-sm font-semibold text-pink-700 transition hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-200">
                         <x-icon name="rotate" size="sm" class="inline" />
                         Reset
@@ -120,8 +109,10 @@
         </div>
 
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Published Articles</p>
-            <p class="mt-2 text-4xl font-bold text-slate-900">{{ number_format($totalPublished) }}</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Net Profit</p>
+            <p class="mt-2 text-4xl font-bold text-slate-900">
+                EUR {{ number_format((float) $totalNetProfit, 2, '.', ',') }}
+            </p>
         </div>
 
         {{-- Per-widget granularity toggle (Monthly / Quarterly / Yearly), styled after
@@ -137,28 +128,16 @@
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Guest Posts Published</h2>
+                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Net Profit</h2>
                     </div>
-                    <div data-granularity-toggle="guestPosts" role="group" aria-label="Data granularity"
+                    <div data-granularity-toggle="netProfit" role="group" aria-label="Data granularity"
                          class="inline-flex shrink-0 rounded-lg border border-slate-200 bg-slate-100 p-1 text-sm">
                         <button type="button" data-granularity="monthly"   aria-pressed="true"  class="{{ $toggleBtn }} {{ $toggleOn }}">Monthly</button>
                         <button type="button" data-granularity="quarterly" aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Quarterly</button>
                         <button type="button" data-granularity="yearly"    aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Yearly</button>
                     </div>
                 </div>
-                <div id="guestPostsPublishedChart" class="mt-4 h-[390px]"></div>
-            </section>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Copy Delivery Time</h2>
-                <div id="copyDeliveryTimeChart" class="mt-4 h-[390px]"></div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Publisher Publication Time</h2>
-                <div id="publisherPublicationTimeChart" class="mt-4 h-[390px]"></div>
+                <div id="netProfitChart" class="mt-4 h-[390px]"></div>
             </section>
         </div>
     </div>
@@ -169,19 +148,21 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const labels = @json($labels);
-            const publishedSeries = @json($publishedSeries);
-            const guestPostsMonthly = @json($guestPostsMonthly);
-            const copyMedianSeries = @json($copyMedianSeries);
-            const publisherMedianSeries = @json($publisherMedianSeries);
+            const netProfitMonthly = @json($netProfitMonthly);
             const granularity = @json($granularity);
-            const totalPoints = labels.length;
-            const maxVisibleTicks = granularity === 'quarterly' ? 10 : 14;
-            const labelStep = Math.max(1, Math.ceil(totalPoints / maxVisibleTicks));
-            const labelRotation = totalPoints > 24 ? -40 : (totalPoints > 14 ? -25 : 0);
 
-            const sparseLabelFormatter = function (value, _timestamp, opts) {
-                const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : 0;
-                return index % labelStep === 0 ? value : '';
+            const euro = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            const compactCurrency = function (value) {
+                const abs = Math.abs(value);
+                if (abs >= 1000000) return 'EUR ' + (value / 1000000).toFixed(1) + 'M';
+                if (abs >= 1000) return 'EUR ' + (value / 1000).toFixed(1) + 'k';
+                return 'EUR ' + value.toFixed(0);
             };
 
             const commonOptions = {
@@ -209,20 +190,17 @@
                     axisBorder: { color: '#cbd5e1' },
                     axisTicks: { color: '#cbd5e1' },
                     labels: {
-                        rotate: labelRotation,
                         hideOverlappingLabels: true,
                         trim: true,
-                        style: { colors: '#64748b', fontSize: '11px' },
-                        formatter: sparseLabelFormatter
+                        style: { colors: '#64748b', fontSize: '11px' }
                     }
                 }
             };
 
-            // ── Granularity-toggle widgets ─────────────────────────────────
+            // ── Granularity-toggle widget ──────────────────────────────────
             // A line/area chart driven by its own Monthly / Quarterly / Yearly
             // segmented toggle. The source is always monthly; quarters/years are
-            // summed client-side (ported from menford-analytics' bucketize()), so
-            // each widget is independent of the page-level granularity select.
+            // summed client-side (ported from menford-analytics' bucketize()).
             const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
             const renderGranularityChart = function (cfg) {
@@ -352,106 +330,17 @@
             };
 
             renderGranularityChart({
-                nodeSelector: '#guestPostsPublishedChart',
-                toggleKey: 'guestPosts',
-                monthly: guestPostsMonthly,
-                seriesName: 'Guest Posts Published',
-                color: '#2563eb',
-                type: 'line',
-                yMin: 0,
-                yTitle: 'Guest posts',
-                yFormatter: function (value) { return Math.round(value).toString(); },
-                tooltipFormatter: function (value) {
-                    const n = Math.round(value);
-                    return n + ' guest post' + (n === 1 ? '' : 's');
-                }
+                nodeSelector: '#netProfitChart',
+                toggleKey: 'netProfit',
+                monthly: netProfitMonthly,
+                seriesName: 'Net Profit',
+                color: '#059669',
+                type: 'area',
+                yMin: undefined,
+                yTitle: 'Net Profit (EUR)',
+                yFormatter: function (value) { return compactCurrency(value); },
+                tooltipFormatter: function (value) { return euro.format(value); }
             });
-
-            const renderMedianDaysChart = function (selector, seriesName, data, color) {
-                // Start the line at the first period that actually has data — drop
-                // only the LEADING empty periods so the axis doesn't begin on months
-                // with no median. Interior gaps (null between two data points) and
-                // trailing nulls are left untouched.
-                let firstIdx = data.findIndex(function (value) {
-                    return value !== null && value !== undefined;
-                });
-                if (firstIdx < 0) firstIdx = 0;
-                const chartData = data.slice(firstIdx);
-                const chartLabels = labels.slice(firstIdx);
-                const chartPoints = chartLabels.length;
-                const chartLabelStep = Math.max(1, Math.ceil(chartPoints / (granularity === 'quarterly' ? 6 : 8)));
-
-                new ApexCharts(document.querySelector(selector), {
-                    ...commonOptions,
-                    chart: {
-                        ...commonOptions.chart,
-                        type: 'line',
-                        height: 390
-                    },
-                    series: [{
-                        name: seriesName,
-                        data: chartData
-                    }],
-                    colors: [color],
-                    stroke: {
-                        curve: 'straight',
-                        width: 3,
-                        lineCap: 'round'
-                    },
-                    markers: { size: 3, hover: { sizeOffset: 2 } },
-                    dataLabels: { enabled: false },
-                    // Median can be null for periods with no data — show a gap, not a fake 0.
-                    fill: { opacity: 1 },
-                    xaxis: {
-                        ...commonOptions.xaxis,
-                        categories: chartLabels,
-                        tickAmount: Math.min(chartPoints, 8),
-                        labels: {
-                            ...commonOptions.xaxis.labels,
-                            formatter: function (value, _timestamp, opts) {
-                                const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : 0;
-                                return index % chartLabelStep === 0 ? value : '';
-                            },
-                        },
-                    },
-                    yaxis: {
-                        min: 0,
-                        forceNiceScale: true,
-                        title: { text: 'Median days' },
-                        labels: {
-                            style: { colors: '#64748b', fontSize: '11px' },
-                            formatter: function (value) {
-                                return Math.round(value).toString();
-                            }
-                        }
-                    },
-                    annotations: {
-                        yaxis: [{
-                            y: 2,
-                            borderColor: '#ef4444',
-                            strokeDashArray: 4,
-                            label: {
-                                text: 'Target 2d',
-                                borderColor: '#ef4444',
-                                style: { color: '#fff', background: '#ef4444', fontSize: '10px' }
-                            }
-                        }]
-                    },
-                    tooltip: {
-                        theme: 'light',
-                        y: {
-                            formatter: function (value) {
-                                if (value === null) return 'No data';
-                                const rounded = Math.round(value * 10) / 10;
-                                return rounded + ' day' + (rounded === 1 ? '' : 's');
-                            }
-                        }
-                    }
-                }).render();
-            };
-
-            renderMedianDaysChart('#copyDeliveryTimeChart', 'Copy Delivery Time', copyMedianSeries, '#6366f1');
-            renderMedianDaysChart('#publisherPublicationTimeChart', 'Publisher Publication Time', publisherMedianSeries, '#0ea5e9');
         });
 
         // Date-range picker, ported from menford-analytics' DateRangePicker.tsx.

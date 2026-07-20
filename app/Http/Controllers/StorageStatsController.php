@@ -17,6 +17,25 @@ class StorageStatsController extends Controller
 
     public function index(Request $request)
     {
+        return view('storages.stats', $this->computeStats($request));
+    }
+
+    /**
+     * Financial Statistics — Total Net Profit + Net Profit over time.
+     * Shares the exact filter/aggregation pipeline as Publication Stats;
+     * the view renders only the profit card + chart. Read-only.
+     */
+    public function financial(Request $request)
+    {
+        return view('stats.financial', $this->computeStats($request));
+    }
+
+    /**
+     * Build the shared stats payload (filters + aggregated series) consumed by
+     * both the Publication and Financial Stats pages.
+     */
+    private function computeStats(Request $request): array
+    {
         $window = $request->query('window', 'all');
         if (! in_array($window, self::WINDOW_OPTIONS, true)) {
             $window = 'all';
@@ -124,7 +143,7 @@ class StorageStatsController extends Controller
             'value' => (float) $point['profit'],
         ], $windowedPoints);
 
-        return view('storages.stats', [
+        return [
             'labels' => $labels,
             'publishedSeries' => $publishedSeries,
             'guestPostsMonthly' => $guestPostsMonthly,
@@ -152,7 +171,7 @@ class StorageStatsController extends Controller
             ],
             'rangeLabel' => $this->buildRangeLabel($seriesPoints, $dateFrom, $dateTo),
             'pointsCount' => count($seriesPoints),
-        ]);
+        ];
     }
 
     private function buildMonthlySeries($rows, ?Carbon $startMonth = null, ?Carbon $endMonth = null): array

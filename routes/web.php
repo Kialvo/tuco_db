@@ -48,7 +48,14 @@ Route::get('/dev-login', function () {
     auth()->login($user);
     request()->session()->regenerate();
 
-    return redirect('/storages/stats');
+    // Dev-only: allow ?to=/path to land on a specific page after login.
+    // Restricted to local (route already 404s outside local) + relative paths.
+    $to = (string) request('to', '/stats/production');
+    if (! str_starts_with($to, '/')) {
+        $to = '/stats/production';
+    }
+
+    return redirect($to);
 });
 
 /*======================================================================
@@ -308,8 +315,8 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     Route::post('/storages/summary', [StorageController::class, 'summary'])
         ->name('storages.summary');
 
-    Route::get('/storages/stats', [StorageStatsController::class, 'index'])
-        ->name('storages.stats');
+    Route::get('/stats/production', [StorageStatsController::class, 'index'])
+        ->name('stats.production');
 
     /* ───── STATS section (secondary sidebar) ───── */
     Route::get('/stats/database', [StatsController::class, 'database'])
@@ -317,6 +324,9 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
 
     Route::get('/stats/campaigns', [StatsController::class, 'campaigns'])
         ->name('stats.campaigns');
+
+    Route::get('/stats/financial', [StorageStatsController::class, 'financial'])
+        ->name('stats.financial');
 
     Route::get('/storages/domain-preview', [StorageController::class, 'domainPreview'])->name('storages.domain_preview');
 
