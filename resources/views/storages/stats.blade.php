@@ -141,30 +141,55 @@
             </section>
         </div>
 
-        <div class="grid grid-cols-1 gap-6">
+        {{-- Per-widget granularity toggle (Monthly / Quarterly / Yearly), styled after
+             menford-analytics' GranularityToggle. The buttons drive a client-side
+             re-aggregation of a monthly source, independent of the page granularity. --}}
+        @php
+            $toggleBtn = 'rounded-md border px-3 py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-200';
+            $toggleOn  = 'border-slate-200 bg-white font-semibold text-slate-900 shadow-sm';
+            $toggleOff = 'border-transparent text-slate-500 hover:text-slate-700';
+        @endphp
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Articles Published Per {{ $granularity === 'quarterly' ? 'Quarter' : 'Month' }}</h2>
-                <p class="mt-1 text-sm text-slate-500">Publication count trend for the selected scope.</p>
-                <div id="publishedPerMonthChart" class="mt-4 h-[390px]"></div>
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Guest Posts Published</h2>
+                    </div>
+                    <div data-granularity-toggle="guestPosts" role="group" aria-label="Data granularity"
+                         class="inline-flex shrink-0 rounded-lg border border-slate-200 bg-slate-100 p-1 text-sm">
+                        <button type="button" data-granularity="monthly"   aria-pressed="true"  class="{{ $toggleBtn }} {{ $toggleOn }}">Monthly</button>
+                        <button type="button" data-granularity="quarterly" aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Quarterly</button>
+                        <button type="button" data-granularity="yearly"    aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Yearly</button>
+                    </div>
+                </div>
+                <div id="guestPostsPublishedChart" class="mt-4 h-[390px]"></div>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Net Profit Per {{ $granularity === 'quarterly' ? 'Quarter' : 'Month' }}</h2>
-                <p class="mt-1 text-sm text-slate-500">Profit progression across the same selected periods.</p>
-                <div id="netProfitPerMonthChart" class="mt-4 h-[390px]"></div>
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Net Profit</h2>
+                    </div>
+                    <div data-granularity-toggle="netProfit" role="group" aria-label="Data granularity"
+                         class="inline-flex shrink-0 rounded-lg border border-slate-200 bg-slate-100 p-1 text-sm">
+                        <button type="button" data-granularity="monthly"   aria-pressed="true"  class="{{ $toggleBtn }} {{ $toggleOn }}">Monthly</button>
+                        <button type="button" data-granularity="quarterly" aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Quarterly</button>
+                        <button type="button" data-granularity="yearly"    aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Yearly</button>
+                    </div>
+                </div>
+                <div id="netProfitChart" class="mt-4 h-[390px]"></div>
             </section>
         </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Copy Delivery Time</h2>
-                <p class="mt-1 text-sm text-slate-500">Median days from copy commission to delivery, per {{ $granularity === 'quarterly' ? 'quarter' : 'month' }}.</p>
                 <div id="copyDeliveryTimeChart" class="mt-4 h-[390px]"></div>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Publisher Publication Time</h2>
-                <p class="mt-1 text-sm text-slate-500">Median days from article sent to publisher until publication, per {{ $granularity === 'quarterly' ? 'quarter' : 'month' }}.</p>
                 <div id="publisherPublicationTimeChart" class="mt-4 h-[390px]"></div>
             </section>
         </div>
@@ -177,6 +202,8 @@
         document.addEventListener('DOMContentLoaded', function () {
             const labels = @json($labels);
             const publishedSeries = @json($publishedSeries);
+            const guestPostsMonthly = @json($guestPostsMonthly);
+            const netProfitMonthly = @json($netProfitMonthly);
             const profitSeries = @json($profitSeries);
             const copyMedianSeries = @json($copyMedianSeries);
             const publisherMedianSeries = @json($publisherMedianSeries);
@@ -239,97 +266,167 @@
                 }
             };
 
-            new ApexCharts(document.querySelector('#publishedPerMonthChart'), {
-                ...commonOptions,
-                chart: {
-                    ...commonOptions.chart,
-                    type: 'bar',
-                    height: 390
-                },
-                series: [{
-                    name: 'Articles Published',
-                    data: publishedSeries
-                }],
-                colors: ['#2563eb'],
-                plotOptions: {
-                    bar: {
-                        borderRadius: 5,
-                        columnWidth: '62%'
-                    }
-                },
-                dataLabels: { enabled: false },
-                xaxis: {
-                    ...commonOptions.xaxis,
-                    tickAmount: Math.min(totalPoints, 12),
-                },
-                yaxis: {
-                    title: { text: 'Articles' },
-                    labels: {
-                        style: { colors: '#64748b', fontSize: '11px' },
-                        formatter: function (value) {
-                            return Math.round(value).toString();
-                        }
-                    }
-                },
-                tooltip: {
-                    theme: 'light',
-                    y: {
-                        formatter: function (value) {
-                            const n = Math.round(value);
-                            return n + ' article' + (n === 1 ? '' : 's');
-                        }
-                    }
-                }
-            }).render();
+            // ── Granularity-toggle widgets ─────────────────────────────────
+            // A line/area chart driven by its own Monthly / Quarterly / Yearly
+            // segmented toggle. The source is always monthly; quarters/years are
+            // summed client-side (ported from menford-analytics' bucketize()), so
+            // each widget is independent of the page-level granularity select.
+            const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-            new ApexCharts(document.querySelector('#netProfitPerMonthChart'), {
-                ...commonOptions,
-                chart: {
-                    ...commonOptions.chart,
-                    type: 'area',
-                    height: 390
-                },
-                series: [{
-                    name: 'Net Profit',
-                    data: profitSeries
-                }],
-                colors: ['#059669'],
-                stroke: {
-                    curve: 'smooth',
-                    width: 3
-                },
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shadeIntensity: 1,
-                        opacityFrom: 0.35,
-                        opacityTo: 0.05,
-                        stops: [0, 90, 100]
+            const renderGranularityChart = function (cfg) {
+                const node = document.querySelector(cfg.nodeSelector);
+                const toggle = document.querySelector('[data-granularity-toggle="' + cfg.toggleKey + '"]');
+                if (! node) return;
+
+                const parseLabel = function (label) {
+                    const parts = String(label).split(' ');
+                    return { y: Number(parts[1]), m: MONTHS_ABBR.indexOf(parts[0]) };
+                };
+
+                // Roll the monthly points up into the chosen granularity (sum).
+                const bucketize = function (points, g) {
+                    if (g === 'monthly') {
+                        return { labels: points.map((p) => p.label), data: points.map((p) => p.value) };
                     }
-                },
-                dataLabels: { enabled: false },
-                xaxis: {
-                    ...commonOptions.xaxis,
-                    tickAmount: Math.min(totalPoints, 10),
-                },
-                yaxis: {
-                    title: { text: 'Net Profit (EUR)' },
-                    labels: {
-                        style: { colors: '#64748b', fontSize: '11px' },
-                        formatter: function (value) {
-                            return compactCurrency(value);
+                    const outLabels = [];
+                    const outData = [];
+                    const idxByKey = new Map();
+                    points.forEach((p) => {
+                        const parsed = parseLabel(p.label);
+                        const key = g === 'yearly'
+                            ? String(parsed.y)
+                            : 'Q' + (Math.floor(parsed.m / 3) + 1) + ' ' + parsed.y;
+                        let idx = idxByKey.get(key);
+                        if (idx === undefined) {
+                            idx = outLabels.length;
+                            idxByKey.set(key, idx);
+                            outLabels.push(key);
+                            outData.push(0);
                         }
-                    }
-                },
-                tooltip: {
-                    theme: 'light',
-                    y: {
-                        formatter: function (value) {
-                            return euro.format(value);
+                        outData[idx] += p.value;
+                    });
+                    return { labels: outLabels, data: outData };
+                };
+
+                // Tick sparsity + rotation, tuned to the current bucket count.
+                let step = 1;
+                let rot = 0;
+                const tuneAxis = function (n, g) {
+                    const maxTicks = g === 'monthly' ? 14 : 12;
+                    step = Math.max(1, Math.ceil(n / maxTicks));
+                    rot = n > 24 ? -40 : (n > 14 ? -25 : 0);
+                };
+
+                const xaxisFor = function (bucket) {
+                    return {
+                        ...commonOptions.xaxis,
+                        categories: bucket.labels,
+                        tickAmount: Math.min(bucket.labels.length, 12),
+                        labels: {
+                            ...commonOptions.xaxis.labels,
+                            rotate: rot,
+                            formatter: function (value, _timestamp, opts) {
+                                const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : 0;
+                                return index % step === 0 ? value : '';
+                            }
                         }
-                    }
+                    };
+                };
+
+                let current = 'monthly';
+                let bucket = bucketize(cfg.monthly, current);
+                tuneAxis(bucket.labels.length, current);
+
+                const options = {
+                    ...commonOptions,
+                    chart: { ...commonOptions.chart, type: cfg.type, height: 390 },
+                    series: [{ name: cfg.seriesName, data: bucket.data }],
+                    colors: [cfg.color],
+                    stroke: { curve: 'smooth', width: 3, lineCap: 'round' },
+                    markers: { size: cfg.type === 'area' ? 0 : 4, hover: { sizeOffset: 2 } },
+                    dataLabels: { enabled: false },
+                    xaxis: xaxisFor(bucket),
+                    yaxis: {
+                        min: cfg.yMin,
+                        forceNiceScale: true,
+                        title: { text: cfg.yTitle },
+                        labels: {
+                            style: { colors: '#64748b', fontSize: '11px' },
+                            formatter: cfg.yFormatter
+                        }
+                    },
+                    tooltip: { theme: 'light', y: { formatter: cfg.tooltipFormatter } }
+                };
+                if (cfg.type === 'area') {
+                    options.fill = {
+                        type: 'gradient',
+                        gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05, stops: [0, 90, 100] }
+                    };
                 }
-            }).render();
+
+                const chart = new ApexCharts(node, options);
+                chart.render();
+
+                if (! toggle) return;
+                const buttons = toggle.querySelectorAll('[data-granularity]');
+                buttons.forEach((btn) => {
+                    btn.addEventListener('click', function () {
+                        const g = btn.getAttribute('data-granularity');
+                        if (g === current) return;
+                        current = g;
+
+                        bucket = bucketize(cfg.monthly, g);
+                        tuneAxis(bucket.labels.length, g);
+                        chart.updateOptions({
+                            series: [{ name: cfg.seriesName, data: bucket.data }],
+                            xaxis: xaxisFor(bucket)
+                        });
+
+                        buttons.forEach((b) => {
+                            const on = b.getAttribute('data-granularity') === g;
+                            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                            // active chip ↔ muted text (mirrors the Blade $toggleOn/$toggleOff classes)
+                            b.classList.toggle('border-slate-200', on);
+                            b.classList.toggle('bg-white', on);
+                            b.classList.toggle('font-semibold', on);
+                            b.classList.toggle('text-slate-900', on);
+                            b.classList.toggle('shadow-sm', on);
+                            b.classList.toggle('border-transparent', ! on);
+                            b.classList.toggle('text-slate-500', ! on);
+                            b.classList.toggle('hover:text-slate-700', ! on);
+                        });
+                    });
+                });
+            };
+
+            renderGranularityChart({
+                nodeSelector: '#guestPostsPublishedChart',
+                toggleKey: 'guestPosts',
+                monthly: guestPostsMonthly,
+                seriesName: 'Guest Posts Published',
+                color: '#2563eb',
+                type: 'line',
+                yMin: 0,
+                yTitle: 'Guest posts',
+                yFormatter: function (value) { return Math.round(value).toString(); },
+                tooltipFormatter: function (value) {
+                    const n = Math.round(value);
+                    return n + ' guest post' + (n === 1 ? '' : 's');
+                }
+            });
+
+            renderGranularityChart({
+                nodeSelector: '#netProfitChart',
+                toggleKey: 'netProfit',
+                monthly: netProfitMonthly,
+                seriesName: 'Net Profit',
+                color: '#059669',
+                type: 'area',
+                yMin: undefined,
+                yTitle: 'Net Profit (EUR)',
+                yFormatter: function (value) { return compactCurrency(value); },
+                tooltipFormatter: function (value) { return euro.format(value); }
+            });
 
             const renderMedianDaysChart = function (selector, seriesName, data, color) {
                 // Start the line at the first period that actually has data — drop

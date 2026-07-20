@@ -108,9 +108,27 @@ class StorageStatsController extends Controller
         $copyMedianSeries = Statistics::medianSeries($windowedPoints, $copyPeriodByMonth, $granularity);
         $publisherMedianSeries = Statistics::medianSeries($windowedPoints, $publisherPeriodByMonth, $granularity);
 
+        // Raw MONTHLY published series for the "Guest Posts Published" widget.
+        // Kept independent of the page-level $granularity so that widget's own
+        // Monthly / Quarterly / Yearly toggle can re-aggregate it client-side.
+        $guestPostsMonthly = array_map(static fn (array $point) => [
+            'label' => $point['label'],          // "Mon YYYY"
+            'value' => (int) $point['published'],
+        ], $windowedPoints);
+
+        // Same idea for the "Net Profit" widget: monthly source, summed
+        // client-side by its own Monthly / Quarterly / Yearly toggle (profit
+        // is additive, so quarter/year buckets are a straight sum).
+        $netProfitMonthly = array_map(static fn (array $point) => [
+            'label' => $point['label'],
+            'value' => (float) $point['profit'],
+        ], $windowedPoints);
+
         return view('storages.stats', [
             'labels' => $labels,
             'publishedSeries' => $publishedSeries,
+            'guestPostsMonthly' => $guestPostsMonthly,
+            'netProfitMonthly' => $netProfitMonthly,
             'profitSeries' => $profitSeries,
             'totalPublished' => array_sum($publishedSeries),
             'totalNetProfit' => array_sum($profitSeries),
