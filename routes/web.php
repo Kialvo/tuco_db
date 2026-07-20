@@ -39,6 +39,18 @@ use Illuminate\Support\Facades\Route;
 =====================================================================*/
 Route::get('/', fn () => redirect('/login'));
 
+/* TEMP DEV-ONLY login shortcut — NOT for commit. 404s outside local. */
+Route::get('/dev-login', function () {
+    abort_unless(app()->environment('local'), 404);
+    $user = \App\Models\User::where('role', '!=', 'guest')
+        ->where(fn ($q) => $q->where('must_change_password', 0)->orWhereNull('must_change_password'))
+        ->firstOrFail();
+    auth()->login($user);
+    request()->session()->regenerate();
+
+    return redirect('/storages/stats');
+});
+
 /*======================================================================
 |  Breeze‑generated auth routes
 =====================================================================*/
@@ -302,6 +314,9 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     /* ───── STATS section (secondary sidebar) ───── */
     Route::get('/stats/database', [StatsController::class, 'database'])
         ->name('stats.database');
+
+    Route::get('/stats/campaigns', [StatsController::class, 'campaigns'])
+        ->name('stats.campaigns');
 
     Route::get('/storages/domain-preview', [StorageController::class, 'domainPreview'])->name('storages.domain_preview');
 

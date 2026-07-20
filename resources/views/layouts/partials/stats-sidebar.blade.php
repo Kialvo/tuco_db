@@ -4,7 +4,7 @@
     $statsItems = [
         ['route' => 'stats.database', 'label' => 'Database Stats',    'icon' => 'database'],
         ['route' => 'storages.stats', 'label' => 'Publication Stats', 'icon' => 'chart-bar'],
-        ['label' => 'Campaigns Stats', 'icon' => 'briefcase', 'soon' => true],
+        ['route' => 'stats.campaigns', 'label' => 'Campaigns Stats', 'icon' => 'briefcase'],
         ['label' => 'Sales Stats',     'icon' => 'euro',      'soon' => true],
     ];
 @endphp

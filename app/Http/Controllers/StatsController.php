@@ -93,4 +93,13 @@ class StatsController extends Controller
             'statusChart', 'activeDomains', 'countryChart', 'typeChart', 'languageChart'
         ));
     }
+
+    /**
+     * Campaigns Statistics — placeholder shell. Widgets are wired in a later
+     * pass; the page exists so the sidebar entry is reachable in the meantime.
+     */
+    public function campaigns()
+    {
+        return view('stats.campaigns');
+    }
 }

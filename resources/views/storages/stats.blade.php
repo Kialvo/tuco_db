@@ -143,25 +143,27 @@
 
         <div class="grid grid-cols-1 gap-6">
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Articles Published Per {{ $granularity === 'quarterly' ? 'Quarter' : 'Month' }}</h2>
+                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Articles Published Per {{ $granularity === 'quarterly' ? 'Quarter' : 'Month' }}</h2>
                 <p class="mt-1 text-sm text-slate-500">Publication count trend for the selected scope.</p>
                 <div id="publishedPerMonthChart" class="mt-4 h-[390px]"></div>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Net Profit Per {{ $granularity === 'quarterly' ? 'Quarter' : 'Month' }}</h2>
+                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Net Profit Per {{ $granularity === 'quarterly' ? 'Quarter' : 'Month' }}</h2>
                 <p class="mt-1 text-sm text-slate-500">Profit progression across the same selected periods.</p>
                 <div id="netProfitPerMonthChart" class="mt-4 h-[390px]"></div>
             </section>
+        </div>
 
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Copy Delivery Time</h2>
+                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Copy Delivery Time</h2>
                 <p class="mt-1 text-sm text-slate-500">Median days from copy commission to delivery, per {{ $granularity === 'quarterly' ? 'quarter' : 'month' }}.</p>
                 <div id="copyDeliveryTimeChart" class="mt-4 h-[390px]"></div>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Publisher Publication Time</h2>
+                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Publisher Publication Time</h2>
                 <p class="mt-1 text-sm text-slate-500">Median days from article sent to publisher until publication, per {{ $granularity === 'quarterly' ? 'quarter' : 'month' }}.</p>
                 <div id="publisherPublicationTimeChart" class="mt-4 h-[390px]"></div>
             </section>
@@ -330,6 +332,19 @@
             }).render();
 
             const renderMedianDaysChart = function (selector, seriesName, data, color) {
+                // Start the line at the first period that actually has data — drop
+                // only the LEADING empty periods so the axis doesn't begin on months
+                // with no median. Interior gaps (null between two data points) and
+                // trailing nulls are left untouched.
+                let firstIdx = data.findIndex(function (value) {
+                    return value !== null && value !== undefined;
+                });
+                if (firstIdx < 0) firstIdx = 0;
+                const chartData = data.slice(firstIdx);
+                const chartLabels = labels.slice(firstIdx);
+                const chartPoints = chartLabels.length;
+                const chartLabelStep = Math.max(1, Math.ceil(chartPoints / (granularity === 'quarterly' ? 6 : 8)));
+
                 new ApexCharts(document.querySelector(selector), {
                     ...commonOptions,
                     chart: {
@@ -339,7 +354,7 @@
                     },
                     series: [{
                         name: seriesName,
-                        data: data
+                        data: chartData
                     }],
                     colors: [color],
                     stroke: {
@@ -353,7 +368,15 @@
                     fill: { opacity: 1 },
                     xaxis: {
                         ...commonOptions.xaxis,
-                        tickAmount: Math.min(totalPoints, 12),
+                        categories: chartLabels,
+                        tickAmount: Math.min(chartPoints, 8),
+                        labels: {
+                            ...commonOptions.xaxis.labels,
+                            formatter: function (value, _timestamp, opts) {
+                                const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : 0;
+                                return index % chartLabelStep === 0 ? value : '';
+                            },
+                        },
                     },
                     yaxis: {
                         min: 0,
