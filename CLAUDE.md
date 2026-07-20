@@ -16,6 +16,7 @@ Senior Laravel engineer working full-stack on a server-rendered app: Eloquent/PH
 
 - **Domain models:** `Website` (publisher domains + Ahrefs/SeoZoom/DataForSEO metrics), `Contact`, `Copywriter`, `Company`, `Client`, `Order`/`OrderItem`, `OutreachLog`, `Storage`, `NewEntry`/`HistoricalEntry`, refs (`Country`/`Currency`/`Language`). Models are interlinked (Website ↔ categories ↔ orders) — changes ripple; read the model + controller + migration + Blade view before changing behaviour.
 - **SEO Tools:** `app/Http/Controllers/Tool/` (Ahrefs cleaner, keyword research, referring domains, traffic distribution, web scraper).
+- **Stats area:** secondary-sidebar section (`resources/views/layouts/partials/stats-sidebar.blade.php` `$statsItems`). Live: **Database Stats** (`/stats/database`, `StatsController`) + **Publication Stats** (`/storages/stats`, `StorageStatsController`); charts via **ApexCharts (CDN)**. **Campaigns Stats** + **Sales Stats** are coming-soon placeholders gated on the Campaigns feature. Canonical KPI roadmap (sections + ranked KPIs + chart types): Monday item #12441102694 — read it before adding Stats widgets.
 - **Auth:** Breeze (email/password) + Socialite (Google OAuth); `auth` + `AdminMiddleware` + `RestrictGuestToDomainsMiddleware` + forced-password-change gate every authenticated route. Never expose admin/full-domain data to guest accounts.
 
 ## Git Workflow
@@ -54,7 +55,7 @@ php artisan serve --port=8000 # app at http://localhost:8000
 - NEVER create or merge a PR without Fabrizio's explicit, per-PR approval.
 - NEVER delete a teammate's remote branch (e.g. Marvin's).
 - NEVER edit or delete an already-shipped migration; add a new dated one (`php artisan make:migration`) + mirror new columns in the model `$fillable`/`$casts` and any DataTables/import mapping. Do NOT commit "fixes" to the broken fresh-migrate chain.
-- **Database access is READ-ONLY — Claude may only run `SELECT`/read queries.** NEVER write to any database it connects to: no `INSERT`/`UPDATE`/`DELETE`/`REPLACE`, no DDL (`ALTER`/`CREATE`/`DROP`/`TRUNCATE`), no `php artisan migrate`/`migrate:*`/`db:seed`/`db:wipe`, no writes via `tinker` (`->save()`/`->update()`/`->delete()`, `DB::insert`/`update`/`delete`/`statement`). The local `.env` can point at real production/backup data, so writes are **never** permitted — not even with approval. This supersedes the old "destructive DB command with approval" allowance.
+- **Database access is READ-ONLY — Claude may only run `SELECT`/read queries.** NEVER write to any database it connects to: no `INSERT`/`UPDATE`/`DELETE`/`REPLACE`, no DDL (`ALTER`/`CREATE`/`DROP`/`TRUNCATE`), no `php artisan migrate`/`migrate:*`/`db:seed`/`db:wipe`, no writes via `tinker` (`->save()`/`->update()`/`->delete()`, `DB::insert`/`update`/`delete`/`statement`). The local `.env` points at **LIVE PRODUCTION** — the active host `tuco-db-may-23-backup-2026-…ondigitalocean.com` is production despite "backup" in its name (the genuine backup host is commented out). So writes are **never** permitted — not even with approval; they hit production, not a throwaway copy. This supersedes the old "destructive DB command with approval" allowance.
 - NEVER assume push = live (see Deployment). NEVER hardcode secrets — add keys to `.env.example` (empty) and read via `config()`.
 
 ## Deployment
