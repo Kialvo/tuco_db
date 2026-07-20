@@ -7,108 +7,6 @@
 @section('content')
     <div class="mx-auto max-w-7xl space-y-6 py-2">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                <div>
-                    <h1 class="text-2xl font-semibold text-slate-900">Financial Statistics</h1>
-                    <p class="mt-2 text-sm text-slate-600">
-                        Net profit for storages with status <strong>article_published</strong>.
-                    </p>
-                    @if($rangeLabel)
-                        <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-                            Visible period: {{ $rangeLabel }}
-                        </p>
-                    @endif
-                </div>
-
-                <form id="statsFiltersForm" method="GET" action="{{ route('stats.financial') }}"
-                      x-data="statsRangePicker({
-                          window: @js($window),
-                          dateFrom: @js($dateFrom ?? ''),
-                          dateTo: @js($dateTo ?? ''),
-                          hasCustomRange: @js($hasCustomRange),
-                          windowOptions: @js($windowOptions),
-                      })"
-                      class="flex w-full flex-wrap items-end gap-3 xl:w-auto xl:flex-nowrap">
-
-                    {{-- Params submitted with the form; kept in sync by the picker. --}}
-                    <input type="hidden" name="window" :value="window">
-                    <input type="hidden" name="date_from" :value="dateFrom">
-                    <input type="hidden" name="date_to" :value="dateTo">
-
-                    {{-- Date-range dropdown (ported from menford-analytics DateRangePicker). --}}
-                    <div class="relative flex flex-col gap-1"
-                         @keydown.escape.window="open = false"
-                         @click.outside="open = false">
-                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Date Range</span>
-                        <button type="button"
-                                @click="open = !open"
-                                :aria-expanded="open.toString()"
-                                class="inline-flex h-[42px] min-w-[240px] items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 text-sm font-medium text-green-700 shadow-sm transition hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-200">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                 stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0" aria-hidden="true">
-                                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span class="flex-1 text-left" x-text="displayLabel"></span>
-                            <x-icon name="chevron-down" size="sm" class="shrink-0 transition-transform"
-                                    ::class="open ? 'rotate-180' : ''" />
-                        </button>
-
-                        <div x-show="open" x-cloak x-transition
-                             role="dialog" aria-label="Select date range"
-                             class="absolute left-0 top-full z-30 mt-2 w-72 origin-top-left rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
-                            {{-- Presets (reuse the tested `window` slicing logic). --}}
-                            <div class="space-y-1">
-                                <template x-for="preset in presets" :key="preset.key">
-                                    <button type="button"
-                                            @click="applyPreset(preset)"
-                                            class="w-full rounded-lg px-3 py-2 text-left text-sm transition"
-                                            :class="isActivePreset(preset) ? 'bg-green-50 font-medium text-green-700' : 'text-slate-700 hover:bg-slate-50'"
-                                            x-text="preset.label"></button>
-                                </template>
-                            </div>
-
-                            {{-- Custom range. --}}
-                            <div class="mt-2 border-t border-slate-200 pt-2">
-                                <button type="button"
-                                        @click="showCustom = !showCustom"
-                                        class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">
-                                    Custom range
-                                    <x-icon name="chevron-down" size="sm" class="transition-transform"
-                                            ::class="showCustom ? 'rotate-180' : ''" />
-                                </button>
-
-                                <div x-show="showCustom" x-cloak class="mt-2 space-y-2 px-1">
-                                    <div>
-                                        <label class="mb-1 block text-xs text-slate-500">Start date</label>
-                                        <input type="date" x-model="customStart" :max="customEnd || null"
-                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                                    </div>
-                                    <div>
-                                        <label class="mb-1 block text-xs text-slate-500">End date</label>
-                                        <input type="date" x-model="customEnd" :min="customStart || null"
-                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                                    </div>
-                                    <button type="button"
-                                            :disabled="!customStart || !customEnd || customStart > customEnd"
-                                            @click="applyCustom()"
-                                            class="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40">
-                                        Apply
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a href="{{ route('stats.financial') }}"
-                       class="inline-flex h-[42px] items-center justify-center gap-2 self-end rounded-xl border border-pink-200 bg-pink-50 px-4 text-sm font-semibold text-pink-700 transition hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-200">
-                        <x-icon name="rotate" size="sm" class="inline" />
-                        Reset
-                    </a>
-                </form>
-            </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Net Profit</p>
             <p class="mt-2 text-4xl font-bold text-slate-900">
                 EUR {{ number_format((float) $totalNetProfit, 2, '.', ',') }}
@@ -138,6 +36,49 @@
                     </div>
                 </div>
                 <div id="netProfitChart" class="mt-4 h-[390px]"></div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Revenues per Client</h2>
+                        <p class="mt-1 text-sm text-slate-600">
+                            Total revenues (EUR) by company, stacked per period. Dated by <strong>Live Date</strong>.
+                        </p>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-2">
+                        {{-- Filter toggle — reveals the company filter panel below. --}}
+                        <button type="button" id="companyFilterToggle"
+                                aria-label="Filter by company" aria-expanded="false"
+                                aria-controls="companyRevenueFilterPanel"
+                                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-200">
+                            <x-icon name="filter" size="md" />
+                        </button>
+
+                        <div data-granularity-toggle="revenuesPerClient" role="group" aria-label="Data granularity"
+                             class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 text-sm">
+                            <button type="button" data-granularity="monthly"   aria-pressed="true"  class="{{ $toggleBtn }} {{ $toggleOn }}">Monthly</button>
+                            <button type="button" data-granularity="quarterly" aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Quarterly</button>
+                            <button type="button" data-granularity="yearly"    aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Yearly</button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Company filter: pick one or more companies to isolate their revenue
+                     evolution over time. Empty = the default top-companies view.
+                     Collapsed by default; revealed by the filter button above. --}}
+                <div id="companyRevenueFilterPanel" class="mt-4 hidden max-w-xl">
+                    <label for="companyRevenueFilter" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Filter by company
+                    </label>
+                    <select id="companyRevenueFilter" multiple class="w-full">
+                        @foreach($revenuePerCompanyList as $co)
+                            <option value="{{ $co['name'] }}">{{ $co['name'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div id="revenuesPerClientChart" class="mt-4 h-[460px]"></div>
             </section>
         </div>
     </div>
@@ -341,72 +282,247 @@
                 yFormatter: function (value) { return compactCurrency(value); },
                 tooltipFormatter: function (value) { return euro.format(value); }
             });
+
+            // ── Stacked bars: Revenues per Client ─────────────────────────
+            // Companies are stacked series over a monthly axis. The Monthly /
+            // Quarterly / Yearly toggle sums each series across buckets (revenue is
+            // additive), and the company filter isolates the evolution of chosen
+            // companies over time. Dated by Live Date.
+            const revenuePerCompanyMonths = @json($revenuePerCompanyMonths);
+            const revenuePerCompanySeries = @json($revenuePerCompanySeries);   // default view
+            const revenuePerCompanyList   = @json($revenuePerCompanyList);     // every company
+
+            const renderStackedClientChart = function (cfg) {
+                const node = document.querySelector(cfg.nodeSelector);
+                const toggle = document.querySelector('[data-granularity-toggle="' + cfg.toggleKey + '"]');
+                if (! node) return;
+
+                const parseLabel = function (label) {
+                    const parts = String(label).split(' ');
+                    return { y: Number(parts[1]), m: MONTHS_ABBR.indexOf(parts[0]) };
+                };
+
+                // Roll the monthly matrix up into the chosen granularity (sum per series).
+                const bucketize = function (months, series, g) {
+                    if (g === 'monthly') {
+                        return { labels: months.slice(), series: series.map((s) => ({ name: s.name, data: s.data.slice() })) };
+                    }
+                    const outLabels = [];
+                    const idxByKey = new Map();
+                    const monthOutIdx = months.map((label) => {
+                        const parsed = parseLabel(label);
+                        const key = g === 'yearly'
+                            ? String(parsed.y)
+                            : 'Q' + (Math.floor(parsed.m / 3) + 1) + ' ' + parsed.y;
+                        let idx = idxByKey.get(key);
+                        if (idx === undefined) {
+                            idx = outLabels.length;
+                            idxByKey.set(key, idx);
+                            outLabels.push(key);
+                        }
+                        return idx;
+                    });
+                    const outSeries = series.map((s) => {
+                        const data = new Array(outLabels.length).fill(0);
+                        s.data.forEach((v, i) => { data[monthOutIdx[i]] += v; });
+                        return { name: s.name, data: data.map((x) => Math.round(x * 100) / 100) };
+                    });
+                    return { labels: outLabels, series: outSeries };
+                };
+
+                // Drop leading/trailing months where every visible series is zero,
+                // so a filtered selection starts at its own first month with data.
+                const trimEmpty = function (months, series) {
+                    let first = null, last = null;
+                    for (let i = 0; i < months.length; i++) {
+                        const has = series.some((s) => (s.data[i] || 0) !== 0);
+                        if (has) { if (first === null) first = i; last = i; }
+                    }
+                    if (first === null) return { months: [], series: series.map((s) => ({ name: s.name, data: [] })) };
+                    return {
+                        months: months.slice(first, last + 1),
+                        series: series.map((s) => ({ name: s.name, data: s.data.slice(first, last + 1) }))
+                    };
+                };
+
+                // Base data for the current selection: default view when nothing is
+                // picked, otherwise just the chosen companies re-trimmed to their range.
+                const computeBase = function (selected) {
+                    if (! selected || selected.length === 0) {
+                        return { months: cfg.months, series: cfg.series };
+                    }
+                    const pick = new Set(selected);
+                    const chosen = cfg.companies.filter((c) => pick.has(c.name));
+                    return trimEmpty(cfg.months, chosen);
+                };
+
+                // Distinct hues for companies; "Others"/"Unassigned" pinned to greys.
+                const PALETTE = ['#059669', '#2563eb', '#f59e0b', '#db2777', '#7c3aed',
+                                 '#0891b2', '#65a30d', '#dc2626', '#0d9488', '#c026d3'];
+                const colorsFor = function (series) {
+                    let ci = 0;
+                    return series.map((s) => {
+                        if (s.name === 'Unassigned') return '#94a3b8';
+                        if (s.name === 'Others') return '#cbd5e1';
+                        return PALETTE[(ci++) % PALETTE.length];
+                    });
+                };
+
+                let step = 1;
+                let rot = 0;
+                const tuneAxis = function (n) {
+                    step = Math.max(1, Math.ceil(n / 14));
+                    rot = n > 24 ? -40 : (n > 14 ? -25 : 0);
+                };
+
+                const xaxisFor = function (labels) {
+                    return {
+                        ...commonOptions.xaxis,
+                        categories: labels,
+                        tickAmount: Math.min(labels.length, 14),
+                        labels: {
+                            ...commonOptions.xaxis.labels,
+                            rotate: rot,
+                            formatter: function (value, _timestamp, opts) {
+                                const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : 0;
+                                return index % step === 0 ? value : '';
+                            }
+                        }
+                    };
+                };
+
+                let current = 'monthly';
+                let selected = [];
+                let chart = null;
+
+                const applyState = function () {
+                    const base = computeBase(selected);
+                    const bucket = bucketize(base.months, base.series, current);
+                    tuneAxis(bucket.labels.length);
+                    const colors = colorsFor(bucket.series);
+
+                    if (! chart) {
+                        chart = new ApexCharts(node, {
+                            ...commonOptions,
+                            chart: { ...commonOptions.chart, type: 'bar', height: 460, stacked: true },
+                            series: bucket.series,
+                            colors: colors,
+                            plotOptions: { bar: { columnWidth: '68%', borderRadius: 2 } },
+                            dataLabels: { enabled: false },
+                            stroke: { show: false, width: 0 },
+                            legend: {
+                                show: true, position: 'bottom', horizontalAlign: 'left',
+                                fontSize: '12px', markers: { radius: 3 }, itemMargin: { horizontal: 8, vertical: 3 }
+                            },
+                            xaxis: xaxisFor(bucket.labels),
+                            yaxis: {
+                                min: 0,
+                                forceNiceScale: true,
+                                title: { text: 'Revenues (EUR)' },
+                                labels: {
+                                    style: { colors: '#64748b', fontSize: '11px' },
+                                    formatter: function (value) { return compactCurrency(value); }
+                                }
+                            },
+                            tooltip: { theme: 'light', shared: true, intersect: false, y: { formatter: function (value) { return euro.format(value); } } }
+                        });
+                        chart.render();
+                        return;
+                    }
+
+                    chart.updateOptions({
+                        series: bucket.series,
+                        colors: colors,
+                        xaxis: xaxisFor(bucket.labels)
+                    });
+                };
+
+                applyState();
+
+                // Granularity toggle.
+                if (toggle) {
+                    const buttons = toggle.querySelectorAll('[data-granularity]');
+                    buttons.forEach((btn) => {
+                        btn.addEventListener('click', function () {
+                            const g = btn.getAttribute('data-granularity');
+                            if (g === current) return;
+                            current = g;
+                            applyState();
+
+                            buttons.forEach((b) => {
+                                const on = b.getAttribute('data-granularity') === g;
+                                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                                b.classList.toggle('border-slate-200', on);
+                                b.classList.toggle('bg-white', on);
+                                b.classList.toggle('font-semibold', on);
+                                b.classList.toggle('text-slate-900', on);
+                                b.classList.toggle('shadow-sm', on);
+                                b.classList.toggle('border-transparent', ! on);
+                                b.classList.toggle('text-slate-500', ! on);
+                                b.classList.toggle('hover:text-slate-700', ! on);
+                            });
+                        });
+                    });
+                }
+
+                // Company filter (select2), revealed by the header filter button.
+                // select2 is initialised lazily on first open so it measures a
+                // visible (non-zero) width.
+                const filterBtn = cfg.filterButtonSelector ? document.querySelector(cfg.filterButtonSelector) : null;
+                const filterPanel = cfg.filterPanelSelector ? document.querySelector(cfg.filterPanelSelector) : null;
+                let select2Inited = false;
+
+                const refreshFilterBtn = function () {
+                    if (! filterBtn) return;
+                    const open = filterPanel && ! filterPanel.classList.contains('hidden');
+                    const active = open || selected.length > 0;
+                    filterBtn.classList.toggle('border-green-300', active);
+                    filterBtn.classList.toggle('bg-green-50', active);
+                    filterBtn.classList.toggle('text-green-700', active);
+                    filterBtn.classList.toggle('border-slate-200', ! active);
+                    filterBtn.classList.toggle('text-slate-500', ! active);
+                };
+
+                const initSelect2 = function () {
+                    if (select2Inited || ! cfg.filterSelector || ! window.jQuery) return;
+                    const $filter = window.jQuery(cfg.filterSelector);
+                    if (! $filter.length) return;
+                    $filter.select2({
+                        placeholder: 'All companies',
+                        allowClear: true,
+                        width: '100%',
+                        closeOnSelect: false
+                    });
+                    $filter.on('change', function () {
+                        selected = window.jQuery(this).val() || [];
+                        applyState();
+                        refreshFilterBtn();
+                    });
+                    select2Inited = true;
+                };
+
+                if (filterBtn && filterPanel) {
+                    filterBtn.addEventListener('click', function () {
+                        const willShow = filterPanel.classList.contains('hidden');
+                        filterPanel.classList.toggle('hidden', ! willShow);
+                        filterBtn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+                        if (willShow) initSelect2();
+                        refreshFilterBtn();
+                    });
+                }
+            };
+
+            renderStackedClientChart({
+                nodeSelector: '#revenuesPerClientChart',
+                toggleKey: 'revenuesPerClient',
+                filterSelector: '#companyRevenueFilter',
+                filterButtonSelector: '#companyFilterToggle',
+                filterPanelSelector: '#companyRevenueFilterPanel',
+                months: revenuePerCompanyMonths,
+                series: revenuePerCompanySeries,
+                companies: revenuePerCompanyList
+            });
         });
 
-        // Date-range picker, ported from menford-analytics' DateRangePicker.tsx.
-        // Presets drive the existing `window` param (reusing the controller's tested
-        // month-window slicing); the custom range drives `date_from`/`date_to`.
-        function statsRangePicker(config) {
-            return {
-                open: false,
-                showCustom: config.hasCustomRange,
-                window: config.window,
-                dateFrom: config.dateFrom || '',
-                dateTo: config.dateTo || '',
-                customStart: config.dateFrom || '',
-                customEnd: config.dateTo || '',
-                windowOptions: config.windowOptions,
-                hasCustomRange: config.hasCustomRange,
-
-                get presets() {
-                    // Friendly order; only keep windows the controller actually offers.
-                    return ['12', '24', '36', '60', 'all']
-                        .filter((key) => this.windowOptions[key])
-                        .map((key) => ({ key: key, label: this.windowOptions[key] }));
-                },
-
-                get displayLabel() {
-                    if (this.hasCustomRange && this.dateFrom && this.dateTo) {
-                        return this.formatLabel(this.dateFrom) + ' – ' + this.formatLabel(this.dateTo);
-                    }
-                    if (this.hasCustomRange && this.dateFrom) return 'From ' + this.formatLabel(this.dateFrom);
-                    if (this.hasCustomRange && this.dateTo) return 'Up to ' + this.formatLabel(this.dateTo);
-                    return this.windowOptions[this.window] || 'Select range';
-                },
-
-                formatLabel(dateStr) {
-                    if (!dateStr) return '';
-                    const d = new Date(dateStr + 'T00:00:00');
-                    if (isNaN(d.getTime())) return dateStr;
-                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                },
-
-                isActivePreset(preset) {
-                    return !this.hasCustomRange && this.window === preset.key;
-                },
-
-                submit() {
-                    this.$nextTick(() => document.getElementById('statsFiltersForm').submit());
-                },
-
-                applyPreset(preset) {
-                    this.window = preset.key;
-                    this.dateFrom = '';
-                    this.dateTo = '';
-                    this.open = false;
-                    this.submit();
-                },
-
-                applyCustom() {
-                    if (!this.customStart || !this.customEnd || this.customStart > this.customEnd) return;
-                    this.dateFrom = this.customStart;
-                    this.dateTo = this.customEnd;
-                    this.window = 'all'; // ignored by the controller while a custom range is set
-                    this.open = false;
-                    this.showCustom = false;
-                    this.submit();
-                },
-            };
-        }
     </script>
 @endpush
