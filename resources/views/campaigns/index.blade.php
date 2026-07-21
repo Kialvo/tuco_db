@@ -77,6 +77,7 @@
                     <th class="py-3 px-3 font-semibold text-left">Offer&nbsp;Ready</th>
                     <th class="py-3 px-3 font-semibold text-left">Deadline</th>
                     <th class="py-3 px-3 font-semibold text-left">Next&nbsp;Update</th>
+                    <th class="py-3 px-3 font-semibold text-left">Completion</th>
                     <th class="py-3 px-3 font-semibold text-left">Responsible</th>
                     <th class="py-3 px-3 font-semibold text-center">💬</th>
                     <th class="py-3 px-3 font-semibold text-center">Action</th>
@@ -161,8 +162,8 @@
                         <input type="text" id="c_deadline" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Completion</label>
-                        <input type="text" id="c_completion_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="YYYY-MM-DD">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Completion <span class="text-gray-400 font-normal">(auto)</span></label>
+                        <input type="text" id="c_completion_date" readonly class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed" placeholder="—">
                     </div>
                 </div>
 
@@ -250,6 +251,7 @@ $(function () {
             { data: 'offer_ready_date',     name: 'offer_ready_date',     searchable: false, className: 'whitespace-nowrap' },
             { data: 'deadline',             name: 'deadline',             searchable: false, className: 'whitespace-nowrap' },
             { data: 'next_update_date',     name: 'next_update_date',     searchable: false, className: 'whitespace-nowrap' },
+            { data: 'completion_date',      name: 'completion_date', orderable: false, searchable: false, className: 'whitespace-nowrap' },
             { data: 'responsible',          name: 'responsible', orderable: false, searchable: false },
             { data: 'comments_btn',         name: 'comments_btn', orderable: false, searchable: false, className: 'text-center' },
             { data: 'action',               name: 'action', orderable: false, searchable: false, className: 'text-center' },
@@ -528,7 +530,7 @@ $(function () {
             budget_approval_date: $('#c_budget_approval_date').val() || '',
             offer_ready_date: $('#c_offer_ready_date').val() || '',
             deadline: $('#c_deadline').val() || '',
-            completion_date: $('#c_completion_date').val() || '',
+            // completion_date is auto-derived + read-only — not submitted.
             next_update_date: $('#c_next_update_date').val() || '',
             _token: csrf
         };

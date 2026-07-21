@@ -114,20 +114,30 @@ class StatsController extends Controller
             "Completed with Delay – Publisher's Fault" => '#eab308', // gold
         ];
 
-        // Completed campaigns bucketed by completion month + status. Rows with
-        // no completion_date can't be placed on the month axis, so they're
-        // excluded (SoftDeletes auto-excludes trashed campaigns).
-        $rows = \App\Models\Campaign::query()
+        // Completed campaigns bucketed by completion month + status. The
+        // completion date is derived (Campaign::liveCompletionDate): the most
+        // recent publication LIVE DATE. Campaigns with no live publication
+        // can't be placed on the month axis, so they're skipped. SoftDeletes
+        // auto-excludes trashed campaigns.
+        $campaigns = \App\Models\Campaign::query()
             ->whereIn('status', $completedStatuses)
-            ->whereNotNull('completion_date')
-            ->selectRaw("DATE_FORMAT(completion_date, '%Y-%m') as ym, status, COUNT(*) as c")
-            ->groupBy('ym', 'status')
+            ->withMax('publications as latest_live_date', 'publication_date')
             ->get();
+
+        // [ym][status] => count
+        $lookup = [];
+        foreach ($campaigns as $c) {
+            if (! $c->latest_live_date) {
+                continue;
+            }
+            $ym = substr((string) $c->latest_live_date, 0, 7); // 'Y-m'
+            $lookup[$ym][$c->status] = ($lookup[$ym][$c->status] ?? 0) + 1;
+        }
 
         // Month axis: trailing 12 months, extended back if older data exists.
         $end = \Carbon\Carbon::now()->startOfMonth();
         $start = $end->copy()->subMonths(11);
-        $earliest = $rows->min('ym');
+        $earliest = $lookup ? min(array_keys($lookup)) : null;
         if ($earliest) {
             $earliestC = \Carbon\Carbon::createFromFormat('Y-m', $earliest)->startOfMonth();
             if ($earliestC->lt($start)) {
@@ -138,12 +148,6 @@ class StatsController extends Controller
         $months = []; // ['Y-m' => 'Mon YYYY']
         for ($m = $start->copy(); $m->lte($end); $m->addMonth()) {
             $months[$m->format('Y-m')] = $m->format('M Y');
-        }
-
-        // [ym][status] => count
-        $lookup = [];
-        foreach ($rows as $r) {
-            $lookup[$r->ym][$r->status] = (int) $r->c;
         }
 
         // One series per status that actually occurs in-window (config order).
