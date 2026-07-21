@@ -134,9 +134,9 @@
                 Copywriters
             </a>
 
-            <a href="{{ route('stats.database') }}"
+            <a href="{{ route('stats.publishers') }}"
                class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
-                      {{ $navActive('stats.*', 'storages.stats') ? 'nav-active' : 'text-gray-300' }}">
+                      {{ $navActive('stats.*') ? 'nav-active' : 'text-gray-300' }}">
                 <x-icon name="chart-bar" />
                 Stats
             </a>

@@ -92,6 +92,27 @@ class Campaign extends Model
     }
 
     /**
+     * Automatic completion date: for a "Completed*" campaign, the most recent
+     * LIVE DATE (storage.publication_date) across its publications; null otherwise.
+     * Derived on read (never stored) — supersedes the old manual completion_date.
+     */
+    public function liveCompletionDate(): ?\Carbon\Carbon
+    {
+        $completed = config('linkbuilding.campaign_statuses.Completed', []);
+        if (! in_array($this->status, $completed, true)) {
+            return null;
+        }
+
+        // Prefer the withMax aggregate when the query supplied it (list / stats)
+        // to avoid an N+1; otherwise fall back to the eager-loaded relation (show).
+        $max = array_key_exists('latest_live_date', $this->attributes)
+            ? $this->latest_live_date
+            : $this->publications->max('publication_date');
+
+        return $max ? \Carbon\Carbon::parse($max) : null;
+    }
+
+    /**
      * Recompute the target's "first number" (live_count) from published publications.
      * Budget target => sum of their total_revenues; otherwise count of published.
      * Called automatically on any linked Storage save/delete/restore (Storage::booted()).

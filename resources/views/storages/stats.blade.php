@@ -6,165 +6,101 @@
 
 @section('content')
     <div class="mx-auto max-w-7xl space-y-6 py-2">
+        {{-- Universal-filter note + the date-range picker, top-right. Every widget
+             on this page reflects only storages with status Article Published. --}}
+        <div class="flex flex-wrap items-center justify-end gap-3">
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
+                <x-icon name="info" size="sm" class="shrink-0 text-slate-400" />
+                All stats below show only storages with status
+                <span class="font-semibold text-slate-800">Article Published</span>
+            </span>
+
+            <form id="statsFiltersForm" method="GET" action="{{ route('stats.production') }}"
+                  x-data="statsRangePicker({
+                      dateFrom: @js($dateFrom ?? ''),
+                      dateTo: @js($dateTo ?? ''),
+                  })"
+                  class="flex items-end gap-3">
+
+                {{-- Preserve the publisher widgets' website filters across a date change. --}}
+                @foreach($pubArticleSelected as $s)
+                    <input type="hidden" name="article_sites[]" value="{{ $s }}">
+                @endforeach
+                @foreach($pubSpendSelected as $s)
+                    <input type="hidden" name="spend_sites[]" value="{{ $s }}">
+                @endforeach
+
+                @include('stats.partials.date-range-picker', ['showDateLabel' => false])
+            </form>
+        </div>
+
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                <div>
-                    <h1 class="text-2xl font-semibold text-slate-900">Publication Statistics</h1>
-                    <p class="mt-2 text-sm text-slate-600">
-                        Trend and profitability for storages with status <strong>article_published</strong>.
-                    </p>
-                    @if($rangeLabel)
-                        <p class="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-                            Visible period: {{ $rangeLabel }}
-                        </p>
-                    @endif
-                </div>
-
-                <form id="statsFiltersForm" method="GET" action="{{ route('storages.stats') }}"
-                      x-data="statsRangePicker({
-                          window: @js($window),
-                          dateFrom: @js($dateFrom ?? ''),
-                          dateTo: @js($dateTo ?? ''),
-                          hasCustomRange: @js($hasCustomRange),
-                          windowOptions: @js($windowOptions),
-                      })"
-                      class="flex w-full flex-wrap items-end gap-3 xl:w-auto xl:flex-nowrap">
-
-                    {{-- Params submitted with the form; kept in sync by the picker. --}}
-                    <input type="hidden" name="window" :value="window">
-                    <input type="hidden" name="date_from" :value="dateFrom">
-                    <input type="hidden" name="date_to" :value="dateTo">
-
-                    {{-- Date-range dropdown (ported from menford-analytics DateRangePicker). --}}
-                    <div class="relative flex flex-col gap-1"
-                         @keydown.escape.window="open = false"
-                         @click.outside="open = false">
-                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Date Range</span>
-                        <button type="button"
-                                @click="open = !open"
-                                :aria-expanded="open.toString()"
-                                class="inline-flex h-[42px] min-w-[240px] items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 text-sm font-medium text-green-700 shadow-sm transition hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-200">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                 stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0" aria-hidden="true">
-                                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span class="flex-1 text-left" x-text="displayLabel"></span>
-                            <x-icon name="chevron-down" size="sm" class="shrink-0 transition-transform"
-                                    ::class="open ? 'rotate-180' : ''" />
-                        </button>
-
-                        <div x-show="open" x-cloak x-transition
-                             role="dialog" aria-label="Select date range"
-                             class="absolute left-0 top-full z-30 mt-2 w-72 origin-top-left rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
-                            {{-- Presets (reuse the tested `window` slicing logic). --}}
-                            <div class="space-y-1">
-                                <template x-for="preset in presets" :key="preset.key">
-                                    <button type="button"
-                                            @click="applyPreset(preset)"
-                                            class="w-full rounded-lg px-3 py-2 text-left text-sm transition"
-                                            :class="isActivePreset(preset) ? 'bg-green-50 font-medium text-green-700' : 'text-slate-700 hover:bg-slate-50'"
-                                            x-text="preset.label"></button>
-                                </template>
-                            </div>
-
-                            {{-- Custom range. --}}
-                            <div class="mt-2 border-t border-slate-200 pt-2">
-                                <button type="button"
-                                        @click="showCustom = !showCustom"
-                                        class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">
-                                    Custom range
-                                    <x-icon name="chevron-down" size="sm" class="transition-transform"
-                                            ::class="showCustom ? 'rotate-180' : ''" />
-                                </button>
-
-                                <div x-show="showCustom" x-cloak class="mt-2 space-y-2 px-1">
-                                    <div>
-                                        <label class="mb-1 block text-xs text-slate-500">Start date</label>
-                                        <input type="date" x-model="customStart" :max="customEnd || null"
-                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                                    </div>
-                                    <div>
-                                        <label class="mb-1 block text-xs text-slate-500">End date</label>
-                                        <input type="date" x-model="customEnd" :min="customStart || null"
-                                               class="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                                    </div>
-                                    <button type="button"
-                                            :disabled="!customStart || !customEnd || customStart > customEnd"
-                                            @click="applyCustom()"
-                                            class="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40">
-                                        Apply
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <label class="flex flex-col gap-1">
-                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Granularity</span>
-                        <select name="granularity"
-                                @change="$el.form.submit()"
-                                class="h-[42px] rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200">
-                            @foreach($granularityOptions as $value => $label)
-                                <option value="{{ $value }}" @selected($granularity === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-
-                    <a href="{{ route('storages.stats') }}"
-                       class="inline-flex h-[42px] items-center justify-center gap-2 self-end rounded-xl border border-pink-200 bg-pink-50 px-4 text-sm font-semibold text-pink-700 transition hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-200">
-                        <x-icon name="rotate" size="sm" class="inline" />
-                        Reset
-                    </a>
-                </form>
-            </div>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Published Articles</p>
+            <p class="mt-2 text-4xl font-bold text-slate-900">{{ number_format($totalPublished) }}</p>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <section class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-sky-50 to-white p-6 shadow-sm">
-                <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                    <x-icon name="newspaper" size="sm" class="inline" />
-                </div>
-                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Published Articles</p>
-                <p class="mt-3 text-4xl font-bold leading-none text-slate-900">{{ number_format($totalPublished) }}</p>
-                <p class="mt-3 text-sm text-slate-600">{{ number_format($pointsCount) }} periods in current view</p>
-            </section>
-
-            <section class="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm">
-                <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                    <x-icon name="euro" size="sm" class="inline" />
-                </div>
-                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Net Profit</p>
-                <p class="mt-3 text-4xl font-bold leading-none text-emerald-700">
-                    EUR {{ number_format((float) $totalNetProfit, 2, '.', ',') }}
-                </p>
-                <p class="mt-3 text-sm text-slate-600">Net value across visible periods</p>
-            </section>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Articles Published Per {{ $granularity === 'quarterly' ? 'Quarter' : 'Month' }}</h2>
-                <p class="mt-1 text-sm text-slate-500">Publication count trend for the selected scope.</p>
-                <div id="publishedPerMonthChart" class="mt-4 h-[390px]"></div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Net Profit Per {{ $granularity === 'quarterly' ? 'Quarter' : 'Month' }}</h2>
-                <p class="mt-1 text-sm text-slate-500">Profit progression across the same selected periods.</p>
-                <div id="netProfitPerMonthChart" class="mt-4 h-[390px]"></div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Copy Delivery Time</h2>
-                <p class="mt-1 text-sm text-slate-500">Median days from copy commission to delivery, per {{ $granularity === 'quarterly' ? 'quarter' : 'month' }}.</p>
+                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Copy Delivery Time</h2>
                 <div id="copyDeliveryTimeChart" class="mt-4 h-[390px]"></div>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-slate-900">Publisher Publication Time</h2>
-                <p class="mt-1 text-sm text-slate-500">Median days from article sent to publisher until publication, per {{ $granularity === 'quarterly' ? 'quarter' : 'month' }}.</p>
+                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Publisher Publication Time</h2>
                 <div id="publisherPublicationTimeChart" class="mt-4 h-[390px]"></div>
             </section>
+        </div>
+
+        {{-- Publisher time-series widgets: published articles + € spent by website.
+             Each has its own server-side website filter; submitting one preserves
+             the sibling filter + the page's date/window/granularity via $preserve. --}}
+        @php
+            // Only the date range is still user-controllable on this page, so it's
+            // the only page-level param the publisher filters need to preserve.
+            $pubPageFilters = array_filter([
+                'date_from' => $dateFrom,
+                'date_to'   => $dateTo,
+            ], fn ($v) => $v !== null && $v !== '');
+        @endphp
+
+        <div class="grid grid-cols-1 gap-6">
+            @include('stats.partials.publisher-bar-widget', [
+                'title'          => 'PUBLISHED ARTICLES PER WEBSITE',
+                'subtitle'       => 'Number of published articles, stacked by publisher website (Domain). Dated by Publication Date.',
+                'chartId'        => 'pubArticlesChart',
+                'toggleKey'      => 'pubArticles',
+                'filterButtonId' => 'pubArticlesFilterToggle',
+                'filterPanelId'  => 'pubArticlesFilterPanel',
+                'selectId'       => 'pubArticlesSiteFilter',
+                'formRoute'      => 'stats.production',
+                'paramName'      => 'article_sites',
+                'selected'       => $pubArticleSelected,
+                'preserve'       => $pubPageFilters + ['spend_sites' => $pubSpendSelected],
+                'siteOptions'    => $pubSiteOptions,
+                'series'         => $pubArticleWidget['series'],
+                'itemHeader'     => 'Website',
+                'valueHeader'    => 'Articles',
+                'isMoney'        => false,
+            ])
+
+            @include('stats.partials.publisher-bar-widget', [
+                'title'          => '€ SPENT PER WEBSITE',
+                'subtitle'       => 'Publisher payment (EUR) stacked by publisher website (Domain). Dated by Publication Date.',
+                'chartId'        => 'pubSpendChart',
+                'toggleKey'      => 'pubSpend',
+                'filterButtonId' => 'pubSpendFilterToggle',
+                'filterPanelId'  => 'pubSpendFilterPanel',
+                'selectId'       => 'pubSpendSiteFilter',
+                'formRoute'      => 'stats.production',
+                'paramName'      => 'spend_sites',
+                'selected'       => $pubSpendSelected,
+                'preserve'       => $pubPageFilters + ['article_sites' => $pubArticleSelected],
+                'siteOptions'    => $pubSiteOptions,
+                'series'         => $pubSpendWidget['series'],
+                'itemHeader'     => 'Website',
+                'valueHeader'    => 'Spent',
+                'isMoney'        => true,
+            ])
         </div>
     </div>
 @endsection
@@ -175,7 +111,6 @@
         document.addEventListener('DOMContentLoaded', function () {
             const labels = @json($labels);
             const publishedSeries = @json($publishedSeries);
-            const profitSeries = @json($profitSeries);
             const copyMedianSeries = @json($copyMedianSeries);
             const publisherMedianSeries = @json($publisherMedianSeries);
             const granularity = @json($granularity);
@@ -183,20 +118,6 @@
             const maxVisibleTicks = granularity === 'quarterly' ? 10 : 14;
             const labelStep = Math.max(1, Math.ceil(totalPoints / maxVisibleTicks));
             const labelRotation = totalPoints > 24 ? -40 : (totalPoints > 14 ? -25 : 0);
-
-            const euro = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'EUR',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-
-            const compactCurrency = function (value) {
-                const abs = Math.abs(value);
-                if (abs >= 1000000) return 'EUR ' + (value / 1000000).toFixed(1) + 'M';
-                if (abs >= 1000) return 'EUR ' + (value / 1000).toFixed(1) + 'k';
-                return 'EUR ' + value.toFixed(0);
-            };
 
             const sparseLabelFormatter = function (value, _timestamp, opts) {
                 const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : 0;
@@ -237,99 +158,20 @@
                 }
             };
 
-            new ApexCharts(document.querySelector('#publishedPerMonthChart'), {
-                ...commonOptions,
-                chart: {
-                    ...commonOptions.chart,
-                    type: 'bar',
-                    height: 390
-                },
-                series: [{
-                    name: 'Articles Published',
-                    data: publishedSeries
-                }],
-                colors: ['#2563eb'],
-                plotOptions: {
-                    bar: {
-                        borderRadius: 5,
-                        columnWidth: '62%'
-                    }
-                },
-                dataLabels: { enabled: false },
-                xaxis: {
-                    ...commonOptions.xaxis,
-                    tickAmount: Math.min(totalPoints, 12),
-                },
-                yaxis: {
-                    title: { text: 'Articles' },
-                    labels: {
-                        style: { colors: '#64748b', fontSize: '11px' },
-                        formatter: function (value) {
-                            return Math.round(value).toString();
-                        }
-                    }
-                },
-                tooltip: {
-                    theme: 'light',
-                    y: {
-                        formatter: function (value) {
-                            const n = Math.round(value);
-                            return n + ' article' + (n === 1 ? '' : 's');
-                        }
-                    }
-                }
-            }).render();
-
-            new ApexCharts(document.querySelector('#netProfitPerMonthChart'), {
-                ...commonOptions,
-                chart: {
-                    ...commonOptions.chart,
-                    type: 'area',
-                    height: 390
-                },
-                series: [{
-                    name: 'Net Profit',
-                    data: profitSeries
-                }],
-                colors: ['#059669'],
-                stroke: {
-                    curve: 'smooth',
-                    width: 3
-                },
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shadeIntensity: 1,
-                        opacityFrom: 0.35,
-                        opacityTo: 0.05,
-                        stops: [0, 90, 100]
-                    }
-                },
-                dataLabels: { enabled: false },
-                xaxis: {
-                    ...commonOptions.xaxis,
-                    tickAmount: Math.min(totalPoints, 10),
-                },
-                yaxis: {
-                    title: { text: 'Net Profit (EUR)' },
-                    labels: {
-                        style: { colors: '#64748b', fontSize: '11px' },
-                        formatter: function (value) {
-                            return compactCurrency(value);
-                        }
-                    }
-                },
-                tooltip: {
-                    theme: 'light',
-                    y: {
-                        formatter: function (value) {
-                            return euro.format(value);
-                        }
-                    }
-                }
-            }).render();
-
             const renderMedianDaysChart = function (selector, seriesName, data, color) {
+                // Start the line at the first period that actually has data — drop
+                // only the LEADING empty periods so the axis doesn't begin on months
+                // with no median. Interior gaps (null between two data points) and
+                // trailing nulls are left untouched.
+                let firstIdx = data.findIndex(function (value) {
+                    return value !== null && value !== undefined;
+                });
+                if (firstIdx < 0) firstIdx = 0;
+                const chartData = data.slice(firstIdx);
+                const chartLabels = labels.slice(firstIdx);
+                const chartPoints = chartLabels.length;
+                const chartLabelStep = Math.max(1, Math.ceil(chartPoints / (granularity === 'quarterly' ? 6 : 8)));
+
                 new ApexCharts(document.querySelector(selector), {
                     ...commonOptions,
                     chart: {
@@ -339,7 +181,7 @@
                     },
                     series: [{
                         name: seriesName,
-                        data: data
+                        data: chartData
                     }],
                     colors: [color],
                     stroke: {
@@ -353,7 +195,15 @@
                     fill: { opacity: 1 },
                     xaxis: {
                         ...commonOptions.xaxis,
-                        tickAmount: Math.min(totalPoints, 12),
+                        categories: chartLabels,
+                        tickAmount: Math.min(chartPoints, 8),
+                        labels: {
+                            ...commonOptions.xaxis.labels,
+                            formatter: function (value, _timestamp, opts) {
+                                const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : 0;
+                                return index % chartLabelStep === 0 ? value : '';
+                            },
+                        },
                     },
                     yaxis: {
                         min: 0,
@@ -395,70 +245,205 @@
             renderMedianDaysChart('#publisherPublicationTimeChart', 'Publisher Publication Time', publisherMedianSeries, '#0ea5e9');
         });
 
-        // Date-range picker, ported from menford-analytics' DateRangePicker.tsx.
-        // Presets drive the existing `window` param (reusing the controller's tested
-        // month-window slicing); the custom range drives `date_from`/`date_to`.
-        function statsRangePicker(config) {
-            return {
-                open: false,
-                showCustom: config.hasCustomRange,
-                window: config.window,
-                dateFrom: config.dateFrom || '',
-                dateTo: config.dateTo || '',
-                customStart: config.dateFrom || '',
-                customEnd: config.dateTo || '',
-                windowOptions: config.windowOptions,
-                hasCustomRange: config.hasCustomRange,
+    </script>
+@endpush
 
-                get presets() {
-                    // Friendly order; only keep windows the controller actually offers.
-                    return ['12', '24', '36', '60', 'all']
-                        .filter((key) => this.windowOptions[key])
-                        .map((key) => ({ key: key, label: this.windowOptions[key] }));
-                },
+@push('scripts')
+    {{-- Publisher stacked-bar widgets (published articles + € spent by website).
+         Separate closure so its own consts don't collide with the charts above.
+         Series are pre-filtered server-side; the Monthly/Quarterly/Yearly toggle
+         re-buckets client-side. --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof ApexCharts === 'undefined') return;
 
-                get displayLabel() {
-                    if (this.hasCustomRange && this.dateFrom && this.dateTo) {
-                        return this.formatLabel(this.dateFrom) + ' – ' + this.formatLabel(this.dateTo);
-                    }
-                    if (this.hasCustomRange && this.dateFrom) return 'From ' + this.formatLabel(this.dateFrom);
-                    if (this.hasCustomRange && this.dateTo) return 'Up to ' + this.formatLabel(this.dateTo);
-                    return this.windowOptions[this.window] || 'Select range';
-                },
-
-                formatLabel(dateStr) {
-                    if (!dateStr) return '';
-                    const d = new Date(dateStr + 'T00:00:00');
-                    if (isNaN(d.getTime())) return dateStr;
-                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                },
-
-                isActivePreset(preset) {
-                    return !this.hasCustomRange && this.window === preset.key;
-                },
-
-                submit() {
-                    this.$nextTick(() => document.getElementById('statsFiltersForm').submit());
-                },
-
-                applyPreset(preset) {
-                    this.window = preset.key;
-                    this.dateFrom = '';
-                    this.dateTo = '';
-                    this.open = false;
-                    this.submit();
-                },
-
-                applyCustom() {
-                    if (!this.customStart || !this.customEnd || this.customStart > this.customEnd) return;
-                    this.dateFrom = this.customStart;
-                    this.dateTo = this.customEnd;
-                    this.window = 'all'; // ignored by the controller while a custom range is set
-                    this.open = false;
-                    this.showCustom = false;
-                    this.submit();
-                },
+            const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const euro = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            const compactCurrency = function (v) {
+                const a = Math.abs(v);
+                if (a >= 1000000) return 'EUR ' + (v / 1000000).toFixed(1) + 'M';
+                if (a >= 1000) return 'EUR ' + (v / 1000).toFixed(1) + 'k';
+                return 'EUR ' + v.toFixed(0);
             };
-        }
+
+            const pubCommonOptions = {
+                chart: { foreColor: '#334155', toolbar: { show: false }, animations: { enabled: true, easing: 'easeout', speed: 400 } },
+                noData: { text: 'No article_published data available', align: 'center', verticalAlign: 'middle', style: { color: '#64748b' } },
+                grid: { borderColor: '#e2e8f0', strokeDashArray: 4, padding: { left: 8, right: 8, top: 6, bottom: 6 } },
+                xaxis: {
+                    tickPlacement: 'on',
+                    axisBorder: { color: '#cbd5e1' }, axisTicks: { color: '#cbd5e1' },
+                    labels: { hideOverlappingLabels: true, trim: true, style: { colors: '#64748b', fontSize: '11px' } }
+                }
+            };
+
+            const PUB_PALETTE = ['#059669', '#2563eb', '#f59e0b', '#db2777', '#7c3aed',
+                                 '#0891b2', '#65a30d', '#dc2626', '#0d9488', '#c026d3'];
+
+            const renderPublisherStacked = function (cfg) {
+                const node = document.querySelector(cfg.nodeSelector);
+                if (! node) return;
+                const toggle = document.querySelector('[data-granularity-toggle="' + cfg.toggleKey + '"]');
+
+                const parseLabel = function (label) {
+                    const parts = String(label).split(' ');
+                    return { y: Number(parts[1]), m: MONTHS_ABBR.indexOf(parts[0]) };
+                };
+
+                const bucketize = function (months, series, g) {
+                    if (g === 'monthly') {
+                        return { labels: months.slice(), series: series.map((s) => ({ name: s.name, data: s.data.slice() })) };
+                    }
+                    const outLabels = [];
+                    const idxByKey = new Map();
+                    const monthOutIdx = months.map((label) => {
+                        const parsed = parseLabel(label);
+                        const key = g === 'yearly' ? String(parsed.y) : 'Q' + (Math.floor(parsed.m / 3) + 1) + ' ' + parsed.y;
+                        let idx = idxByKey.get(key);
+                        if (idx === undefined) { idx = outLabels.length; idxByKey.set(key, idx); outLabels.push(key); }
+                        return idx;
+                    });
+                    const outSeries = series.map((s) => {
+                        const data = new Array(outLabels.length).fill(0);
+                        s.data.forEach((v, i) => { data[monthOutIdx[i]] += v; });
+                        return { name: s.name, data: cfg.isMoney ? data.map((x) => Math.round(x * 100) / 100) : data };
+                    });
+                    return { labels: outLabels, series: outSeries };
+                };
+
+                const colorsFor = function (series) {
+                    let ci = 0;
+                    return series.map((s) => {
+                        if (s.name === 'Others') return '#cbd5e1';
+                        if (s.name === '(No domain)') return '#94a3b8';
+                        return PUB_PALETTE[(ci++) % PUB_PALETTE.length];
+                    });
+                };
+
+                let step = 1, rot = 0;
+                const tuneAxis = function (n) {
+                    step = Math.max(1, Math.ceil(n / 14));
+                    rot = n > 24 ? -40 : (n > 14 ? -25 : 0);
+                };
+                const xaxisFor = function (labels) {
+                    return {
+                        ...pubCommonOptions.xaxis,
+                        categories: labels,
+                        tickAmount: Math.min(labels.length, 14),
+                        labels: {
+                            ...pubCommonOptions.xaxis.labels,
+                            rotate: rot,
+                            formatter: function (value, _t, opts) {
+                                const index = opts && typeof opts.dataPointIndex === 'number' ? opts.dataPointIndex : 0;
+                                return index % step === 0 ? value : '';
+                            }
+                        }
+                    };
+                };
+
+                let current = 'monthly';
+                let chart = null;
+
+                const applyState = function () {
+                    const bucket = bucketize(cfg.months, cfg.series, current);
+                    tuneAxis(bucket.labels.length);
+                    const colors = colorsFor(bucket.series);
+                    if (! chart) {
+                        chart = new ApexCharts(node, {
+                            ...pubCommonOptions,
+                            chart: { ...pubCommonOptions.chart, type: 'bar', height: 460, stacked: true },
+                            series: bucket.series,
+                            colors: colors,
+                            plotOptions: { bar: { columnWidth: '68%', borderRadius: 2 } },
+                            dataLabels: { enabled: false },
+                            legend: { show: true, position: 'bottom', horizontalAlign: 'left', fontSize: '12px', markers: { radius: 3 }, itemMargin: { horizontal: 8, vertical: 3 } },
+                            xaxis: xaxisFor(bucket.labels),
+                            yaxis: {
+                                min: 0, forceNiceScale: true,
+                                title: { text: cfg.yTitle },
+                                labels: { style: { colors: '#64748b', fontSize: '11px' }, formatter: cfg.yFormatter }
+                            },
+                            tooltip: { theme: 'light', shared: true, intersect: false, y: { formatter: cfg.tooltipFormatter } }
+                        });
+                        chart.render();
+                        return;
+                    }
+                    chart.updateOptions({ series: bucket.series, colors: colors, xaxis: xaxisFor(bucket.labels) });
+                };
+
+                applyState();
+
+                if (toggle) {
+                    const buttons = toggle.querySelectorAll('[data-granularity]');
+                    buttons.forEach((btn) => {
+                        btn.addEventListener('click', function () {
+                            const g = btn.getAttribute('data-granularity');
+                            if (g === current) return;
+                            current = g;
+                            applyState();
+                            buttons.forEach((b) => {
+                                const on = b.getAttribute('data-granularity') === g;
+                                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                                b.classList.toggle('border-slate-200', on);
+                                b.classList.toggle('bg-white', on);
+                                b.classList.toggle('font-semibold', on);
+                                b.classList.toggle('text-slate-900', on);
+                                b.classList.toggle('shadow-sm', on);
+                                b.classList.toggle('border-transparent', ! on);
+                                b.classList.toggle('text-slate-500', ! on);
+                                b.classList.toggle('hover:text-slate-700', ! on);
+                            });
+                        });
+                    });
+                }
+            };
+
+            // Filter panel: icon toggles the panel; select2 initialises lazily on
+            // first open so it measures a visible width. The Apply button submits.
+            const wireFilter = function (buttonId, panelId, selectId) {
+                const btn = document.getElementById(buttonId);
+                const panel = document.getElementById(panelId);
+                if (! btn || ! panel) return;
+                let inited = false;
+                const initSelect2 = function () {
+                    if (inited || ! window.jQuery) return;
+                    const $s = window.jQuery('#' + selectId);
+                    if (! $s.length) return;
+                    $s.select2({ placeholder: 'Search websites…', allowClear: true, width: '100%', closeOnSelect: false });
+                    inited = true;
+                };
+                if (! panel.classList.contains('hidden')) initSelect2();
+                btn.addEventListener('click', function () {
+                    const willShow = panel.classList.contains('hidden');
+                    panel.classList.toggle('hidden', ! willShow);
+                    btn.setAttribute('aria-expanded', willShow ? 'true' : 'false');
+                    if (willShow) initSelect2();
+                });
+            };
+
+            renderPublisherStacked({
+                nodeSelector: '#pubArticlesChart',
+                toggleKey: 'pubArticles',
+                months: @json($pubArticleWidget['months']),
+                series: @json($pubArticleWidget['series']),
+                isMoney: false,
+                yTitle: 'Published Articles',
+                yFormatter: function (v) { return Math.round(v).toLocaleString(); },
+                tooltipFormatter: function (v) { return Math.round(v).toLocaleString() + ' articles'; }
+            });
+            wireFilter('pubArticlesFilterToggle', 'pubArticlesFilterPanel', 'pubArticlesSiteFilter');
+
+            renderPublisherStacked({
+                nodeSelector: '#pubSpendChart',
+                toggleKey: 'pubSpend',
+                months: @json($pubSpendWidget['months']),
+                series: @json($pubSpendWidget['series']),
+                isMoney: true,
+                yTitle: 'Spent (EUR)',
+                yFormatter: function (v) { return compactCurrency(v); },
+                tooltipFormatter: function (v) { return euro.format(v); }
+            });
+            wireFilter('pubSpendFilterToggle', 'pubSpendFilterPanel', 'pubSpendSiteFilter');
+        });
     </script>
 @endpush

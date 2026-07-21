@@ -70,7 +70,7 @@
     </div>
 
     {{-- Stat cards --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-5">
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-5">
         @php
             $stat = function ($label, $val) {
                 return '<div class="bg-white border border-gray-200 rounded-xl shadow-card px-4 py-3">'
@@ -93,6 +93,7 @@
         {!! $stat('Offer Ready', $fd($campaign->offer_ready_date)) !!}
         {!! $stat('Deadline', $fd($campaign->deadline)) !!}
         {!! $stat('Next Update', $fd($campaign->next_update_date) . ($campaign->responsibleUser ? '<span class="block text-[10px] text-gray-400 font-normal">'.e($campaign->responsibleUser->name).'</span>' : '')) !!}
+        {!! $stat('Completion', $fd($campaign->liveCompletionDate())) !!}
     </div>
 
     {{-- Publications --}}
@@ -300,7 +301,7 @@
                 <div><label class="block text-xs font-semibold text-gray-600 mb-1">Budget Approval</label><input type="text" id="c_budget_approval_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></div>
                 <div><label class="block text-xs font-semibold text-gray-600 mb-1">Offer Ready</label><input type="text" id="c_offer_ready_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></div>
                 <div><label class="block text-xs font-semibold text-gray-600 mb-1">Deadline</label><input type="text" id="c_deadline" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></div>
-                <div><label class="block text-xs font-semibold text-gray-600 mb-1">Completion</label><input type="text" id="c_completion_date" class="js-date block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></div>
+                <div><label class="block text-xs font-semibold text-gray-600 mb-1">Completion <span class="text-gray-400 font-normal">(auto)</span></label><input type="text" id="c_completion_date" readonly placeholder="—" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed"></div>
             </div>
             <div class="pt-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 border-t border-gray-100">Assignment</div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -661,7 +662,7 @@ $(function () {
             budget_approval_date: $('#c_budget_approval_date').val() || '',
             offer_ready_date: $('#c_offer_ready_date').val() || '',
             deadline: $('#c_deadline').val() || '',
-            completion_date: $('#c_completion_date').val() || '',
+            // completion_date is auto-derived + read-only — not submitted.
             next_update_date: $('#c_next_update_date').val() || '',
             _method: 'PUT', _token: csrf
         };

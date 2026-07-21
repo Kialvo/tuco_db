@@ -8,7 +8,7 @@ class StatsController extends Controller
      * Database Statistics — website status split (donut) + active domains.
      * Read-only. Further metrics/charts wired in a later pass.
      */
-    public function database()
+    public function publishers()
     {
         // Model query auto-excludes soft-deleted (SoftDeletes); status is
         // lowercase-normalized on write, so the keys are stable slugs.
@@ -89,8 +89,91 @@ class StatsController extends Controller
 
         $languageChart = ['labels' => $langLabels, 'series' => $langSeries];
 
-        return view('stats.database', compact(
+        return view('stats.publishers', compact(
             'statusChart', 'activeDomains', 'countryChart', 'typeChart', 'languageChart'
         ));
+    }
+
+    /**
+     * Campaigns Statistics — completed campaigns per month, stacked by the
+     * completion status (the config "Completed" group). Read-only.
+     */
+    public function campaigns()
+    {
+        // Ordered list of "Completed" statuses (single source of truth: config).
+        $completedStatuses = config('linkbuilding.campaign_statuses.Completed', []);
+
+        // Fixed colour per status, echoing the screenshot's deadline-respect
+        // coding (in-time green, our-fault red, publisher gold, etc.).
+        $statusColors = [
+            'Completed in time' => '#10b981', // emerald
+            'Completed with delay (Our fault)' => '#ef4444', // red
+            'Completed with Delay – Late Budget Approval' => '#f59e0b', // amber
+            'Completed with Delay – Sites Added Mid-Campaign' => '#ec4899', // pink
+            'Completed with Delay – Client Unresponsive' => '#64748b', // slate
+            "Completed with Delay – Publisher's Fault" => '#eab308', // gold
+        ];
+
+        // Completed campaigns bucketed by completion month + status. The
+        // completion date is derived (Campaign::liveCompletionDate): the most
+        // recent publication LIVE DATE. Campaigns with no live publication
+        // can't be placed on the month axis, so they're skipped. SoftDeletes
+        // auto-excludes trashed campaigns.
+        $campaigns = \App\Models\Campaign::query()
+            ->whereIn('status', $completedStatuses)
+            ->withMax('publications as latest_live_date', 'publication_date')
+            ->get();
+
+        // [ym][status] => count
+        $lookup = [];
+        foreach ($campaigns as $c) {
+            if (! $c->latest_live_date) {
+                continue;
+            }
+            $ym = substr((string) $c->latest_live_date, 0, 7); // 'Y-m'
+            $lookup[$ym][$c->status] = ($lookup[$ym][$c->status] ?? 0) + 1;
+        }
+
+        // Month axis: trailing 12 months, extended back if older data exists.
+        $end = \Carbon\Carbon::now()->startOfMonth();
+        $start = $end->copy()->subMonths(11);
+        $earliest = $lookup ? min(array_keys($lookup)) : null;
+        if ($earliest) {
+            $earliestC = \Carbon\Carbon::createFromFormat('Y-m', $earliest)->startOfMonth();
+            if ($earliestC->lt($start)) {
+                $start = $earliestC;
+            }
+        }
+
+        $months = []; // ['Y-m' => 'Mon YYYY']
+        for ($m = $start->copy(); $m->lte($end); $m->addMonth()) {
+            $months[$m->format('Y-m')] = $m->format('M Y');
+        }
+
+        // One series per status that actually occurs in-window (config order).
+        $series = [];
+        $colors = [];
+        foreach ($completedStatuses as $status) {
+            $data = [];
+            $total = 0;
+            foreach (array_keys($months) as $ym) {
+                $v = $lookup[$ym][$status] ?? 0;
+                $data[] = $v;
+                $total += $v;
+            }
+            if ($total > 0) {
+                $series[] = ['name' => $status, 'data' => $data];
+                $colors[] = $statusColors[$status] ?? '#94a3b8';
+            }
+        }
+
+        $campaignsChart = [
+            'categories' => array_values($months),
+            'series' => $series,
+            'colors' => $colors,
+            'totalCompleted' => array_sum(array_map(fn ($s) => array_sum($s['data']), $series)),
+        ];
+
+        return view('stats.campaigns', compact('campaignsChart'));
     }
 }

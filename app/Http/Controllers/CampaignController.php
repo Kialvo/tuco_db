@@ -32,6 +32,9 @@ class CampaignController extends Controller
         $q = Campaign::query()
             ->leftJoin('companies', 'companies.id', '=', 'lb_campaigns.company_id')
             ->select('lb_campaigns.*', 'companies.name as company_name')
+            // Most recent publication LIVE DATE — feeds the auto completion date
+            // (Campaign::liveCompletionDate). Must stay AFTER select() per the note above.
+            ->withMax('publications as latest_live_date', 'publication_date')
             ->with(['contact:id,first_name,last_name', 'responsibleUser:id,name,avatar_url']);
 
         // Filters
@@ -58,6 +61,8 @@ class CampaignController extends Controller
             ->editColumn('offer_ready_date', fn (Campaign $c) => $this->dateCell($c, 'offer_ready_date'))
             ->editColumn('deadline', fn (Campaign $c) => $this->dateCell($c, 'deadline'))
             ->editColumn('next_update_date', fn (Campaign $c) => $this->dateCell($c, 'next_update_date'))
+            // Automatic completion date (read-only, not inline-editable) — plain text, no rawColumns.
+            ->addColumn('completion_date', fn (Campaign $c) => optional($c->liveCompletionDate())->format('d/m/Y') ?? '—')
             ->addColumn('responsible', fn (Campaign $c) => $this->responsibleCell($c))
             ->addColumn('comments_btn', fn (Campaign $c) => $this->commentsBtn($c))
             ->addColumn('action', fn (Campaign $c) => $this->actionCell($c))
@@ -157,7 +162,7 @@ class CampaignController extends Controller
             'budget_approval_date' => $campaign->budget_approval_date?->format('Y-m-d'),
             'offer_ready_date'     => $campaign->offer_ready_date?->format('Y-m-d'),
             'deadline'             => $campaign->deadline?->format('Y-m-d'),
-            'completion_date'      => $campaign->completion_date?->format('Y-m-d'),
+            'completion_date'      => optional($campaign->liveCompletionDate())->format('Y-m-d'), // auto (read-only)
             'next_update_date'     => $campaign->next_update_date?->format('Y-m-d'),
         ]]);
     }
@@ -213,7 +218,7 @@ class CampaignController extends Controller
             'budget_approval_date' => 'nullable|date',
             'offer_ready_date'     => 'nullable|date',
             'deadline'             => 'nullable|date',
-            'completion_date'      => 'nullable|date',
+            // completion_date is auto-derived (Campaign::liveCompletionDate) — never manually written.
             'next_update_date'     => 'nullable|date',
         ]);
 
@@ -235,7 +240,7 @@ class CampaignController extends Controller
             'next_update_date'     => 'nullable|date',
             'budget_approval_date' => 'nullable|date',
             'offer_ready_date'     => 'nullable|date',
-            'completion_date'      => 'nullable|date',
+            // completion_date intentionally omitted — auto-derived, not inline-editable.
             'deal_value'           => 'nullable|numeric|min:0',
             'target_value'         => 'nullable|numeric|min:0',
             'responsible_user_id'  => 'nullable|exists:users,id',

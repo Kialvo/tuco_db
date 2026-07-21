@@ -2,10 +2,11 @@
      next to the main sidebar, on every page in the Stats section. --}}
 @php
     $statsItems = [
-        ['route' => 'stats.database', 'label' => 'Database Stats',    'icon' => 'database'],
-        ['route' => 'storages.stats', 'label' => 'Publication Stats', 'icon' => 'chart-bar'],
-        ['label' => 'Campaigns Stats', 'icon' => 'briefcase', 'soon' => true],
-        ['label' => 'Sales Stats',     'icon' => 'euro',      'soon' => true],
+        ['route' => 'stats.financial', 'label' => 'Financial Stats',  'icon' => 'chart-line'],
+        ['route' => 'stats.campaigns', 'label' => 'Campaigns Stats',  'icon' => 'briefcase'],
+        ['route' => 'stats.production', 'label' => 'Production Stats',  'icon' => 'chart-bar'],
+        ['route' => 'stats.publishers', 'label' => 'Publisher Stats',   'icon' => 'database'],
+        ['label' => 'Sales Stats',     'icon' => 'euro',       'soon' => true],
     ];
 @endphp
 

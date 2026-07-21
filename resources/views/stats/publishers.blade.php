@@ -1,6 +1,6 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Database Statistics')
+@section('title', 'Publisher Statistics')
 
 @section('subnav')
     @include('layouts.partials.stats-sidebar')
@@ -12,7 +12,6 @@
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">ACTIVE DOMAINS</p>
             <p class="mt-2 text-4xl font-bold text-slate-900">{{ number_format($activeDomains) }}</p>
-            <p class="mt-2 text-sm text-slate-600">Domains with status Active.</p>
         </div>
 
         {{-- Two pie widgets per row --}}
