@@ -36,13 +36,13 @@ class Campaign extends Model
 
     protected $casts = [
         'budget_approval_date' => 'date',
-        'offer_ready_date'     => 'date',
-        'deadline'             => 'date',
-        'completion_date'      => 'date',
-        'next_update_date'     => 'date',
-        'deal_value'           => 'decimal:2',
-        'target_value'         => 'decimal:2',
-        'live_count'           => 'decimal:2',
+        'offer_ready_date' => 'date',
+        'deadline' => 'date',
+        'completion_date' => 'date',
+        'next_update_date' => 'date',
+        'deal_value' => 'decimal:2',
+        'target_value' => 'decimal:2',
+        'live_count' => 'decimal:2',
     ];
 
     /* ---------------------------------------------------------------- Events */
@@ -149,29 +149,58 @@ class Campaign extends Model
     public function getProgressAttribute(): array
     {
         $target = (float) $this->target_value;
-        $live   = (float) $this->live_count;
+        $live = (float) $this->live_count;
         $isBudget = $this->target_type === 'budget';
 
         if ($target <= 0) {
             return ['has' => false, 'pct' => 0, 'label' => '—', 'missing' => '—', 'tone' => 'gray'];
         }
 
-        $pct        = (int) min(100, round($live / $target * 100));
+        $pct = (int) min(100, round($live / $target * 100));
         $missingVal = $target - $live;
-        $tone       = $pct >= 100 ? 'green' : ($pct >= 60 ? 'amber' : 'red');
+        $tone = $pct >= 100 ? 'green' : ($pct >= 60 ? 'amber' : 'red');
 
         if ($isBudget) {
-            $label   = '€' . number_format($live, 0) . ' / €' . number_format($target, 0);
+            $label = '€'.number_format($live, 0).' / €'.number_format($target, 0);
             $missing = $missingVal <= 0
                 ? 'Target reached'
-                : '€' . number_format($missingVal, 0) . ' missing';
+                : '€'.number_format($missingVal, 0).' missing';
         } else {
-            $label   = (int) $live . ' / ' . (int) $target . ' pubs';
+            $label = (int) $live.' / '.(int) $target.' pubs';
             $missing = $missingVal <= 0
                 ? 'Target reached'
-                : (int) $missingVal . ' pub' . ($missingVal != 1 ? 's' : '') . ' missing';
+                : (int) $missingVal.' pub'.($missingVal != 1 ? 's' : '').' missing';
         }
 
         return ['has' => true, 'pct' => $pct, 'label' => $label, 'missing' => $missing, 'tone' => $tone];
+    }
+
+    /**
+     * Financials over PUBLISHED publications (status = article_published):
+     * revenue = SUM total_revenues, cost = SUM total_cost,
+     * profit  = revenue − cost, pct = profit / revenue × 100 (null when no revenue).
+     *
+     * Prefers the query-supplied withSum aggregates (pub_revenue / pub_cost) to
+     * avoid an N+1 on the list; falls back to the eager-loaded publications
+     * collection on the show page — same pattern as liveCompletionDate().
+     */
+    public function getFinancialsAttribute(): array
+    {
+        $revenue = array_key_exists('pub_revenue', $this->attributes)
+            ? (float) $this->pub_revenue
+            : (float) $this->publications->where('status', 'article_published')->sum('total_revenues');
+
+        $cost = array_key_exists('pub_cost', $this->attributes)
+            ? (float) $this->pub_cost
+            : (float) $this->publications->where('status', 'article_published')->sum('total_cost');
+
+        $profit = $revenue - $cost;
+
+        return [
+            'revenue' => $revenue,
+            'cost' => $cost,
+            'profit' => $profit,
+            'pct' => $revenue > 0 ? round($profit / $revenue * 100, 1) : null,
+        ];
     }
 }

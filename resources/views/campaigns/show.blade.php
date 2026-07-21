@@ -20,6 +20,7 @@
     $g1        = $campaign->publications->filter(fn($p) => PublicationStatus::group($p->status) === 1);
     $g2        = $campaign->publications->filter(fn($p) => PublicationStatus::group($p->status) === 2);
     $published = $campaign->publications->where('status', 'article_published')->count();
+    $f         = $campaign->financials;   // revenue / cost / profit / pct over published publications
 
     // inline-editable publication cell (data-field = storage column)
     $editable = function ($p, $field, $type, $rawValue, $display) {
@@ -70,7 +71,7 @@
     </div>
 
     {{-- Stat cards --}}
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-5">
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
         @php
             $stat = function ($label, $val) {
                 return '<div class="bg-white border border-gray-200 rounded-xl shadow-card px-4 py-3">'
@@ -90,6 +91,10 @@
         </div>
         {!! $stat('Published', $published . ' pub' . ($published != 1 ? 's' : '')) !!}
         {!! $stat('Deal Value', '€'.number_format((float)$campaign->deal_value,0)) !!}
+        {!! $stat('Revenues', '€'.number_format($f['revenue'],0)) !!}
+        {!! $stat('Costs', '€'.number_format($f['cost'],0)) !!}
+        {!! $stat('Profit €', ($f['profit'] < 0 ? '-€' : '€').number_format(abs($f['profit']),0)) !!}
+        {!! $stat('Profit %', is_null($f['pct']) ? '—' : $f['pct'].'%') !!}
         {!! $stat('Offer Ready', $fd($campaign->offer_ready_date)) !!}
         {!! $stat('Deadline', $fd($campaign->deadline)) !!}
         {!! $stat('Next Update', $fd($campaign->next_update_date) . ($campaign->responsibleUser ? '<span class="block text-[10px] text-gray-400 font-normal">'.e($campaign->responsibleUser->name).'</span>' : '')) !!}

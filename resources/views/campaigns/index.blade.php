@@ -73,6 +73,10 @@
                     <th class="py-3 px-3 font-semibold text-left">Status</th>
                     <th class="py-3 px-3 font-semibold text-right">Value</th>
                     <th class="py-3 px-3 font-semibold text-left">Target</th>
+                    <th class="py-3 px-3 font-semibold text-right">Revenues</th>
+                    <th class="py-3 px-3 font-semibold text-right">Costs</th>
+                    <th class="py-3 px-3 font-semibold text-right">Profit&nbsp;€</th>
+                    <th class="py-3 px-3 font-semibold text-right">Profit&nbsp;%</th>
                     <th class="py-3 px-3 font-semibold text-left">Budget&nbsp;Appr.</th>
                     <th class="py-3 px-3 font-semibold text-left">Offer&nbsp;Ready</th>
                     <th class="py-3 px-3 font-semibold text-left">Deadline</th>
@@ -247,6 +251,10 @@ $(function () {
             { data: 'status_badge',         name: 'status',               searchable: false },
             { data: 'deal',                 name: 'deal_value',           searchable: false, className: 'text-right whitespace-nowrap' },
             { data: 'target',               name: 'target', orderable: false, searchable: false },
+            { data: 'campaign_revenues',    name: 'campaign_revenues',    searchable: false, className: 'text-right whitespace-nowrap' },
+            { data: 'campaign_costs',       name: 'campaign_costs',       searchable: false, className: 'text-right whitespace-nowrap' },
+            { data: 'campaign_profit',      name: 'campaign_profit',      searchable: false, className: 'text-right whitespace-nowrap' },
+            { data: 'campaign_profit_pct',  name: 'campaign_profit_pct',  searchable: false, className: 'text-right whitespace-nowrap' },
             { data: 'budget_approval_date', name: 'budget_approval_date', searchable: false, className: 'whitespace-nowrap' },
             { data: 'offer_ready_date',     name: 'offer_ready_date',     searchable: false, className: 'whitespace-nowrap' },
             { data: 'deadline',             name: 'deadline',             searchable: false, className: 'whitespace-nowrap' },
