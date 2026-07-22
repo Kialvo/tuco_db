@@ -71,7 +71,6 @@
                     <th class="py-3 px-3 font-semibold text-left">Company</th>
                     <th class="py-3 px-3 font-semibold text-left">Service</th>
                     <th class="py-3 px-3 font-semibold text-left">Status</th>
-                    <th class="py-3 px-3 font-semibold text-right">Value</th>
                     <th class="py-3 px-3 font-semibold text-left">Target</th>
                     <th class="py-3 px-3 font-semibold text-right">Revenues</th>
                     <th class="py-3 px-3 font-semibold text-right">Costs</th>
@@ -132,10 +131,6 @@
                                 </optgroup>
                             @endforeach
                         </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 mb-1">Deal Value (€)</label>
-                        <input type="number" step="0.01" id="c_deal_value" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500" placeholder="0">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">Target Type <span class="text-red-500">*</span></label>
@@ -249,7 +244,6 @@ $(function () {
             { data: 'company_name',         name: 'company_name', visible: false },
             { data: 'service_badge',        name: 'service',              searchable: false },
             { data: 'status_badge',         name: 'status',               searchable: false },
-            { data: 'deal',                 name: 'deal_value',           searchable: false, className: 'text-right whitespace-nowrap' },
             { data: 'target',               name: 'target', orderable: false, searchable: false },
             { data: 'campaign_revenues',    name: 'campaign_revenues',    searchable: false, className: 'text-right whitespace-nowrap' },
             { data: 'campaign_costs',       name: 'campaign_costs',       searchable: false, className: 'text-right whitespace-nowrap' },
@@ -454,7 +448,7 @@ $(function () {
     function resetCampaignForm() {
         $('#campaignErrors').addClass('hidden').empty();
         $('#c_id').val('');
-        $('#c_code, #c_deal_value, #c_target_value').val('');
+        $('#c_code, #c_target_value').val('');
         $('#c_service, #c_status, #c_responsible_user_id').val('');
         // No silent default: picking budget vs publications decides the
         // progress unit — an unnoticed 'budget' default froze campaign #6's
@@ -485,7 +479,6 @@ $(function () {
             $('#c_code').val(d.code);
             $('#c_service').val(d.service || '');
             $('#c_status').val(d.status);
-            $('#c_deal_value').val(d.deal_value || '');
             $('#c_target_type').val(d.target_type || 'budget'); updTargetLabel();
             $('#c_target_value').val(d.target_value || '');
             $('#c_responsible_user_id').val(d.responsible_user_id || '');
@@ -532,7 +525,6 @@ $(function () {
             responsible_user_id: $('#c_responsible_user_id').val() || '',
             service: $('#c_service').val() || '',
             status: $('#c_status').val(),
-            deal_value: $('#c_deal_value').val() || 0,
             target_type: $('#c_target_type').val(),
             target_value: $('#c_target_value').val() || 0,
             budget_approval_date: $('#c_budget_approval_date').val() || '',

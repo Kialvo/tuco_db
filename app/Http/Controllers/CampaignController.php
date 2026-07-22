@@ -59,7 +59,6 @@ class CampaignController extends Controller
             ->addColumn('code_cell', fn (Campaign $c) => $this->codeCell($c))
             ->addColumn('service_badge', fn (Campaign $c) => $this->serviceBadge($c))
             ->addColumn('status_badge', fn (Campaign $c) => $this->statusBadge($c))
-            ->addColumn('deal', fn (Campaign $c) => $this->editableCell($c->id, 'deal_value', 'money', (string) (float) $c->deal_value, '€'.number_format((float) $c->deal_value, 0)))
             ->addColumn('target', fn (Campaign $c) => $this->targetCell($c))
             ->addColumn('campaign_revenues', fn (Campaign $c) => '€'.number_format($c->financials['revenue'], 0))
             ->addColumn('campaign_costs', fn (Campaign $c) => '€'.number_format($c->financials['cost'], 0))
@@ -82,7 +81,7 @@ class CampaignController extends Controller
             ->orderColumn('campaign_costs', 'pub_cost $1')
             ->orderColumn('campaign_profit', '(pub_revenue - pub_cost) $1')
             ->orderColumn('campaign_profit_pct', '((pub_revenue - pub_cost) / NULLIF(pub_revenue,0)) $1')
-            ->rawColumns(['code_cell', 'service_badge', 'status_badge', 'deal', 'target', 'budget_approval_date', 'offer_ready_date', 'deadline', 'next_update_date', 'responsible', 'comments_btn', 'action'])
+            ->rawColumns(['code_cell', 'service_badge', 'status_badge', 'target', 'budget_approval_date', 'offer_ready_date', 'deadline', 'next_update_date', 'responsible', 'comments_btn', 'action'])
             ->make(true);
     }
 
@@ -169,7 +168,6 @@ class CampaignController extends Controller
             'responsible_user_id' => $campaign->responsible_user_id,
             'service' => $campaign->service,
             'status' => $campaign->status,
-            'deal_value' => (float) $campaign->deal_value,
             'target_type' => $campaign->target_type,
             'target_value' => (float) $campaign->target_value,
             'live_count' => (float) $campaign->live_count,
@@ -226,7 +224,9 @@ class CampaignController extends Controller
             'responsible_user_id' => 'nullable|exists:users,id',
             'service' => ['nullable', Rule::in(config('linkbuilding.services'))],
             'status' => ['required', Rule::in(Campaign::allStatuses())],
-            'deal_value' => 'nullable|numeric|min:0',
+            // deal_value is intentionally absent: the field was retired from the UI.
+            // Keeping it out of the ruleset is what stops an edit from writing the
+            // column at all — a `nullable` rule here would coerce it to 0 on every save.
             'target_type' => ['required', Rule::in(array_keys(config('linkbuilding.target_types')))],
             'target_value' => 'nullable|numeric|min:0',
             'budget_approval_date' => 'nullable|date',
@@ -237,7 +237,6 @@ class CampaignController extends Controller
         ]);
 
         // live_count is auto-derived from Published publications (Campaign::recomputeProgress)
-        $data['deal_value'] = $data['deal_value'] ?? 0;
         $data['target_value'] = $data['target_value'] ?? 0;
 
         return $data;
@@ -255,7 +254,7 @@ class CampaignController extends Controller
             'budget_approval_date' => 'nullable|date',
             'offer_ready_date' => 'nullable|date',
             // completion_date intentionally omitted — auto-derived, not inline-editable.
-            'deal_value' => 'nullable|numeric|min:0',
+            // deal_value intentionally omitted — field retired from the UI.
             'target_value' => 'nullable|numeric|min:0',
             'responsible_user_id' => 'nullable|exists:users,id',
             'service' => ['nullable', Rule::in(config('linkbuilding.services'))],
@@ -267,7 +266,7 @@ class CampaignController extends Controller
         $validated = $request->validate(['value' => $allowed[$field]]);
         $value = $validated['value'] ?? null;
 
-        if (in_array($field, ['deal_value', 'target_value'], true)) {
+        if ($field === 'target_value') {
             $value = $value ?? 0;
         }
 
