@@ -48,6 +48,33 @@ class PublicationStatus
         return static::all()[$slug]['tone'] ?? 'gray';
     }
 
+    /**
+     * Which side of the client's site-approval decision this status represents:
+     * 'approved' | 'rejected' | 'pending'.
+     *
+     * Unknown/legacy values ('0', '', anything not in config) fall back to
+     * 'pending' so they can never inflate an approval or rejection rate.
+     */
+    public static function decision(?string $slug): string
+    {
+        if ($slug === null || $slug === '' || $slug === '0') {
+            return 'pending';
+        }
+
+        return static::all()[$slug]['decision'] ?? 'pending';
+    }
+
+    /**
+     * @return string[] every slug on the given side of the decision, in config order
+     */
+    public static function slugsByDecision(string $decision): array
+    {
+        return array_keys(array_filter(
+            static::all(),
+            fn (array $def) => ($def['decision'] ?? 'pending') === $decision
+        ));
+    }
+
     /** group label => [slug => label] — for <optgroup> selects */
     public static function grouped(): array
     {

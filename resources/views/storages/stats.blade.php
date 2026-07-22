@@ -6,33 +6,18 @@
 
 @section('content')
     <div class="mx-auto max-w-7xl space-y-6 py-2">
-        {{-- Universal-filter note + the date-range picker, top-right. Every widget
-             on this page reflects only storages with status Article Published. --}}
-        <div class="flex flex-wrap items-center justify-end gap-3">
-            <span class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">
-                <x-icon name="info" size="sm" class="shrink-0 text-slate-400" />
-                All stats below show only storages with status
-                <span class="font-semibold text-slate-800">Article Published</span>
-            </span>
-
-            <form id="statsFiltersForm" method="GET" action="{{ route('stats.production') }}"
-                  x-data="statsRangePicker({
-                      dateFrom: @js($dateFrom ?? ''),
-                      dateTo: @js($dateTo ?? ''),
-                  })"
-                  class="flex items-end gap-3">
-
-                {{-- Preserve the publisher widgets' website filters across a date change. --}}
-                @foreach($pubArticleSelected as $s)
-                    <input type="hidden" name="article_sites[]" value="{{ $s }}">
-                @endforeach
-                @foreach($pubSpendSelected as $s)
-                    <input type="hidden" name="spend_sites[]" value="{{ $s }}">
-                @endforeach
-
-                @include('stats.partials.date-range-picker', ['showDateLabel' => false])
-            </form>
-        </div>
+        {{-- Universal-filter note + the date-range picker, top-right, sticky.
+             Every widget on this page reflects only storages with status
+             Article Published. Shared with Financial Stats so both bars behave
+             identically; the publisher widgets' website filters are preserved
+             across a date change. --}}
+        @include('stats.partials.filters-bar', [
+            'route' => 'stats.production',
+            'preserveArrays' => [
+                'article_sites' => $pubArticleSelected,
+                'spend_sites'   => $pubSpendSelected,
+            ],
+        ])
 
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Published Articles</p>

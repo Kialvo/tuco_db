@@ -41,6 +41,22 @@ class Statistics
     }
 
     /**
+     * A percentage rate, rounded to one decimal.
+     *
+     * Returns NULL — never 0.0 — when the denominator is zero, so a client with
+     * proposals but no decision yet renders as "—" instead of a 0% that reads
+     * like a real measurement.
+     */
+    public static function rate(int|float $part, int|float $total): ?float
+    {
+        if ($total <= 0) {
+            return null;
+        }
+
+        return round($part / $total * 100, 1);
+    }
+
+    /**
      * Median-per-bucket series aligned to the visible (windowed) points.
      *
      * Monthly: one median per visible month (null when that month has no data).

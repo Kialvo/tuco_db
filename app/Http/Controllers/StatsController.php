@@ -2,6 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Statistics;
+use App\Support\StatsDateRange;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+
 class StatsController extends Controller
 {
     /**
@@ -98,8 +103,17 @@ class StatsController extends Controller
      * Campaigns Statistics — completed campaigns per month, stacked by the
      * completion status (the config "Completed" group). Read-only.
      */
-    public function campaigns()
+    public function campaigns(Request $request)
     {
+        // Shared date-range picker (?date_from / ?date_to). NOTE the two widget
+        // families on this page are dated by DIFFERENT columns, because no single
+        // date fits both — each is labelled accordingly in the view:
+        //   • completed campaigns → completion date (latest publication_date)
+        //   • approval funnel     → proposal date (storage.created_at)
+        // storage.updated_at is NOT usable as a decision date: a backfill
+        // collapsed all 260 campaign-linked rows into a single month.
+        [$dateFrom, $dateTo] = StatsDateRange::fromRequest($request);
+
         // Ordered list of "Completed" statuses (single source of truth: config).
         $completedStatuses = config('linkbuilding.campaign_statuses.Completed', []);
 
@@ -124,25 +138,43 @@ class StatsController extends Controller
             ->withMax('publications as latest_live_date', 'publication_date')
             ->get();
 
-        // [ym][status] => count
+        // [ym][status] => count. Campaigns whose completion date falls outside the
+        // selected range are dropped here, so the chart matches the picker.
         $lookup = [];
         foreach ($campaigns as $c) {
             if (! $c->latest_live_date) {
+                continue;
+            }
+            $completedOn = \Carbon\Carbon::parse($c->latest_live_date)->startOfDay();
+            if ($dateFrom && $completedOn->lt($dateFrom)) {
+                continue;
+            }
+            if ($dateTo && $completedOn->gt($dateTo)) {
                 continue;
             }
             $ym = substr((string) $c->latest_live_date, 0, 7); // 'Y-m'
             $lookup[$ym][$c->status] = ($lookup[$ym][$c->status] ?? 0) + 1;
         }
 
-        // Month axis: trailing 12 months, extended back if older data exists.
-        $end = \Carbon\Carbon::now()->startOfMonth();
-        $start = $end->copy()->subMonths(11);
-        $earliest = $lookup ? min(array_keys($lookup)) : null;
-        if ($earliest) {
-            $earliestC = \Carbon\Carbon::createFromFormat('Y-m', $earliest)->startOfMonth();
-            if ($earliestC->lt($start)) {
-                $start = $earliestC;
+        // Month axis. With a picked range the axis IS the range (so an empty
+        // range still renders its months rather than silently falling back to
+        // "last 12 months" and looking unfiltered); otherwise trailing 12
+        // months, extended back if older data exists.
+        $end = $dateTo ? $dateTo->copy()->startOfMonth() : \Carbon\Carbon::now()->startOfMonth();
+        $start = $dateFrom ? $dateFrom->copy()->startOfMonth() : $end->copy()->subMonths(11);
+
+        if (! $dateFrom) {
+            $earliest = $lookup ? min(array_keys($lookup)) : null;
+            if ($earliest) {
+                $earliestC = \Carbon\Carbon::createFromFormat('Y-m', $earliest)->startOfMonth();
+                if ($earliestC->lt($start)) {
+                    $start = $earliestC;
+                }
             }
+        }
+
+        if ($start->gt($end)) {
+            $start = $end->copy();
         }
 
         $months = []; // ['Y-m' => 'Mon YYYY']
@@ -174,6 +206,155 @@ class StatsController extends Controller
             'totalCompleted' => array_sum(array_map(fn ($s) => array_sum($s['data']), $series)),
         ];
 
-        return view('stats.campaigns', compact('campaignsChart'));
+        return view('stats.campaigns', compact('campaignsChart') + $this->publicationDecisions($dateFrom, $dateTo) + [
+            'dateFrom' => $dateFrom?->toDateString(),
+            'dateTo' => $dateTo?->toDateString(),
+        ]);
+    }
+
+    /**
+     * Site-approval funnel over CRM campaign-linked publications: approval rate,
+     * rejection rate and rejection reasons — overall and per client.
+     *
+     * Scope is deliberately `storage.lb_campaign_id NOT NULL`. Legacy Storage
+     * rows are excluded because, before the CRM, a row was usually only created
+     * AFTER the client had accepted the site — including them would report a
+     * survivorship-biased ~91% approval instead of the real one.
+     *
+     * The rates use a DECIDED-ONLY denominator (approved + rejected), so they
+     * sum to 100%; pending proposals are reported separately.
+     *
+     * DATE AXIS — `storage.created_at`, i.e. WHEN THE SITE WAS PROPOSED, not when
+     * it was decided. There is no decision-date column, and `updated_at` cannot
+     * stand in for one: a backfill collapsed every campaign-linked row into a
+     * single month, so it carries no signal. The range therefore selects a
+     * PROPOSAL COHORT — "of the sites we pitched in this period, how many were
+     * approved" — which also means a cohort's recent months carry more pending
+     * rows, since some decisions have not landed yet.
+     */
+    private function publicationDecisions(?Carbon $dateFrom = null, ?Carbon $dateTo = null): array
+    {
+        // Company × status counts. Storage's SoftDeletes global scope excludes
+        // trashed publications; the raw join does NOT carry Campaign's scope, so
+        // trashed campaigns are excluded explicitly.
+        $rows = \App\Models\Storage::query()
+            ->join('lb_campaigns', 'lb_campaigns.id', '=', 'storage.lb_campaign_id')
+            ->whereNull('lb_campaigns.deleted_at')
+            ->when($dateFrom, fn ($q) => $q->whereDate('storage.created_at', '>=', $dateFrom->toDateString()))
+            ->when($dateTo, fn ($q) => $q->whereDate('storage.created_at', '<=', $dateTo->toDateString()))
+            ->leftJoin('companies', 'companies.id', '=', 'lb_campaigns.company_id')
+            ->selectRaw("COALESCE(NULLIF(companies.name, ''), 'Unassigned') as company")
+            ->selectRaw('storage.status as status, COUNT(*) as c')
+            ->groupBy('company', 'storage.status')
+            ->get();
+
+        $blank = ['approved' => 0, 'rejected' => 0, 'pending' => 0];
+        $totals = $blank;
+        $byClient = [];          // company => [approved, rejected, pending]
+        $reasonCounts = [];      // rejected slug => count
+        $reasonByClient = [];    // company => [slug => count]
+
+        foreach ($rows as $row) {
+            $decision = \App\Support\PublicationStatus::decision($row->status);
+            $count = (int) $row->c;
+            $company = (string) $row->company;
+
+            $totals[$decision] += $count;
+            $byClient[$company] ??= $blank;
+            $byClient[$company][$decision] += $count;
+
+            if ($decision === 'rejected') {
+                $reasonCounts[$row->status] = ($reasonCounts[$row->status] ?? 0) + $count;
+                $reasonByClient[$company][$row->status] = ($reasonByClient[$company][$row->status] ?? 0) + $count;
+            }
+        }
+
+        $decided = $totals['approved'] + $totals['rejected'];
+
+        $decisionTotals = [
+            'approved' => $totals['approved'],
+            'rejected' => $totals['rejected'],
+            'pending' => $totals['pending'],
+            'decided' => $decided,
+            'proposed' => $decided + $totals['pending'],
+            'approvalRate' => Statistics::rate($totals['approved'], $decided),
+            'rejectionRate' => Statistics::rate($totals['rejected'], $decided),
+        ];
+
+        // Per client. A company can have proposals but NO decision yet (pitched,
+        // client silent) — its rates stay null so the view renders "—", and it is
+        // kept out of the 100%-stacked chart, whose category total would be zero.
+        $decisionByClient = [];
+        foreach ($byClient as $company => $c) {
+            $clientDecided = $c['approved'] + $c['rejected'];
+            $decisionByClient[] = [
+                'name' => $company,
+                'approved' => $c['approved'],
+                'rejected' => $c['rejected'],
+                'pending' => $c['pending'],
+                'decided' => $clientDecided,
+                'proposed' => $clientDecided + $c['pending'],
+                'approvalRate' => Statistics::rate($c['approved'], $clientDecided),
+                'rejectionRate' => Statistics::rate($c['rejected'], $clientDecided),
+            ];
+        }
+
+        // Ranked by decided volume, then by proposals; "Unassigned" is a
+        // data-quality bucket, never ranked (mirrors buildRevenuesPerCompany).
+        usort($decisionByClient, function (array $a, array $b) {
+            if (($a['name'] === 'Unassigned') !== ($b['name'] === 'Unassigned')) {
+                return $a['name'] === 'Unassigned' ? 1 : -1;
+            }
+
+            return [$b['decided'], $b['proposed']] <=> [$a['decided'], $a['proposed']];
+        });
+
+        // Rejection reasons, in config order, only those that actually occur.
+        $reasonSlugs = array_filter(
+            \App\Support\PublicationStatus::slugsByDecision('rejected'),
+            fn ($slug) => ($reasonCounts[$slug] ?? 0) > 0
+        );
+
+        $rejectionReasons = [];
+        foreach ($reasonSlugs as $slug) {
+            $rejectionReasons[] = [
+                'slug' => $slug,
+                'label' => \App\Support\PublicationStatus::label($slug) ?? $slug,
+                'count' => $reasonCounts[$slug],
+                'share' => Statistics::rate($reasonCounts[$slug], $totals['rejected']),
+            ];
+        }
+
+        // Reason × client matrix — one stacked series per reason, clients with at
+        // least one rejection, most-rejected first.
+        $rejectedClients = array_values(array_filter(
+            array_column($decisionByClient, 'name'),
+            fn ($name) => ! empty($reasonByClient[$name])
+        ));
+
+        $reasonSeries = [];
+        foreach ($reasonSlugs as $slug) {
+            $reasonSeries[] = [
+                'name' => \App\Support\PublicationStatus::label($slug) ?? $slug,
+                'data' => array_map(
+                    fn ($name) => (int) ($reasonByClient[$name][$slug] ?? 0),
+                    $rejectedClients
+                ),
+            ];
+        }
+
+        return [
+            'decisionTotals' => $decisionTotals,
+            'decisionByClient' => $decisionByClient,
+            'rejectionReasons' => $rejectionReasons,
+            'rejectionReasonChart' => [
+                'labels' => array_column($rejectionReasons, 'label'),
+                'series' => array_column($rejectionReasons, 'count'),
+            ],
+            'rejectionReasonsByClient' => [
+                'clients' => $rejectedClients,
+                'series' => $reasonSeries,
+            ],
+        ];
     }
 }

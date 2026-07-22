@@ -6,6 +6,11 @@
 
 @section('content')
     <div class="mx-auto max-w-7xl space-y-6 py-2">
+        {{-- Same sticky date-range picker as Production Stats. Every figure on
+             this page comes from the same article_published set, filtered by
+             Live Date, so one range drives the whole page. --}}
+        @include('stats.partials.filters-bar', ['route' => 'stats.financial'])
+
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Net Profit</p>
             <p class="mt-2 text-4xl font-bold text-slate-900">
@@ -79,6 +84,113 @@
                 </div>
 
                 <div id="revenuesPerClientChart" class="mt-4 h-[460px]"></div>
+            </section>
+
+            {{-- Customer net profit contribution — who actually MAKES us money,
+                 which the revenue widget above cannot answer (margins differ by
+                 ~20 points between clients). Ranked bar + full breakdown table;
+                 deliberately not a pie, because losses are real and negative
+                 slices cannot be drawn. --}}
+            @php
+                // Chart: top 10 contributors + an "Others" rollup. "Unassigned"
+                // (publications with no client on file) is split out and drawn as
+                // its OWN labelled bar, never folded into "Others" — it is ~31% of
+                // all net profit, and burying that inside an unlabelled rollup
+                // would hide the biggest data-quality gap we have. Same treatment
+                // the Revenues per Client widget gives it. The table lists everyone.
+                $pcRanked = array_values(array_filter($profitContribution, fn ($r) => $r['name'] !== 'Unassigned'));
+                $pcUnassigned = array_values(array_filter($profitContribution, fn ($r) => $r['name'] === 'Unassigned'));
+
+                $pcTop = array_slice($pcRanked, 0, 10);
+                $pcRest = array_slice($pcRanked, 10);
+                $pcChart = array_map(fn ($r) => ['name' => $r['name'], 'profit' => $r['profit']], $pcTop);
+                if (! empty($pcRest)) {
+                    $pcChart[] = [
+                        'name'   => 'Others (' . count($pcRest) . ')',
+                        'profit' => round(array_sum(array_column($pcRest, 'profit')), 2),
+                    ];
+                }
+                foreach ($pcUnassigned as $r) {
+                    $pcChart[] = ['name' => 'Unassigned (no client)', 'profit' => $r['profit']];
+                }
+                $pcTotalRevenue = array_sum(array_column($profitContribution, 'revenue'));
+                $pcTotalCount   = array_sum(array_column($profitContribution, 'count'));
+                $pcTotalMargin  = $pcTotalRevenue != 0.0
+                    ? round($profitContributionTotal / $pcTotalRevenue * 100, 1)
+                    : null;
+            @endphp
+
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div>
+                    <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Customer Net Profit Contribution</h2>
+                    <p class="mt-1 text-sm text-slate-600">
+                        Net profit (EUR) by company and its share of the total, with revenue and margin for
+                        context. Dated by <strong>Live Date</strong>, same filtered set as Total Net Profit above.
+                    </p>
+                </div>
+
+                @if(count($profitContribution) > 0)
+                    <div id="profitContributionChart" class="mt-4"></div>
+
+                    <div class="mt-6 overflow-x-auto">
+                        <table class="min-w-full text-sm" data-sortable>
+                            <thead>
+                                <tr class="border-b border-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    <th class="py-2 pr-4 text-left"  data-sort-key data-sort-type="text">Client <span data-sort-indicator></span></th>
+                                    <th class="py-2 pr-4 text-right" data-sort-key data-sort-type="number" data-sort-default>Net Profit <span data-sort-indicator></span></th>
+                                    <th class="py-2 pr-4 text-right" data-sort-key data-sort-type="number">Share <span data-sort-indicator></span></th>
+                                    <th class="py-2 pr-4 text-right" data-sort-key data-sort-type="number">Revenue <span data-sort-indicator></span></th>
+                                    <th class="py-2 pr-4 text-right" data-sort-key data-sort-type="number">Margin <span data-sort-indicator></span></th>
+                                    <th class="py-2 text-right"      data-sort-key data-sort-type="number">Publications <span data-sort-indicator></span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($profitContribution as $row)
+                                    <tr class="border-b border-slate-100">
+                                        <td class="py-2 pr-4 text-left text-slate-700" data-sort-value="{{ $row['name'] }}">
+                                            {{ $row['name'] }}
+                                        </td>
+                                        <td class="py-2 pr-4 text-right tabular-nums font-medium {{ $row['profit'] < 0 ? 'text-red-700' : 'text-slate-900' }}"
+                                            data-sort-value="{{ $row['profit'] }}">
+                                            EUR {{ number_format($row['profit'], 2, '.', ',') }}
+                                        </td>
+                                        <td class="py-2 pr-4 text-right tabular-nums text-slate-600"
+                                            data-sort-value="{{ $row['share'] ?? '' }}">
+                                            {{ $row['share'] === null ? '—' : number_format($row['share'], 1) . '%' }}
+                                        </td>
+                                        <td class="py-2 pr-4 text-right tabular-nums text-slate-600"
+                                            data-sort-value="{{ $row['revenue'] }}">
+                                            EUR {{ number_format($row['revenue'], 2, '.', ',') }}
+                                        </td>
+                                        <td class="py-2 pr-4 text-right tabular-nums {{ ($row['margin'] ?? 0) < 0 ? 'text-red-700' : 'text-slate-600' }}"
+                                            data-sort-value="{{ $row['margin'] ?? '' }}">
+                                            {{ $row['margin'] === null ? '—' : number_format($row['margin'], 1) . '%' }}
+                                        </td>
+                                        <td class="py-2 text-right tabular-nums text-slate-600"
+                                            data-sort-value="{{ $row['count'] }}">
+                                            {{ number_format($row['count']) }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                <tr class="font-semibold text-slate-900" data-sort-pinned>
+                                    <td class="py-2 pr-4 text-left">Total</td>
+                                    <td class="py-2 pr-4 text-right tabular-nums">EUR {{ number_format($profitContributionTotal, 2, '.', ',') }}</td>
+                                    <td class="py-2 pr-4 text-right tabular-nums">100%</td>
+                                    <td class="py-2 pr-4 text-right tabular-nums">EUR {{ number_format($pcTotalRevenue, 2, '.', ',') }}</td>
+                                    <td class="py-2 pr-4 text-right tabular-nums">{{ $pcTotalMargin === null ? '—' : number_format($pcTotalMargin, 1) . '%' }}</td>
+                                    <td class="py-2 text-right tabular-nums">{{ number_format($pcTotalCount) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="mt-4">
+                        <x-ds.empty-state
+                            icon="euro"
+                            title="No published publications in this range"
+                            hint="Net profit is counted from publications with status “Article Published” and a live date." />
+                    </div>
+                @endif
             </section>
         </div>
     </div>
@@ -522,7 +634,56 @@
                 series: revenuePerCompanySeries,
                 companies: revenuePerCompanyList
             });
+
+            // ── Ranked bars: Customer Net Profit Contribution ──────────────
+            // Horizontal so long company names stay readable, and because a
+            // loss-making client must render as a bar pointing the other way —
+            // something a pie chart structurally cannot show.
+            (function () {
+                const node = document.querySelector('#profitContributionChart');
+                if (! node) return;
+
+                const contribution = @json($pcChart);
+                if (! contribution.length) return;
+
+                new ApexCharts(node, {
+                    ...commonOptions,
+                    chart: { ...commonOptions.chart, type: 'bar', height: Math.max(280, contribution.length * 42) },
+                    series: [{ name: 'Net Profit', data: contribution.map((c) => c.profit) }],
+                    colors: ['#059669'],
+                    plotOptions: {
+                        bar: {
+                            horizontal: true,
+                            borderRadius: 2,
+                            barHeight: '62%',
+                            // Losses read red without needing a second series.
+                            colors: { ranges: [{ from: -1e12, to: -0.01, color: '#dc2626' }] }
+                        }
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        formatter: (value) => compactCurrency(value),
+                        style: { fontSize: '11px', colors: ['#334155'] },
+                        offsetX: 28
+                    },
+                    stroke: { show: false, width: 0 },
+                    xaxis: {
+                        ...commonOptions.xaxis,
+                        categories: contribution.map((c) => c.name),
+                        labels: {
+                            ...commonOptions.xaxis.labels,
+                            formatter: (value) => compactCurrency(Number(value))
+                        }
+                    },
+                    yaxis: {
+                        labels: { style: { colors: '#64748b', fontSize: '11px' }, maxWidth: 220 }
+                    },
+                    tooltip: { theme: 'light', y: { formatter: (value) => euro.format(value) } }
+                }).render();
+            })();
         });
 
     </script>
+
+    @include('stats.partials.sortable-table-script')
 @endpush

@@ -54,26 +54,35 @@ return [
     | The DB (storage.status) stores the SLUG key; the UI shows the label.
     | Slugs match the values historically used by the Storage module so the
     | 10k+ existing rows keep working without a rewrite.
+    |
+    | `decision` = which side of the client's site-approval decision the status
+    | represents (approved | rejected | pending). Declared here per status and
+    | never derived from the label, which would break on a relabel. Group 2 is
+    | approved by definition: reaching Production means the client said yes —
+    | a publisher failing afterwards does not turn that into a client refusal.
     |----------------------------------------------------------------------
     */
     'publication_statuses' => [
         // Group 1 – Site Evaluation
-        'waiting_client_approval'         => ['label' => 'Waiting Client Approval',             'group' => 1, 'tone' => 'amber'],
-        'accepted'                        => ['label' => 'Accepted',                            'group' => 1, 'tone' => 'green'],
-        'waiting_blog_price_confirmation' => ['label' => 'Waiting Blog Price Confirmation',     'group' => 1, 'tone' => 'amber'],
-        'potential_substitute'            => ['label' => 'Potential Substitute',                'group' => 1, 'tone' => 'sky'],
-        'requirements_not_met'            => ['label' => 'Refused by Client – Metrics too low', 'group' => 1, 'tone' => 'red'],
-        'high_price'                      => ['label' => 'Refused by Client – High Price',      'group' => 1, 'tone' => 'red'],
-        'out_of_topic'                    => ['label' => 'Refused by Client – Out of Topic',    'group' => 1, 'tone' => 'red'],
-        'already_used_by_client'          => ['label' => 'Refused by Client – Already Used',    'group' => 1, 'tone' => 'red'],
+        'waiting_client_approval'         => ['label' => 'Waiting Client Approval',             'group' => 1, 'tone' => 'amber',  'decision' => 'pending'],
+        'accepted'                        => ['label' => 'Accepted',                            'group' => 1, 'tone' => 'green',  'decision' => 'approved'],
+        'waiting_blog_price_confirmation' => ['label' => 'Waiting Blog Price Confirmation',     'group' => 1, 'tone' => 'amber',  'decision' => 'pending'],
+        'potential_substitute'            => ['label' => 'Potential Substitute',                'group' => 1, 'tone' => 'sky',    'decision' => 'pending'],
+        'requirements_not_met'            => ['label' => 'Refused by Client – Metrics too low', 'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'high_price'                      => ['label' => 'Refused by Client – High Price',      'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'out_of_topic'                    => ['label' => 'Refused by Client – Out of Topic',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'already_used_by_client'          => ['label' => 'Refused by Client – Already Used',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
         // Group 2 – Production
-        'waiting_copywriter'              => ['label' => 'Waiting Copywriter',                  'group' => 2, 'tone' => 'purple'],
-        'waiting_client_article_approval' => ['label' => 'Waiting Client Article Approval',     'group' => 2, 'tone' => 'amber'],
-        'waiting_blog_publication'        => ['label' => 'Waiting Blog Publication',            'group' => 2, 'tone' => 'blue'],
-        'article_published'               => ['label' => 'Article Published',                   'group' => 2, 'tone' => 'green'],
-        'publisher_disappeared'           => ['label' => 'Publisher Disappeared',               'group' => 2, 'tone' => 'red'],
-        'publisher_refused'               => ['label' => 'Publisher Refused',                   'group' => 2, 'tone' => 'red'],
+        'waiting_copywriter'              => ['label' => 'Waiting Copywriter',                  'group' => 2, 'tone' => 'purple', 'decision' => 'approved'],
+        'waiting_client_article_approval' => ['label' => 'Waiting Client Article Approval',     'group' => 2, 'tone' => 'amber',  'decision' => 'approved'],
+        'waiting_blog_publication'        => ['label' => 'Waiting Blog Publication',            'group' => 2, 'tone' => 'blue',   'decision' => 'approved'],
+        'article_published'               => ['label' => 'Article Published',                   'group' => 2, 'tone' => 'green',  'decision' => 'approved'],
+        'publisher_disappeared'           => ['label' => 'Publisher Disappeared',               'group' => 2, 'tone' => 'red',    'decision' => 'approved'],
+        'publisher_refused'               => ['label' => 'Publisher Refused',                   'group' => 2, 'tone' => 'red',    'decision' => 'approved'],
     ],
+
+    // Canonical set of valid `decision` values (see publication_statuses above).
+    'publication_decisions' => ['approved', 'rejected', 'pending'],
 
     'publication_status_groups' => [
         1 => 'Group 1 – Site Evaluation',
