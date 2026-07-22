@@ -90,7 +90,6 @@
             @else <div class="text-sm font-bold text-gray-400">—</div> @endif
         </div>
         {!! $stat('Published', $published . ' pub' . ($published != 1 ? 's' : '')) !!}
-        {!! $stat('Deal Value', '€'.number_format((float)$campaign->deal_value,0)) !!}
         {!! $stat('Revenues', '€'.number_format($f['revenue'],0)) !!}
         {!! $stat('Costs', '€'.number_format($f['cost'],0)) !!}
         {!! $stat('Profit €', ($f['profit'] < 0 ? '-€' : '€').number_format(abs($f['profit']),0)) !!}
@@ -292,7 +291,6 @@
                         @endforeach
                     </select>
                 </div>
-                <div><label class="block text-xs font-semibold text-gray-600 mb-1">Deal Value (€)</label><input type="number" step="0.01" id="c_deal_value" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"></div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-600 mb-1">Target Type</label>
                     <select id="c_target_type" class="block w-full border border-gray-300 rounded-md text-sm px-3 py-2 bg-white focus:ring-green-500 focus:border-green-500">
@@ -639,7 +637,6 @@ $(function () {
             $('#c_contact_id_hidden').val(d.contact_id || '');
             $('#c_service').val(d.service || '');
             $('#c_status').val(d.status);
-            $('#c_deal_value').val(d.deal_value || '');
             $('#c_target_type').val(d.target_type || 'budget'); updTargetLabel();
             $('#c_target_value').val(d.target_value || '');
             $('#c_responsible_user_id').val(d.responsible_user_id || '');
@@ -660,7 +657,6 @@ $(function () {
             contact_id: $('#c_contact_id_hidden').val() || '',
             service: $('#c_service').val() || '',
             status: $('#c_status').val(),
-            deal_value: $('#c_deal_value').val() || 0,
             target_type: $('#c_target_type').val(),
             target_value: $('#c_target_value').val() || 0,
             responsible_user_id: $('#c_responsible_user_id').val() || '',
