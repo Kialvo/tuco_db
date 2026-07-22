@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Storage;
 use App\Support\Statistics;
+use App\Support\StatsDateRange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Throwable;
 
 class StorageStatsController extends Controller
 {
@@ -169,7 +169,13 @@ class StorageStatsController extends Controller
         // filtered set as above. The widget's own toggle re-buckets it client-side.
         $revenuePerCompany = $this->buildRevenuesPerCompany($baseQuery, $dateFrom, $dateTo, $windowedPoints);
 
+        // Net profit contribution per client — same filtered set AND the same
+        // visible months as $totalNetProfit below, so the two can never disagree.
+        $profitContribution = $this->buildProfitContribution($baseQuery, $dateFrom, $dateTo, $windowedPoints);
+
         return [
+            'profitContribution' => $profitContribution['rows'],
+            'profitContributionTotal' => $profitContribution['total'],
             'labels' => $labels,
             'publishedSeries' => $publishedSeries,
             'guestPostsMonthly' => $guestPostsMonthly,
@@ -234,12 +240,7 @@ class StorageStatsController extends Controller
             ->selectRaw('client_id, COALESCE(total_revenues, 0) as revenue')
             ->get();
 
-        // Resolve each client to its company name once (client → company).
-        // DB::table so soft-deleted clients/companies still resolve their label.
-        $companyByClient = DB::table('clients')
-            ->join('companies', 'companies.id', '=', 'clients.company_id')
-            ->whereIn('clients.id', $rows->pluck('client_id')->filter()->unique()->values())
-            ->pluck('companies.name', 'clients.id');
+        $companyByClient = $this->companyNameByClientId($rows->pluck('client_id'));
 
         // [companyName][monthKey] => summed revenue, restricted to visible months.
         $matrix = [];
@@ -309,6 +310,105 @@ class StorageStatsController extends Controller
         // Trim leading/trailing empty months once, off the default series (which
         // covers all revenue), and apply the same slice to the full company list.
         return $this->trimEmptyMonths($monthLabels, $series, $companies);
+    }
+
+    /**
+     * Resolve a set of client ids to their company NAME (client → company).
+     * DB::table rather than the Eloquent relation so soft-deleted clients and
+     * companies still resolve their label instead of silently becoming
+     * "Unassigned". Shared by the Revenues-per-Client and Net-Profit-Contribution
+     * widgets so both bucket rows under exactly the same company names.
+     *
+     * @param  \Illuminate\Support\Collection  $clientIds  raw ids (nulls/dupes tolerated)
+     * @return \Illuminate\Support\Collection client id => company name
+     */
+    private function companyNameByClientId($clientIds)
+    {
+        return DB::table('clients')
+            ->join('companies', 'companies.id', '=', 'clients.company_id')
+            ->whereIn('clients.id', $clientIds->filter()->unique()->values())
+            ->pluck('companies.name', 'clients.id');
+    }
+
+    /**
+     * "Customer Net Profit Contribution" — every client company ranked by the net
+     * profit it contributed, with its share of the total, its revenue and its
+     * margin. Answers who MAKES us money, which the revenue widget cannot
+     * (Better Collective bills at ~53% margin, others at ~30%).
+     *
+     * IMPORTANT — the visible-month restriction is not optional. `totalNetProfit`
+     * is summed from the WINDOWED points (computeStats()), so filtering only by
+     * $baseQuery + dates would show an all-time contribution total beside a
+     * 12-month "Total Net Profit" tile under ?window=12. Same $monthKeySet guard
+     * as buildRevenuesPerCompany().
+     *
+     * Negative contributors are real (2,225 published rows carry a negative
+     * profit) and are kept — hence a ranked bar rather than a pie.
+     *
+     * @param  array  $windowedPoints  The visible month sequence [{month:'Y-m', …}].
+     * @return array{rows: array<int, array<string, mixed>>, total: float}
+     */
+    private function buildProfitContribution($baseQuery, ?Carbon $dateFrom, ?Carbon $dateTo, array $windowedPoints): array
+    {
+        $monthKeySet = array_flip(array_column($windowedPoints, 'month'));
+
+        if (empty($monthKeySet)) {
+            return ['rows' => [], 'total' => 0.0];
+        }
+
+        $rows = (clone $baseQuery)
+            ->when($dateFrom, fn ($q) => $q->whereDate('publication_date', '>=', $dateFrom->toDateString()))
+            ->when($dateTo, fn ($q) => $q->whereDate('publication_date', '<=', $dateTo->toDateString()))
+            ->selectRaw("DATE_FORMAT(publication_date, '%Y-%m') as month_key")
+            ->selectRaw('client_id, COALESCE(profit, 0) as profit, COALESCE(total_revenues, 0) as revenue')
+            ->get();
+
+        $companyByClient = $this->companyNameByClientId($rows->pluck('client_id'));
+
+        $buckets = [];   // company => [profit, revenue, count]
+        foreach ($rows as $row) {
+            if (! isset($monthKeySet[$row->month_key])) {
+                continue;
+            }
+
+            $name = ($row->client_id && isset($companyByClient[$row->client_id]))
+                ? $companyByClient[$row->client_id]
+                : 'Unassigned';
+
+            $buckets[$name] ??= ['profit' => 0.0, 'revenue' => 0.0, 'count' => 0];
+            $buckets[$name]['profit'] += (float) $row->profit;
+            $buckets[$name]['revenue'] += (float) $row->revenue;
+            $buckets[$name]['count']++;
+        }
+
+        $total = array_sum(array_column($buckets, 'profit'));
+
+        $out = [];
+        foreach ($buckets as $name => $b) {
+            $out[] = [
+                'name' => $name,
+                'profit' => round($b['profit'], 2),
+                // Share of the total net profit. A loss-making client yields a
+                // negative share, which is correct — the shares still sum to 100%.
+                'share' => $total != 0.0 ? round($b['profit'] / $total * 100, 1) : null,
+                'revenue' => round($b['revenue'], 2),
+                // Null (rendered "—") rather than 0.0% when a client billed nothing.
+                'margin' => $b['revenue'] != 0.0 ? round($b['profit'] / $b['revenue'] * 100, 1) : null,
+                'count' => $b['count'],
+            ];
+        }
+
+        // Ranked by profit desc; "Unassigned" is a data-quality bucket, pinned
+        // last and never ranked (mirrors buildRevenuesPerCompany).
+        usort($out, function (array $a, array $b) {
+            if (($a['name'] === 'Unassigned') !== ($b['name'] === 'Unassigned')) {
+                return $a['name'] === 'Unassigned' ? 1 : -1;
+            }
+
+            return $b['profit'] <=> $a['profit'];
+        });
+
+        return ['rows' => $out, 'total' => round($total, 2)];
     }
 
     /**
@@ -626,26 +726,16 @@ class StorageStatsController extends Controller
         return $first.' to '.$last;
     }
 
+    // Both delegate to App\Support\StatsDateRange so every Stats page's picker
+    // parses identically (Campaigns Stats uses the same helper).
     private function parseSelectedDate(mixed $value): ?Carbon
     {
-        if (! is_string($value) || trim($value) === '') {
-            return null;
-        }
-
-        try {
-            return Carbon::createFromFormat('Y-m-d', trim($value))->startOfDay();
-        } catch (Throwable) {
-            return null;
-        }
+        return StatsDateRange::parse($value);
     }
 
     private function normalizeSelectedDates(?Carbon $dateFrom, ?Carbon $dateTo): array
     {
-        if ($dateFrom && $dateTo && $dateFrom->gt($dateTo)) {
-            return [$dateTo->copy(), $dateFrom->copy()];
-        }
-
-        return [$dateFrom, $dateTo];
+        return StatsDateRange::normalize($dateFrom, $dateTo);
     }
 
     private function resolveSeriesBounds(
