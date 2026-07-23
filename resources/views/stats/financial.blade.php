@@ -88,31 +88,12 @@
 
             {{-- Customer net profit contribution — who actually MAKES us money,
                  which the revenue widget above cannot answer (margins differ by
-                 ~20 points between clients). Ranked bar + full breakdown table;
-                 deliberately not a pie, because losses are real and negative
-                 slices cannot be drawn. --}}
+                 ~20 points between clients). Grouped bars over time + full
+                 breakdown table; deliberately not a pie and not stacked, because
+                 losses are real and negative slices cannot be drawn. The chart
+                 series (top companies + "Others" + "Unassigned") are built
+                 controller-side in buildProfitContribution(). --}}
             @php
-                // Chart: top 10 contributors + an "Others" rollup. "Unassigned"
-                // (publications with no client on file) is split out and drawn as
-                // its OWN labelled bar, never folded into "Others" — it is ~31% of
-                // all net profit, and burying that inside an unlabelled rollup
-                // would hide the biggest data-quality gap we have. Same treatment
-                // the Revenues per Client widget gives it. The table lists everyone.
-                $pcRanked = array_values(array_filter($profitContribution, fn ($r) => $r['name'] !== 'Unassigned'));
-                $pcUnassigned = array_values(array_filter($profitContribution, fn ($r) => $r['name'] === 'Unassigned'));
-
-                $pcTop = array_slice($pcRanked, 0, 10);
-                $pcRest = array_slice($pcRanked, 10);
-                $pcChart = array_map(fn ($r) => ['name' => $r['name'], 'profit' => $r['profit']], $pcTop);
-                if (! empty($pcRest)) {
-                    $pcChart[] = [
-                        'name'   => 'Others (' . count($pcRest) . ')',
-                        'profit' => round(array_sum(array_column($pcRest, 'profit')), 2),
-                    ];
-                }
-                foreach ($pcUnassigned as $r) {
-                    $pcChart[] = ['name' => 'Unassigned (no client)', 'profit' => $r['profit']];
-                }
                 $pcTotalRevenue = array_sum(array_column($profitContribution, 'revenue'));
                 $pcTotalCount   = array_sum(array_column($profitContribution, 'count'));
                 $pcTotalMargin  = $pcTotalRevenue != 0.0
@@ -121,15 +102,53 @@
             @endphp
 
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div>
-                    <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Customer Net Profit Contribution</h2>
-                    <p class="mt-1 text-sm text-slate-600">
-                        Net profit (EUR) by company and its share of the total, with revenue and margin for
-                        context. Dated by <strong>Live Date</strong>, same filtered set as Total Net Profit above.
-                    </p>
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Customer Net Profit Contribution</h2>
+                        <p class="mt-1 text-sm text-slate-600">
+                            Net profit (EUR) by company over time, with the ranked breakdown below showing each
+                            client's share, revenue and margin. Dated by <strong>Live Date</strong>, same filtered
+                            set as Total Net Profit above.
+                        </p>
+                    </div>
+                    {{-- Controls only render when there is something to control; on the
+                         empty state they would be three dead buttons over a placeholder. --}}
+                    @if(count($profitContribution) > 0)
+                        <div class="flex shrink-0 items-center gap-2">
+                            {{-- Filter toggle — reveals the company filter panel below. --}}
+                            <button type="button" id="profitCompanyFilterToggle"
+                                    aria-label="Filter by company" aria-expanded="false"
+                                    aria-controls="profitCompanyFilterPanel"
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-200">
+                                <x-icon name="filter" size="md" />
+                            </button>
+
+                            <div data-granularity-toggle="profitPerClient" role="group" aria-label="Data granularity"
+                                 class="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 text-sm">
+                                {{-- Opens on Yearly: see initialGranularity in the chart config. --}}
+                                <button type="button" data-granularity="monthly"   aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Monthly</button>
+                                <button type="button" data-granularity="quarterly" aria-pressed="false" class="{{ $toggleBtn }} {{ $toggleOff }}">Quarterly</button>
+                                <button type="button" data-granularity="yearly"    aria-pressed="true"  class="{{ $toggleBtn }} {{ $toggleOn }}">Yearly</button>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 @if(count($profitContribution) > 0)
+                    {{-- Company filter: isolate one or more clients to follow their profit
+                         evolution. Empty = the default top-companies view. Collapsed by
+                         default; revealed by the filter button above. --}}
+                    <div id="profitCompanyFilterPanel" class="mt-4 hidden max-w-xl">
+                        <label for="profitCompanyFilter" class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            Filter by company
+                        </label>
+                        <select id="profitCompanyFilter" multiple class="w-full">
+                            @foreach($profitPerCompanyList as $co)
+                                <option value="{{ $co['name'] }}">{{ $co['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <div id="profitContributionChart" class="mt-4"></div>
 
                     <div class="mt-6 overflow-x-auto">
@@ -404,7 +423,7 @@
             const revenuePerCompanySeries = @json($revenuePerCompanySeries);   // default view
             const revenuePerCompanyList   = @json($revenuePerCompanyList);     // every company
 
-            const renderStackedClientChart = function (cfg) {
+            const renderClientSeriesChart = function (cfg) {
                 const node = document.querySelector(cfg.nodeSelector);
                 const toggle = document.querySelector('[data-granularity-toggle="' + cfg.toggleKey + '"]');
                 if (! node) return;
@@ -503,7 +522,10 @@
                     };
                 };
 
-                let current = 'monthly';
+                // Grouped charts split every bucket across N series, so a long
+                // all-time range is unreadable at monthly granularity. Such widgets
+                // open on a coarser bucket; the toggle still offers all three.
+                let current = cfg.initialGranularity || 'monthly';
                 let selected = [];
                 let chart = null;
 
@@ -516,21 +538,25 @@
                     if (! chart) {
                         chart = new ApexCharts(node, {
                             ...commonOptions,
-                            chart: { ...commonOptions.chart, type: 'bar', height: 460, stacked: true },
+                            chart: { ...commonOptions.chart, type: 'bar', height: cfg.height, stacked: cfg.stacked },
                             series: bucket.series,
                             colors: colors,
                             plotOptions: { bar: { columnWidth: '68%', borderRadius: 2 } },
                             dataLabels: { enabled: false },
                             stroke: { show: false, width: 0 },
+                            // Solid baseline so a bar below it reads unambiguously as a loss.
+                            annotations: cfg.zeroLine
+                                ? { yaxis: [{ y: 0, borderColor: '#94a3b8', borderWidth: 1, strokeDashArray: 0 }] }
+                                : {},
                             legend: {
                                 show: true, position: 'bottom', horizontalAlign: 'left',
                                 fontSize: '12px', markers: { radius: 3 }, itemMargin: { horizontal: 8, vertical: 3 }
                             },
                             xaxis: xaxisFor(bucket.labels),
                             yaxis: {
-                                min: 0,
+                                min: cfg.yMin,
                                 forceNiceScale: true,
-                                title: { text: 'Revenues (EUR)' },
+                                title: { text: cfg.yTitle },
                                 labels: {
                                     style: { colors: '#64748b', fontSize: '11px' },
                                     formatter: function (value) { return compactCurrency(value); }
@@ -624,7 +650,7 @@
                 }
             };
 
-            renderStackedClientChart({
+            renderClientSeriesChart({
                 nodeSelector: '#revenuesPerClientChart',
                 toggleKey: 'revenuesPerClient',
                 filterSelector: '#companyRevenueFilter',
@@ -632,55 +658,40 @@
                 filterPanelSelector: '#companyRevenueFilterPanel',
                 months: revenuePerCompanyMonths,
                 series: revenuePerCompanySeries,
-                companies: revenuePerCompanyList
+                companies: revenuePerCompanyList,
+                stacked: true,
+                height: 460,
+                yMin: 0,
+                yTitle: 'Revenues (EUR)'
             });
 
-            // ── Ranked bars: Customer Net Profit Contribution ──────────────
-            // Horizontal so long company names stay readable, and because a
-            // loss-making client must render as a bar pointing the other way —
-            // something a pie chart structurally cannot show.
-            (function () {
-                const node = document.querySelector('#profitContributionChart');
-                if (! node) return;
+            // ── Grouped bars: Customer Net Profit Contribution ─────────────
+            // Same company × period matrix as Revenues per Client, but GROUPED
+            // rather than stacked: net profit goes negative, and a loss-making
+            // client has to draw below the zero line. Stacking would hide that —
+            // the bar height would stop equalling the bucket total, the same
+            // reason this widget is not a pie. The ranked table below is
+            // untouched and still answers "who contributes most overall".
+            const profitPerCompanyMonths = @json($profitPerCompanyMonths);
+            const profitPerCompanySeries = @json($profitPerCompanySeries);   // default view
+            const profitPerCompanyList   = @json($profitPerCompanyList);     // every company
 
-                const contribution = @json($pcChart);
-                if (! contribution.length) return;
-
-                new ApexCharts(node, {
-                    ...commonOptions,
-                    chart: { ...commonOptions.chart, type: 'bar', height: Math.max(280, contribution.length * 42) },
-                    series: [{ name: 'Net Profit', data: contribution.map((c) => c.profit) }],
-                    colors: ['#059669'],
-                    plotOptions: {
-                        bar: {
-                            horizontal: true,
-                            borderRadius: 2,
-                            barHeight: '62%',
-                            // Losses read red without needing a second series.
-                            colors: { ranges: [{ from: -1e12, to: -0.01, color: '#dc2626' }] }
-                        }
-                    },
-                    dataLabels: {
-                        enabled: true,
-                        formatter: (value) => compactCurrency(value),
-                        style: { fontSize: '11px', colors: ['#334155'] },
-                        offsetX: 28
-                    },
-                    stroke: { show: false, width: 0 },
-                    xaxis: {
-                        ...commonOptions.xaxis,
-                        categories: contribution.map((c) => c.name),
-                        labels: {
-                            ...commonOptions.xaxis.labels,
-                            formatter: (value) => compactCurrency(Number(value))
-                        }
-                    },
-                    yaxis: {
-                        labels: { style: { colors: '#64748b', fontSize: '11px' }, maxWidth: 220 }
-                    },
-                    tooltip: { theme: 'light', y: { formatter: (value) => euro.format(value) } }
-                }).render();
-            })();
+            renderClientSeriesChart({
+                nodeSelector: '#profitContributionChart',
+                toggleKey: 'profitPerClient',
+                filterSelector: '#profitCompanyFilter',
+                filterButtonSelector: '#profitCompanyFilterToggle',
+                filterPanelSelector: '#profitCompanyFilterPanel',
+                months: profitPerCompanyMonths,
+                series: profitPerCompanySeries,
+                companies: profitPerCompanyList,
+                stacked: false,
+                height: 460,
+                yMin: undefined,   // let the scale reach below zero for losses
+                yTitle: 'Net Profit (EUR)',
+                zeroLine: true,
+                initialGranularity: 'yearly'
+            });
         });
 
     </script>
