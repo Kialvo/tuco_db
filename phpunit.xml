@@ -22,8 +22,15 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+        <!-- Tests get their own throwaway in-memory database and must NEVER
+             inherit DB_* from .env: this project's .env points at the LIVE
+             production host, and RefreshDatabase runs migrate:fresh, which
+             drops every table. These two lines are the only thing standing
+             between `php artisan test` and the production data, so do not
+             comment them out. Tests\TestCase enforces the same rule at
+             runtime as a second line of defence. -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
