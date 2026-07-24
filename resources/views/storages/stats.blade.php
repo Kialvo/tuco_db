@@ -375,8 +375,8 @@
                                 b.classList.toggle('text-slate-900', on);
                                 b.classList.toggle('shadow-sm', on);
                                 b.classList.toggle('border-transparent', ! on);
-                                b.classList.toggle('text-slate-500', ! on);
-                                b.classList.toggle('hover:text-slate-700', ! on);
+                                b.classList.toggle('text-slate-600', ! on);
+                                b.classList.toggle('hover:text-slate-800', ! on);
                             });
                         });
                     });

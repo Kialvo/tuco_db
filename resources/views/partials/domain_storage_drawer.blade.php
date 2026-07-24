@@ -13,7 +13,7 @@
     <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 bg-gray-50 flex-shrink-0">
         <div class="min-w-0 flex-1 mr-3">
             <h2 id="drawerDomainName" class="text-sm font-bold text-gray-800 truncate"></h2>
-            <p class="text-xs text-gray-500 mt-0.5">
+            <p class="text-sm text-gray-500 mt-0.5">
                 <span id="drawerEntryCount">—</span> storage entries
                 <span id="drawerFilterCount" class="hidden"> &middot; <span id="drawerFilterNum"></span> shown</span>
             </p>
