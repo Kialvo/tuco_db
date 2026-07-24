@@ -176,6 +176,9 @@ class StorageStatsController extends Controller
         return [
             'profitContribution' => $profitContribution['rows'],
             'profitContributionTotal' => $profitContribution['total'],
+            'profitPerCompanyMonths' => $profitContribution['months'],
+            'profitPerCompanySeries' => $profitContribution['series'],
+            'profitPerCompanyList' => $profitContribution['companies'],
             'labels' => $labels,
             'publishedSeries' => $publishedSeries,
             'guestPostsMonthly' => $guestPostsMonthly,
@@ -350,10 +353,12 @@ class StorageStatsController extends Controller
      */
     private function buildProfitContribution($baseQuery, ?Carbon $dateFrom, ?Carbon $dateTo, array $windowedPoints): array
     {
-        $monthKeySet = array_flip(array_column($windowedPoints, 'month'));
+        $monthKeys = array_column($windowedPoints, 'month');
+        $monthLabels = array_column($windowedPoints, 'label');
+        $monthKeySet = array_flip($monthKeys);
 
-        if (empty($monthKeySet)) {
-            return ['rows' => [], 'total' => 0.0];
+        if (empty($monthKeys)) {
+            return ['rows' => [], 'total' => 0.0, 'months' => [], 'series' => [], 'companies' => []];
         }
 
         $rows = (clone $baseQuery)
@@ -366,6 +371,7 @@ class StorageStatsController extends Controller
         $companyByClient = $this->companyNameByClientId($rows->pluck('client_id'));
 
         $buckets = [];   // company => [profit, revenue, count]
+        $matrix = [];    // [companyName][monthKey] => summed profit, for the time series
         foreach ($rows as $row) {
             if (! isset($monthKeySet[$row->month_key])) {
                 continue;
@@ -379,6 +385,8 @@ class StorageStatsController extends Controller
             $buckets[$name]['profit'] += (float) $row->profit;
             $buckets[$name]['revenue'] += (float) $row->revenue;
             $buckets[$name]['count']++;
+
+            $matrix[$name][$row->month_key] = ($matrix[$name][$row->month_key] ?? 0) + (float) $row->profit;
         }
 
         $total = array_sum(array_column($buckets, 'profit'));
@@ -408,7 +416,65 @@ class StorageStatsController extends Controller
             return $b['profit'] <=> $a['profit'];
         });
 
-        return ['rows' => $out, 'total' => round($total, 2)];
+        // Company × month profit matrix powering the widget's grouped-bar chart.
+        // Grouped (not stacked) because profit goes negative: a loss-making client
+        // must draw below the zero line, which a stack cannot represent honestly.
+        // Ranking reuses $out, so chart order and table order can never disagree.
+        $seriesFor = fn (string $name): array => array_map(
+            static fn (string $mk) => round($matrix[$name][$mk] ?? 0, 2),
+            $monthKeys
+        );
+
+        $rankedNames = array_values(array_diff(array_column($out, 'name'), ['Unassigned']));
+        $hasUnassigned = in_array('Unassigned', array_column($out, 'name'), true);
+
+        $topNames = array_slice($rankedNames, 0, self::REVENUE_TOP_COMPANIES);
+        $otherNames = array_slice($rankedNames, self::REVENUE_TOP_COMPANIES);
+
+        $series = [];
+        foreach ($topNames as $name) {
+            $series[] = ['name' => $name, 'data' => $seriesFor($name)];
+        }
+
+        if (! empty($otherNames)) {
+            $othersData = array_map(static function (string $mk) use ($otherNames, $matrix) {
+                $sum = 0.0;
+                foreach ($otherNames as $name) {
+                    $sum += $matrix[$name][$mk] ?? 0;
+                }
+
+                return round($sum, 2);
+            }, $monthKeys);
+
+            // != 0.0, not > 0: an "Others" bucket that nets to a loss still matters.
+            if (array_sum($othersData) != 0.0) {
+                $series[] = ['name' => 'Others', 'data' => $othersData];
+            }
+        }
+
+        if ($hasUnassigned) {
+            $series[] = ['name' => 'Unassigned', 'data' => $seriesFor('Unassigned')];
+        }
+
+        // Full per-company list so the filter can select anyone, including
+        // companies folded into "Others" by default.
+        $companies = [];
+        foreach ($rankedNames as $name) {
+            $companies[] = ['name' => $name, 'data' => $seriesFor($name)];
+        }
+        if ($hasUnassigned) {
+            $companies[] = ['name' => 'Unassigned', 'data' => $seriesFor('Unassigned')];
+        }
+
+        $trimmed = $this->trimEmptyMonths($monthLabels, $series, $companies);
+
+        return [
+            'rows' => $out,
+            'total' => round($total, 2),
+            'months' => $trimmed['months'],
+            'series' => $trimmed['series'],
+            'companies' => $trimmed['companies'],
+        ];
     }
 
     /**
