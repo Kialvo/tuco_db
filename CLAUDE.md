@@ -22,7 +22,7 @@ Senior Laravel engineer working full-stack on a server-rendered app: Eloquent/PH
 ## Git Workflow
 
 - **Personal branch `tuco_db-<firstname>`** (e.g. `tuco_db-fabrizio`). Do ALL work on it; never spin up a fresh `feature/*` branch per task for the AI session, never work on `main`.
-- **Claude STOPS at pushed-to-personal-branch.** The commit and the `gh pr create` each need Fabrizio's explicit, per-action approval (one approval never carries to the next action or a later PR). **Merging to `main` + deploying is Marvin's exclusive responsibility — Claude never merges.**
+- **Claude's default stop is pushed-to-personal-branch.** The commit, the `gh pr create`, AND the merge to `main` are three separate approval-gated actions — each needs Fabrizio's explicit, per-action approval, and one approval never carries to the next action or a later PR. **Claude MAY merge an approved PR to `main` on Fabrizio's explicit per-PR approval** (never autonomously; still harness-gated by the global `block-gh-pr.sh` hook / `PR_APPROVED=1`). **The manual server deploy remains Marvin's responsibility — merging is not deploying.**
 - **Commit identity must resolve to Kialvo:** `git config user.name "Kialvo"` + `user.email "info@kialvo.com"`; run `gh auth switch -u Kialvo` before any push.
 - Fast-forward the personal branch to `origin/main` before starting work (`git fetch && git merge --ff-only origin/main`).
 - Never delete a teammate's `tuco_db-<firstname>` branch on the remote.
@@ -51,16 +51,16 @@ php artisan serve --port=8000 # app at http://localhost:8000
 
 ## Absolute Prohibitions
 
-- NEVER commit or push to `main`.
+- NEVER **directly** commit or push to `main` — changes reach `main` only through an approved, merged PR (which Claude may perform only on Fabrizio's explicit per-PR approval).
 - NEVER create or merge a PR without Fabrizio's explicit, per-PR approval.
 - NEVER delete a teammate's remote branch (e.g. Marvin's).
 - NEVER edit or delete an already-shipped migration; add a new dated one (`php artisan make:migration`) + mirror new columns in the model `$fillable`/`$casts` and any DataTables/import mapping. Do NOT commit "fixes" to the broken fresh-migrate chain.
-- **Database access is READ-ONLY — Claude may only run `SELECT`/read queries.** NEVER write to any database it connects to: no `INSERT`/`UPDATE`/`DELETE`/`REPLACE`, no DDL (`ALTER`/`CREATE`/`DROP`/`TRUNCATE`), no `php artisan migrate`/`migrate:*`/`db:seed`/`db:wipe`, no writes via `tinker` (`->save()`/`->update()`/`->delete()`, `DB::insert`/`update`/`delete`/`statement`). The local `.env` points at **LIVE PRODUCTION** — the active host `tuco-db-may-23-backup-2026-…ondigitalocean.com` is production despite "backup" in its name (the genuine backup host is commented out). So writes are **never** permitted — not even with approval; they hit production, not a throwaway copy. This supersedes the old "destructive DB command with approval" allowance.
+- **Database access is STRICTLY READ-ONLY and verification-only — Claude may run ONLY `SELECT`/read queries, and only when a read is genuinely required; prefer reading the migrations/models/schema in code over connecting at all.** EVERY connection hits **LIVE PRODUCTION**: the local `.env` active host `tuco-db-may-23-backup-2026-…ondigitalocean.com` is production despite "backup" in its name (the genuine backup host is commented out). NEVER write — under ANY circumstance, with or without approval: no `INSERT`/`UPDATE`/`DELETE`/`REPLACE`, no DDL (`ALTER`/`CREATE`/`DROP`/`TRUNCATE`), no `php artisan migrate`/`migrate:*`/`db:seed`/`db:wipe`, no writes via `tinker` (`->save()`/`->update()`/`->delete()`/`->create()`, `DB::insert`/`update`/`delete`/`statement`). A write here is irreversible — it hits production, not a throwaway copy. This is absolute and supersedes the old "destructive DB command with approval" allowance.
 - NEVER assume push = live (see Deployment). NEVER hardcode secrets — add keys to `.env.example` (empty) and read via `config()`.
 
 ## Deployment
 
-- **Deploy model: manual, self-hosted server — push to `main` does NOT go live.** Only Marvin merges to `main` and deploys; a Fabrizio-approved PR is handed to him.
+- **Deploy model: manual, self-hosted server — push to `main` does NOT go live.** An approved PR may be merged to `main` by Claude on Fabrizio's explicit per-PR approval, or handed to Marvin; either way the **manual server deploy is Marvin's** responsibility — merging is not deploying.
 - **Server deploy steps:** SSH in → `git pull` → `composer install --no-dev` → `php artisan migrate --force` → `npm ci && npm run build` → `php artisan optimize`.
 - **Live URL:** linkinablink.com (tool at `/dashboard`, `/websites`).
 
