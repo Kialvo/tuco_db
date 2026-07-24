@@ -174,13 +174,13 @@
 {{--                    @error('copy_nr') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror--}}
 {{--                </div>--}}
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copywriter Comm. Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copywriter Ordered</label>
                     <input type="text" name="copywriter_commision_date" value="{{ old('copywriter_commision_date') }}"
                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('copywriter_commision_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1">Copywriter Subm. Date</label>
+                    <label class="block text-gray-700 font-medium mb-1">Copywriter Delivered</label>
                     <input type="text" name="copywriter_submission_date" value="{{ old('copywriter_submission_date') }}"
                            class="date-input w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500">
                     @error('copywriter_submission_date')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror

@@ -20,12 +20,20 @@ class PublicationController extends Controller
 {
     /** Campaign-facing columns editable inline from the campaign page. */
     private const INLINE_FIELDS = [
-        'price'                     => 'nullable|numeric|min:0',   // virtual → menford (see StorageCalculator::setPrice)
-        'article_url'               => 'nullable|url|max:500',
-        'publication_date'          => 'nullable|date',            // "Live Date"
+        'price' => 'nullable|numeric|min:0',   // virtual → menford (see StorageCalculator::setPrice)
+        'article_url' => 'nullable|url|max:500',
+        'publication_date' => 'nullable|date',            // "Live Date"
         'copywriter_commision_date' => 'nullable|date',            // "Sent to Copy"
-        'copywriter_submission_date'=> 'nullable|date',            // "Copy Received"
+        'copywriter_submission_date' => 'nullable|date',            // "Copy Received"
         'article_sent_to_publisher' => 'nullable|date',            // "Sent to Blog"
+    ];
+
+    /** Date fields that feed a derived period (StorageCalculator::apply). */
+    private const PERIOD_DATE_FIELDS = [
+        'copywriter_commision_date',
+        'copywriter_submission_date',
+        'article_sent_to_publisher',
+        'publication_date',
     ];
 
     /*======================================================================
@@ -37,7 +45,7 @@ class PublicationController extends Controller
 
         $attrs = $this->mappedAttributes($data);
         $attrs['lb_campaign_id'] = $campaign->id;
-        $attrs['campaign_code']  = $campaign->code;
+        $attrs['campaign_code'] = $campaign->code;
 
         StorageCalculator::setPrice($attrs, (float) $data['price']);
 
@@ -51,7 +59,7 @@ class PublicationController extends Controller
     ======================================================================*/
     public function update(Request $request, Storage $storage)
     {
-        $data  = $this->validated($request);
+        $data = $this->validated($request);
         $attrs = $this->mappedAttributes($data);
 
         // Recompute derived totals against the FULL row, not just the subset.
@@ -60,12 +68,12 @@ class PublicationController extends Controller
 
         $storage->fill([
             ...$attrs,
-            'menford'           => $payload['menford'],
-            'total_cost'        => $payload['total_cost'],
-            'total_revenues'    => $payload['total_revenues'],
-            'profit'            => $payload['profit'],
+            'menford' => $payload['menford'],
+            'total_cost' => $payload['total_cost'],
+            'total_revenues' => $payload['total_revenues'],
+            'profit' => $payload['profit'],
             'copywriter_period' => $payload['copywriter_period'] ?? $storage->copywriter_period,
-            'publisher_period'  => $payload['publisher_period'] ?? $storage->publisher_period,
+            'publisher_period' => $payload['publisher_period'] ?? $storage->publisher_period,
         ])->save();
 
         return response()->json(['status' => 'success', 'id' => $storage->id]);
@@ -83,8 +91,8 @@ class PublicationController extends Controller
         $storage->update($data);
 
         return response()->json([
-            'status'       => 'success',
-            'value'        => $storage->status,
+            'status' => 'success',
+            'value' => $storage->status,
             'status_group' => $storage->status_group,
         ]);
     }
@@ -104,11 +112,24 @@ class PublicationController extends Controller
             $payload = $storage->getAttributes();
             StorageCalculator::setPrice($payload, (float) ($value ?? 0));
             $storage->update([
-                'menford'        => $payload['menford'],
+                'menford' => $payload['menford'],
                 'total_revenues' => $payload['total_revenues'],
-                'profit'         => $payload['profit'],
+                'profit' => $payload['profit'],
             ]);
             $value = $storage->total_revenues;
+        } elseif (in_array($field, self::PERIOD_DATE_FIELDS, true)) {
+            // A copywriter/publisher date drives a derived period
+            // (StorageCalculator::apply — copywriter_period, publisher_period).
+            // Recompute and persist it alongside the date so Publication Stats
+            // never drift; without this an inline date edit desyncs the period.
+            $payload = $storage->getAttributes();
+            $payload[$field] = $value;
+            StorageCalculator::apply($payload);
+            $storage->update([
+                $field => $value,
+                'copywriter_period' => $payload['copywriter_period'] ?? $storage->copywriter_period,
+                'publisher_period' => $payload['publisher_period'] ?? $storage->publisher_period,
+            ]);
         } else {
             $storage->update([$field => $value]);
         }
@@ -125,16 +146,16 @@ class PublicationController extends Controller
         $fdate = fn ($v) => $v ? \Illuminate\Support\Carbon::parse($v)->format('Y-m-d') : null;
 
         return response()->json(['status' => 'success', 'data' => [
-            'id'                          => $storage->id,
-            'website_id'                  => $storage->website_id,
-            'site'                        => $storage->publisher_domain,
-            'status'                      => $storage->status,
-            'price'                       => (float) $storage->total_revenues,
-            'article_url'                 => $storage->article_url,
-            'publication_date'            => $fdate($storage->publication_date),
-            'copywriter_commision_date'   => $fdate($storage->copywriter_commision_date),
-            'copywriter_submission_date'  => $fdate($storage->copywriter_submission_date),
-            'article_sent_to_publisher'   => $fdate($storage->article_sent_to_publisher),
+            'id' => $storage->id,
+            'website_id' => $storage->website_id,
+            'site' => $storage->publisher_domain,
+            'status' => $storage->status,
+            'price' => (float) $storage->total_revenues,
+            'article_url' => $storage->article_url,
+            'publication_date' => $fdate($storage->publication_date),
+            'copywriter_commision_date' => $fdate($storage->copywriter_commision_date),
+            'copywriter_submission_date' => $fdate($storage->copywriter_submission_date),
+            'article_sent_to_publisher' => $fdate($storage->article_sent_to_publisher),
         ]]);
     }
 
@@ -182,11 +203,11 @@ class PublicationController extends Controller
 
         return response()->json([
             'results' => $rows->map(fn (Storage $s) => [
-                'id'   => $s->id,
-                'text' => '#' . $s->id . ' — ' . ($s->publisher_domain ?: 'no domain'),
-                'domain'   => $s->publisher_domain,
-                'status'   => $s->status_label ?? '—',
-                'price'    => (float) $s->total_revenues,
+                'id' => $s->id,
+                'text' => '#'.$s->id.' — '.($s->publisher_domain ?: 'no domain'),
+                'domain' => $s->publisher_domain,
+                'status' => $s->status_label ?? '—',
+                'price' => (float) $s->total_revenues,
                 'pub_date' => $s->publication_date ? \Illuminate\Support\Carbon::parse($s->publication_date)->format('d/m/Y') : null,
                 'campaign' => $s->lbCampaign?->code,
             ]),
@@ -199,7 +220,7 @@ class PublicationController extends Controller
     public function linkExisting(Request $request, Campaign $campaign)
     {
         $data = $request->validate([
-            'ids'   => 'required|array|min:1',
+            'ids' => 'required|array|min:1',
             'ids.*' => 'integer|exists:storage,id',
         ]);
 
@@ -207,7 +228,7 @@ class PublicationController extends Controller
         foreach (Storage::whereIn('id', $data['ids'])->get() as $storage) {
             $storage->update([
                 'lb_campaign_id' => $campaign->id,
-                'campaign_code'  => $campaign->code,
+                'campaign_code' => $campaign->code,
             ]);
             $linked++;
         }
@@ -239,15 +260,15 @@ class PublicationController extends Controller
     private function validated(Request $request): array
     {
         return $request->validate([
-            'website_id'                  => 'nullable|integer|exists:websites,id',
-            'site'                        => 'required_without:website_id|nullable|string|max:255',
-            'status'                      => ['required', Rule::in(PublicationStatus::slugs())],
-            'price'                       => 'required|numeric|min:0',
-            'article_url'                 => 'nullable|url|max:500',
-            'publication_date'            => 'nullable|date',
-            'copywriter_commision_date'   => 'nullable|date',
-            'copywriter_submission_date'  => 'nullable|date',
-            'article_sent_to_publisher'   => 'nullable|date',
+            'website_id' => 'nullable|integer|exists:websites,id',
+            'site' => 'required_without:website_id|nullable|string|max:255',
+            'status' => ['required', Rule::in(PublicationStatus::slugs())],
+            'price' => 'required|numeric|min:0',
+            'article_url' => 'nullable|url|max:500',
+            'publication_date' => 'nullable|date',
+            'copywriter_commision_date' => 'nullable|date',
+            'copywriter_submission_date' => 'nullable|date',
+            'article_sent_to_publisher' => 'nullable|date',
         ]);
     }
 
@@ -255,15 +276,15 @@ class PublicationController extends Controller
     private function mappedAttributes(array $data): array
     {
         return [
-            'website_id'                  => $data['website_id'] ?? null,
+            'website_id' => $data['website_id'] ?? null,
             // free-typed publisher (no websites match) → legacy text column
-            'website'                     => ($data['website_id'] ?? null) ? null : ($data['site'] ?? null),
-            'status'                      => $data['status'],
-            'article_url'                 => $data['article_url'] ?? null,
-            'publication_date'            => $data['publication_date'] ?? null,
-            'copywriter_commision_date'   => $data['copywriter_commision_date'] ?? null,
-            'copywriter_submission_date'  => $data['copywriter_submission_date'] ?? null,
-            'article_sent_to_publisher'   => $data['article_sent_to_publisher'] ?? null,
+            'website' => ($data['website_id'] ?? null) ? null : ($data['site'] ?? null),
+            'status' => $data['status'],
+            'article_url' => $data['article_url'] ?? null,
+            'publication_date' => $data['publication_date'] ?? null,
+            'copywriter_commision_date' => $data['copywriter_commision_date'] ?? null,
+            'copywriter_submission_date' => $data['copywriter_submission_date'] ?? null,
+            'article_sent_to_publisher' => $data['article_sent_to_publisher'] ?? null,
         ];
     }
 }

@@ -48,9 +48,9 @@
                 @endforeach
             </select>
 
-            <button id="f_today" type="button"
-                    class="filter-toggle border border-gray-300 rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-600 hover:bg-gray-50">
-                📅 Today
+            <button id="f_active" type="button"
+                    class="filter-toggle border rounded-lg text-xs font-semibold px-3 py-2 bg-white text-green-700 border-green-500 hover:bg-green-50">
+                🟢 Actives
             </button>
             <button id="f_group" type="button"
                     class="filter-toggle border border-gray-300 rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-600 hover:bg-gray-50">
@@ -236,7 +236,7 @@ $(function () {
                 d.company_id = $('#f_company').val() || '';
                 d.status     = $('#f_status').val() || '';
                 d.service    = $('#f_service').val() || '';
-                d.today      = $('#f_today').hasClass('active') ? 1 : 0;
+                d.active_group = $('#f_active').hasClass('active') ? 1 : 0;
             }
         },
         columns: [
@@ -296,7 +296,7 @@ $(function () {
 
     function syncClear() {
         const active = $('#f_search').val() || $('#f_company').val() || $('#f_service').val()
-            || $('#f_status').val() || $('#f_today').hasClass('active') || grouped;
+            || $('#f_status').val() || $('#f_active').hasClass('active') || grouped;
         $('#f_clear').toggleClass('hidden', !active);
     }
 
@@ -308,9 +308,12 @@ $(function () {
     });
     $('#f_company, #f_service, #f_status').on('change', () => { table.ajax.reload(); syncClear(); });
 
-    // Today and By-Client are INDEPENDENT toggles.
-    $('#f_today').on('click', function () {
-        $(this).toggleClass('active bg-amber-50 text-amber-700 border-amber-300');
+    // Actives and By-Client are INDEPENDENT toggles.
+    $('#f_active').on('click', function () {
+        const on = !$(this).hasClass('active');
+        $(this).toggleClass('active', on)
+               .toggleClass('bg-white text-green-700 border-green-500 hover:bg-green-50', !on)
+               .toggleClass('bg-green-600 text-white border-green-600 hover:bg-green-700', on);
         table.ajax.reload();
         syncClear();
     });
@@ -327,7 +330,8 @@ $(function () {
         $('#f_company').val(null).trigger('change.select2');
         $('#f_service').val('');
         $('#f_status').val('');
-        $('#f_today').removeClass('active bg-amber-50 text-amber-700 border-amber-300');
+        $('#f_active').removeClass('active bg-green-600 text-white border-green-600 hover:bg-green-700')
+                      .addClass('bg-white text-green-700 border-green-500 hover:bg-green-50');
         grouped = false;
         $('#f_group').removeClass('active bg-green-50 text-green-700 border-green-300');
         table.rowGroup().enable(false);

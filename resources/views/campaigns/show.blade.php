@@ -16,6 +16,12 @@
     $fds = fn($v) => $v ? Carbon::parse($v)->format('d/m/Y') : '—';                   // storage raw datetimes
     $ymd = fn($v) => $v ? Carbon::parse($v)->format('Y-m-d') : '';
 
+    // Date cell display: the date ("29 Jan 2026") when set, else a calendar icon
+    // affordance (still click-to-edit). Centered via the cell's text-center.
+    $dateCell = fn($v) => $v
+        ? '<span class="text-gray-700">'.Carbon::parse($v)->format('j M Y').'</span>'
+        : '<span class="inline-flex items-center justify-center w-6 h-6 rounded text-gray-500 hover:bg-green-50 hover:text-green-600" title="Add date"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>';
+
     $prog      = $campaign->progress;
     $g1        = $campaign->publications->filter(fn($p) => PublicationStatus::group($p->status) === 1);
     $g2        = $campaign->publications->filter(fn($p) => PublicationStatus::group($p->status) === 2);
@@ -58,6 +64,9 @@
             @if($campaign->service)
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $svcTone($campaign->service) }}">{{ $campaign->service }}</span>
             @endif
+            <button id="btnPubFilterPublished" type="button" aria-pressed="false" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold border rounded-lg bg-white text-green-700 border-green-500 hover:bg-green-50">
+                <x-icon name="check" size="sm" /> Article Published
+            </button>
             <button id="btnEditCampaign" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                 <x-icon name="pencil" size="sm" /> Edit
             </button>
@@ -113,15 +122,15 @@
                 <div class="text-xs mt-1">Create one from scratch or link an existing Storage entry.</div>
             </div>
         @else
-            <div class="overflow-x-auto">
+            <div class="ds-table overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                     <tr class="bg-gray-50 text-[10px] uppercase tracking-wider text-gray-500">
                         <th class="text-left py-2.5 px-3 font-semibold">Publisher</th>
                         <th class="text-left py-2.5 px-3 font-semibold">Status</th>
                         <th class="text-right py-2.5 px-3 font-semibold">Price €</th>
-                        <th class="text-left py-2.5 px-3 font-semibold">Sent&nbsp;to&nbsp;Copy</th>
-                        <th class="text-left py-2.5 px-3 font-semibold">Copy&nbsp;Received</th>
+                        <th class="text-left py-2.5 px-3 font-semibold">Copywriter&nbsp;Ordered</th>
+                        <th class="text-left py-2.5 px-3 font-semibold">Copywriter&nbsp;Delivered</th>
                         <th class="text-left py-2.5 px-3 font-semibold">Sent&nbsp;to&nbsp;Blog</th>
                         <th class="text-left py-2.5 px-3 font-semibold">Live&nbsp;URL</th>
                         <th class="text-left py-2.5 px-3 font-semibold">Live&nbsp;Date</th>
@@ -131,9 +140,9 @@
                     <tbody class="divide-y divide-gray-100">
                         @foreach([['GROUP 1 – Site Evaluation', $g1], ['GROUP 2 – Production', $g2]] as [$label, $rows])
                             @if($rows->count())
-                                <tr><td colspan="9" class="bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-400 px-3 py-1.5">{{ $label }}</td></tr>
+                                <tr class="js-pub-group"><td colspan="9" class="bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-400 px-3 py-1.5">{{ $label }}</td></tr>
                                 @foreach($rows as $p)
-                                    <tr class="hover:bg-gray-50">
+                                    <tr class="js-pub-row hover:bg-gray-50" data-status="{{ $p->status }}">
                                         <td class="py-2.5 px-3 font-medium">
                                             <a href="{{ route('storages.edit', $p->id) }}" class="text-green-600 hover:underline" title="Open full Storage record">{{ $p->publisher_domain ?: '—' }}</a>
                                         </td>
@@ -144,11 +153,11 @@
                                             </button>
                                         </td>
                                         <td class="py-2.5 px-3 text-right whitespace-nowrap">{!! $editable($p, 'price', 'money', (float)$p->total_revenues, '€'.number_format((float)$p->total_revenues, 0)) !!}</td>
-                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'copywriter_commision_date', 'date', $ymd($p->copywriter_commision_date), $fds($p->copywriter_commision_date)) !!}</td>
-                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'copywriter_submission_date', 'date', $ymd($p->copywriter_submission_date), $fds($p->copywriter_submission_date)) !!}</td>
-                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'article_sent_to_publisher', 'date', $ymd($p->article_sent_to_publisher), $fds($p->article_sent_to_publisher)) !!}</td>
+                                        <td class="py-2.5 px-3 text-center text-gray-500 whitespace-nowrap">{!! $editable($p, 'copywriter_commision_date', 'date', $ymd($p->copywriter_commision_date), $dateCell($p->copywriter_commision_date)) !!}</td>
+                                        <td class="py-2.5 px-3 text-center text-gray-500 whitespace-nowrap">{!! $editable($p, 'copywriter_submission_date', 'date', $ymd($p->copywriter_submission_date), $dateCell($p->copywriter_submission_date)) !!}</td>
+                                        <td class="py-2.5 px-3 text-center text-gray-500 whitespace-nowrap">{!! $editable($p, 'article_sent_to_publisher', 'date', $ymd($p->article_sent_to_publisher), $dateCell($p->article_sent_to_publisher)) !!}</td>
                                         <td class="py-2.5 px-3">{!! $editable($p, 'article_url', 'text', $p->article_url, $p->article_url ? '<span class="text-green-600 text-xs">'.e(\Illuminate\Support\Str::of($p->article_url)->replace(['https://','http://'],'')->limit(24)).'</span>' : '<span class="text-gray-300">—</span>') !!}</td>
-                                        <td class="py-2.5 px-3 text-gray-500 whitespace-nowrap">{!! $editable($p, 'publication_date', 'date', $ymd($p->publication_date), $fds($p->publication_date)) !!}</td>
+                                        <td class="py-2.5 px-3 text-center text-gray-500 whitespace-nowrap">{!! $editable($p, 'publication_date', 'date', $ymd($p->publication_date), $dateCell($p->publication_date)) !!}</td>
                                         <td class="py-2.5 px-3 text-right whitespace-nowrap">
                                             <button type="button" class="js-pub-comments inline-flex items-center justify-center h-7 px-1.5 rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600" data-id="{{ $p->id }}" data-site="{{ $p->publisher_domain }}" title="Conversation">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
@@ -348,6 +357,19 @@ $(function () {
     }
 
     flatpickr('.js-date', { dateFormat: 'Y-m-d', allowInput: true });
+
+    /* ── "Article Published" quick filter (client-side toggle) ── */
+    $('#btnPubFilterPublished').on('click', function () {
+        const on = $(this).attr('aria-pressed') !== 'true';
+        $(this).attr('aria-pressed', on ? 'true' : 'false')
+               .toggleClass('bg-white text-green-700 border-green-500 hover:bg-green-50', !on)
+               .toggleClass('bg-green-600 text-white border-green-600 hover:bg-green-700', on);
+        $('.js-pub-row').each(function () {
+            $(this).toggle(!on || $(this).attr('data-status') === 'article_published');
+        });
+        // While filtering, hide the group-label rows (flat published-only view).
+        $('.js-pub-group').toggle(!on);
+    });
 
     /* ── Publisher select2 (Domains catalog search + free-text tags) ── */
     function initSiteSelect() {

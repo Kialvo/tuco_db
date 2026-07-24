@@ -15,8 +15,8 @@
 
         // COPY DETAILS
         'copy_nr'                   => 'Copywriter Amount €',
-        'copywriter_commision_date' => 'Copywriter Comm. Date',
-        'copywriter_submission_date'=> 'Copywriter Subm. Date',
+        'copywriter_commision_date' => 'Copywriter Ordered',
+        'copywriter_submission_date'=> 'Copywriter Delivered',
         'copywriter_period'         => 'Copywriter Period (days)',
 
         // PUBLISHER
