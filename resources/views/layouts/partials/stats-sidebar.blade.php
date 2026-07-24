@@ -11,7 +11,7 @@
 @endphp
 
 <div class="p-3 text-sm">
-    <div class="px-3 pt-2 pb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+    <div class="px-3 pt-2 pb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
         Stats
     </div>
 
@@ -21,7 +21,7 @@
                 <span class="flex items-center gap-2.5 px-3 py-2 rounded-lg font-medium text-gray-500 cursor-not-allowed select-none">
                     <x-icon name="{{ $item['icon'] }}" size="sm" class="flex-shrink-0 text-gray-400" />
                     <span class="truncate">{{ $item['label'] }}</span>
-                    <span class="ml-auto text-[10px] font-semibold uppercase tracking-wide rounded bg-gray-100 px-1.5 py-0.5 text-gray-500">soon</span>
+                    <span class="ml-auto text-[10px] font-semibold uppercase tracking-wide rounded bg-gray-100 px-1.5 py-0.5 text-gray-600">soon</span>
                 </span>
             @else
                 @php $active = request()->routeIs($item['route']); @endphp

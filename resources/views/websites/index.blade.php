@@ -81,7 +81,7 @@
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
             <h1 class="text-base font-bold text-gray-800">Domains</h1>
-            <p class="text-xs text-gray-500 mt-0.5">Manage your domain inventory.</p>
+            <p class="text-sm text-gray-500 mt-0.5">Manage your domain inventory.</p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             @if($isGuestUser)
@@ -92,7 +92,7 @@
                 <button type="button"
                         id="btnOpenCart"
                         onclick="window.LIBCart && window.LIBCart.openDrawer()"
-                        class="relative inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                        class="relative inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 rounded-lg shadow-sm">
                     <x-icon name="cart" size="sm" />
                     <span>Current Order</span>
                     <span id="cartCountBadge"
@@ -114,7 +114,7 @@
                     <x-icon name="upload" size="sm" /> Import CSV
                 </a>
                 <a href="{{ route('websites.create') }}"
-                   class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                   class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 rounded-lg shadow-sm">
                     <x-icon name="plus" size="sm" /> Create Domain
                 </a>
             @endunless
@@ -164,7 +164,7 @@
                             Cancel
                         </button>
                         <button type="button" id="websiteExportConfirm"
-                                class="rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700">
+                                class="rounded bg-green-700 px-3 py-1.5 text-xs text-white hover:bg-green-800">
                             Continue Export
                         </button>
                     </div>
@@ -1077,7 +1077,7 @@
                             const inCart = !!data;
                             if (inCart) {
                                 return `
-            <button class="order-toggle inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-600 text-white hover:bg-green-700 transition" data-id="${row.id}" data-in-cart="1" title="Remove from order">
+            <button class="order-toggle inline-flex items-center justify-center w-7 h-7 rounded-md bg-green-700 text-white hover:bg-green-800 transition" data-id="${row.id}" data-in-cart="1" title="Remove from order">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
             </button>`;
                             }

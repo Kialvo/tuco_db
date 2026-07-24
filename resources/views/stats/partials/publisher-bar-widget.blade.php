@@ -19,7 +19,7 @@
 @php
     $wToggleBtn = 'rounded-md border px-3 py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-200';
     $wToggleOn  = 'border-slate-200 bg-white font-semibold text-slate-900 shadow-sm';
-    $wToggleOff = 'border-transparent text-slate-500 hover:text-slate-700';
+    $wToggleOff = 'border-transparent text-slate-600 hover:text-slate-800';
     $hasFilter  = ! empty($selected);
     $preserve   = $preserve ?? [];
 

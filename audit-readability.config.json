@@ -3,7 +3,7 @@
   "storageStatePath": ".readability-auth.json",
   "themes": ["light"],
   "urls": [
-    { "path": "/storages/stats", "label": "storages-stats" },
+    { "path": "/stats/production", "label": "production-stats" },
     { "path": "/dashboard", "label": "dashboard" },
     { "path": "/contacts", "label": "contacts" },
     { "path": "/companies", "label": "companies" },

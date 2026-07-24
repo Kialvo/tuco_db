@@ -13,10 +13,10 @@
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
             <h1 class="text-base font-bold text-gray-800">Campaigns</h1>
-            <p class="text-xs text-gray-500 mt-0.5">Link building campaigns &amp; publications.</p>
+            <p class="text-sm text-gray-500 mt-0.5">Link building campaigns &amp; publications.</p>
         </div>
         <button id="btnNewCampaign"
-                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 rounded-lg shadow-sm">
             <x-icon name="plus" size="sm" /> New Campaign
         </button>
     </div>
@@ -183,7 +183,7 @@
             </form>
             <div class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
                 <button type="button" class="js-close-campaign px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="button" id="c_save" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">Create Campaign</button>
+                <button type="button" id="c_save" class="px-4 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 rounded-lg shadow-sm">Create Campaign</button>
             </div>
         </div>
     </div>
@@ -313,7 +313,7 @@ $(function () {
         const on = !$(this).hasClass('active');
         $(this).toggleClass('active', on)
                .toggleClass('bg-white text-green-700 border-green-500 hover:bg-green-50', !on)
-               .toggleClass('bg-green-600 text-white border-green-600 hover:bg-green-700', on);
+               .toggleClass('bg-green-700 text-white border-green-700 hover:bg-green-800', on);
         table.ajax.reload();
         syncClear();
     });
@@ -330,7 +330,7 @@ $(function () {
         $('#f_company').val(null).trigger('change.select2');
         $('#f_service').val('');
         $('#f_status').val('');
-        $('#f_active').removeClass('active bg-green-600 text-white border-green-600 hover:bg-green-700')
+        $('#f_active').removeClass('active bg-green-700 text-white border-green-700 hover:bg-green-800')
                       .addClass('bg-white text-green-700 border-green-500 hover:bg-green-50');
         grouped = false;
         $('#f_group').removeClass('active bg-green-50 text-green-700 border-green-300');

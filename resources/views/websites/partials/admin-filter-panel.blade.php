@@ -12,7 +12,7 @@
             <span id="filterActiveBadge" class="hidden bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full"></span>
         </div>
         <button id="btnClear" type="button"
-                class="text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                class="text-xs text-red-600 hover:text-red-700 font-medium transition-colors">
             Clear all
         </button>
     </div>
@@ -91,7 +91,7 @@
 
     {{-- ── Pricing ── --}}
     <div class="pt-3 border-t border-gray-100">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Pricing</p>
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Pricing</p>
     </div>
 
     <div>
@@ -162,7 +162,7 @@
 
     {{-- ── Authority ── --}}
     <div class="pt-3 border-t border-gray-100">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Authority Metrics</p>
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Authority Metrics</p>
     </div>
 
     <div>
@@ -243,7 +243,7 @@
 
     {{-- ── Traffic ── --}}
     <div class="pt-3 border-t border-gray-100">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Traffic Metrics</p>
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Traffic Metrics</p>
     </div>
 
     <div>
@@ -324,7 +324,7 @@
 
     {{-- ── Toggles ── --}}
     <div class="pt-3 border-t border-gray-100 space-y-3">
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Content flags</p>
+        <p class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Content flags</p>
 
         @php
             $toggleFilters = $isGuestUser
@@ -364,7 +364,7 @@
 {{-- Sticky search button at bottom --}}
 <div class="px-4 py-3 border-t border-gray-100 flex-shrink-0 bg-white">
     <button id="btnSearch" type="button"
-            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
         <x-icon name="search" size="sm" /> Search
     </button>
 </div>

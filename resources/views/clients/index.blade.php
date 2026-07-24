@@ -8,7 +8,7 @@
     <div class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div>
             <h1 class="text-base font-bold text-gray-800">Contacts</h1>
-            <p class="text-xs text-gray-500 mt-0.5">Companies you publish for.</p>
+            <p class="text-sm text-gray-500 mt-0.5">Companies you publish for.</p>
         </div>
         <div class="flex items-center gap-3 flex-wrap">
             <label for="filterShowDeleted" class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
@@ -19,7 +19,7 @@
                 </label>
             </label>
             <button id="btnOpenModal"
-                    class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+                    class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 rounded-lg shadow-sm">
                 <x-icon name="plus" size="sm" /> Create Client
             </button>
         </div>

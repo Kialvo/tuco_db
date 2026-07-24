@@ -18,7 +18,7 @@
                 <x-icon name="document-pdf" size="sm" /> Export PDF
             </a>
             <a href="{{ route('storages.create') }}"
-               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm">
+               class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 rounded-lg shadow-sm">
                 <x-icon name="plus" size="sm" /> Add new article
             </a>
         </div>
@@ -131,7 +131,7 @@
                             Cancel
                         </button>
                         <button type="button" id="storageExportConfirm"
-                                class="rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700">
+                                class="rounded bg-green-700 px-3 py-1.5 text-xs text-white hover:bg-green-800">
                             Continue Export
                         </button>
                     </div>
