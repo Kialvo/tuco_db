@@ -42,8 +42,8 @@
         'contact_name'                   => 'Publisher',
         'copywriter_name'                => 'Copywriter',
         'copy_nr'                        => 'Copywriter Amount €',
-        'copywriter_commision_date'      => 'Copywriter Comm. Date',
-        'copywriter_submission_date'     => 'Copywriter Subm. Date',
+        'copywriter_commision_date'      => 'Copywriter Ordered',
+        'copywriter_submission_date'     => 'Copywriter Delivered',
         'copywriter_period'              => 'Copywriter Period',
         'language_name'                  => 'Language',
         'country_name'                   => 'Country',
@@ -196,8 +196,8 @@
                     <th class="px-4 py-2">Publisher</th>
                     <th class="px-4 py-2">Copywriter</th>
                     <th class="px-4 py-2">Copywriter Amount €</th>
-                    <th class="px-4 py-2">Copywriter Comm.<br>Date</th>
-                    <th class="px-4 py-2">Copywriter Subm.<br>Date</th>
+                    <th class="px-4 py-2">Copywriter<br>Ordered</th>
+                    <th class="px-4 py-2">Copywriter<br>Delivered</th>
                     <th class="px-4 py-2">Copywriter Period</th>
                     <th class="px-4 py-2">Language</th>
                     <th class="px-4 py-2">Country</th>
@@ -249,8 +249,8 @@
                     <td></td>                                            {{--  8 Publisher --}}
                     <td></td>                                            {{--  9 Copywriter --}}
                     <td data-col="copy_nr"            data-index="10"></td>  {{-- 10 Copywriter Amount € --}}
-                    <td></td>                                            {{-- 11 Copywriter Comm. Date --}}
-                    <td></td>                                            {{-- 12 Copywriter Subm. Date --}}
+                    <td></td>                                            {{-- 11 Copywriter Ordered --}}
+                    <td></td>                                            {{-- 12 Copywriter Delivered --}}
                     <td data-col="copywriter_period"  data-index="13"></td> {{-- 13 Copywriter Period --}}
                     <td></td>                                            {{-- 14 Language --}}
                     <td></td>                                            {{-- 15 Country --}}
@@ -415,9 +415,24 @@
                 return `<span class="inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-[11px] font-medium ring-1 ring-inset ${tone}">${label}</span>`;
             };
 
+            /* Fill the viewport: pick an initial page length from the screen
+               height so the table isn't a short block with dead space below it
+               on large monitors. Recomputed on resize below. Snaps to the
+               lengthMenu options so the "Show entries" select stays in sync. */
+            function fitPageLength() {
+                const rowH    = 34;   // approx storage row height (text-xs)
+                const chrome  = 340;  // app header + page header + filters + toolbars + margins
+                const fits    = Math.floor((window.innerHeight - chrome) / rowH);
+                const options = [10, 25, 50, 100, 200, 500];
+                let choice = options[0];
+                for (const o of options) { if (o <= fits) choice = o; }
+                return choice;
+            }
+
             /* DataTable */
             const table = $('#storagesTable').DataTable({
                 processing:true, serverSide:true,
+                pageLength: fitPageLength(),
                 dom: "<'dt-toolbar-top'<'flex items-center gap-3'l<'dt-search'>>>" +
                      "<'dt-scroll'rt>" +
                      "<'dt-toolbar-bottom'ip>",
@@ -705,6 +720,18 @@
             table.on('draw', refreshSummary);
             table.on('draw init', syncFooterWidths);
             $(window).on('resize', syncFooterWidths);
+
+            /* Re-fit the page length to the viewport on resize (debounced;
+               only reloads when the fitted length actually changes). */
+            let fitTimer;
+            $(window).on('resize', function () {
+                clearTimeout(fitTimer);
+                fitTimer = setTimeout(function () {
+                    const next = fitPageLength();
+                    if (next !== table.page.len()) { table.page.len(next).draw(false); }
+                }, 400);
+            });
+
             refreshSummary();
 
             /* F.  interactions */

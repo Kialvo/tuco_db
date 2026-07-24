@@ -51,8 +51,8 @@ class CampaignController extends Controller
         if ($request->filled('service')) {
             $q->where('lb_campaigns.service', $request->input('service'));
         }
-        if ($request->boolean('today')) {
-            $q->whereDate('lb_campaigns.next_update_date', now()->toDateString());
+        if ($request->boolean('active_group')) {
+            $q->whereIn('lb_campaigns.status', Campaign::statusGroups()['Active'] ?? []);
         }
 
         return datatables()->eloquent($q)
