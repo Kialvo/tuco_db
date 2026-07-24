@@ -66,7 +66,7 @@ php artisan serve --port=8000 # app at http://localhost:8000
 
 ## Skill References
 
-- `~/kialvo-brain/skills/frontend-design/SKILL.md` → universal layout/readability principles when building UI. Note: the Next.js `check:*` / `audit:*` lints referenced there are NOT installed in this Laravel repo — apply the principles, not the tooling.
+- `~/kialvo-brain/skills/frontend-design/SKILL.md` → universal layout/readability principles when building UI. The static Next.js `check:*` lints there do NOT apply (they parse `.tsx`/dictionaries, not Blade) — apply those principles by hand. The runtime **`audit:readability`** IS wired here (stack-agnostic; `website-lints.json` declares `{"stack":"laravel"}`): run `node scripts/capture-auth-state.mjs && npm run audit:readability` before declaring UI work done — see `scripts/README-audit.md`.
 
 ## Output Conventions
 

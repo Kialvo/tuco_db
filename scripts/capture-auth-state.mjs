@@ -2,15 +2,17 @@
 // Capture a signed-in session so `audit-readability` can reach the auth-gated
 // dashboard routes instead of silently auditing only /login.
 //
-// Drives the real /login form with AUDIT_EMAIL / AUDIT_PASSWORD (read from
-// .env, gitignored), then writes { cookies: [...] } (Puppeteer format) to the
-// storageStatePath the audit replays via page.setCookie().
+// Default (local): logs in via the /dev-login shortcut — no credentials needed,
+// no DB write (SESSION_DRIVER=file). If AUDIT_EMAIL / AUDIT_PASSWORD are set in
+// .env (gitignored), it drives the real /login form as that user instead. Either
+// way it writes { cookies: [...] } (Puppeteer format) to the storageStatePath the
+// audit replays via page.setCookie().
 //
 // One-time local setup (these are NOT app dependencies — they stay out of
 // package.json so `npm install` on deploy never pulls Chromium):
 //   npm install --save-dev puppeteer @axe-core/puppeteer
 //   npx puppeteer browsers install chrome
-// Then set AUDIT_EMAIL / AUDIT_PASSWORD in .env and run:
+// Then run (no creds needed when APP_ENV=local):
 //   node scripts/capture-auth-state.mjs
 //   npx website-lints audit-readability
 
@@ -37,26 +39,37 @@ const base = cfg.baseUrl || 'http://localhost:8000';
 const out = cfg.storageStatePath || '.readability-auth.json';
 const email = env.AUDIT_EMAIL;
 const password = env.AUDIT_PASSWORD;
-
-if (!email || !password) {
-  console.error('[capture] set AUDIT_EMAIL and AUDIT_PASSWORD in .env (gitignored).');
-  process.exit(1);
-}
+// No creds in .env → use the local-only /dev-login shortcut: a GET that logs in
+// as the first non-guest, password-set admin. No password is sent and, with
+// SESSION_DRIVER=file, the session is written to disk — never to the (production)
+// DB. Set AUDIT_EMAIL/AUDIT_PASSWORD to force the real /login form instead
+// (e.g. to audit as a specific user, or when APP_ENV is not local).
+const useDevLogin = !email || !password;
 
 const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
 try {
   const page = await browser.newPage();
-  await page.goto(base + '/login', { waitUntil: 'networkidle2', timeout: 30000 });
-  await page.type('input[name="email"]', email);
-  await page.type('input[name="password"]', password);
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {}),
-    page.click('button[type="submit"]'),
-  ]);
-  const finalUrl = page.url();
-  if (/\/login(\?|$)/.test(finalUrl)) {
-    console.error('[capture] still on /login after submit — check AUDIT_EMAIL/AUDIT_PASSWORD. URL:', finalUrl);
-    process.exit(1);
+  let finalUrl;
+  if (useDevLogin) {
+    await page.goto(base + '/dev-login?to=/dashboard', { waitUntil: 'networkidle2', timeout: 30000 });
+    finalUrl = page.url();
+    if (/\/dev-login|\/login(\?|$)/.test(finalUrl)) {
+      console.error('[capture] /dev-login did not authenticate — is APP_ENV=local, the server up, and a non-guest user present? URL:', finalUrl);
+      process.exit(1);
+    }
+  } else {
+    await page.goto(base + '/login', { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.type('input[name="email"]', email);
+    await page.type('input[name="password"]', password);
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {}),
+      page.click('button[type="submit"]'),
+    ]);
+    finalUrl = page.url();
+    if (/\/login(\?|$)/.test(finalUrl)) {
+      console.error('[capture] still on /login after submit — check AUDIT_EMAIL/AUDIT_PASSWORD. URL:', finalUrl);
+      process.exit(1);
+    }
   }
   const cookies = await page.cookies();
   if (!cookies.length) {
