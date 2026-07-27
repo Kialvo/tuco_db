@@ -52,6 +52,10 @@
                     class="filter-toggle border rounded-lg text-xs font-semibold px-3 py-2 bg-white text-green-700 border-green-500 hover:bg-green-50">
                 🟢 Actives
             </button>
+            <button id="f_suspended" type="button"
+                    class="filter-toggle border rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-700 border-gray-400 hover:bg-gray-50">
+                ⏸ Suspended
+            </button>
             <button id="f_group" type="button"
                     class="filter-toggle border border-gray-300 rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-600 hover:bg-gray-50">
                 By client
@@ -198,6 +202,30 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.3.1/css/rowGroup.dataTables.min.css">
+    <style>
+        /* Sticky column headers.
+           The page scrolls inside <main>, and every ancestor between the DataTables
+           header wrapper and <main> is overflow:visible — so plain CSS sticky pins
+           the header there without switching the grid to DataTables' internal
+           scrollY mode (which would change the page's scroll model). Scoped to this
+           table so the Domains/Storages grids keep their own scroll behaviour.
+           .dataTables_scrollHead keeps its own overflow:hidden — only ANCESTOR
+           overflow traps a sticky element, not the element itself — so DataTables
+           can still sync it horizontally with the body.
+           !important is REQUIRED: DataTables writes `position: relative` as an
+           INLINE style on this div, which a plain stylesheet rule cannot beat. */
+        #campaignsTable_wrapper .dataTables_scrollHead {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            top: 0;
+            z-index: 20;
+        }
+        /* Row-group "By client" bars must pass UNDER the pinned header. */
+        #campaignsTable_wrapper table.dataTable tr.dtrg-group td {
+            position: relative;
+            z-index: 0;
+        }
+    </style>
 @endpush
 
 @push('scripts')
@@ -237,6 +265,7 @@ $(function () {
                 d.status     = $('#f_status').val() || '';
                 d.service    = $('#f_service').val() || '';
                 d.active_group = $('#f_active').hasClass('active') ? 1 : 0;
+                d.suspended_only = $('#f_suspended').hasClass('active') ? 1 : 0;
             }
         },
         columns: [
@@ -259,6 +288,7 @@ $(function () {
             { data: 'action',               name: 'action', orderable: false, searchable: false, className: 'text-center' },
         ],
         order: [[0, 'asc']],
+        pageLength: 25,
         autoWidth: false,
         responsive: false,
         scrollX: true,
@@ -296,8 +326,20 @@ $(function () {
 
     function syncClear() {
         const active = $('#f_search').val() || $('#f_company').val() || $('#f_service').val()
-            || $('#f_status').val() || $('#f_active').hasClass('active') || grouped;
+            || $('#f_status').val() || $('#f_active').hasClass('active')
+            || $('#f_suspended').hasClass('active') || grouped;
         $('#f_clear').toggleClass('hidden', !active);
+    }
+
+    function setActive(on) {
+        $('#f_active').toggleClass('active', on)
+            .toggleClass('bg-white text-green-700 border-green-500 hover:bg-green-50', !on)
+            .toggleClass('bg-green-700 text-white border-green-700 hover:bg-green-800', on);
+    }
+    function setSuspended(on) {
+        $('#f_suspended').toggleClass('active', on)
+            .toggleClass('bg-white text-gray-700 border-gray-400 hover:bg-gray-50', !on)
+            .toggleClass('bg-gray-700 text-white border-gray-700 hover:bg-gray-800', on);
     }
 
     let searchTimer;
@@ -306,14 +348,32 @@ $(function () {
         const v = this.value;
         searchTimer = setTimeout(() => { table.search(v).draw(); syncClear(); }, 300);
     });
-    $('#f_company, #f_service, #f_status').on('change', () => { table.ajax.reload(); syncClear(); });
+    $('#f_company, #f_service').on('change', () => { table.ajax.reload(); syncClear(); });
+    // Picking an explicit status supersedes the Suspended toggle — leaving both on
+    // would AND to an empty table for every status except Suspended itself.
+    $('#f_status').on('change', function () {
+        if ($(this).val()) setSuspended(false);
+        table.ajax.reload();
+        syncClear();
+    });
 
     // Actives and By-Client are INDEPENDENT toggles.
+    // Actives and Suspended are MUTUALLY EXCLUSIVE: Suspended is one status inside
+    // the Active group, so lighting both would show two filters for one result set.
     $('#f_active').on('click', function () {
         const on = !$(this).hasClass('active');
-        $(this).toggleClass('active', on)
-               .toggleClass('bg-white text-green-700 border-green-500 hover:bg-green-50', !on)
-               .toggleClass('bg-green-700 text-white border-green-700 hover:bg-green-800', on);
+        setActive(on);
+        if (on) setSuspended(false);
+        table.ajax.reload();
+        syncClear();
+    });
+    $('#f_suspended').on('click', function () {
+        const on = !$(this).hasClass('active');
+        setSuspended(on);
+        if (on) {
+            setActive(false);
+            $('#f_status').val('');
+        }
         table.ajax.reload();
         syncClear();
     });
@@ -330,8 +390,8 @@ $(function () {
         $('#f_company').val(null).trigger('change.select2');
         $('#f_service').val('');
         $('#f_status').val('');
-        $('#f_active').removeClass('active bg-green-700 text-white border-green-700 hover:bg-green-800')
-                      .addClass('bg-white text-green-700 border-green-500 hover:bg-green-50');
+        setActive(false);
+        setSuspended(false);
         grouped = false;
         $('#f_group').removeClass('active bg-green-50 text-green-700 border-green-300');
         table.rowGroup().enable(false);

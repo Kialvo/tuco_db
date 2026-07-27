@@ -54,6 +54,11 @@ class CampaignController extends Controller
         if ($request->boolean('active_group')) {
             $q->whereIn('lb_campaigns.status', Campaign::statusGroups()['Active'] ?? []);
         }
+        // Suspended is a single status inside the Active group — its own toggle so
+        // the UI can isolate it without going through the status dropdown.
+        if ($request->boolean('suspended_only')) {
+            $q->where('lb_campaigns.status', 'Suspended');
+        }
 
         return datatables()->eloquent($q)
             ->addColumn('code_cell', fn (Campaign $c) => $this->codeCell($c))
