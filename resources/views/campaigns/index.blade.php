@@ -52,6 +52,10 @@
                     class="filter-toggle border rounded-lg text-xs font-semibold px-3 py-2 bg-white text-green-700 border-green-500 hover:bg-green-50">
                 🟢 Actives
             </button>
+            <button id="f_suspended" type="button"
+                    class="filter-toggle border rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-700 border-gray-400 hover:bg-gray-50">
+                ⏸ Suspended
+            </button>
             <button id="f_group" type="button"
                     class="filter-toggle border border-gray-300 rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-600 hover:bg-gray-50">
                 By client
@@ -60,6 +64,53 @@
                     class="border border-red-200 text-red-600 rounded-lg text-xs font-semibold px-3 py-2 bg-white hover:bg-red-50 hidden">
                 ✕ Clear
             </button>
+
+            {{-- Pushed to the far right; the filters above stay left-aligned.
+                 NOT a filter — it shows every campaign regardless of the bar,
+                 so it stays out of syncClear() and the Clear handler. --}}
+            <button id="f_calendar" type="button"
+                    class="filter-toggle ml-auto border border-gray-300 rounded-lg text-xs font-semibold px-3 py-2 bg-white text-gray-600 hover:bg-gray-50"
+                    aria-expanded="false" aria-controls="campaignCalendar">
+                📅 Calendar
+            </button>
+        </div>
+
+        {{-- ═══════════ Calendar panel (collapsed by default) ═══════════ --}}
+        <div id="campaignCalendar" class="hidden bg-white border border-gray-200 rounded-xl shadow-card p-4 mb-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <button type="button" id="calPrev" aria-label="Previous month" title="Previous month"
+                            class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-gray-600 hover:border-green-500 hover:text-green-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <div id="calTitle" class="min-w-[10.5rem] text-center text-sm font-bold text-gray-800"></div>
+                    <button type="button" id="calNext" aria-label="Next month" title="Next month"
+                            class="border border-gray-300 rounded-lg px-2.5 py-1.5 text-gray-600 hover:border-green-500 hover:text-green-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                    <button type="button" id="calToday"
+                            class="ml-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-semibold text-gray-600 hover:border-green-500 hover:text-green-700">
+                        Today
+                    </button>
+                    <span id="calCounts" class="ml-1 text-sm text-gray-600"></span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-700">
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-100 border border-amber-300" aria-hidden="true"></span> Deadline
+                    </span>
+                    <span class="inline-flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-100 border border-sky-300" aria-hidden="true"></span> Next update
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1.5 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                @foreach(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] as $wd)
+                    <div class="px-1 pb-1 text-center">{{ $wd }}</div>
+                @endforeach
+            </div>
+            <div id="calGrid" class="grid grid-cols-7 gap-1.5"></div>
         </div>
 
         {{-- DataTable --}}
@@ -198,6 +249,30 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.3.1/css/rowGroup.dataTables.min.css">
+    <style>
+        /* Sticky column headers.
+           The page scrolls inside <main>, and every ancestor between the DataTables
+           header wrapper and <main> is overflow:visible — so plain CSS sticky pins
+           the header there without switching the grid to DataTables' internal
+           scrollY mode (which would change the page's scroll model). Scoped to this
+           table so the Domains/Storages grids keep their own scroll behaviour.
+           .dataTables_scrollHead keeps its own overflow:hidden — only ANCESTOR
+           overflow traps a sticky element, not the element itself — so DataTables
+           can still sync it horizontally with the body.
+           !important is REQUIRED: DataTables writes `position: relative` as an
+           INLINE style on this div, which a plain stylesheet rule cannot beat. */
+        #campaignsTable_wrapper .dataTables_scrollHead {
+            position: -webkit-sticky !important;
+            position: sticky !important;
+            top: 0;
+            z-index: 20;
+        }
+        /* Row-group "By client" bars must pass UNDER the pinned header. */
+        #campaignsTable_wrapper table.dataTable tr.dtrg-group td {
+            position: relative;
+            z-index: 0;
+        }
+    </style>
 @endpush
 
 @push('scripts')
@@ -237,6 +312,7 @@ $(function () {
                 d.status     = $('#f_status').val() || '';
                 d.service    = $('#f_service').val() || '';
                 d.active_group = $('#f_active').hasClass('active') ? 1 : 0;
+                d.suspended_only = $('#f_suspended').hasClass('active') ? 1 : 0;
             }
         },
         columns: [
@@ -259,6 +335,7 @@ $(function () {
             { data: 'action',               name: 'action', orderable: false, searchable: false, className: 'text-center' },
         ],
         order: [[0, 'asc']],
+        pageLength: 25,
         autoWidth: false,
         responsive: false,
         scrollX: true,
@@ -296,8 +373,20 @@ $(function () {
 
     function syncClear() {
         const active = $('#f_search').val() || $('#f_company').val() || $('#f_service').val()
-            || $('#f_status').val() || $('#f_active').hasClass('active') || grouped;
+            || $('#f_status').val() || $('#f_active').hasClass('active')
+            || $('#f_suspended').hasClass('active') || grouped;
         $('#f_clear').toggleClass('hidden', !active);
+    }
+
+    function setActive(on) {
+        $('#f_active').toggleClass('active', on)
+            .toggleClass('bg-white text-green-700 border-green-500 hover:bg-green-50', !on)
+            .toggleClass('bg-green-700 text-white border-green-700 hover:bg-green-800', on);
+    }
+    function setSuspended(on) {
+        $('#f_suspended').toggleClass('active', on)
+            .toggleClass('bg-white text-gray-700 border-gray-400 hover:bg-gray-50', !on)
+            .toggleClass('bg-gray-700 text-white border-gray-700 hover:bg-gray-800', on);
     }
 
     let searchTimer;
@@ -306,14 +395,32 @@ $(function () {
         const v = this.value;
         searchTimer = setTimeout(() => { table.search(v).draw(); syncClear(); }, 300);
     });
-    $('#f_company, #f_service, #f_status').on('change', () => { table.ajax.reload(); syncClear(); });
+    $('#f_company, #f_service').on('change', () => { table.ajax.reload(); syncClear(); });
+    // Picking an explicit status supersedes the Suspended toggle — leaving both on
+    // would AND to an empty table for every status except Suspended itself.
+    $('#f_status').on('change', function () {
+        if ($(this).val()) setSuspended(false);
+        table.ajax.reload();
+        syncClear();
+    });
 
     // Actives and By-Client are INDEPENDENT toggles.
+    // Actives and Suspended are MUTUALLY EXCLUSIVE: Suspended is one status inside
+    // the Active group, so lighting both would show two filters for one result set.
     $('#f_active').on('click', function () {
         const on = !$(this).hasClass('active');
-        $(this).toggleClass('active', on)
-               .toggleClass('bg-white text-green-700 border-green-500 hover:bg-green-50', !on)
-               .toggleClass('bg-green-700 text-white border-green-700 hover:bg-green-800', on);
+        setActive(on);
+        if (on) setSuspended(false);
+        table.ajax.reload();
+        syncClear();
+    });
+    $('#f_suspended').on('click', function () {
+        const on = !$(this).hasClass('active');
+        setSuspended(on);
+        if (on) {
+            setActive(false);
+            $('#f_status').val('');
+        }
         table.ajax.reload();
         syncClear();
     });
@@ -330,8 +437,8 @@ $(function () {
         $('#f_company').val(null).trigger('change.select2');
         $('#f_service').val('');
         $('#f_status').val('');
-        $('#f_active').removeClass('active bg-green-700 text-white border-green-700 hover:bg-green-800')
-                      .addClass('bg-white text-green-700 border-green-500 hover:bg-green-50');
+        setActive(false);
+        setSuspended(false);
         grouped = false;
         $('#f_group').removeClass('active bg-green-50 text-green-700 border-green-300');
         table.rowGroup().enable(false);
@@ -674,6 +781,155 @@ $(function () {
     $(document).on('click', '.js-comments-btn', function () {
         openThread($(this).data('id'), $(this).data('code'));
     });
+
+    /* ─────────────── Calendar panel ─────────────── */
+    // Deadline + Next Update dates as a month grid. Not a filter: it always
+    // shows every non-Closed campaign, so it is absent from syncClear().
+    const MONTH_NAMES = ['January','February','March','April','May','June',
+                         'July','August','September','October','November','December'];
+    const CHIP_TONE = {
+        deadline:    'bg-amber-100 text-amber-800 border-amber-300',
+        next_update: 'bg-sky-100 text-sky-800 border-sky-300'
+    };
+    const FLAG_SVG = '<svg class="w-2.5 h-2.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
+
+    let calEvents = null;          // fetched once — the whole table is ~20 campaigns
+    let calLoading = false;
+    const calNow = new Date();
+    let calYear = calNow.getFullYear();
+    let calMonth = calNow.getMonth();   // 0-based
+
+    const pad2 = n => String(n).padStart(2, '0');
+    const isoOf = (y, m0, d) => y + '-' + pad2(m0 + 1) + '-' + pad2(d);
+    // Built from LOCAL date parts and compared as strings against the server's
+    // Y-m-d — never Date.parse'd, so no UTC off-by-one day shift.
+    const todayIso = isoOf(calNow.getFullYear(), calNow.getMonth(), calNow.getDate());
+
+    // Monday-first grid, padded with the adjacent months' days to whole weeks.
+    function calCells(year, month) {
+        const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrev = new Date(year, month, 0).getDate();
+        const cells = [];
+
+        for (let i = firstWeekday - 1; i >= 0; i--) {
+            const d = daysInPrev - i;
+            const m = month === 0 ? 11 : month - 1, y = month === 0 ? year - 1 : year;
+            cells.push({ iso: isoOf(y, m, d), day: d, inMonth: false });
+        }
+        for (let d = 1; d <= daysInMonth; d++) {
+            cells.push({ iso: isoOf(year, month, d), day: d, inMonth: true });
+        }
+        let next = 1;
+        while (cells.length % 7 !== 0) {
+            const m = month === 11 ? 0 : month + 1, y = month === 11 ? year + 1 : year;
+            cells.push({ iso: isoOf(y, m, next), day: next, inMonth: false });
+            next++;
+        }
+        return cells;
+    }
+
+    function renderCalendar() {
+        $('#calTitle').text(MONTH_NAMES[calMonth] + ' ' + calYear);
+
+        const events = calEvents || [];
+        const byDate = {};
+        events.forEach(e => { (byDate[e.date] = byDate[e.date] || []).push(e); });
+        // Next Update before Deadline within a day, so the colours stay
+        // blocked instead of interleaving.
+        Object.values(byDate).forEach(list => list.sort((a, b) =>
+            a.kind === b.kind ? 0 : (a.kind === 'next_update' ? -1 : 1)));
+
+        const prefix = calYear + '-' + pad2(calMonth + 1) + '-';
+        let updates = 0, deadlines = 0;
+        events.forEach(e => {
+            if (e.date.indexOf(prefix) !== 0) return;
+            if (e.kind === 'deadline') deadlines++; else updates++;
+        });
+        $('#calCounts').text(updates + ' update' + (updates === 1 ? '' : 's') + ', '
+            + deadlines + ' deadline' + (deadlines === 1 ? '' : 's') + ' this month');
+
+        const $grid = $('#calGrid').empty();
+
+        calCells(calYear, calMonth).forEach(c => {
+            const isToday = c.iso === todayIso;
+            const $cell = $('<div/>').addClass(
+                'flex min-h-[5.5rem] flex-col gap-1 rounded-lg border p-1.5 '
+                // Out-of-month days are de-emphasised by dropping the border and
+                // card background, NOT by lightening the text: gray-400 on a
+                // gray-50 cell measures ~2.3:1 and fails AA (caught by
+                // audit:readability on /campaigns?calendar=1).
+                + (c.inMonth ? 'border-gray-200 bg-white' : 'border-transparent bg-transparent')
+                + (isToday ? ' ring-1 ring-green-500' : '')
+            );
+            $cell.append($('<div/>')
+                .addClass('px-0.5 text-sm font-semibold '
+                    + (c.inMonth ? (isToday ? 'text-green-700' : 'text-gray-600') : 'text-gray-500'))
+                .text(c.day));
+
+            if (c.inMonth) {
+                (byDate[c.iso] || []).forEach(e => {
+                    const kindName = e.kind === 'deadline' ? 'deadline' : 'next update';
+                    const $chip = $('<button type="button"/>')
+                        .addClass('cal-chip flex w-full items-center gap-1 rounded border px-1.5 py-0.5 '
+                            + 'text-left text-[11px] font-medium leading-tight hover:brightness-95 ' + CHIP_TONE[e.kind])
+                        .attr('title', e.code + ' (' + kindName + ') — click to open the conversation')
+                        .attr('aria-label', e.code + ', ' + kindName)
+                        .on('click', () => openThread(e.id, e.code));
+                    if (e.kind === 'deadline') $chip.append(FLAG_SVG);
+                    $chip.append($('<span/>').addClass('truncate').text(e.code));
+                    $cell.append($chip);
+                });
+            }
+            $grid.append($cell);
+        });
+    }
+
+    function openCalendar() {
+        $('#campaignCalendar').removeClass('hidden');
+        $('#f_calendar').addClass('active bg-green-700 text-white border-green-700 hover:bg-green-800')
+            .removeClass('bg-white text-gray-600 border-gray-300 hover:bg-gray-50')
+            .attr('aria-expanded', 'true');
+
+        if (calEvents || calLoading) { renderCalendar(); return; }
+        calLoading = true;
+        $('#calCounts').text('Loading…');
+        $.getJSON("{{ route('crm.campaigns.calendarData') }}")
+            .done(d => { calEvents = d.events || []; renderCalendar(); })
+            .fail(() => $('#calCounts').text('Could not load campaign dates.'))
+            .always(() => { calLoading = false; });
+    }
+
+    function closeCalendar() {
+        $('#campaignCalendar').addClass('hidden');
+        $('#f_calendar').removeClass('active bg-green-700 text-white border-green-700 hover:bg-green-800')
+            .addClass('bg-white text-gray-600 border-gray-300 hover:bg-gray-50')
+            .attr('aria-expanded', 'false');
+    }
+
+    $('#f_calendar').on('click', function () {
+        $(this).hasClass('active') ? closeCalendar() : openCalendar();
+    });
+
+    $('#calPrev').on('click', function () {
+        if (calMonth === 0) { calMonth = 11; calYear--; } else { calMonth--; }
+        renderCalendar();
+    });
+    $('#calNext').on('click', function () {
+        if (calMonth === 11) { calMonth = 0; calYear++; } else { calMonth++; }
+        renderCalendar();
+    });
+    $('#calToday').on('click', function () {
+        calYear = calNow.getFullYear();
+        calMonth = calNow.getMonth();
+        renderCalendar();
+    });
+
+    // /campaigns?calendar=1 lands with the panel open — shareable, and the
+    // only way the readability audit (which cannot click) ever sees it.
+    if (new URLSearchParams(window.location.search).get('calendar') === '1') {
+        openCalendar();
+    }
 
     // Deep link from a notification: /campaigns?thread=<id> auto-opens the
     // pane, then removes the param so a refresh doesn't reopen it (CRM-style).

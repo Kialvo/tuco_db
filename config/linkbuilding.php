@@ -84,6 +84,26 @@ return [
     // Canonical set of valid `decision` values (see publication_statuses above).
     'publication_decisions' => ['approved', 'rejected', 'pending'],
 
+    /*
+    |----------------------------------------------------------------------
+    | Publication statuses that count as IN FLIGHT toward a campaign target:
+    | client-approved and moving through production, but not yet live. Drives
+    | the yellow segment of the target bar (green = article_published, grey =
+    | the remainder still missing).
+    |
+    | Listed explicitly rather than derived from `decision`/`group`: a
+    | derivation would silently pull any future approved status into the
+    | yellow segment, and the two dead ends (publisher_disappeared /
+    | publisher_refused) are 'approved' as well but will never go live.
+    |----------------------------------------------------------------------
+    */
+    'publication_inflight_statuses' => [
+        'accepted',
+        'waiting_copywriter',
+        'waiting_client_article_approval',
+        'waiting_blog_publication',
+    ],
+
     'publication_status_groups' => [
         1 => 'Group 1 – Site Evaluation',
         2 => 'Group 2 – Production',

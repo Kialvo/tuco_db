@@ -65,6 +65,18 @@ class PublicationStatus
     }
 
     /**
+     * Slugs that are client-approved and in production, but not yet live —
+     * the yellow segment of a campaign's target bar. Green is
+     * `article_published`; everything else is the grey remainder.
+     *
+     * @return string[]
+     */
+    public static function inFlightSlugs(): array
+    {
+        return config('linkbuilding.publication_inflight_statuses', []);
+    }
+
+    /**
      * @return string[] every slug on the given side of the decision, in config order
      */
     public static function slugsByDecision(string $decision): array

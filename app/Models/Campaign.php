@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\PublicationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -173,6 +174,98 @@ class Campaign extends Model
         }
 
         return ['has' => true, 'pct' => $pct, 'label' => $label, 'missing' => $missing, 'tone' => $tone];
+    }
+
+    /**
+     * Target bar segments: published (green) + in flight (yellow) + the grey
+     * remainder that is still missing. Replaces the old percentage-driven tone
+     * (green ≥100 / amber ≥60 / red <60), which said how far along a campaign
+     * was but hid WHERE the work sat.
+     *
+     * The unit follows target_type: € of total_revenues for a budget target,
+     * publication count otherwise — the same split recomputeProgress() applies
+     * to live_count.
+     *
+     * `done` reads live_count rather than a fresh aggregate on purpose: it is
+     * the very number the cell prints beside the bar ("4 / 10"), and Storage
+     * events keep it current. Deriving the green segment from anything else
+     * could make the bar contradict the number next to it.
+     *
+     * The in-flight figure prefers the query-supplied aggregates
+     * (inflight_revenue / inflight_count) to avoid an N+1 on the list, and
+     * falls back to the eager-loaded relation on the show page — the same
+     * pattern as getFinancialsAttribute() and liveCompletionDate().
+     */
+    public function progressSegments(): array
+    {
+        $isBudget = $this->target_type === 'budget';
+        $target = (float) $this->target_value;
+        $done = (float) $this->live_count;
+
+        if ($isBudget) {
+            $inflight = array_key_exists('inflight_revenue', $this->attributes)
+                ? (float) $this->inflight_revenue
+                : (float) $this->publications->whereIn('status', PublicationStatus::inFlightSlugs())->sum('total_revenues');
+        } else {
+            $inflight = array_key_exists('inflight_count', $this->attributes)
+                ? (float) $this->inflight_count
+                : (float) $this->publications->whereIn('status', PublicationStatus::inFlightSlugs())->count();
+        }
+
+        if ($target <= 0) {
+            return [
+                'has' => false, 'done' => $done, 'inflight' => $inflight, 'target' => 0.0,
+                'donePct' => 0.0, 'inflightPct' => 0.0, 'label' => '—', 'missing' => '—', 'tone' => 'gray',
+            ];
+        }
+
+        // Widths keep one decimal: rounding both segments to int leaves a
+        // visible grey sliver when done + inflight exactly covers the target.
+        $donePct = round(min(100, $done / $target * 100), 1);
+        $inflightPct = round(min(100 - $donePct, $inflight / $target * 100), 1);
+
+        // Bare amount ("€2,800" / "3") for the two-part caption, which has to
+        // fit a table cell; the single-part caption keeps the fuller wording.
+        $amt = fn (float $v) => $isBudget ? '€'.number_format($v, 0) : (string) (int) $v;
+
+        $remainder = max(0, $target - $done - $inflight);
+
+        if ($done >= $target) {
+            $missing = 'Target reached';
+            $tone = 'green';
+        } elseif ($inflight > 0) {
+            // When what is in flight already covers the gap the second clause
+            // would read "€0 missing" — drop it rather than print a dead zero.
+            $shortfall = $isBudget ? round($remainder) : (int) $remainder;
+            $missing = $amt($inflight).' in flight'
+                .($shortfall > 0 ? ' · '.$amt($remainder).' missing' : '');
+            $tone = 'amber';
+        } else {
+            $missing = $isBudget
+                ? '€'.number_format($remainder, 0).' missing'
+                : (int) $remainder.' pub'.((int) $remainder !== 1 ? 's' : '').' missing';
+            $tone = 'gray';
+        }
+
+        $label = $isBudget
+            ? '€'.number_format($done, 0).' / €'.number_format($target, 0)
+            : (int) $done.' / '.(int) $target.' pubs';
+
+        return [
+            'has' => true,
+            'done' => $done,
+            'inflight' => $inflight,
+            'target' => $target,
+            'donePct' => $donePct,
+            'inflightPct' => $inflightPct,
+            'label' => $label,
+            'missing' => $missing,
+            'tone' => $tone,
+            // Spoken equivalent of the bar's three segments — the widths alone
+            // carry no meaning to a screen reader.
+            'aria' => $amt($done).' published, '.$amt($inflight).' in flight, target '.$amt($target)
+                .($isBudget ? ' euro' : ' publications'),
+        ];
     }
 
     /**
