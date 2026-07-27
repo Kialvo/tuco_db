@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Campaign;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\PublicationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -39,6 +40,12 @@ class CampaignController extends Controller
             // (revenue/cost/profit/pct) without an N+1. Must stay AFTER select().
             ->withSum(['publications as pub_revenue' => fn ($q) => $q->where('status', 'article_published')], 'total_revenues')
             ->withSum(['publications as pub_cost' => fn ($q) => $q->where('status', 'article_published')], 'total_cost')
+            // In-flight publications (client-approved, in production, not yet live)
+            // — feed the yellow segment of Campaign::progressSegments(). Budget
+            // targets use the € sum, publication targets the row count.
+            // Must stay AFTER select() per the note above.
+            ->withSum(['publications as inflight_revenue' => fn ($q) => $q->whereIn('status', PublicationStatus::inFlightSlugs())], 'total_revenues')
+            ->withCount(['publications as inflight_count' => fn ($q) => $q->whereIn('status', PublicationStatus::inFlightSlugs())])
             ->with(['contact:id,first_name,last_name', 'responsibleUser:id,name,avatar_url']);
 
         // Filters
@@ -88,6 +95,51 @@ class CampaignController extends Controller
             ->orderColumn('campaign_profit_pct', '((pub_revenue - pub_cost) / NULLIF(pub_revenue,0)) $1')
             ->rawColumns(['code_cell', 'service_badge', 'status_badge', 'target', 'budget_approval_date', 'offer_ready_date', 'deadline', 'next_update_date', 'responsible', 'comments_btn', 'action'])
             ->make(true);
+    }
+
+    /*======================================================================
+    |  CALENDAR FEED – every dated campaign as chips for the month grid
+    |
+    |  One payload, not paginated: the whole table is ~20 campaigns, so the
+    |  client caches this once and renders every month locally. Deliberately
+    |  ignores the filter bar — the calendar answers "what is due when across
+    |  the board", which a filtered view cannot.
+    ======================================================================*/
+    public function calendarData()
+    {
+        // Only campaigns still in play. Closed and Completed ones keep
+        // whatever dates they finished with, and those stale deadlines would
+        // read as live work on a calendar.
+        $finished = array_merge(
+            config('linkbuilding.campaign_statuses.Closed', []),
+            config('linkbuilding.campaign_statuses.Completed', [])
+        );
+
+        $campaigns = Campaign::query()
+            ->whereNotIn('status', $finished)
+            ->where(fn ($q) => $q->whereNotNull('deadline')->orWhereNotNull('next_update_date'))
+            ->orderBy('code')
+            ->get(['id', 'code', 'status', 'deadline', 'next_update_date']);
+
+        $events = [];
+
+        foreach ($campaigns as $c) {
+            foreach ([['deadline', 'deadline'], ['next_update_date', 'next_update']] as [$column, $kind]) {
+                if (! $c->{$column}) {
+                    continue;
+                }
+                $events[] = [
+                    'id' => $c->id,
+                    'code' => $c->code,
+                    'kind' => $kind,
+                    // Plain Y-m-d: the client compares it as a string against
+                    // keys built from local date parts, so no timezone shift.
+                    'date' => $c->{$column}->format('Y-m-d'),
+                ];
+            }
+        }
+
+        return response()->json(['events' => $events]);
     }
 
     /*======================================================================
@@ -368,22 +420,29 @@ class CampaignController extends Controller
         $suffix = $isBudget ? '' : ' pubs';
         $label = '<span class="font-semibold text-gray-700">'.$first.'</span> / '.$second.$suffix;
 
-        if ($target > 0) {
-            $pct = (int) min(100, round($live / $target * 100));
-            $tone = $pct >= 100 ? 'green' : ($pct >= 60 ? 'amber' : 'red');
-            $bar = ['green' => 'bg-green-500', 'amber' => 'bg-amber-400', 'red' => 'bg-red-400'][$tone];
-            $txt = ['green' => 'text-green-600', 'amber' => 'text-amber-600', 'red' => 'text-red-600'][$tone];
-            $missVal = $target - $live;
-            $miss = $missVal <= 0
-                ? 'Target reached'
-                : ($isBudget ? '€'.number_format($missVal, 0).' missing' : (int) $missVal.' pub'.($missVal != 1 ? 's' : '').' missing');
-            $barHtml = '<div class="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-1.5 '.$bar.' rounded-full" style="width:'.$pct.'%"></div></div>'
-                .'<div class="text-[10px] mt-0.5 font-semibold '.$txt.'">'.e($miss).'</div>';
+        // Two stacked segments on a grey track: green = published, yellow = in
+        // flight, whatever grey is left = still missing. Replaces the old
+        // percentage-driven tone, which showed how far along a campaign was but
+        // never where the work sat.
+        $seg = $c->progressSegments();
+
+        if ($seg['has']) {
+            // -700 shades, not -600: at this 10px caption size the lighter
+            // shades fall under the AA contrast ratio on white.
+            $txt = ['green' => 'text-green-700', 'amber' => 'text-amber-700', 'gray' => 'text-gray-600'][$seg['tone']] ?? 'text-gray-600';
+            $barHtml = '<div class="mt-1 flex h-1.5 bg-gray-200 rounded-full overflow-hidden" role="img" aria-label="'.e($seg['aria']).'">'
+                .'<div class="h-full bg-green-500" style="width:'.$seg['donePct'].'%"></div>'
+                .'<div class="h-full bg-amber-400" style="width:'.$seg['inflightPct'].'%"></div>'
+                .'</div>'
+                .'<div class="text-[10px] mt-0.5 font-semibold whitespace-nowrap '.$txt.'">'.e($seg['missing']).'</div>';
         } else {
-            $barHtml = '<div class="text-[10px] mt-0.5 text-gray-400">no target set</div>';
+            $barHtml = '<div class="text-[10px] mt-0.5 text-gray-400 whitespace-nowrap">no target set</div>';
         }
 
-        return '<div class="min-w-[130px]"><div class="text-xs text-gray-600">'.$label.'</div>'.$barHtml.'</div>';
+        // whitespace-nowrap throughout: the grid is scrollX, so letting this
+        // column claim its natural width beats wrapping every caption onto two
+        // or three lines and doubling the height of every row.
+        return '<div class="min-w-[130px]"><div class="text-xs text-gray-600 whitespace-nowrap">'.$label.'</div>'.$barHtml.'</div>';
     }
 
     private function responsibleCell(Campaign $c): string

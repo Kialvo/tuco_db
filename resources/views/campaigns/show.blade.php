@@ -22,7 +22,7 @@
         ? '<span class="text-gray-700">'.Carbon::parse($v)->format('j M Y').'</span>'
         : '<span class="inline-flex items-center justify-center w-6 h-6 rounded text-gray-500 hover:bg-green-50 hover:text-green-600" title="Add date"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>';
 
-    $prog      = $campaign->progress;
+    $seg       = $campaign->progressSegments();   // green = published, yellow = in flight, grey = missing
     $g1        = $campaign->publications->filter(fn($p) => PublicationStatus::group($p->status) === 1);
     $g2        = $campaign->publications->filter(fn($p) => PublicationStatus::group($p->status) === 2);
     $published = $campaign->publications->where('status', 'article_published')->count();
@@ -91,11 +91,13 @@
         {!! $stat('Target', $campaign->target_type === 'budget' ? '€'.number_format((float)$campaign->target_value,0) : (int)$campaign->target_value.' pubs') !!}
         <div class="bg-white border border-gray-200 rounded-xl shadow-card px-4 py-3">
             <div class="text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-1">Progress</div>
-            @if($prog['has'])
-                <div class="text-xs text-gray-700">{{ $prog['label'] }}</div>
-                <div class="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div class="h-1.5 rounded-full {{ ['green'=>'bg-green-500','amber'=>'bg-amber-400','red'=>'bg-red-400'][$prog['tone']] ?? 'bg-gray-300' }}" style="width: {{ $prog['pct'] }}%"></div>
+            @if($seg['has'])
+                <div class="text-xs text-gray-700">{{ $seg['label'] }}</div>
+                <div class="mt-1 flex h-1.5 bg-gray-200 rounded-full overflow-hidden" role="img" aria-label="{{ $seg['aria'] }}">
+                    <div class="h-full bg-green-500" style="width: {{ $seg['donePct'] }}%"></div>
+                    <div class="h-full bg-amber-400" style="width: {{ $seg['inflightPct'] }}%"></div>
                 </div>
+                <div class="text-[10px] mt-0.5 font-semibold {{ ['green'=>'text-green-700','amber'=>'text-amber-700','gray'=>'text-gray-600'][$seg['tone']] ?? 'text-gray-600' }}">{{ $seg['missing'] }}</div>
             @else <div class="text-sm font-bold text-gray-400">—</div> @endif
         </div>
         {!! $stat('Published', $published . ' pub' . ($published != 1 ? 's' : '')) !!}

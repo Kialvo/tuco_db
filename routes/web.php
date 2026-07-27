@@ -422,6 +422,7 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
     Route::get('campaigns/{campaign}/edit-ajax', [CampaignController::class, 'editAjax'])->name('crm.campaigns.editAjax');
     Route::put('campaigns/{campaign}/status', [CampaignController::class, 'updateStatus'])->name('crm.campaigns.status');
     Route::put('campaigns/{campaign}/inline', [CampaignController::class, 'inlineUpdate'])->name('crm.campaigns.inline');
+    Route::get('campaigns/calendar-data', [CampaignController::class, 'calendarData'])->name('crm.campaigns.calendarData');
     Route::get('companies/{company}/contacts', [CampaignController::class, 'contactsForCompany'])->name('crm.company.contacts');
 
     Route::get('campaigns', [CampaignController::class, 'index'])->name('crm.campaigns.index');

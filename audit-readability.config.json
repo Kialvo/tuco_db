@@ -9,6 +9,7 @@
     { "path": "/companies", "label": "companies" },
     { "path": "/clients", "label": "clients" },
     { "path": "/websites", "label": "websites" },
-    { "path": "/campaigns", "label": "campaigns" }
+    { "path": "/campaigns", "label": "campaigns" },
+    { "path": "/campaigns?calendar=1", "label": "campaigns-calendar" }
   ]
 }
