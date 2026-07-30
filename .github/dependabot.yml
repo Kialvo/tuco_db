@@ -1,0 +1,17 @@
+version: 2
+registries:
+  github-npm:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.KIALVO_PACKAGES_TOKEN}}
+    replaces-base: true
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    registries:
+      - github-npm
+    allow:
+      - dependency-name: "@kialvo/website-lints"
+    versioning-strategy: increase
