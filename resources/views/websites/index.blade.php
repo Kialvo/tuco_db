@@ -202,6 +202,15 @@
                 <x-icon name="paper-plane" size="sm" /> Bulk Outreach
             </button>
 
+            @can('bulk-add-to-campaign')
+                <button id="btnBulkAddCampaign"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                               bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200
+                               disabled:opacity-50 disabled:cursor-not-allowed">
+                    <x-icon name="plus" size="sm" /> Bulk Add to Campaign
+                </button>
+            @endcan
+
             <span class="h-5 w-px bg-gray-200 mx-1"></span>
 
             <button id="btnSyncDataForSeo"
@@ -687,6 +696,9 @@
     @include('websites.partials.note-modal')
     @include('websites.partials.bulk-modal')
     @include('websites.partials.outreach-modal')
+    @can('bulk-add-to-campaign')
+        @include('websites.partials.bulk-add-campaign-modal')
+    @endcan
     @include('partials.domain_storage_drawer')
 
 @endsection
@@ -2165,6 +2177,220 @@
         @endif
 
     </script>
+
+    @can('bulk-add-to-campaign')
+    {{-- Bulk Add to Campaign — self-contained IIFE. Rendered only for gated
+         users, so it cannot affect the Domains page for anyone else. --}}
+    <script>
+    (function () {
+        'use strict';
+
+        var MAX_ROWS   = 50;
+        var PREVIEW_URL = "{{ route('websites.bulkAddToCampaign.preview') }}";
+        var STORE_URL   = "{{ route('websites.bulkAddToCampaign.store') }}";
+        var CSRF        = $('meta[name="csrf-token"]').attr('content');
+
+        var $modal = $('#bulkAddCampaignModal');
+        var rowState = {};   // website_id => {status, price_type}
+        var lastRows = [];
+
+        function post(url, payload) {
+            return fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify(payload)
+            }).then(function (r) {
+                return r.json().then(function (body) {
+                    if (!r.ok) { throw new Error(body && body.message ? body.message : 'Request failed'); }
+                    return body;
+                });
+            });
+        }
+
+        function selectedIds() {
+            return $('.rowChk:checked').map(function (_, c) { return parseInt(c.value, 10); }).get();
+        }
+
+        function money(v) {
+            return v === null || v === undefined ? '—' : '€' + Number(v).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function esc(s) { return $('<div>').text(s === null || s === undefined ? '' : s).html(); }
+
+        function renderRows(rows) {
+            lastRows = rows;
+            var $tb = $('#bacRows').empty();
+
+            rows.forEach(function (row) {
+                var id = row.website_id;
+                if (!rowState[id]) { rowState[id] = { status: '', price_type: row.price_type || 'price' }; }
+
+                var $tr = $('<tr>').addClass('border-b border-gray-100 align-middle')
+                    .attr('data-id', id);
+
+                if (row.blocked) { $tr.addClass('bg-red-50/60 text-gray-400'); }
+
+                /* Domain (+ blocked reason) */
+                var $domain = $('<td class="py-2 pr-3">').append(
+                    $('<div class="font-medium">').toggleClass('text-gray-800', !row.blocked).text(row.domain_name)
+                );
+                if (row.blocked) {
+                    var $reason = $('<div class="text-[11px] text-red-600 mt-0.5">').text(row.reason);
+                    if (String(row.reason).indexOf('add it on the domain record') !== -1) {
+                        $reason.append(
+                            $('<a class="ml-1 underline font-medium" target="_blank" rel="noopener">')
+                                .attr('href', row.edit_url).text('Edit domain ↗')
+                        );
+                    }
+                    $domain.append($reason);
+                }
+                $tr.append($domain);
+
+                /* Status */
+                var $statusCell = $('<td class="py-2 pr-3">');
+                var $status = $($('#bacStatusTemplate').html());
+                $status.val(rowState[id].status || $status.find('option:first').val());
+                if (row.blocked) { $status.prop('disabled', true); }
+                rowState[id].status = $status.val();
+                $statusCell.append($status);
+                $tr.append($statusCell);
+
+                /* Price type */
+                var $ptCell = $('<td class="py-2 pr-3">');
+                [['price', 'Price'], ['sensitive_topic_price', 'Sensitive Topic Price']].forEach(function (pt) {
+                    var $lbl = $('<label class="inline-flex items-center gap-1 mr-3 cursor-pointer text-xs">');
+                    var $radio = $('<input type="radio" class="bac-price-type text-sky-600">')
+                        .attr('name', 'bacPriceType_' + id).val(pt[0])
+                        .prop('checked', rowState[id].price_type === pt[0]);
+                    $lbl.append($radio, $('<span>').text(pt[1]));
+                    $ptCell.append($lbl);
+                });
+                $tr.append($ptCell);
+
+                /* Amount — READ-ONLY, resolved server-side */
+                $tr.append(
+                    $('<td class="py-2 text-right font-semibold">')
+                        .toggleClass('text-gray-800', !row.blocked)
+                        .toggleClass('text-red-500', !!row.blocked)
+                        .text(row.amount === null ? 'missing' : money(row.amount))
+                );
+
+                $tb.append($tr);
+            });
+
+            var ready = rows.filter(function (r) { return !r.blocked; }).length;
+            $('#bacReadyCount').text(ready);
+            $('#bacBlockedCount').text(rows.length - ready);
+            $('#bacConfirm').prop('disabled', ready === 0)
+                .text(ready > 0 ? 'Create ' + ready + ' publication' + (ready === 1 ? '' : 's') : 'Create publications');
+        }
+
+        function refresh() {
+            var ids = Object.keys(rowState).map(Number);
+            if (!ids.length) { return; }
+
+            var priceTypes = {};
+            ids.forEach(function (id) { priceTypes[id] = rowState[id].price_type; });
+
+            $('#bacLoading').removeClass('hidden');
+            post(PREVIEW_URL, {
+                ids: ids,
+                campaign_id: $('#bacCampaign').val() || null,
+                price_types: priceTypes
+            }).then(function (res) {
+                $('#bacLoading').addClass('hidden');
+                renderRows(res.rows);
+            }).catch(function (e) {
+                $('#bacLoading').addClass('hidden');
+                Swal.fire('Could not load domains', e.message, 'error');
+            });
+        }
+
+        /* ---------- open / close ---------- */
+        $(document).on('click', '#btnBulkAddCampaign', function () {
+            var ids = selectedIds();
+            if (ids.length === 0) { Swal.fire('Select at least one domain first'); return; }
+            if (ids.length > MAX_ROWS) {
+                Swal.fire('Too many domains', 'Maximum ' + MAX_ROWS + ' domains per bulk add — you selected ' + ids.length + '.', 'warning');
+                return;
+            }
+
+            rowState = {};
+            ids.forEach(function (id) { rowState[id] = { status: '', price_type: 'price' }; });
+
+            $('#bacCampaign').val('');
+            $('#bacStatusAll').val('');
+            $('input[name="bacPriceTypeAll"]').prop('checked', false);
+            $('#bacRows').empty();
+            $modal.removeClass('hidden');
+            refresh();
+        });
+
+        function closeModal() { $modal.addClass('hidden'); }
+        $(document).on('click', '#bacCloseTop, #bacCancel', closeModal);
+
+        /* ---------- reactive controls ---------- */
+        $(document).on('change', '#bacCampaign', refresh);
+
+        $(document).on('change', '.bac-status', function () {
+            var id = $(this).closest('tr').data('id');
+            if (rowState[id]) { rowState[id].status = $(this).val(); }
+        });
+
+        $(document).on('change', '.bac-price-type', function () {
+            var id = $(this).closest('tr').data('id');
+            if (rowState[id]) { rowState[id].price_type = $(this).val(); }
+            refresh();   // amount + missing-price state depend on the type
+        });
+
+        $(document).on('change', '#bacStatusAll', function () {
+            var val = $(this).val();
+            if (!val) { return; }
+            Object.keys(rowState).forEach(function (id) { rowState[id].status = val; });
+            $('.bac-status').val(val);
+        });
+
+        $(document).on('change', 'input[name="bacPriceTypeAll"]', function () {
+            var val = $(this).val();
+            Object.keys(rowState).forEach(function (id) { rowState[id].price_type = val; });
+            refresh();
+        });
+
+        /* ---------- confirm ---------- */
+        $(document).on('click', '#bacConfirm', function () {
+            var campaignId = $('#bacCampaign').val();
+            if (!campaignId) { Swal.fire('Pick a campaign first'); return; }
+
+            var rows = lastRows.filter(function (r) { return !r.blocked; }).map(function (r) {
+                return {
+                    website_id: r.website_id,
+                    status: rowState[r.website_id].status,
+                    price_type: rowState[r.website_id].price_type
+                };
+            });
+            if (!rows.length) { return; }
+
+            var $btn = $(this).prop('disabled', true).text('Creating…');
+
+            post(STORE_URL, { campaign_id: campaignId, rows: rows })
+                .then(function (res) {
+                    closeModal();
+                    var html = '<b>' + res.created + '</b> publication' + (res.created === 1 ? '' : 's') +
+                               ' created in <b>' + esc(res.campaign) + '</b>.';
+                    if (res.skipped && res.skipped.length) {
+                        html += '<br><br><b>' + res.skipped.length + ' skipped:</b><ul style="text-align:left;margin-top:6px">' +
+                            res.skipped.map(function (s) { return '<li>' + esc(s.domain) + ' — ' + esc(s.reason) + '</li>'; }).join('') +
+                            '</ul>';
+                    }
+                    Swal.fire({ title: 'Done', html: html, icon: 'success' });
+                    $('.rowChk:checked').prop('checked', false).trigger('change');
+                })
+                .catch(function (e) { Swal.fire('Could not create publications', e.message, 'error'); })
+                .finally(function () { $btn.prop('disabled', false).text('Create publications'); });
+        });
+    })();
+    </script>
+    @endcan
 
 @endpush
 

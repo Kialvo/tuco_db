@@ -161,4 +161,22 @@ return [
     ],
 
     // Team dropdown for "responsible" falls back to app users; no config needed.
+
+    /*
+    |----------------------------------------------------------------------
+    | "Bulk Add to Campaign" (Domains → Publications) — allowlist
+    |----------------------------------------------------------------------
+    | Emails allowed to use the bulk add-to-campaign action on /websites.
+    | The Gate also requires the admin role, so listing a non-admin here
+    | grants nothing. Comma-separated in BULK_CAMPAIGN_MANAGERS; the default
+    | is Martina (feature owner) plus Marvin (so it can be tested/supported).
+    |
+    | NOTE the `?:` — an env line present but EMPTY returns '' (not the
+    | default), which would silently lock out everyone including Martina.
+    */
+    'bulk_campaign_managers' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) (env('BULK_CAMPAIGN_MANAGERS')
+            ?: 'm.napolano@menford.com,marvindinaku@gmail.com'))
+    ))),
 ];
