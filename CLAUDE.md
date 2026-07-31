@@ -71,7 +71,7 @@ php artisan serve --port=8000 # app at http://localhost:8000
 - **Deploy model:** manual
 - **Self-hosted server — push to `main` does NOT go live.** An approved PR may be merged to `main` by Claude on Fabrizio's explicit per-PR approval, or handed to Marvin; either way the **manual server deploy is Marvin's** responsibility — merging is not deploying.
 - **Server deploy steps:** SSH in → `git pull` → `composer install --no-dev` → `php artisan migrate --force` → `npm ci && npm run build` → `php artisan optimize`.
-- **Live URL:** linkinablink.com (tool at `/dashboard`, `/websites`).
+- **Live URL:** https://linkinablink.com (tool at `/dashboard`, `/websites`).
 
 ## Skill References
 
