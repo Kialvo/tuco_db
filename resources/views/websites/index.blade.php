@@ -2190,7 +2190,12 @@
         var STORE_URL   = "{{ route('websites.bulkAddToCampaign.store') }}";
         var CSRF        = $('meta[name="csrf-token"]').attr('content');
 
-        var $modal = $('#bulkAddCampaignModal');
+        // NOTE: @stack('scripts') renders inside <head>, so this file executes
+        // BEFORE the body exists. Never cache a body element in a variable here
+        // — it would capture an empty jQuery set and every call would silently
+        // no-op. Always look the modal up at call time.
+        function $modal() { return $('#bulkAddCampaignModal'); }
+
         var rowState = {};   // website_id => {status, price_type}
         var lastRows = [];
 
@@ -2322,11 +2327,11 @@
             $('#bacStatusAll').val('');
             $('input[name="bacPriceTypeAll"]').prop('checked', false);
             $('#bacRows').empty();
-            $modal.removeClass('hidden');
+            $modal().removeClass('hidden');
             refresh();
         });
 
-        function closeModal() { $modal.addClass('hidden'); }
+        function closeModal() { $modal().addClass('hidden'); }
         $(document).on('click', '#bacCloseTop, #bacCancel', closeModal);
 
         /* ---------- reactive controls ---------- */
