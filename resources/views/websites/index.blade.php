@@ -2190,10 +2190,12 @@
         var STORE_URL   = "{{ route('websites.bulkAddToCampaign.store') }}";
         var CSRF        = $('meta[name="csrf-token"]').attr('content');
 
-        // NOTE: @stack('scripts') renders inside <head>, so this file executes
-        // BEFORE the body exists. Never cache a body element in a variable here
-        // — it would capture an empty jQuery set and every call would silently
-        // no-op. Always look the modal up at call time.
+        // NOTE: the scripts stack is rendered inside the document HEAD, so this
+        // file executes BEFORE the body exists. Never cache a body element in a
+        // variable here — it would capture an empty jQuery set and every call
+        // would silently no-op. Always look the modal up at call time.
+        // (Do not name Blade directives in these comments: Blade compiles them
+        // even inside a JS comment, which breaks out of the script tag.)
         function $modal() { return $('#bulkAddCampaignModal'); }
 
         var rowState = {};   // website_id => {status, price_type}
