@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,6 +21,22 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // "Bulk Add to Campaign" on /websites — a CRM write exposed on a page
+        // guests and editors can reach, so the endpoint is gated, not just the
+        // button. Admin role AND an allowlisted email are both required.
+        Gate::define('bulk-add-to-campaign', function (User $user): bool {
+            if (! $user->isAdmin()) {
+                return false;
+            }
+
+            $allowed = array_map(
+                'mb_strtolower',
+                (array) config('linkbuilding.bulk_campaign_managers', [])
+            );
+
+            return in_array(mb_strtolower((string) $user->email), $allowed, true);
+        });
+
         RateLimiter::for('ai-internal', function (Request $request) {
             $providedKey = (string) $request->header('X-AI-Orchestration-Key', '');
             $keyFingerprint = $providedKey !== '' ? hash('sha256', $providedKey) : 'missing';

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserFavoritesController;
+use App\Http\Controllers\BulkAddToCampaignController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ClientsController;
 use App\Http\Controllers\CompanyController;
@@ -407,6 +408,20 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
         'update' => 'admin.users.update',
         'destroy' => 'admin.users.destroy',
     ]);
+
+    /*--------------------------------------------------------------
+    | Bulk Add to Campaign (Domains → Publications)
+    | Lives in the ADMIN group even though the button is on /websites:
+    | it writes CRM data, and /websites is reachable by guests/editors.
+    | The Gate narrows it further to the allowlist (Martina).
+    --------------------------------------------------------------*/
+    Route::post('/websites/bulk-add-to-campaign/preview', [BulkAddToCampaignController::class, 'preview'])
+        ->middleware('can:bulk-add-to-campaign')
+        ->name('websites.bulkAddToCampaign.preview');
+
+    Route::post('/websites/bulk-add-to-campaign', [BulkAddToCampaignController::class, 'store'])
+        ->middleware('can:bulk-add-to-campaign')
+        ->name('websites.bulkAddToCampaign.store');
 
     /*--------------------------------------------------------------
     | Link Building CRM (admin-only) — Campaigns + Publications
