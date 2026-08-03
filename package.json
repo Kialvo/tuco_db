@@ -9,7 +9,7 @@
     },
     "devDependencies": {
         "@axe-core/puppeteer": "^4.12.1",
-        "@kialvo/website-lints": "^0.11.2",
+        "@kialvo/website-lints": "^0.12.0",
         "@tailwindcss/forms": "^0.5.2",
         "alpinejs": "^3.4.2",
         "autoprefixer": "^10.4.2",
