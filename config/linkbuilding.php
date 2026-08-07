@@ -165,6 +165,22 @@ return [
 
     /*
     |----------------------------------------------------------------------
+    | Per-publication "Office Code" (campaign page only)
+    |----------------------------------------------------------------------
+    | Which office a placement is attributed to. The column is shown only for
+    | campaigns belonging to the companies listed below, and the value is
+    | validated server-side against this exact list, so an office can be added
+    | here without a migration.
+    |
+    | Gate on company ID rather than name: `companies` is a table the Menford
+    | CRM can also edit, and a rename there would silently hide the column.
+    */
+    'office_codes' => ['BLA', 'CPH', 'PRS', 'USA'],
+
+    'office_code_company_ids' => [14],   // Better Collective
+
+    /*
+    |----------------------------------------------------------------------
     | "Bulk Add to Campaign" (Domains → Publications) — allowlist
     |----------------------------------------------------------------------
     | Emails allowed to use the bulk add-to-campaign action on /websites.

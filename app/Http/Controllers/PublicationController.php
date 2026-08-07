@@ -18,15 +18,25 @@ use Illuminate\Validation\Rule;
  */
 class PublicationController extends Controller
 {
-    /** Campaign-facing columns editable inline from the campaign page. */
-    private const INLINE_FIELDS = [
-        'price' => 'nullable|numeric|min:0',   // virtual → menford (see StorageCalculator::setPrice)
-        'article_url' => 'nullable|url|max:500',
-        'publication_date' => 'nullable|date',            // "Live Date"
-        'copywriter_commision_date' => 'nullable|date',            // "Sent to Copy"
-        'copywriter_submission_date' => 'nullable|date',            // "Copy Received"
-        'article_sent_to_publisher' => 'nullable|date',            // "Sent to Blog"
-    ];
+    /**
+     * Campaign-facing columns editable inline from the campaign page.
+     *
+     * A method rather than a const because office_code validates against
+     * config('linkbuilding.office_codes') — a const cannot hold a runtime rule.
+     */
+    private static function inlineFields(): array
+    {
+        return [
+            'price' => 'nullable|numeric|min:0',   // virtual → menford (see StorageCalculator::setPrice)
+            'article_url' => 'nullable|url|max:500',
+            'publication_date' => 'nullable|date',            // "Live Date"
+            'copywriter_commision_date' => 'nullable|date',            // "Sent to Copy"
+            'copywriter_submission_date' => 'nullable|date',            // "Copy Received"
+            'article_sent_to_publisher' => 'nullable|date',            // "Sent to Blog"
+            // Blank clears the office; anything outside the configured list is rejected.
+            'office_code' => ['nullable', Rule::in(config('linkbuilding.office_codes', []))],
+        ];
+    }
 
     /** Date fields that feed a derived period (StorageCalculator::apply). */
     private const PERIOD_DATE_FIELDS = [
@@ -102,10 +112,12 @@ class PublicationController extends Controller
     ======================================================================*/
     public function inlineUpdate(Request $request, Storage $storage)
     {
-        $field = (string) $request->input('field');
-        abort_unless(array_key_exists($field, self::INLINE_FIELDS), 422, 'Field not editable');
+        $fields = self::inlineFields();
 
-        $validated = $request->validate(['value' => self::INLINE_FIELDS[$field]]);
+        $field = (string) $request->input('field');
+        abort_unless(array_key_exists($field, $fields), 422, 'Field not editable');
+
+        $validated = $request->validate(['value' => $fields[$field]]);
         $value = $validated['value'] ?? null;
 
         if ($field === 'price') {
