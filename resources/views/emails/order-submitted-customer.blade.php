@@ -24,7 +24,7 @@ Thanks for your order {{ $order->reference }}. We've received it and will verify
 View order
 @endcomponent
 
-We'll be in touch shortly with confirmed pricing.
+We'll be in touch shortly with confirmed pricing. Then you decide whether to proceed.
 
 Thanks,
 {{ config('app.name') }}

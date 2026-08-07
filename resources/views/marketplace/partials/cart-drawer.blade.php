@@ -11,6 +11,7 @@
         <header class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
             <div>
                 <h2 class="font-bold text-gray-800 text-base">Current Order</h2>
+                <p class="text-xs font-medium text-green-700 mt-1">✓ No payment now. No card, no deposit.</p>
                 <p class="text-xs text-gray-400 mt-0.5">
                     <span x-text="$store.cart.count"></span>
                     <span x-text="$store.cart.count === 1 ? 'site' : 'sites'"></span>
@@ -115,7 +116,10 @@
                 <span x-show="!$store.cart.submitting">Submit Order Request</span>
                 <span x-show="$store.cart.submitting">Submitting…</span>
             </button>
-            <p class="text-xs text-gray-400 text-center">We'll confirm prices within 24 hours</p>
+            <p class="text-xs text-gray-400 text-center leading-relaxed">
+                We'll confirm final prices within 24 hours.<br>
+                Then you decide whether to proceed.
+            </p>
         </div>
     </aside>
 
@@ -136,8 +140,12 @@
                 <x-icon name="check" size="xl" class="text-green-600" :stroke="2.5" />
             </div>
             <h2 class="text-xl font-bold text-gray-800 mb-2">Order submitted!</h2>
+            <p class="text-gray-500 text-sm leading-relaxed mb-3">
+                Your request has been received. No payment has been taken.
+            </p>
             <p class="text-gray-500 text-sm leading-relaxed mb-6">
-                Your request has been received. We'll verify current prices with publishers and get back to you within 24 hours.
+                We'll verify current prices with the publishers and get back to you within 24 hours.
+                Nothing is final until you approve the quote.
             </p>
             <button type="button" @click="$store.cart.viewOrder()"
                     class="w-full inline-flex items-center justify-center px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg shadow-sm">
