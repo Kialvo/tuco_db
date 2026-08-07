@@ -28,6 +28,16 @@
     $published = $campaign->publications->where('status', 'article_published')->count();
     $f         = $campaign->financials;   // revenue / cost / profit / pct over published publications
 
+    // Office Code column: only for the configured companies (Better Collective).
+    // Matched on company ID, never name — `companies` is shared with the Menford
+    // CRM and a rename there would silently hide the column.
+    $officeCodes    = config('linkbuilding.office_codes', []);
+    $showOfficeCode = in_array((int) $campaign->company_id, config('linkbuilding.office_code_company_ids', []), true);
+
+    // Group-separator colspan must track the visible column count, otherwise the
+    // GROUP 1 / GROUP 2 bars render short.
+    $pubColspan = 10 + ($showOfficeCode ? 1 : 0);
+
     // inline-editable publication cell (data-field = storage column)
     $editable = function ($p, $field, $type, $rawValue, $display) {
         return '<span class="js-pub-edit cursor-pointer rounded px-1 -mx-1 hover:bg-yellow-50 hover:ring-1 hover:ring-yellow-200" '
@@ -67,6 +77,23 @@
             <button id="btnPubFilterPublished" type="button" aria-pressed="false" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold border rounded-lg bg-white text-green-700 border-green-500 hover:bg-green-50">
                 <x-icon name="check" size="sm" /> Article Published
             </button>
+
+            <select id="pubFilterInvoiced"
+                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white text-gray-700">
+                <option value="">Invoiced: Any</option>
+                <option value="1">Invoiced: Yes</option>
+                <option value="0">Invoiced: No</option>
+            </select>
+
+            @if($showOfficeCode)
+                <select id="pubFilterOffice"
+                        class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg bg-white text-gray-700">
+                    <option value="">Office: Any</option>
+                    @foreach($officeCodes as $code)
+                        <option value="{{ $code }}">Office: {{ $code }}</option>
+                    @endforeach
+                </select>
+            @endif
             <button id="btnEditCampaign" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                 <x-icon name="pencil" size="sm" /> Edit
             </button>
@@ -136,15 +163,22 @@
                         <th class="text-left py-2.5 px-3 font-semibold">Sent&nbsp;to&nbsp;Blog</th>
                         <th class="text-left py-2.5 px-3 font-semibold">Live&nbsp;URL</th>
                         <th class="text-left py-2.5 px-3 font-semibold">Live&nbsp;Date</th>
+                        <th class="text-center py-2.5 px-3 font-semibold">Invoiced</th>
+                        @if($showOfficeCode)
+                            <th class="text-left py-2.5 px-3 font-semibold">Office&nbsp;Code</th>
+                        @endif
                         <th class="py-2.5 px-3 text-right font-semibold">Actions</th>
                     </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach([['GROUP 1 – Site Evaluation', $g1], ['GROUP 2 – Production', $g2]] as [$label, $rows])
                             @if($rows->count())
-                                <tr class="js-pub-group"><td colspan="9" class="bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-400 px-3 py-1.5">{{ $label }}</td></tr>
+                                <tr class="js-pub-group"><td colspan="{{ $pubColspan }}" class="bg-gray-50/70 text-[10px] font-bold uppercase tracking-wider text-gray-400 px-3 py-1.5">{{ $label }}</td></tr>
                                 @foreach($rows as $p)
-                                    <tr class="js-pub-row hover:bg-gray-50" data-status="{{ $p->status }}">
+                                    <tr class="js-pub-row hover:bg-gray-50"
+                                        data-status="{{ $p->status }}"
+                                        data-invoiced="{{ $p->invoiced ? '1' : '0' }}"
+                                        data-office="{{ $p->office_code }}">
                                         <td class="py-2.5 px-3 font-medium">
                                             <a href="{{ route('storages.edit', $p->id) }}" class="text-green-600 hover:underline" title="Open full Storage record">{{ $p->publisher_domain ?: '—' }}</a>
                                         </td>
@@ -160,6 +194,30 @@
                                         <td class="py-2.5 px-3 text-center text-gray-500 whitespace-nowrap">{!! $editable($p, 'article_sent_to_publisher', 'date', $ymd($p->article_sent_to_publisher), $dateCell($p->article_sent_to_publisher)) !!}</td>
                                         <td class="py-2.5 px-3">{!! $editable($p, 'article_url', 'text', $p->article_url, $p->article_url ? '<span class="text-green-600 text-xs">'.e(\Illuminate\Support\Str::of($p->article_url)->replace(['https://','http://'],'')->limit(24)).'</span>' : '<span class="text-gray-300">—</span>') !!}</td>
                                         <td class="py-2.5 px-3 text-center text-gray-500 whitespace-nowrap">{!! $editable($p, 'publication_date', 'date', $ymd($p->publication_date), $dateCell($p->publication_date)) !!}</td>
+
+                                        {{-- Invoiced: DERIVED from the two Menford invoice fields, read-only --}}
+                                        <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                            @if($p->invoiced)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800"
+                                                      title="Invoice Menford Date and Nr are both set">Yes</span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500"
+                                                      title="Set Invoice Menford Date and Nr on the Storage record">No</span>
+                                            @endif
+                                        </td>
+
+                                        @if($showOfficeCode)
+                                            <td class="py-2.5 px-3 whitespace-nowrap">
+                                                <select class="js-pub-office border border-gray-300 rounded px-1.5 py-1 text-xs bg-white"
+                                                        data-id="{{ $p->id }}">
+                                                    <option value="">—</option>
+                                                    @foreach($officeCodes as $code)
+                                                        <option value="{{ $code }}" @selected($p->office_code === $code)>{{ $code }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                        @endif
+
                                         <td class="py-2.5 px-3 text-right whitespace-nowrap">
                                             <button type="button" class="js-pub-comments inline-flex items-center justify-center h-7 px-1.5 rounded-md text-gray-400 hover:bg-blue-50 hover:text-blue-600" data-id="{{ $p->id }}" data-site="{{ $p->publisher_domain }}" title="Conversation">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
@@ -361,17 +419,36 @@ $(function () {
     flatpickr('.js-date', { dateFormat: 'Y-m-d', allowInput: true });
 
     /* ── "Article Published" quick filter (client-side toggle) ── */
+    /* All publication filters go through ONE function. They used to call
+       .toggle() independently, which meant the last one to run won and silently
+       undid the others — adding Invoiced/Office made that a real bug. */
+    function applyPubFilters() {
+        const published = $('#btnPubFilterPublished').attr('aria-pressed') === 'true';
+        const invoiced  = $('#pubFilterInvoiced').val() || '';
+        const office    = $('#pubFilterOffice').val() || '';        // absent on non-BC campaigns
+        const anyActive = published || invoiced !== '' || office !== '';
+
+        $('.js-pub-row').each(function () {
+            const $r = $(this);
+            const ok = (!published || $r.attr('data-status') === 'article_published')
+                    && (invoiced === '' || $r.attr('data-invoiced') === invoiced)
+                    && (office === ''   || $r.attr('data-office')   === office);
+            $r.toggle(ok);
+        });
+
+        // Any active filter → flat view, group labels hidden.
+        $('.js-pub-group').toggle(!anyActive);
+    }
+
     $('#btnPubFilterPublished').on('click', function () {
         const on = $(this).attr('aria-pressed') !== 'true';
         $(this).attr('aria-pressed', on ? 'true' : 'false')
                .toggleClass('bg-white text-green-700 border-green-500 hover:bg-green-50', !on)
                .toggleClass('bg-green-600 text-white border-green-600 hover:bg-green-700', on);
-        $('.js-pub-row').each(function () {
-            $(this).toggle(!on || $(this).attr('data-status') === 'article_published');
-        });
-        // While filtering, hide the group-label rows (flat published-only view).
-        $('.js-pub-group').toggle(!on);
+        applyPubFilters();
     });
+
+    $('#pubFilterInvoiced, #pubFilterOffice').on('change', applyPubFilters);
 
     /* ── Publisher select2 (Domains catalog search + free-text tags) ── */
     function initSiteSelect() {
@@ -618,6 +695,33 @@ $(function () {
         });
         input.on('blur', () => commit(true));
     });
+
+    /* ── Office Code select (Better Collective campaigns only) ── */
+    $(document).on('change', '.js-pub-office', function () {
+        const $sel = $(this), id = $sel.data('id'), value = $sel.val();
+        const prev = $sel.data('prev') ?? '';
+        $sel.prop('disabled', true);
+
+        $.ajax({
+            url: "{{ url('publications') }}/" + id + "/inline", method: 'PUT',
+            data: { field: 'office_code', value: value },
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+            success: () => {
+                $sel.data('prev', value);
+                // Keep the row's filter attribute in step, otherwise an active
+                // Office filter would judge this row on its old value.
+                $sel.closest('.js-pub-row').attr('data-office', value);
+                applyPubFilters();
+            },
+            error: (xhr) => {
+                $sel.val(prev);   // no reload: revert in place so nothing else is lost
+                const msg = Object.values(xhr.responseJSON?.errors ?? {}).flat().join(' ') || 'Update failed.';
+                Swal.fire({ icon: 'error', title: 'Could not save office', text: msg, timer: 2600, showConfirmButton: false });
+            },
+            complete: () => $sel.prop('disabled', false),
+        });
+    });
+    $('.js-pub-office').each(function () { $(this).data('prev', $(this).val() || ''); });
 
     /* ── Inline publication status (unified slug list) ── */
     const menu = $('#pubStatusMenu');

@@ -59,6 +59,7 @@ class Storage extends Model
         'invoice_menford',
         'invoice_menford_nr',
         'invoice_company',
+        'office_code',
         'payment_to_us_date',
         'bill_publisher_date',
         'bill_publisher_name',
@@ -176,6 +177,21 @@ class Storage extends Model
     /* --------------------------------------------------------------------
      | Accessors — unified publication status + display helpers
      |--------------------------------------------------------------------*/
+
+    /**
+     * Campaigns-page reminder only — DERIVED, never stored. A publication counts
+     * as invoiced when BOTH Menford invoice fields carry a value, so this can
+     * never disagree with the Storage record it mirrors.
+     *
+     * Reads $attributes directly and uses filled(): invoice_menford_nr is a
+     * varchar that can legally hold '', which a plain null check would wrongly
+     * report as invoiced.
+     */
+    public function getInvoicedAttribute(): bool
+    {
+        return filled($this->attributes['invoice_menford'] ?? null)
+            && filled($this->attributes['invoice_menford_nr'] ?? null);
+    }
 
     /** Human label for the status slug (null for empty/legacy '0'). */
     public function getStatusLabelAttribute(): ?string
