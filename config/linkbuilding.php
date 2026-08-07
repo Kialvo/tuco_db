@@ -72,6 +72,7 @@ return [
         'high_price'                      => ['label' => 'Refused by Client – High Price',      'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
         'out_of_topic'                    => ['label' => 'Refused by Client – Out of Topic',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
         'already_used_by_client'          => ['label' => 'Refused by Client – Already Used',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'blog_terms'                      => ['label' => 'Refused by Client – Blog Terms',     'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
         // Group 2 – Production
         'waiting_copywriter'              => ['label' => 'Waiting Copywriter',                  'group' => 2, 'tone' => 'purple', 'decision' => 'approved'],
         'waiting_client_article_approval' => ['label' => 'Waiting Client Article Approval',     'group' => 2, 'tone' => 'amber',  'decision' => 'approved'],

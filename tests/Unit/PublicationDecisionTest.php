@@ -48,7 +48,7 @@ class PublicationDecisionTest extends TestCase
 
     public function test_client_refusals_are_rejections(): void
     {
-        $expected = ['requirements_not_met', 'high_price', 'out_of_topic', 'already_used_by_client'];
+        $expected = ['requirements_not_met', 'high_price', 'out_of_topic', 'already_used_by_client', 'blog_terms'];
 
         foreach ($expected as $slug) {
             $this->assertSame('rejected', PublicationStatus::decision($slug));
