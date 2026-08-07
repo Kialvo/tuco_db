@@ -81,7 +81,8 @@
         @if($order->status === \App\Models\Order::STATUS_SUBMITTED)
             <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-700">
                 <strong>What happens next?</strong>
-                We're verifying current prices with the publishers. We'll get back to you within 24 hours with a confirmed quote.
+                We're verifying current prices with the publishers and we'll come back within 24 hours
+                with a confirmed quote. The order only goes ahead if you approve it.
             </div>
         @endif
     </div>
