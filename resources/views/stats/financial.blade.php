@@ -12,7 +12,12 @@
         @include('stats.partials.filters-bar', ['route' => 'stats.financial'])
 
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Net Profit</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Total Net Profit
+                <x-ds.info-tip
+                    label="How is total net profit calculated?"
+                    text="Sum of profit over every publication with status Article Published inside the selected range, where profit = total revenues − total cost. Total revenues = Menford amount + client copy; total cost = publisher amount + copywriter amount. Publications are dated by their Live Date (publication date)." />
+            </p>
             <p class="mt-2 text-4xl font-bold text-slate-900">
                 EUR {{ number_format((float) $totalNetProfit, 2, '.', ',') }}
             </p>
@@ -31,7 +36,12 @@
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Net Profit</h2>
+                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">
+                            Net Profit
+                            <x-ds.info-tip
+                                label="How is net profit over time calculated?"
+                                text="The same net profit as the card above (revenues − cost per publication), summed per period and dated by Live Date. The source series is monthly; Quarterly and Yearly are straight sums of those months, which is exact because profit is additive." />
+                        </h2>
                     </div>
                     <div data-granularity-toggle="netProfit" role="group" aria-label="Data granularity"
                          class="inline-flex shrink-0 rounded-lg border border-slate-200 bg-slate-100 p-1 text-sm">
@@ -46,7 +56,12 @@
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Revenues per Client</h2>
+                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">
+                            Revenues per Client
+                            <x-ds.info-tip
+                                label="How are revenues per client calculated?"
+                                text="Total revenues (Menford amount + client copy) per publication, grouped by the client's company via storage → client → company, stacked per period and dated by Live Date. Only publications with status Article Published count. The top 8 companies by revenue in view get their own series; the rest collapse into “Others”, and publications with no resolvable company go to “Unassigned”. Quarterly and Yearly sum the underlying months." />
+                        </h2>
                         <p class="mt-1 text-sm text-slate-600">
                             Total revenues (EUR) by company, stacked per period. Dated by <strong>Live Date</strong>.
                         </p>
@@ -104,7 +119,12 @@
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Customer Net Profit Contribution</h2>
+                        <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">
+                            Customer Net Profit Contribution
+                            <x-ds.info-tip
+                                label="How is customer net profit contribution calculated?"
+                                text="Net profit (revenues − cost) per publication, grouped by client company and dated by Live Date — the same filtered set as Total Net Profit, so the two can never disagree. Bars are GROUPED, not stacked: a loss-making client has to draw below zero, which stacking would hide. In the table, Share is the client's profit as a percentage of total net profit and Margin is their profit ÷ their revenue." />
+                        </h2>
                         <p class="mt-1 text-sm text-slate-600">
                             Net profit (EUR) by company over time, with the ranked breakdown below showing each
                             client's share, revenue and margin. Dated by <strong>Live Date</strong>, same filtered
@@ -217,6 +237,10 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    {{-- statsSortedTooltip(): shared tooltips listed highest → lowest. --}}
+    @include('stats.partials.chart-tooltip-script')
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const labels = @json($labels);
@@ -562,7 +586,9 @@
                                     formatter: function (value) { return compactCurrency(value); }
                                 }
                             },
-                            tooltip: { theme: 'light', shared: true, intersect: false, y: { formatter: function (value) { return euro.format(value); } } }
+                            // Sorted highest → lowest: series order would otherwise
+                            // bury the biggest client under a stack of €0 rows.
+                            tooltip: { theme: 'light', shared: true, intersect: false, custom: statsSortedTooltip(function (value) { return euro.format(value); }) }
                         });
                         chart.render();
                         return;

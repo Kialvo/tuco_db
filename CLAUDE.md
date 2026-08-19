@@ -58,11 +58,20 @@ php artisan serve --port=8000 # app at http://localhost:8000
 - **Database access is STRICTLY READ-ONLY and verification-only — Claude may run ONLY `SELECT`/read queries, and only when a read is genuinely required; prefer reading the migrations/models/schema in code over connecting at all.** EVERY connection hits **LIVE PRODUCTION**: the local `.env` active host `tuco-db-may-23-backup-2026-…ondigitalocean.com` is production despite "backup" in its name (the genuine backup host is commented out). NEVER write — under ANY circumstance, with or without approval: no `INSERT`/`UPDATE`/`DELETE`/`REPLACE`, no DDL (`ALTER`/`CREATE`/`DROP`/`TRUNCATE`), no `php artisan migrate`/`migrate:*`/`db:seed`/`db:wipe`, no writes via `tinker` (`->save()`/`->update()`/`->delete()`/`->create()`, `DB::insert`/`update`/`delete`/`statement`). A write here is irreversible — it hits production, not a throwaway copy. This is absolute and supersedes the old "destructive DB command with approval" allowance.
 - NEVER assume push = live (see Deployment). NEVER hardcode secrets — add keys to `.env.example` (empty) and read via `config()`.
 
+## Verification
+
+- `php artisan test` (or `vendor/bin/phpunit`) — **this project HAS a real PHPUnit suite**: `phpunit.xml` plus 13 test files under `tests/Feature/` and `tests/Unit/`. Run it; do not treat this repo as untested.
+- `npm run build` (`vite build`) for any frontend change, and `npm run doctor` (`website-lints doctor`) to check the lint wiring itself.
+- `node scripts/capture-auth-state.mjs && npm run audit:readability` before declaring UI work done — the runtime audit is stack-agnostic and IS wired here. The static Next.js `check:*` lints are NOT: they parse `.tsx`/dictionaries, not Blade.
+- A green local run says nothing about production — the deploy is manual and Marvin's (see below). Never report a change as live off a passing build.
+- Review, model sizing, and verification discipline: see global Standing Rule #50 in `~/.claude/CLAUDE.md`
+
 ## Deployment
 
-- **Deploy model: manual, self-hosted server — push to `main` does NOT go live.** An approved PR may be merged to `main` by Claude on Fabrizio's explicit per-PR approval, or handed to Marvin; either way the **manual server deploy is Marvin's** responsibility — merging is not deploying.
+- **Deploy model:** manual
+- **Self-hosted server — push to `main` does NOT go live.** An approved PR may be merged to `main` by Claude on Fabrizio's explicit per-PR approval, or handed to Marvin; either way the **manual server deploy is Marvin's** responsibility — merging is not deploying.
 - **Server deploy steps:** SSH in → `git pull` → `composer install --no-dev` → `php artisan migrate --force` → `npm ci && npm run build` → `php artisan optimize`.
-- **Live URL:** linkinablink.com (tool at `/dashboard`, `/websites`).
+- **Live URL:** https://linkinablink.com (tool at `/dashboard`, `/websites`).
 
 ## Skill References
 

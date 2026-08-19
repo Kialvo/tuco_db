@@ -237,6 +237,9 @@ class StatsController extends Controller
         // Company × status counts. Storage's SoftDeletes global scope excludes
         // trashed publications; the raw join does NOT carry Campaign's scope, so
         // trashed campaigns are excluded explicitly.
+        // Grouped by MONTH as well as company × status: the over-time widget and
+        // the headline rates are then two readings of one result set and cannot
+        // disagree, which a second query for the trend could not guarantee.
         $rows = \App\Models\Storage::query()
             ->join('lb_campaigns', 'lb_campaigns.id', '=', 'storage.lb_campaign_id')
             ->whereNull('lb_campaigns.deleted_at')
@@ -244,8 +247,9 @@ class StatsController extends Controller
             ->when($dateTo, fn ($q) => $q->whereDate('storage.created_at', '<=', $dateTo->toDateString()))
             ->leftJoin('companies', 'companies.id', '=', 'lb_campaigns.company_id')
             ->selectRaw("COALESCE(NULLIF(companies.name, ''), 'Unassigned') as company")
+            ->selectRaw("DATE_FORMAT(storage.created_at, '%Y-%m') as month_key")
             ->selectRaw('storage.status as status, COUNT(*) as c')
-            ->groupBy('company', 'storage.status')
+            ->groupBy('company', 'month_key', 'storage.status')
             ->get();
 
         $blank = ['approved' => 0, 'rejected' => 0, 'pending' => 0];
@@ -253,6 +257,7 @@ class StatsController extends Controller
         $byClient = [];          // company => [approved, rejected, pending]
         $reasonCounts = [];      // rejected slug => count
         $reasonByClient = [];    // company => [slug => count]
+        $decisionsByMonth = [];  // company => 'Y-m' => [approved, rejected]
 
         foreach ($rows as $row) {
             $decision = \App\Support\PublicationStatus::decision($row->status);
@@ -262,6 +267,14 @@ class StatsController extends Controller
             $totals[$decision] += $count;
             $byClient[$company] ??= $blank;
             $byClient[$company][$decision] += $count;
+
+            // Pending rows carry no decision to rate, and a row with no created_at
+            // cannot be placed on the month axis — both are still counted above, so
+            // the KPI cards keep reporting them.
+            if ($decision !== 'pending' && $row->month_key) {
+                $decisionsByMonth[$company][$row->month_key] ??= ['approved' => 0, 'rejected' => 0];
+                $decisionsByMonth[$company][$row->month_key][$decision] += $count;
+            }
 
             if ($decision === 'rejected') {
                 $reasonCounts[$row->status] = ($reasonCounts[$row->status] ?? 0) + $count;
@@ -346,6 +359,7 @@ class StatsController extends Controller
         return [
             'decisionTotals' => $decisionTotals,
             'decisionByClient' => $decisionByClient,
+            'decisionTrend' => $this->buildDecisionTrend($decisionsByMonth, $decisionByClient, $dateFrom, $dateTo),
             'rejectionReasons' => $rejectionReasons,
             'rejectionReasonChart' => [
                 'labels' => array_column($rejectionReasons, 'label'),
@@ -355,6 +369,99 @@ class StatsController extends Controller
                 'clients' => $rejectedClients,
                 'series' => $reasonSeries,
             ],
+        ];
+    }
+
+    /**
+     * "Approval / Rejection Rate over time" payload — a company × month matrix of
+     * APPROVED and REJECTED counts, plus the all-clients aggregate, aligned to one
+     * continuous month axis.
+     *
+     * COUNTS, not rates, cross the wire on purpose: the widget re-buckets to
+     * quarters/years client-side, and a quarter's rate is
+     * `sum(approved) / sum(decided)` — averaging three monthly percentages would
+     * weight a month holding 2 decisions the same as one holding 200.
+     *
+     * The axis is dated by PROPOSAL DATE (`storage.created_at`), the same cohort
+     * basis as the headline rates — see the docblock on publicationDecisions().
+     * A bucket with no decision at all stays NULL so the line breaks rather than
+     * dropping to a 0% nobody measured.
+     *
+     * @param  array  $decisionsByMonth  company => 'Y-m' => [approved, rejected]
+     * @param  array  $decisionByClient  the ranked client rows (decided-volume order)
+     * @return array{months: string[], overall: array, clients: array<int, array>}
+     */
+    private function buildDecisionTrend(
+        array $decisionsByMonth,
+        array $decisionByClient,
+        ?Carbon $dateFrom = null,
+        ?Carbon $dateTo = null
+    ): array {
+        $monthKeys = [];
+        foreach ($decisionsByMonth as $months) {
+            $monthKeys = array_merge($monthKeys, array_keys($months));
+        }
+
+        if (! $monthKeys && ! $dateFrom) {
+            return ['months' => [], 'overall' => ['approved' => [], 'rejected' => []], 'clients' => []];
+        }
+
+        // With a picked range the axis IS the range, so an empty range still draws
+        // its months instead of silently collapsing to whatever data exists.
+        $end = $dateTo
+            ? $dateTo->copy()->startOfMonth()
+            : ($monthKeys ? Carbon::createFromFormat('Y-m', max($monthKeys))->startOfMonth() : Carbon::now()->startOfMonth());
+        $start = $dateFrom
+            ? $dateFrom->copy()->startOfMonth()
+            : ($monthKeys ? Carbon::createFromFormat('Y-m', min($monthKeys))->startOfMonth() : $end->copy());
+
+        if ($start->gt($end)) {
+            $start = $end->copy();
+        }
+
+        $axis = [];   // 'Y-m' => 'Mon YYYY'
+        for ($m = $start->copy(); $m->lte($end); $m->addMonth()) {
+            $axis[$m->format('Y-m')] = $m->format('M Y');
+        }
+
+        $overallApproved = array_fill(0, count($axis), 0);
+        $overallRejected = array_fill(0, count($axis), 0);
+
+        // Client order is the page's existing ranking (decided volume desc), so the
+        // widget's default selection matches the table above it.
+        $clients = [];
+        foreach ($decisionByClient as $client) {
+            $name = $client['name'];
+            $approved = [];
+            $rejected = [];
+
+            foreach (array_keys($axis) as $i => $ym) {
+                $a = (int) ($decisionsByMonth[$name][$ym]['approved'] ?? 0);
+                $r = (int) ($decisionsByMonth[$name][$ym]['rejected'] ?? 0);
+                $approved[] = $a;
+                $rejected[] = $r;
+                $overallApproved[$i] += $a;
+                $overallRejected[$i] += $r;
+            }
+
+            // A client whose every decision fell outside the month axis (no
+            // created_at) would draw an all-null line — drop it from the widget.
+            if (array_sum($approved) + array_sum($rejected) === 0) {
+                continue;
+            }
+
+            $clients[] = [
+                'name' => $name,
+                'approved' => $approved,
+                'rejected' => $rejected,
+                'decided' => array_sum($approved) + array_sum($rejected),
+            ];
+        }
+
+        return [
+            'months' => array_values($axis),
+            'overall' => ['approved' => $overallApproved, 'rejected' => $overallRejected],
+            'clients' => $clients,
         ];
     }
 }
