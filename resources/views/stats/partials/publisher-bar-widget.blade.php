@@ -15,6 +15,7 @@
       itemHeader  — left column header for the table (e.g. 'Website')
       valueHeader — value column header for the table (e.g. 'Articles')
       isMoney     — format the table values as EUR when true
+      info        — optional plain text: how this metric is calculated → "i" icon
 --}}
 @php
     $wToggleBtn = 'rounded-md border px-3 py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-200';
@@ -22,6 +23,7 @@
     $wToggleOff = 'border-transparent text-slate-600 hover:text-slate-800';
     $hasFilter  = ! empty($selected);
     $preserve   = $preserve ?? [];
+    $info       = $info ?? null;
 
     // Per-website totals over the visible range (granularity-independent, so this
     // stays correct regardless of the Monthly/Quarterly/Yearly toggle).
@@ -35,7 +37,12 @@
 <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
     <div class="flex items-start justify-between gap-3">
         <div>
-            <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">{{ $title }}</h2>
+            <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">
+                {{ $title }}
+                @if($info)
+                    <x-ds.info-tip :text="$info" :label="'How is ' . \Illuminate\Support\Str::lower($title) . ' calculated?'" />
+                @endif
+            </h2>
             <p class="mt-1 text-sm text-slate-600">{{ $subtitle }}</p>
         </div>
         <div class="flex shrink-0 items-center gap-2">

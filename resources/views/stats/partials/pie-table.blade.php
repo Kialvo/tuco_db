@@ -1,7 +1,8 @@
 {{--
     Pie-with-table stats widget.
     Vars: $title, $subtitle, $chartId, $itemHeader, $labels (array), $series (array),
-          $countHeader (optional, defaults to "Domains" — the count column's header).
+          $countHeader (optional, defaults to "Domains" — the count column's header),
+          $info (optional, plain text: how this metric is calculated → "i" icon).
     Pie + legend on the left; breakdown table (item | count | %) on the right.
 
     This is an @include partial, not a Blade component, so defaults are ?? here
@@ -10,9 +11,15 @@
 @php
     $total = array_sum($series);
     $countHeader = $countHeader ?? 'Domains';
+    $info = $info ?? null;
 @endphp
 <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-    <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">{{ $title }}</h2>
+    <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">
+        {{ $title }}
+        @if($info)
+            <x-ds.info-tip :text="$info" :label="'How is ' . \Illuminate\Support\Str::lower($title) . ' calculated?'" />
+        @endif
+    </h2>
     <p class="mt-1 text-sm text-slate-500">{{ $subtitle }}</p>
 
     <div class="mt-4 grid grid-cols-1 gap-6 2xl:grid-cols-2 2xl:items-center">

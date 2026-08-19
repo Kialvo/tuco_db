@@ -4,6 +4,9 @@
   "themes": ["light"],
   "urls": [
     { "path": "/stats/production", "label": "production-stats" },
+    { "path": "/stats/financial", "label": "financial-stats" },
+    { "path": "/stats/campaigns", "label": "campaigns-stats" },
+    { "path": "/stats/publishers", "label": "publisher-stats" },
     { "path": "/dashboard", "label": "dashboard" },
     { "path": "/contacts", "label": "contacts" },
     { "path": "/companies", "label": "companies" },

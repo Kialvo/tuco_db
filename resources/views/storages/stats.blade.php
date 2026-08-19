@@ -20,18 +20,33 @@
         ])
 
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total Published Articles</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Total Published Articles
+                <x-ds.info-tip
+                    label="How is total published articles calculated?"
+                    text="Count of publications with status Article Published and a publication date, inside the selected range. Dated by Live Date (publication date)." />
+            </p>
             <p class="mt-2 text-4xl font-bold text-slate-900">{{ number_format($totalPublished) }}</p>
         </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Copy Delivery Time</h2>
+                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">
+                    Copy Delivery Time
+                    <x-ds.info-tip
+                        label="How is copy delivery time calculated?"
+                        text="Days between the copywriter's commission date and their submission date, per publication. The line plots the MEDIAN of those days for each period, not the average, so one very late article cannot drag the whole month. Publications are grouped by their Live Date and only rows with both dates recorded are counted — a period with none is a gap, not a zero. The dashed line marks the 2-day target." />
+                </h2>
                 <div id="copyDeliveryTimeChart" class="mt-4 h-[390px]"></div>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">Publisher Publication Time</h2>
+                <h2 class="text-lg font-semibold uppercase tracking-wide text-slate-900">
+                    Publisher Publication Time
+                    <x-ds.info-tip
+                        label="How is publisher publication time calculated?"
+                        text="Days between the date the article was sent to the publisher and the date it went live, per publication. The line plots the MEDIAN of those days per period, not the average. Publications are grouped by their Live Date and only rows with both dates recorded are counted — a period with none is a gap, not a zero. The dashed line marks the 2-day target." />
+                </h2>
                 <div id="publisherPublicationTimeChart" class="mt-4 h-[390px]"></div>
             </section>
         </div>
@@ -52,6 +67,7 @@
             @include('stats.partials.publisher-bar-widget', [
                 'title'          => 'PUBLISHED ARTICLES PER WEBSITE',
                 'subtitle'       => 'Number of published articles, stacked by publisher website (Domain). Dated by Publication Date.',
+                'info'           => 'Count of publications with status Article Published, grouped by the publisher website (Domain) and dated by publication date. The top 8 websites by volume get their own stacked series; the rest collapse into “Others”, and publications with no domain go to “(No domain)”. The table on the right totals each website over the whole visible range, so it does not change with the Monthly/Quarterly/Yearly toggle.',
                 'chartId'        => 'pubArticlesChart',
                 'toggleKey'      => 'pubArticles',
                 'filterButtonId' => 'pubArticlesFilterToggle',
@@ -71,6 +87,7 @@
             @include('stats.partials.publisher-bar-widget', [
                 'title'          => '€ SPENT PER WEBSITE',
                 'subtitle'       => 'Publisher payment (EUR) stacked by publisher website (Domain). Dated by Publication Date.',
+                'info'           => 'Sum of the publisher payment on each published article, grouped by the publisher website (Domain) and dated by publication date. This is what we PAY the publisher — it is a cost, not revenue, and excludes the copywriter amount. Top 8 websites by spend get their own series; the rest collapse into “Others”.',
                 'chartId'        => 'pubSpendChart',
                 'toggleKey'      => 'pubSpend',
                 'filterButtonId' => 'pubSpendFilterToggle',
@@ -92,6 +109,10 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    {{-- statsSortedTooltip(): shared tooltips listed highest → lowest. --}}
+    @include('stats.partials.chart-tooltip-script')
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const labels = @json($labels);
@@ -348,7 +369,9 @@
                                 title: { text: cfg.yTitle },
                                 labels: { style: { colors: '#64748b', fontSize: '11px' }, formatter: cfg.yFormatter }
                             },
-                            tooltip: { theme: 'light', shared: true, intersect: false, y: { formatter: cfg.tooltipFormatter } }
+                            // Sorted highest → lowest: series order would otherwise
+                            // bury the busiest website under a stack of zero rows.
+                            tooltip: { theme: 'light', shared: true, intersect: false, custom: statsSortedTooltip(cfg.tooltipFormatter) }
                         });
                         chart.render();
                         return;

@@ -140,6 +140,20 @@
                         const to = new Date(d.getFullYear(), firstMonthThisQ, 0);
                         return { from: this.fmt(from), to: this.fmt(to) };
                     },
+                    // "This …" presets are CURRENT-PERIOD-TO-DATE: they run from the
+                    // first day of the period to today, never to the period's end —
+                    // a range reaching into the future would read as a partial period
+                    // with a suspicious drop at the tail.
+                    thisQuarter() {
+                        const d = this.today();
+                        const from = new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1);
+                        return { from: this.fmt(from), to: this.fmt(d) };
+                    },
+                    thisYear() {
+                        const d = this.today();
+                        const from = new Date(d.getFullYear(), 0, 1);
+                        return { from: this.fmt(from), to: this.fmt(d) };
+                    },
                     previousYear() {
                         const d = this.today();
                         const from = new Date(d.getFullYear() - 1, 0, 1);
@@ -155,9 +169,11 @@
                             { key: 'prevWeek', label: 'Previous Week', ...this.previousWeek() },
                             { key: 'last30', label: 'Last 30 Days', ...this.lastDays(30) },
                             { key: 'prevMonth', label: 'Previous Month', ...this.previousMonth() },
+                            { key: 'thisQuarter', label: 'This Quarter', ...this.thisQuarter() },
                             { key: 'prevQuarter', label: 'Previous Quarter', ...this.previousQuarter() },
                             { key: 'last90', label: 'Last 90 Days', ...this.lastDays(90) },
                             { key: 'last12m', label: 'Last 12 Months', ...this.lastMonths(12) },
+                            { key: 'thisYear', label: 'This Year', ...this.thisYear() },
                             { key: 'prevYear', label: 'Previous Year', ...this.previousYear() },
                         ];
                     },
