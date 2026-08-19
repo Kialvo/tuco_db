@@ -32,6 +32,9 @@ class CampaignController extends Controller
         // (conversation counts are fetched client-side from conversations/counts)
         $q = Campaign::query()
             ->leftJoin('companies', 'companies.id', '=', 'lb_campaigns.company_id')
+            // Joined only to give the "responsible" column something to ORDER BY —
+            // the display name/avatar still comes from the eager-loaded relation below.
+            ->leftJoin('users as responsible_users', 'responsible_users.id', '=', 'lb_campaigns.responsible_user_id')
             ->select('lb_campaigns.*', 'companies.name as company_name')
             // Most recent publication LIVE DATE — feeds the auto completion date
             // (Campaign::liveCompletionDate). Must stay AFTER select() per the note above.
@@ -93,6 +96,20 @@ class CampaignController extends Controller
             ->orderColumn('campaign_costs', 'pub_cost $1')
             ->orderColumn('campaign_profit', '(pub_revenue - pub_cost) $1')
             ->orderColumn('campaign_profit_pct', '((pub_revenue - pub_cost) / NULLIF(pub_revenue,0)) $1')
+            // Progress toward target, normalized across budget-€ and pub-count
+            // targets alike — the same ratio the progress bar in the cell shows.
+            ->orderColumn('target', '(lb_campaigns.live_count / NULLIF(lb_campaigns.target_value, 0)) $1')
+            ->orderColumn('responsible', 'responsible_users.name $1')
+            // Mirrors Campaign::liveCompletionDate(): only "Completed*" statuses
+            // have a real completion date, else it displays as "—".
+            ->orderColumn('completion_date', function ($query, $direction) {
+                $completed = config('linkbuilding.campaign_statuses.Completed', []);
+                $placeholders = implode(',', array_fill(0, count($completed), '?'));
+                $query->orderByRaw(
+                    "CASE WHEN lb_campaigns.status IN ({$placeholders}) THEN latest_live_date ELSE NULL END {$direction}",
+                    $completed
+                );
+            })
             ->rawColumns(['code_cell', 'service_badge', 'status_badge', 'target', 'budget_approval_date', 'offer_ready_date', 'deadline', 'next_update_date', 'responsible', 'comments_btn', 'action'])
             ->make(true);
     }
