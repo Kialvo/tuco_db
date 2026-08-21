@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\Payments\FakeGateway;
+use App\Services\Payments\PaymentGateway;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -16,7 +18,20 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // The gateway is chosen by config and defaults to the fake driver: a
+        // missing PAYMENTS_DRIVER must never leave a half-configured live
+        // gateway in front of customers. Stripe is registered here once the
+        // stripe/stripe-php package is added.
+        $this->app->bind(PaymentGateway::class, function () {
+            $driver = config('tokens.driver', 'fake');
+
+            return match ($driver) {
+                'fake' => new FakeGateway,
+                default => throw new \RuntimeException(
+                    "Unsupported payments driver [{$driver}]. Only [fake] exists until the Stripe phase."
+                ),
+            };
+        });
     }
 
     public function boot(): void

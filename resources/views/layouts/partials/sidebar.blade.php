@@ -42,6 +42,18 @@
                 <x-icon name="orders" />
                 My Orders
             </a>
+            {{-- Tokens: the balance lives here rather than the topbar, which
+                 renders at zero height for guests. --}}
+            <a href="{{ route('billing.tokens.index') }}"
+               class="nav-btn flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium hover:bg-white/10 hover:text-white transition-all
+                      {{ $navActive('billing.*') ? 'nav-active' : 'text-gray-300' }}">
+                <x-icon name="cart" />
+                <span class="flex-1">Tokens</span>
+                @php($sbBalance = app(\App\Services\Tokens\TokenLedger::class)->balance($user))
+                <span class="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-white/10 text-white">
+                    {{ number_format($sbBalance) }}
+                </span>
+            </a>
 
         @else
             {{-- ─── ADMIN/EDITOR: full nested nav ─── --}}
