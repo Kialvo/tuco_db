@@ -3,6 +3,9 @@
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserFavoritesController;
+use App\Http\Controllers\Billing\FakeCheckoutController;
+use App\Http\Controllers\Billing\PaymentWebhookController;
+use App\Http\Controllers\Billing\TokenWalletController;
 use App\Http\Controllers\BulkAddToCampaignController;
 use App\Http\Controllers\CampaignController;
 use App\Http\Controllers\ClientsController;
@@ -67,7 +70,32 @@ require __DIR__.'/auth.php';
 /*======================================================================
 |  AUTHENTICATED ROUTES
 =====================================================================*/
+/*--------------------------------------------------------------
+| Payment gateway webhook — NO auth, NO CSRF, NO guest middleware.
+| The gateway is not logged in and holds no session token; the
+| request is trusted only because its signature verifies (see
+| PaymentWebhookController). Declared outside every group on
+| purpose so no future middleware quietly starts rejecting it.
+--------------------------------------------------------------*/
+Route::post('/billing/webhook/{gateway}', PaymentWebhookController::class)->name('billing.webhook');
+
 Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, RestrictGuestToDomainsMiddleware::class])->group(function () {
+
+    /*--------------------------------------------------------------
+    | Tokens / wallet (guests + admins)
+    | NOTE: every route name here must also be listed in
+    | RestrictGuestToDomainsMiddleware::ALLOWED_ROUTE_NAMES, or guests
+    | are silently redirected to /websites and the page appears broken.
+    --------------------------------------------------------------*/
+    Route::get('/billing/tokens', [TokenWalletController::class, 'index'])->name('billing.tokens.index');
+    Route::post('/billing/tokens/checkout', [TokenWalletController::class, 'checkout'])->name('billing.tokens.checkout');
+
+    // Local simulated gateway. The controller 404s unless the fake driver is active.
+    Route::get('/billing/fake-checkout/{session}', [FakeCheckoutController::class, 'show'])->name('billing.fake-checkout');
+    Route::post('/billing/fake-checkout/{session}/pay', [FakeCheckoutController::class, 'pay'])->name('billing.fake-checkout.pay');
+    Route::post('/billing/fake-checkout/{session}/fail', [FakeCheckoutController::class, 'fail'])->name('billing.fake-checkout.fail');
+    Route::post('/billing/fake-checkout/{session}/refund', [FakeCheckoutController::class, 'refund'])->name('billing.fake-checkout.refund');
+
 
     /*--------------------------------------------------------------
     | Dashboard

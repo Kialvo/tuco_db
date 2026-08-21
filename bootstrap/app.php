@@ -12,7 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Payment webhooks carry no session and therefore no CSRF token. They
+        // are authenticated by signature instead — see PaymentWebhookController,
+        // which rejects anything that does not verify.
+        $middleware->validateCsrfTokens(except: [
+            'billing/webhook/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

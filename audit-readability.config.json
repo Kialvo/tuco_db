@@ -13,6 +13,7 @@
     { "path": "/clients", "label": "clients" },
     { "path": "/websites", "label": "websites" },
     { "path": "/campaigns", "label": "campaigns" },
-    { "path": "/campaigns?calendar=1", "label": "campaigns-calendar" }
+    { "path": "/campaigns?calendar=1", "label": "campaigns-calendar" },
+    { "path": "/billing/tokens", "label": "token-wallet" }
   ]
 }

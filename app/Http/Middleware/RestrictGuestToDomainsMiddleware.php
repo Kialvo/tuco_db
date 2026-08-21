@@ -37,6 +37,15 @@ class RestrictGuestToDomainsMiddleware
         'profile.update',
         'profile.photo',
         'profile.photo.destroy',
+        // Tokens / wallet — guests buy and spend their own credit.
+        // Omitting a route here does not error, it silently redirects to
+        // /websites, which presents as "the page does nothing".
+        'billing.tokens.index',
+        'billing.tokens.checkout',
+        'billing.fake-checkout',
+        'billing.fake-checkout.pay',
+        'billing.fake-checkout.fail',
+        'billing.fake-checkout.refund',
     ];
 
     public function handle(Request $request, Closure $next): Response
