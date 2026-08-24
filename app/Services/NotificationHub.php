@@ -128,6 +128,29 @@ class NotificationHub
         }
     }
 
+    /**
+     * External alert for a submitted order: Discord webhook only, same
+     * channel/URL as newUserAlerts (config: services.admin_alerts). Order
+     * emails are already sent by OrderController::submit(); this only adds
+     * the Discord leg. Non-fatal — must never break order submission.
+     */
+    public static function orderSubmitted(\App\Models\Order $order): void
+    {
+        try {
+            if ($url = config('services.admin_alerts.discord_webhook_url')) {
+                \Illuminate\Support\Facades\Http::timeout(5)->post($url, [
+                    'content' => "There's a new order on Linkinablink. Here are the details:\n"
+                        . '**Order:** ' . $order->reference . "\n"
+                        . '**Customer:** ' . $order->user->name . ' (' . $order->user->email . ")\n"
+                        . '**Items:** ' . $order->item_count . "\n"
+                        . '**Total:** €' . number_format($order->total_amount, 2),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[NotificationHub] order-submitted discord alert failed: ' . $e->getMessage());
+        }
+    }
+
     /** Normalize a recipient (User model or raw address) to a lowercase email. */
     private static function email(User|string|null $recipient): ?string
     {

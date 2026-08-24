@@ -7,6 +7,7 @@ use App\Mail\OrderSubmittedCustomerMail;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Website;
+use App\Services\NotificationHub;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -170,6 +171,8 @@ class OrderController extends Controller
         } catch (\Throwable $e) {
             Log::error('Order admin email failed: '.$e->getMessage());
         }
+
+        NotificationHub::orderSubmitted($order);
 
         return response()->json([
             'status'   => 'success',
