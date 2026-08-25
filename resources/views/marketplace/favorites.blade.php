@@ -39,8 +39,8 @@
 
                 <x-ds.table-shell>
                     <x-slot name="head">
-                        <x-ds.th width="10" align="center">Fav</x-ds.th>
-                        <x-ds.th width="10" align="center" tip="Add to order">+</x-ds.th>
+                        <x-ds.th width="10" align="center" pad="pl-3 pr-1">Fav</x-ds.th>
+                        <x-ds.th width="10" align="center" pad="pl-1 pr-3"></x-ds.th>
                         <x-ds.th>Domain</x-ds.th>
                         <x-ds.th>Country</x-ds.th>
                         <x-ds.th>Price</x-ds.th>
@@ -54,19 +54,19 @@
                             $daClass = $w->DA >= 60 ? 'text-green-600' : ($w->DA >= 40 ? 'text-amber-600' : 'text-gray-500');
                         @endphp
                         <tr id="fav-row-{{ $w->id }}" class="cart-row" data-website-id="{{ $w->id }}">
-                            <td class="px-3 py-3 text-center">
+                            <td class="pl-3 pr-1 py-3 text-center">
                                 <button type="button"
                                         onclick="removeFav({{ $w->id }})"
                                         class="text-lg leading-none transition-transform hover:scale-110"
                                         title="Remove from favorites">⭐</button>
                             </td>
-                            <td class="px-3 py-3 text-center">
+                            <td class="pl-1 pr-3 py-3 text-center">
                                 <button type="button"
                                         class="cart-toggle w-7 h-7 rounded-lg flex items-center justify-center mx-auto transition-all bg-gray-100 hover:bg-green-100 text-gray-500 hover:text-green-700"
                                         data-website-id="{{ $w->id }}"
                                         title="Add to order">
-                                    <svg class="w-4 h-4 cart-toggle-plus" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                                    <svg class="w-4 h-4 cart-toggle-check hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    <x-icon name="cart" class="cart-toggle-plus" :stroke="2.5" />
+                                    <x-icon name="check" class="cart-toggle-check hidden" :stroke="2.5" />
                                 </button>
                             </td>
                             <td class="px-3 py-3">
