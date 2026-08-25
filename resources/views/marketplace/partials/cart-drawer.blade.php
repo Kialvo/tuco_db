@@ -295,7 +295,6 @@
             notes: '',
             submitting: false,
             confirmShown: false,
-            lastOrderId: null,
 
             csrf() {
                 return document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -390,8 +389,7 @@
                         body: JSON.stringify({ notes: this.notes }),
                     });
                     if (r.ok) {
-                        const d = await r.json();
-                        this.lastOrderId = d.order_id;
+                        await r.json();
                         this.count = 0;
                         this.total = 0;
                         this.items = [];
@@ -425,11 +423,7 @@
             },
 
             viewOrder() {
-                if (this.lastOrderId) {
-                    window.location.href = `/orders/${this.lastOrderId}`;
-                } else {
-                    window.location.href = '{{ route('orders.index') }}';
-                }
+                window.location.href = '{{ route('orders.index') }}';
             },
         });
 

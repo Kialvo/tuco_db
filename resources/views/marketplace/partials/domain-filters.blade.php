@@ -12,7 +12,10 @@
     {{-- Preserve sort + per_page across filter submits --}}
     @if(($sort ?? null) !== 'ms')<input type="hidden" name="sort" value="{{ $sort }}">@endif
     @if(($direction ?? null) !== 'desc')<input type="hidden" name="direction" value="{{ $direction }}">@endif
-    @if(($perPage ?? 10) !== 10)<input type="hidden" name="per_page" value="{{ $perPage }}">@endif
+    {{-- Must match guestMarketplace()'s per_page default. If it drifts low, a
+         user who explicitly picks the controller's default has it dropped from
+         every filter submit and silently bounced back. --}}
+    @if(($perPage ?? 25) !== 25)<input type="hidden" name="per_page" value="{{ $perPage }}">@endif
 
     <x-ds.filter-panel :active-count="$activeCount ?? 0"
                        :clear-url="route('websites.index')">

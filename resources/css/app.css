@@ -193,10 +193,29 @@
 .dt-toolbar-bottom { @apply border-t border-gray-100 rounded-b-xl; }
 
 /* ── Marketplace DS table: horizontal scroll within the card.
-   overflow-x:auto means CSS position:sticky on <thead> would be trapped here,
-   so sticky is handled by the JS clone in app.js (initDsTableSticky). ── */
+   With no bounded height the real scrollport is <main>, and overflow-x:auto
+   traps CSS position:sticky on <thead> here — so sticky is handled by the JS
+   clone in app.js (initDsTableSticky). Cards in fill mode escape this; see
+   .ds-table--fill below. ── */
 .ds-table {
     overflow-x: auto;
+}
+
+/* ── Fill mode (x-ds.table-shell :fill) ──────────────────────────────────
+   The card is given a bounded height by its flex parent, so adding overflow-y
+   makes the CARD the scrollport rather than <main>. That un-traps the sticky
+   above: thead now sticks to the card's own top edge, and the JS clone is
+   skipped for these cards (see the :not(.ds-table--fill) selector in app.js).
+   Requires .ds-table table's border-collapse:separate below — sticky <th> is
+   ignored under border-collapse:collapse. ── */
+.ds-table--fill {
+    overflow-y: auto;
+}
+.ds-table--fill thead th {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 /* DS table: border-collapse separate keeps row dividers pixel-perfect. */

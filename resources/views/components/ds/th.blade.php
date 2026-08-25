@@ -2,6 +2,7 @@
     'tip'    => null,
     'align'  => 'left',      // left | center | right
     'width'  => null,
+    'pad'    => 'px-3',     // horizontal padding; override to tighten a narrow icon column
 ])
 
 @php
@@ -9,7 +10,7 @@
     $w = $width ? "w-{$width}" : '';
 @endphp
 
-<th class="px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider {{ $align }} {{ $w }}">
+<th class="{{ $pad }} py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider {{ $align }} {{ $w }}">
     @if($tip)
         <div class="tip {{ $align === 'center' ? 'justify-center' : '' }}">
             {{ $slot }}

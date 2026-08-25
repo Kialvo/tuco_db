@@ -1,4 +1,6 @@
-<x-marketplace-layout>
+{{-- fill: this page's card stretches to the bottom of <main> so a tall viewport
+     shows rows instead of empty background. See marketplace-layout's $fill. --}}
+<x-marketplace-layout fill>
     <x-slot name="title">Domains</x-slot>
 
     {{-- ─── LEFT FILTER PANEL ─── --}}
@@ -36,10 +38,10 @@
         $total      = $websites->total();
     @endphp
 
-    <div class="space-y-4" x-data="domainListUI()" @fav-bulk-update.window="favs = new Set($event.detail || [])">
+    <div class="space-y-4 flex flex-col flex-1 min-h-0" x-data="domainListUI()" @fav-bulk-update.window="favs = new Set($event.detail || [])">
 
         {{-- Top row: page-size + search --}}
-        <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center justify-between flex-wrap gap-3 flex-shrink-0">
             <div class="flex items-center gap-2.5 text-sm">
                 <span class="text-gray-500">Show</span>
                 <form method="GET" action="{{ route('websites.index') }}" class="inline-flex">
@@ -79,7 +81,10 @@
 
         {{-- Table --}}
         @if($websites->count() === 0)
+            {{-- flex-1 + centring: without it this branch leaves the same dead
+                 space below the message that the fill layout exists to remove. --}}
             <x-ds.empty-state
+                class="flex-1 flex flex-col justify-center"
                 icon="search"
                 title="No domains match these filters"
                 hint="Try clearing some filters, or widen your price/score ranges.">
@@ -90,16 +95,16 @@
                 </x-slot>
             </x-ds.empty-state>
         @else
-            <x-ds.table-shell>
+            <x-ds.table-shell fill>
                 <x-slot name="head">
-                    <x-ds.th width="10" align="center">
+                    <x-ds.th width="10" align="center" pad="pl-3 pr-1">
                         <button type="button" id="favHeaderToggle"
                                 title="Click to select / unselect all visible domains as favorites"
                                 class="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:bg-gray-100 hover:text-amber-500 transition">
                             <span id="favHeaderStar" class="text-lg leading-none">☆</span>
                         </button>
                     </x-ds.th>
-                    <x-ds.th width="10" align="center" tip="Add to order">+</x-ds.th>
+                    <x-ds.th width="10" align="center" pad="pl-1 pr-3"></x-ds.th>
                     <x-ds.th>{{ __('Domain') }}</x-ds.th>
                     <x-ds.th>Notes</x-ds.th>
                     <x-ds.th>Country</x-ds.th>
@@ -136,7 +141,7 @@
                         $daClass = $w->DA >= 60 ? 'text-green-600' : ($w->DA >= 40 ? 'text-amber-600' : 'text-gray-500');
                     @endphp
                     <tr class="cart-row" data-website-id="{{ $w->id }}">
-                        <td class="px-3 py-3 text-center">
+                        <td class="pl-3 pr-1 py-3 text-center">
                             <button type="button" @click="toggleFav({{ $w->id }})"
                                     class="text-lg leading-none transition-transform hover:scale-110"
                                     title="Favourite">
@@ -144,13 +149,13 @@
                                 <span x-show="!favs.has({{ $w->id }})" {{ $isFav ? 'style=display:none' : '' }}>☆</span>
                             </button>
                         </td>
-                        <td class="px-3 py-3 text-center">
+                        <td class="pl-1 pr-3 py-3 text-center">
                             <button type="button"
                                     class="cart-toggle w-7 h-7 rounded-lg flex items-center justify-center mx-auto transition-all bg-gray-100 hover:bg-green-100 text-gray-500 hover:text-green-700"
                                     data-website-id="{{ $w->id }}"
                                     title="Add to order">
-                                <svg class="w-4 h-4 cart-toggle-plus" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                                <svg class="w-4 h-4 cart-toggle-check hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                <x-icon name="cart" class="cart-toggle-plus" :stroke="2.5" />
+                                <x-icon name="check" class="cart-toggle-check hidden" :stroke="2.5" />
                             </button>
                         </td>
                         <td class="px-3 py-3">
@@ -222,8 +227,11 @@
                 @endforeach
             </x-ds.table-shell>
 
-            {{-- Pagination --}}
-            <x-ds.pagination :paginator="$websites" />
+            {{-- Pagination — wrapped so it keeps its intrinsic height and the
+                 card above absorbs all the free space instead. --}}
+            <div class="flex-shrink-0">
+                <x-ds.pagination :paginator="$websites" />
+            </div>
         @endif
     </div>
 
