@@ -28,3 +28,5 @@ yarn-error.log
 .readability-auth.json
 audit-*-report.json
 audit-readability-screenshots/
+.readability-auth-guest.json
+audit-guest-render/

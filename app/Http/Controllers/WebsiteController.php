@@ -105,9 +105,11 @@ class WebsiteController extends Controller
      */
     private function guestMarketplace(Request $request)
     {
-        $perPage = (int) $request->get('per_page', 10);
+        // Keep in sync with the default in marketplace/partials/domain-filters
+        // (it omits the hidden per_page input when the value equals this one).
+        $perPage = (int) $request->get('per_page', 25);
         if (! in_array($perPage, [10, 25, 50, 100], true)) {
-            $perPage = 10;
+            $perPage = 25;
         }
 
         $allowedSorts = ['domain_name', 'price', 'sensitive_topic_price', 'DA', 'PA', 'ms', 'created_at'];

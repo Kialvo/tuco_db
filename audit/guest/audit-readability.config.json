@@ -1,0 +1,14 @@
+{
+  "baseUrl": "http://localhost:8000",
+  "storageStatePath": "../../.readability-auth-guest.json",
+  "themes": ["light"],
+  "urls": [
+    { "path": "/websites",       "label": "guest-domains" },
+    { "path": "/websites/47",    "label": "guest-domain-detail" },
+    { "path": "/favorites",      "label": "guest-favorites" },
+    { "path": "/orders",         "label": "guest-orders" },
+    { "path": "/orders/3",       "label": "guest-order-detail" },
+    { "path": "/billing/tokens", "label": "guest-token-wallet" },
+    { "path": "/profile",        "label": "guest-profile" }
+  ]
+}

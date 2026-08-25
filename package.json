@@ -5,6 +5,7 @@
         "build": "vite build",
         "dev": "vite",
         "audit:readability": "website-lints audit-readability",
+        "audit:readability:guest": "website-lints audit-readability --dir audit/guest",
         "doctor": "website-lints doctor"
     },
     "devDependencies": {

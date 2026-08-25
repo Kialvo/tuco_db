@@ -46,9 +46,29 @@ Route::get('/', fn () => redirect('/login'));
 /* TEMP DEV-ONLY login shortcut — NOT for commit. 404s outside local. */
 Route::get('/dev-login', function () {
     abort_unless(app()->environment('local'), 404);
-    $user = \App\Models\User::where('role', '!=', 'guest')
+
+    // ?as=guest logs in as a GUEST so the readability audit can reach the
+    // marketplace views (/websites renders marketplace.domains for guests and
+    // the DataTables view for everyone else).
+    //
+    // email_verified_at is NOT optional here. Every authenticated route sits
+    // behind the `verified` middleware, and 668 of 691 guests are unverified —
+    // picking an unverified one redirects each request to /verify-email, which
+    // is guest-allowlisted, renders HTTP 200, and is NOT matched by the audit's
+    // bounce detector. The audit would then grade the verification prompt and
+    // report a clean bill. The password guard is mirrored for the same reason.
+    $asGuest = request('as') === 'guest';
+
+    $user = \App\Models\User::query()
+        ->when(
+            $asGuest,
+            fn ($q) => $q->where('role', 'guest')->whereNotNull('email_verified_at'),
+            fn ($q) => $q->where('role', '!=', 'guest'),
+        )
         ->where(fn ($q) => $q->where('must_change_password', 0)->orWhereNull('must_change_password'))
+        ->orderBy('id')
         ->firstOrFail();
+
     auth()->login($user);
     request()->session()->regenerate();
 

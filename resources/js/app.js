@@ -313,7 +313,10 @@ window.initDtStickyHeader = function (dt) {
  |  Same marginLeft trick as initDtStickyHeader above.
  *────────────────────────────────────────────────────────────*/
 (function initDsTableSticky() {
-    var card  = document.querySelector('.ds-table');
+    /* .ds-table--fill cards are their own scrollport and use native CSS sticky
+       (see app.css), so they must NOT get a clone driven by <main>'s scroll —
+       main never scrolls on those pages, and the bar would never appear. */
+    var card  = document.querySelector('.ds-table:not(.ds-table--fill)');
     if (!card) return;
     var table = card.querySelector('table');
     var thead = table && table.querySelector('thead');

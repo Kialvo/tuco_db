@@ -1,3 +1,8 @@
+{{-- fill: hand the page's own flex column the remaining height of <main> so a
+     table card can stretch into it and pin its pagination to the bottom. Off by
+     default — the other seven consumers keep the natural-height, main-scrolls
+     behaviour they were written against. --}}
+@props(['padding' => 'px-6 pb-6', 'fill' => false])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -32,8 +37,8 @@
 
             {{-- pt-0 on main so sticky thead sticks flush with visible top (no gap).
                  The pt-6 inner wrapper restores normal content spacing. --}}
-            <main class="flex-1 overflow-auto {{ $padding ?? 'px-6 pb-6' }}">
-                <div class="pt-6">
+            <main class="flex-1 {{ $fill ? 'overflow-hidden flex flex-col' : 'overflow-auto' }} {{ $padding }}">
+                <div class="pt-6 {{ $fill ? 'flex-1 min-h-0 flex flex-col' : '' }}">
                     {{ $slot }}
                 </div>
             </main>
