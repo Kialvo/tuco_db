@@ -11,7 +11,7 @@
         <header class="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
             <div>
                 <h2 class="font-bold text-gray-800 text-base">Current Order</h2>
-                <p class="text-xs text-gray-400 mt-1">
+                <p class="text-sm text-gray-600 mt-1">
                     <span x-text="$store.cart.count"></span>
                     <span x-text="$store.cart.count === 1 ? 'site' : 'sites'"></span>
                     selected
@@ -27,8 +27,8 @@
             {{-- Empty state --}}
             <div x-show="$store.cart.count === 0" class="text-center py-14">
                 <x-icon name="cart" size="w-10 h-10" class="text-gray-200 mx-auto mb-3" :stroke="1.5" />
-                <p class="text-gray-400 text-sm">No sites added yet.</p>
-                <p class="text-gray-400 text-xs mt-1">Click <strong>+</strong> on any domain to add it here.</p>
+                <p class="text-gray-600 text-sm">No sites added yet.</p>
+                <p class="text-gray-600 text-sm mt-1">Click <strong>+</strong> on any domain to add it here.</p>
             </div>
 
             {{-- Items --}}
@@ -38,7 +38,7 @@
                         <div class="flex items-start gap-2">
                             <div class="flex-1 min-w-0">
                                 <div class="text-sm font-medium text-gray-800 truncate" x-text="item.domain"></div>
-                                <div class="text-xs text-gray-400 mt-0.5">
+                                <div class="text-xs text-gray-600 mt-0.5">
                                     <span x-text="item.country ?? '—'"></span> ·
                                     DA <span x-text="item.da ?? '—'"></span> ·
                                     MS <span x-text="item.ms ?? '—'"></span> ·
@@ -124,7 +124,7 @@
                         <div class="flex gap-2">
                             <x-icon name="warning" size="sm" class="text-amber-600 mt-0.5" />
                             <div class="min-w-0 flex-1 text-sm leading-relaxed">
-                                <p class="font-semibold text-amber-800">Not enough credits for this order</p>
+                                <p class="font-semibold text-amber-800">Not enough tokens for this order</p>
 
                                 <dl class="mt-2 space-y-1 text-amber-700">
                                     <div class="flex items-center justify-between gap-3">
@@ -150,7 +150,7 @@
                          Submit button, no underline (buttons don't carry one). --}}
                     <a href="{{ route('billing.tokens.index') }}" data-cta="primary"
                        class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700 active:bg-green-800">
-                        Top up your balance <x-icon name="arrow-right" size="sm" />
+                        Buy tokens <x-icon name="arrow-right" size="sm" />
                     </a>
                 </div>
             </div>
@@ -160,7 +160,7 @@
         <div class="px-4 pb-5 pt-3 border-t border-gray-100 flex-shrink-0 space-y-3">
             <div>
                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Order Notes <span class="font-normal text-gray-400 normal-case">(optional)</span>
+                    Order Notes <span class="font-normal text-gray-500 normal-case">(optional)</span>
                 </label>
                 <textarea x-model="$store.cart.notes" rows="2"
                           placeholder="e.g. Article provided by us · Focus on IT and ES markets…"
@@ -181,14 +181,14 @@
             {{-- PLACEHOLDER (case b): shown after clicking Submit with too little credit --}}
             <p x-show="$store.cart.creditError" x-cloak
                class="text-sm text-red-600 text-center leading-relaxed">
-                Not enough credits,
+                Not enough tokens,
                 {{-- Blue, not the sentence's red: inheriting the error colour made the link
                      read as more error text. text-blue-700 is the app's existing blue token. --}}
                 <a href="{{ route('billing.tokens.index') }}"
-                   class="font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-800 transition-colors">top up your balance</a>.
+                   class="font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-800 transition-colors">buy more tokens</a>.
             </p>
 
-            <p class="text-xs text-gray-400 text-center leading-relaxed">
+            <p class="text-sm text-gray-600 text-center leading-relaxed">
                 We'll confirm final prices within 24 hours.<br>
                 Then you decide whether to proceed.
             </p>
@@ -224,7 +224,7 @@
                 View My Orders
             </button>
             <button type="button" @click="$store.cart.confirmShown = false"
-                    class="mt-2 w-full text-sm text-gray-400 hover:text-gray-600 py-1 transition-colors">
+                    class="mt-2 w-full text-sm text-gray-600 hover:text-gray-800 py-1 transition-colors">
                 Continue browsing
             </button>
         </div>
