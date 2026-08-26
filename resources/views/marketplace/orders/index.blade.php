@@ -36,7 +36,10 @@
 
             @foreach($orders as $order)
                 <tr class="hover:bg-gray-50">
-                    <td class="px-3 py-3 font-mono text-xs text-gray-500">{{ $order->reference }}</td>
+                    <td class="px-3 py-3 font-mono text-xs">
+                        <a href="{{ route('orders.show', $order->id) }}"
+                           class="font-semibold text-green-700 underline underline-offset-2 hover:text-green-800 transition-colors">{{ $order->reference }}</a>
+                    </td>
                     <td class="px-3 py-3 text-sm text-gray-700">{{ $order->submitted_at?->format('M j, Y') ?? '—' }}</td>
                     <td class="px-3 py-3 text-sm text-gray-700">{{ $order->items->count() }} {{ Str::plural('site', $order->items->count()) }}</td>
                     <td class="px-3 py-3 text-sm font-semibold text-gray-800">€ {{ number_format($order->total_amount, 0, '.', ',') }}</td>
@@ -48,7 +51,7 @@
                     </td>
                     <td class="px-3 py-3 text-right">
                         <a href="{{ route('orders.show', $order->id) }}"
-                           class="text-sm font-medium text-green-600 hover:text-green-700 inline-flex items-center gap-1">
+                           class="text-sm font-medium text-green-700 hover:text-green-800 inline-flex items-center gap-1">
                             View <x-icon name="arrow-right" size="sm" />
                         </a>
                     </td>
