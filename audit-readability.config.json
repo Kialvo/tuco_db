@@ -7,6 +7,8 @@
     { "path": "/stats/financial", "label": "financial-stats" },
     { "path": "/stats/campaigns", "label": "campaigns-stats" },
     { "path": "/stats/publishers", "label": "publisher-stats" },
+    { "path": "/stats/marketplace/growth", "label": "marketplace-growth-stats" },
+    { "path": "/stats/marketplace/revenue", "label": "marketplace-revenue-stats" },
     { "path": "/dashboard", "label": "dashboard" },
     { "path": "/contacts", "label": "contacts" },
     { "path": "/companies", "label": "companies" },

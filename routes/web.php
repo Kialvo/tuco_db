@@ -15,6 +15,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\CopyController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HistoricalEntryController;
+use App\Http\Controllers\MarketplaceStatsController;
 use App\Http\Controllers\NewEntryController;
 use App\Http\Controllers\NewEntryImportController;
 use App\Http\Controllers\OrderController;
@@ -115,7 +116,6 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     Route::post('/billing/fake-checkout/{session}/pay', [FakeCheckoutController::class, 'pay'])->name('billing.fake-checkout.pay');
     Route::post('/billing/fake-checkout/{session}/fail', [FakeCheckoutController::class, 'fail'])->name('billing.fake-checkout.fail');
     Route::post('/billing/fake-checkout/{session}/refund', [FakeCheckoutController::class, 'refund'])->name('billing.fake-checkout.refund');
-
 
     /*--------------------------------------------------------------
     | Dashboard
@@ -376,6 +376,16 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
 
     Route::get('/stats/financial', [StorageStatsController::class, 'financial'])
         ->name('stats.financial');
+
+    /* ───── MARKETPLACE STATS (guest-buyer side) ─────
+       Same gating as the Link-Building stats routes above: this group already
+       excludes guests via RestrictGuestToDomainsMiddleware, which is what keeps
+       marketplace figures away from the very accounts they measure. */
+    Route::get('/stats/marketplace/growth', [MarketplaceStatsController::class, 'growth'])
+        ->name('stats.marketplace.growth');
+
+    Route::get('/stats/marketplace/revenue', [MarketplaceStatsController::class, 'revenue'])
+        ->name('stats.marketplace.revenue');
 
     Route::get('/storages/domain-preview', [StorageController::class, 'domainPreview'])->name('storages.domain_preview');
 
