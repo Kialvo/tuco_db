@@ -1,18 +1,8 @@
-@php
-    /*
-     |  PLACEHOLDER — per-item fulfilment timeline.
-     |  Static steps + static dates so the UI can be reviewed. The real steps and
-     |  their per-item state come later; nothing here reads the database.
-     */
-    $progressSteps = [
-        ['label' => 'Order Placed',      'at' => '2024-03-20 14:23', 'done' => true],
-        ['label' => 'Order Confirmed',   'at' => '2024-03-20 14:30', 'done' => true],
-        ['label' => 'Content Delivered', 'at' => '2024-03-21 09:45', 'done' => true],
-        ['label' => 'Published',         'at' => '2024-03-22 08:15', 'done' => false],
-        ['label' => 'Live URL Sent',     'at' => 'Pending',          'done' => false],
-    ];
-@endphp
-
+{{--
+    Per-item fulfilment tracker. The steps are the five customer-facing ones
+    approved on Monday; each is derived from the internal status Martina sets,
+    via App\Support\PublicationProgress. Internal statuses never appear here.
+--}}
 <x-marketplace-layout>
     <x-slot name="title">Order {{ $order->reference }}</x-slot>
 
@@ -105,23 +95,38 @@
                         </td>
                     </tr>
 
-                    {{-- Expanded fulfilment timeline (PLACEHOLDER content) --}}
+                    {{-- Expanded fulfilment timeline --}}
                     <tr id="progress-{{ $item->id }}" x-show="open === {{ $item->id }}" x-cloak class="bg-gray-50/70">
                         <td colspan="5" class="px-6 py-5">
                             {{-- The table scrolls horizontally on narrow screens (.ds-table is the
                                  scrollport). Pinning the panel to its start edge keeps the vertical
                                  stepper readable on mobile without sideways scrolling; from md up it
                                  goes back to flowing full-width for the horizontal stepper. --}}
+                            @php($progress = $item->progress($order))
+
                             <div class="sticky start-0 w-fit md:static md:w-auto">
-                            <div class="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                            <div class="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
                                 Order progress
-                                <span class="ms-1 font-normal normal-case tracking-normal text-gray-500">· placeholder</span>
                             </div>
+
+                            {{-- Something went wrong with this placement. Shown
+                                 instead of pretending the tracker is still moving. --}}
+                            @if($progress['exception'])
+                                <div class="mb-4 flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                                    <x-icon name="info" size="sm" class="mt-0.5 flex-shrink-0 text-red-600" />
+                                    <div>
+                                        <p class="text-sm font-semibold text-red-700">{{ $progress['exception'] }}</p>
+                                        <p class="mt-0.5 text-xs leading-relaxed text-red-700">
+                                            We'll be in touch about this site. Any credit for it returns to your balance.
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
 
                             {{-- Vertical rail on mobile, horizontal stepper from md up.
                                  One markup tree, two layouts — no duplicated step list. --}}
                             <ol class="relative flex flex-col md:flex-row md:items-start">
-                                @foreach($progressSteps as $step)
+                                @foreach($progress['steps'] as $step)
                                     <li class="relative flex gap-3 {{ $loop->last ? '' : 'pb-6' }} md:flex-1 md:flex-col md:items-center md:gap-2 md:px-2 md:pb-0 md:text-center">
                                         @unless($loop->last)
                                             {{-- connector: down to the next step on mobile, across to it on desktop --}}
@@ -140,8 +145,8 @@
                                             <div class="text-sm font-semibold {{ $step['done'] ? 'text-gray-800' : 'text-gray-500' }}">
                                                 {{ $step['label'] }}
                                             </div>
-                                            <div class="mt-0.5 text-xs {{ $step['done'] ? 'text-gray-500' : 'text-gray-500' }}">
-                                                {{ $step['at'] }}
+                                            <div class="mt-0.5 text-xs text-gray-500">
+                                                {{ $step['at'] ?? ($step['done'] ? '' : 'Pending') }}
                                             </div>
                                         </div>
                                     </li>
