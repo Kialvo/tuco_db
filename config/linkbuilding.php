@@ -181,6 +181,18 @@ return [
 
     /*
     |----------------------------------------------------------------------
+    | Marketplace order campaigns
+    |----------------------------------------------------------------------
+    | Guest orders open a campaign automatically (service "LIAB Marketplace").
+    | Guests have no company on file, so the campaign is owned by a named
+    | person instead. Email rather than id so it survives any environment.
+    */
+    // ?: not env()'s 2nd argument: a key present but EMPTY in .env yields '',
+    // which would silently leave marketplace campaigns with no owner.
+    'marketplace_campaign_owner_email' => env('MARKETPLACE_CAMPAIGN_OWNER') ?: 'm.napolano@menford.com',
+
+    /*
+    |----------------------------------------------------------------------
     | "Bulk Add to Campaign" (Domains → Publications) — allowlist
     |----------------------------------------------------------------------
     | Emails allowed to use the bulk add-to-campaign action on /websites.

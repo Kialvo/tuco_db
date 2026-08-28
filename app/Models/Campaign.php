@@ -92,6 +92,18 @@ class Campaign extends Model
         return $this->hasMany(CampaignComment::class, 'lb_campaign_id');
     }
 
+    /** Marketplace orders that opened this campaign (one, in practice). */
+    public function marketplaceOrders()
+    {
+        return $this->hasMany(Order::class, 'lb_campaign_id');
+    }
+
+    /** True for campaigns opened automatically by a guest marketplace order. */
+    public function isMarketplace(): bool
+    {
+        return $this->service === \App\Services\MarketplaceOrderFulfilment::SERVICE;
+    }
+
     /**
      * Automatic completion date: for a "Completed*" campaign, the most recent
      * LIVE DATE (storage.publication_date) across its publications; null otherwise.

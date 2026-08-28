@@ -78,6 +78,47 @@ class Storage extends Model
         // NOTE: in the `saved` event getOriginal() still returns pre-save
         // values (syncOriginal runs after), so we can catch re-links too.
         static::saved(function (Storage $s) {
+            // Eloquent only calls syncChanges() on UPDATE, so wasChanged() is
+            // always false for a freshly inserted row — hence the second arm.
+            // Without it a publication's OPENING status is never recorded and
+            // the tracker's first step has no date to show.
+            $statusMoved = filled($s->status)
+                && ($s->wasChanged('status') || $s->wasRecentlyCreated);
+
+            // Record every status change. Only the CURRENT status lives on the
+            // row, so without this history the customer-facing order tracker
+            // has nothing to date its completed steps with. Non-fatal: a
+            // logging failure must never break Martina saving a publication.
+            if ($statusMoved) {
+                try {
+                    // wasRecentlyCreated stays true for the rest of the
+                    // instance's life, so a save that follows a create would
+                    // otherwise re-log the same status. Comparing against the
+                    // newest event keeps the history free of repeats.
+                    $last = PublicationStatusEvent::where('storage_id', $s->id)
+                        ->orderByDesc('id')
+                        ->value('status');
+
+                    if ($last !== (string) $s->status) {
+                        PublicationStatusEvent::create([
+                            'storage_id' => $s->id,
+                            'status' => (string) $s->status,
+                            'changed_by' => auth()->id(),
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning(
+                        '[publication-status] could not record change for storage '.$s->id.': '.$e->getMessage()
+                    );
+                }
+            }
+
+            // A marketplace order completes itself once every site is live, so
+            // nobody has to remember to close it by hand.
+            if ($statusMoved && $s->status === 'article_published') {
+                Order::completeIfFullyPublished($s->id);
+            }
+
             $ids = array_unique(array_filter([
                 $s->lb_campaign_id,
                 $s->getOriginal('lb_campaign_id'),
@@ -124,6 +165,18 @@ class Storage extends Model
     public function site()
     {
         return $this->belongsTo(Website::class, 'website_id');
+    }
+
+    /** Recorded status changes, oldest first — dates the order tracker's steps. */
+    public function statusEvents()
+    {
+        return $this->hasMany(PublicationStatusEvent::class)->orderBy('id');
+    }
+
+    /** The marketplace order item this publication fulfils, if any. */
+    public function orderItem()
+    {
+        return $this->hasOne(OrderItem::class);
     }
 
     /**

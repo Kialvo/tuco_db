@@ -43,7 +43,9 @@ class OrderController extends Controller
             return redirect()->route('websites.index');
         }
 
-        $order->load('items.website.country');
+        // statusEvents dates the tracker's steps; without it the view would
+        // query them once per row.
+        $order->load('items.website.country', 'items.publication.statusEvents');
 
         return view('marketplace.orders.show', compact('order'));
     }
@@ -159,6 +161,13 @@ class OrderController extends Controller
                 'submitted_at' => now(),
             ]);
         });
+
+        // Open the campaign + one publication per site so the order becomes
+        // trackable work for Martina, and the customer's progress view has
+        // something real behind it. Deliberately outside the transaction
+        // above and internally non-fatal: bookkeeping must never cost us a
+        // submitted order.
+        app(\App\Services\MarketplaceOrderFulfilment::class)->fulfil($order);
 
         try {
             Mail::to($order->user->email)->send(new OrderSubmittedCustomerMail($order));

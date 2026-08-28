@@ -44,6 +44,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'lb_campaign_id',
         'status',
         'notes',
         'submitted_at',
@@ -63,6 +64,51 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /** The campaign opened for this marketplace order. */
+    public function campaign(): BelongsTo
+    {
+        return $this->belongsTo(Campaign::class, 'lb_campaign_id')->withTrashed();
+    }
+
+    /**
+     * Mark the order Completed once every one of its sites is published.
+     *
+     * Called when a publication goes live. Only moves an order that is
+     * genuinely in flight — a cancelled order is never resurrected by a late
+     * publication, and an already-completed one is left alone.
+     */
+    public static function completeIfFullyPublished(int $storageId): void
+    {
+        try {
+            $item = OrderItem::where('storage_id', $storageId)->first();
+
+            if (! $item) {
+                return;   // not a marketplace publication
+            }
+
+            $order = static::with('items.publication')->find($item->order_id);
+
+            if (! $order || ! in_array($order->status, [self::STATUS_SUBMITTED, self::STATUS_IN_PROGRESS], true)) {
+                return;
+            }
+
+            foreach ($order->items as $orderItem) {
+                if (optional($orderItem->publication)->status !== 'article_published') {
+                    return;   // something is still outstanding
+                }
+            }
+
+            $order->forceFill([
+                'status' => self::STATUS_COMPLETED,
+                'status_changed_at' => now(),
+            ])->save();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning(
+                '[order-autocomplete] storage '.$storageId.': '.$e->getMessage()
+            );
+        }
     }
 
     public function getTotalAmountAttribute(): float
