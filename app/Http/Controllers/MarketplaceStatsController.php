@@ -201,7 +201,7 @@ class MarketplaceStatsController extends Controller
             'cohortRows' => $cohortRows,
             'cohortRateSeries' => array_column($cohortRows, 'rate'),
             'maturedThroughLabel' => $maturedThrough
-                ? Carbon::createFromFormat('Y-m', $maturedThrough)->format('M Y')
+                ? Carbon::createFromFormat('!Y-m', $maturedThrough)->format('M Y')
                 : null,
 
             // 4 · Orders submitted (+ later-cancelled secondary line)

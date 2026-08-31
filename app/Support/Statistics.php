@@ -74,7 +74,7 @@ class Statistics
         if ($granularity === 'quarterly') {
             $buckets = [];
             foreach ($windowedPoints as $point) {
-                $monthDate = Carbon::createFromFormat('Y-m', $point['month'])->startOfMonth();
+                $monthDate = Carbon::createFromFormat('!Y-m', $point['month'])->startOfMonth();
                 $bucketKey = $monthDate->year.'-Q'.((int) ceil($monthDate->month / 3));
 
                 if (! isset($buckets[$bucketKey])) {

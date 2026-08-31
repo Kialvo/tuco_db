@@ -567,8 +567,8 @@ class StorageStatsController extends Controller
 
         // Continuous month axis (min..max), gaps filled.
         $yms = $rows->pluck('ym')->unique()->sort()->values();
-        $start = Carbon::createFromFormat('Y-m', $yms->first())->startOfMonth();
-        $end = Carbon::createFromFormat('Y-m', $yms->last())->startOfMonth();
+        $start = Carbon::createFromFormat('!Y-m', $yms->first())->startOfMonth();
+        $end = Carbon::createFromFormat('!Y-m', $yms->last())->startOfMonth();
 
         $monthKeys = [];
         $monthLabels = [];
@@ -690,9 +690,9 @@ class StorageStatsController extends Controller
 
         $monthlyMap = $rows->keyBy('month_key');
         $cursor = $startMonth?->copy()
-            ?? Carbon::createFromFormat('Y-m', $rows->first()->month_key)->startOfMonth();
+            ?? Carbon::createFromFormat('!Y-m', $rows->first()->month_key)->startOfMonth();
         $end = $endMonth?->copy()
-            ?? Carbon::createFromFormat('Y-m', $rows->last()->month_key)->startOfMonth();
+            ?? Carbon::createFromFormat('!Y-m', $rows->last()->month_key)->startOfMonth();
 
         if ($cursor->gt($end)) {
             return [];
@@ -739,7 +739,7 @@ class StorageStatsController extends Controller
 
         $buckets = [];
         foreach ($monthlySeries as $point) {
-            $monthDate = Carbon::createFromFormat('Y-m', $point['month'])->startOfMonth();
+            $monthDate = Carbon::createFromFormat('!Y-m', $point['month'])->startOfMonth();
             $year = $monthDate->year;
             $quarter = (int) ceil($monthDate->month / 3);
             $bucketKey = $year.'-Q'.$quarter;

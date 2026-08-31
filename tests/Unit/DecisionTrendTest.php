@@ -129,4 +129,32 @@ class DecisionTrendTest extends TestCase
         $this->assertCount(1, $trend['months']);
         $this->assertSame(['Mar 2026'], $trend['months']);
     }
+
+    /**
+     * Regression: the month axis must not depend on what today's date is.
+     *
+     * Carbon::createFromFormat('Y-m', ...) fills the missing DAY from today, so
+     * on the 31st "2026-04" became May 1st and the axis silently gained a month.
+     * Every 30-day month and February were affected, on the 29th-31st. Freezing
+     * "now" to a 31st keeps this caught on the other 28 days of the month too.
+     */
+    public function test_month_axis_is_unaffected_by_todays_day_of_month(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-31 12:00:00'));
+
+        try {
+            $trend = $this->build(
+                ['Acme' => [
+                    '2026-02' => ['approved' => 1, 'rejected' => 0],
+                    '2026-04' => ['approved' => 2, 'rejected' => 0],
+                ]],
+                [$this->client('Acme')]
+            );
+
+            $this->assertSame(['Feb 2026', 'Mar 2026', 'Apr 2026'], $trend['months']);
+            $this->assertSame([1, 0, 2], $trend['clients'][0]['approved']);
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
 }
