@@ -180,6 +180,25 @@ class Storage extends Model
     }
 
     /**
+     * Is a customer watching this publication's status?
+     *
+     * True only for publications that fulfil a guest order. The overwhelming
+     * majority of rows are ordinary campaign work with nobody outside the
+     * team looking at them — warning on those would train the warning away.
+     *
+     * Reads the loaded relation when there is one so a list of publications
+     * costs a single eager-loaded query rather than one per row.
+     */
+    public function isCustomerFacing(): bool
+    {
+        if ($this->relationLoaded('orderItem')) {
+            return $this->orderItem !== null;
+        }
+
+        return $this->orderItem()->exists();
+    }
+
+    /**
      * Link Building CRM campaign this row is a publication of.
      * Named lbCampaign because `campaign` is already a COLUMN (Target Domain).
      * withTrashed so rows linked to a soft-deleted campaign still display.

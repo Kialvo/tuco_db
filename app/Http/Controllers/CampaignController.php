@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Campaign;
 use App\Models\Company;
+use App\Models\Storage;
 use App\Models\User;
+use App\Support\PublicationProgress;
 use App\Support\PublicationStatus;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -170,10 +172,22 @@ class CampaignController extends Controller
             'responsibleUser',
             // publications = linked storage rows (Phase 3); conversation
             // counts are decorated client-side (conversations/counts)
-            'publications' => fn ($q) => $q->with('site:id,domain_name')->orderBy('id'),
+            // orderItem: marks which publications a guest is watching, so the
+            // UI can warn before a status change reaches them. Eager-loaded to
+            // keep that check off the per-row path.
+            'publications' => fn ($q) => $q->with('site:id,domain_name', 'orderItem:id,storage_id,order_id')->orderBy('id'),
         ]);
 
-        return view('campaigns.show', ['campaign' => $campaign]);
+        // Built here, not in the view: @json() around a closure trips Blade's
+        // bracket matching, and this keeps the template free of query logic.
+        return view('campaigns.show', [
+            'campaign' => $campaign,
+            'customerFacingPubs' => $campaign->publications
+                ->filter(fn (Storage $p) => $p->isCustomerFacing())
+                ->pluck('id')
+                ->values(),
+            'customerImpact' => PublicationProgress::impactMap(),
+        ]);
     }
 
     /*======================================================================

@@ -57,7 +57,7 @@ class OrderItem extends Model
         // automatically — those show step 1 done and the rest pending.
         $submittedAt = ($order ?? $this->order)?->submitted_at;
         if ($submittedAt) {
-            $timestamps['order_submitted'] = $submittedAt->format('M j, Y · H:i');
+            $timestamps['order_submitted'] = \App\Support\DisplayTime::format($submittedAt);
         }
 
         $publication = $this->publication;
@@ -70,7 +70,7 @@ class OrderItem extends Model
         foreach ($publication->statusEvents as $event) {
             $key = \App\Support\PublicationProgress::stepKeyFor($event->status);
             if ($key !== null && ! isset($timestamps[$key])) {
-                $timestamps[$key] = $event->created_at?->format('M j, Y · H:i');
+                $timestamps[$key] = \App\Support\DisplayTime::format($event->created_at);
             }
         }
 

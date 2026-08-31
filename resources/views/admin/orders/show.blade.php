@@ -24,7 +24,7 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-card p-5">
                 <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">Submitted</div>
                 <div class="font-semibold text-gray-800">
-                    {{ $order->submitted_at?->format('M j, Y') ?? '—' }}
+                    {{ \App\Support\DisplayTime::format($order->submitted_at, \App\Support\DisplayTime::DATE_FORMAT) ?? '—' }}
                 </div>
                 <div class="text-sm text-gray-500">
                     {{ $order->submitted_at?->format('H:i') ?? '' }}
@@ -33,7 +33,7 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-card p-5">
                 <div class="text-xs text-gray-400 uppercase tracking-wider mb-2">Last updated</div>
                 <div class="font-semibold text-gray-800">
-                    {{ $order->status_changed_at?->format('M j, Y') ?? '—' }}
+                    {{ \App\Support\DisplayTime::format($order->status_changed_at, \App\Support\DisplayTime::DATE_FORMAT) ?? '—' }}
                 </div>
                 <div class="text-sm text-gray-500">
                     {{ $order->status_changed_at?->format('H:i') ?? '' }}

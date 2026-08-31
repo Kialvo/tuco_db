@@ -28,7 +28,7 @@
                 <div class="text-right">
                     <div class="text-xs text-gray-400 uppercase tracking-wider">Submitted</div>
                     <div class="text-sm font-medium text-gray-800">
-                        {{ $order->submitted_at?->format('M j, Y · H:i') ?? '—' }}
+                        {{ \App\Support\DisplayTime::formatWithZone($order->submitted_at) ?? '—' }}
                     </div>
                 </div>
                 <div class="text-right">
@@ -105,8 +105,17 @@
                             @php($progress = $item->progress($order))
 
                             <div class="sticky start-0 w-fit md:static md:w-auto">
-                            <div class="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                                Order progress
+                            {{-- The zone is stated once here rather than repeated on all
+                                 five steps: times are stored in UTC and rendered in
+                                 Italian time, and a reader checking a step against their
+                                 own clock needs to know which clock they are reading. --}}
+                            <div class="mb-4 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                    Order progress
+                                </span>
+                                <span class="text-xs font-normal normal-case tracking-normal text-gray-400">
+                                    times in Italian time ({{ \App\Support\DisplayTime::abbreviation() }})
+                                </span>
                             </div>
 
                             {{-- Something went wrong with this placement. Shown

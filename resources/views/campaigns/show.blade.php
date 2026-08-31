@@ -406,6 +406,34 @@ $(function () {
     const csrf = $('meta[name="csrf-token"]').attr('content');
     const CAMPAIGN_ID = {{ $campaign->id }};
     const PUB_STATUSES = @json(PublicationStatus::grouped()); {{-- group label => {slug: label} --}}
+    {{-- Statuses a guest can see, and what each one shows them. --}}
+    const CUSTOMER_IMPACT = @json($customerImpact);
+    {{-- Publications a guest is actually watching (marketplace orders only). --}}
+    const CUSTOMER_FACING_PUBS = @json($customerFacingPubs);
+
+    /* Warn before a status change reaches a guest's order page.
+       Resolves true when it is safe to proceed. Publications nobody outside
+       the team is watching — the overwhelming majority — save straight
+       through, so the warning stays meaningful when it does appear. */
+    function confirmCustomerImpact(pubId, slug, currentSlug) {
+        const impact = CUSTOMER_IMPACT[slug];
+        const watched = CUSTOMER_FACING_PUBS.indexOf(Number(pubId)) !== -1;
+
+        if (!watched || !impact || slug === currentSlug) {
+            return Promise.resolve(true);
+        }
+
+        return Swal.fire({
+            icon: 'warning',
+            title: 'This will be shown to the customer',
+            html: 'This publication belongs to a guest order. Saving shows them '
+                + '<b>' + impact + '</b> on their order page.',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, update it',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#16a34a'
+        }).then(function (r) { return r.isConfirmed === true; });
+    }
 
     // Position a fixed dropdown near a trigger, flipping up if it would overflow the viewport bottom.
     function positionMenu($menu, rect) {
@@ -518,7 +546,7 @@ $(function () {
             } else if (d.site) {
                 $('#p_site').append(new Option(d.site, d.site, true, true)).trigger('change');
             }
-            $('#p_status').val(d.status || '');
+            $('#p_status').val(d.status || '').data('orig', d.status || '');
             $('#p_price').val(d.price || '');
             $('#p_article_url').val(d.article_url || '');
             PUB_DATE_FIELDS.forEach(f => setPubDate(f, d[f]));
@@ -573,6 +601,16 @@ $(function () {
         if (id) { url = "{{ url('publications') }}/" + id; payload._method = 'PUT'; }
         else { url = "{{ url('campaigns') }}/" + CAMPAIGN_ID + "/publications"; }
 
+        // Same guard as the inline dropdown — this modal can set status too,
+        // and warning on only one of the two paths would be no guard at all.
+        // A brand-new publication has no id and no customer yet, so it passes.
+        confirmCustomerImpact(id, payload.status, $('#p_status').data('orig')).then(function (ok) {
+            if (!ok) return;
+            savePublication(url, payload);
+        });
+    });
+
+    function savePublication(url, payload) {
         $.ajax({
             url, method: 'POST', data: payload, headers: { 'Accept': 'application/json' },
             success: function () { location.reload(); },
@@ -581,7 +619,7 @@ $(function () {
                 $('#pubErrors').html(Object.values(errs).flat().join('<br>') || 'An error occurred.').removeClass('hidden');
             }
         });
-    });
+    }
 
     /* ── Unlink publication (storage row survives in Storage) ── */
     $(document).on('click', '.js-unlink-pub', function () {
@@ -743,7 +781,13 @@ $(function () {
         positionMenu(menu, r);
     });
     $(document).on('click', '.js-pub-opt', function () {
-        $.ajax({ url: "{{ url('publications') }}/" + pubTargetId + "/status", method: 'PUT', data: { status: $(this).data('status') }, headers: { 'X-CSRF-TOKEN': csrf }, success: () => location.reload() });
+        const slug = $(this).data('status');
+        const id = pubTargetId;
+        const current = $('.js-pub-status[data-id="' + id + '"]').closest('.js-pub-row').data('status');
+        confirmCustomerImpact(id, slug, current).then(function (ok) {
+            if (!ok) return;
+            $.ajax({ url: "{{ url('publications') }}/" + id + "/status", method: 'PUT', data: { status: slug }, headers: { 'X-CSRF-TOKEN': csrf }, success: () => location.reload() });
+        });
     });
     $(document).on('click', () => menu.addClass('hidden'));
 

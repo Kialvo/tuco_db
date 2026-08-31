@@ -130,6 +130,46 @@ class PublicationProgress
         return $reached;
     }
 
+    /**
+     * What a customer would SEE happen if a publication were moved to this
+     * status — or null when the status is invisible to them.
+     *
+     * Used to warn Martina before a change reaches a customer. It names the
+     * consequence rather than warning in the abstract, because the internal
+     * and customer vocabularies are deliberately offset: "Waiting Copywriter"
+     * is what completes "Publisher Confirmation", and a warning that did not
+     * say so would be easy to misread.
+     */
+    public static function customerImpact(?string $status): ?string
+    {
+        if ($exception = self::exception($status)) {
+            return 'a red "'.$exception.'" notice';
+        }
+
+        $key = self::stepKeyFor($status);
+
+        return $key === null ? null : '"'.self::STEPS[$key].'" marked complete';
+    }
+
+    /**
+     * Every customer-visible status => its consequence, for the front-end.
+     *
+     * Built from the same two tables the tracker itself reads, so a status can
+     * never be added to one and forgotten in the other.
+     *
+     * @return array<string, string>
+     */
+    public static function impactMap(): array
+    {
+        $map = [];
+
+        foreach (array_merge(array_keys(self::REACHED), array_keys(self::EXCEPTIONS)) as $slug) {
+            $map[$slug] = self::customerImpact($slug);
+        }
+
+        return $map;
+    }
+
     /** Which customer step a status completes, as a step key (for logging). */
     public static function stepKeyFor(?string $status): ?string
     {
