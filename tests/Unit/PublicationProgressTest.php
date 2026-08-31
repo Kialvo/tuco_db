@@ -199,4 +199,51 @@ class PublicationProgressTest extends TestCase
         $this->assertNull(P::stepKeyFor('accepted'));
         $this->assertNull(P::stepKeyFor(null));
     }
+
+    /**
+     * The warning Martina sees names the CONSEQUENCE, not the status. The two
+     * vocabularies are offset, so "Waiting Copywriter" must announce itself as
+     * completing "Publisher Confirmation".
+     */
+    public function test_customer_impact_names_the_step_the_status_completes(): void
+    {
+        $this->assertSame('"Publisher Confirmation" marked complete', P::customerImpact('waiting_copywriter'));
+        $this->assertSame('"Article Ready" marked complete', P::customerImpact('waiting_client_article_approval'));
+        $this->assertSame('a red "Publisher Disappeared" notice', P::customerImpact('publisher_disappeared'));
+    }
+
+    /** Internal-only statuses have no impact, so they must never raise a warning. */
+    public function test_internal_only_statuses_have_no_customer_impact(): void
+    {
+        foreach (['accepted', 'potential_substitute', 'waiting_client_approval',
+            'requirements_not_met', 'out_of_topic', 'already_used_by_client',
+            'blog_terms', null, 'nonsense'] as $silent) {
+            $this->assertNull(P::customerImpact($silent), $silent.' must not warn');
+        }
+    }
+
+    /**
+     * The map the front-end warns from must cover every visible status and
+     * nothing else — a status added to one table and not the other would
+     * either warn wrongly or slip out to a customer silently.
+     */
+    public function test_impact_map_covers_exactly_the_customer_visible_statuses(): void
+    {
+        $map = P::impactMap();
+
+        $this->assertSame([
+            'waiting_blog_price_confirmation',
+            'waiting_copywriter',
+            'waiting_client_article_approval',
+            'waiting_blog_publication',
+            'article_published',
+            'high_price',
+            'publisher_refused',
+            'publisher_disappeared',
+        ], array_keys($map));
+
+        foreach ($map as $slug => $message) {
+            $this->assertNotEmpty($message, $slug.' needs a message');
+        }
+    }
 }

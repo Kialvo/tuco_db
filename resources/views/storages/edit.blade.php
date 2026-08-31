@@ -491,4 +491,40 @@
             });
         });
     </script>
+
+    {{-- Third of the three places a status can be set (the other two are on the
+         campaign page). Rendered only for publications that fulfil a guest
+         order, so ordinary campaign work is never interrupted. --}}
+    @if($storage->isCustomerFacing())
+        <script>
+            $(document).ready(function () {
+                const CUSTOMER_IMPACT = @json(\App\Support\PublicationProgress::impactMap());
+                const ORIGINAL_STATUS = @json($storage->status);
+
+                $('select[name="status"]').closest('form').on('submit', function (e) {
+                    const slug = $(this).find('select[name="status"]').val();
+                    const impact = CUSTOMER_IMPACT[slug];
+
+                    if (!impact || slug === ORIGINAL_STATUS) return;
+
+                    e.preventDefault();
+                    const form = this;
+
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'This will be shown to the customer',
+                        html: 'This publication belongs to a guest order. Saving shows them '
+                            + '<b>' + impact + '</b> on their order page.',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, save it',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#16a34a'
+                    }).then(function (r) {
+                        // Native submit: it does not re-fire this handler.
+                        if (r.isConfirmed) form.submit();
+                    });
+                });
+            });
+        </script>
+    @endif
 @endpush

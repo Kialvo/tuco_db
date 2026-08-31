@@ -69,6 +69,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Timestamps are STORED in the timezone above (UTC) and are rendered to
+    | people in this one. Kept separate on purpose: changing APP_TIMEZONE would
+    | rewrite the meaning of every future row while leaving existing rows as
+    | they are, and this database is shared with the Menford CRM.
+    |
+    | A zone name, not an offset — it follows Italy's summer/winter switch on
+    | its own (CEST / CET). See App\Support\DisplayTime.
+    |
+    */
+
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE') ?: 'Europe/Rome',
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

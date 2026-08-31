@@ -46,7 +46,7 @@
                         <div class="text-xs text-gray-500">{{ $order->user->email }}</div>
                     </td>
                     <td class="px-3 py-3 text-sm text-gray-700">
-                        {{ $order->submitted_at?->format('M j, Y · H:i') ?? '—' }}
+                        {{ \App\Support\DisplayTime::format($order->submitted_at) ?? '—' }}
                     </td>
                     <td class="px-3 py-3 text-sm text-gray-700">{{ $order->items->count() }}</td>
                     <td class="px-3 py-3 text-sm font-semibold text-gray-800 text-right">
@@ -56,7 +56,7 @@
                         <x-ds.pill :tone="$order->status_tone">{{ $order->status_label }}</x-ds.pill>
                     </td>
                     <td class="px-3 py-3 text-sm text-gray-500">
-                        {{ $order->status_changed_at?->format('M j, Y · H:i') ?? '—' }}
+                        {{ \App\Support\DisplayTime::format($order->status_changed_at) ?? '—' }}
                     </td>
                     <td class="px-3 py-3 text-right">
                         <a href="{{ route('admin.orders.show', $order->id) }}"

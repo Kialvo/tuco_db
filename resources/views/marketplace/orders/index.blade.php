@@ -40,7 +40,7 @@
                         <a href="{{ route('orders.show', $order->id) }}"
                            class="font-semibold text-green-700 underline underline-offset-2 hover:text-green-800 transition-colors">{{ $order->reference }}</a>
                     </td>
-                    <td class="px-3 py-3 text-sm text-gray-700">{{ $order->submitted_at?->format('M j, Y') ?? '—' }}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700">{{ \App\Support\DisplayTime::format($order->submitted_at, \App\Support\DisplayTime::DATE_FORMAT) ?? '—' }}</td>
                     <td class="px-3 py-3 text-sm text-gray-700">{{ $order->items->count() }} {{ Str::plural('site', $order->items->count()) }}</td>
                     <td class="px-3 py-3 text-sm font-semibold text-gray-800">€ {{ number_format($order->total_amount, 0, '.', ',') }}</td>
                     <td class="px-3 py-3">

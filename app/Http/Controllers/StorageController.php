@@ -739,6 +739,7 @@ class StorageController extends Controller
             'copy',
             'categories',
             'contacts',        // pivot contacts
+            'orderItem',       // marks a publication a guest is watching
         ]);
 
         $countries  = Country::all();
