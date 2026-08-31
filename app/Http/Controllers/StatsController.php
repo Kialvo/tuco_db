@@ -166,7 +166,7 @@ class StatsController extends Controller
         if (! $dateFrom) {
             $earliest = $lookup ? min(array_keys($lookup)) : null;
             if ($earliest) {
-                $earliestC = \Carbon\Carbon::createFromFormat('Y-m', $earliest)->startOfMonth();
+                $earliestC = \Carbon\Carbon::createFromFormat('!Y-m', $earliest)->startOfMonth();
                 if ($earliestC->lt($start)) {
                     $start = $earliestC;
                 }
@@ -410,10 +410,10 @@ class StatsController extends Controller
         // its months instead of silently collapsing to whatever data exists.
         $end = $dateTo
             ? $dateTo->copy()->startOfMonth()
-            : ($monthKeys ? Carbon::createFromFormat('Y-m', max($monthKeys))->startOfMonth() : Carbon::now()->startOfMonth());
+            : ($monthKeys ? Carbon::createFromFormat('!Y-m', max($monthKeys))->startOfMonth() : Carbon::now()->startOfMonth());
         $start = $dateFrom
             ? $dateFrom->copy()->startOfMonth()
-            : ($monthKeys ? Carbon::createFromFormat('Y-m', min($monthKeys))->startOfMonth() : $end->copy());
+            : ($monthKeys ? Carbon::createFromFormat('!Y-m', min($monthKeys))->startOfMonth() : $end->copy());
 
         if ($start->gt($end)) {
             $start = $end->copy();
