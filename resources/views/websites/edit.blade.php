@@ -152,6 +152,14 @@
                 @enderror
             </div>
             <div>
+                <label class="block">Link Builder €</label>
+                <input type="number" step="1" min="0" name="link_builder_amount" value="{{ old('link_builder_amount', $website->link_builder_amount) }}" class="w-full border-gray-300 rounded">
+                <p class="text-xs text-gray-500 mt-1">Always in euros, whatever currency the domain is priced in.</p>
+                @error('link_builder_amount')
+                <p class="text-red-500 text-sm">{{ $message }}</p>
+                @enderror
+            </div>
+            <div>
                 <label class="block">Date Publisher Price</label>
                 <input type="text"
                        name="date_publisher_price"

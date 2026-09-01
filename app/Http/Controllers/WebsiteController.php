@@ -43,7 +43,7 @@ class WebsiteController extends Controller
     /*  NEW: columns that drive the auto-recalculation                    */
     /* ------------------------------------------------------------------ */
     private const DRIVER_COLS = [
-        'publisher_price','banner_price','sitewide_link_price',
+        'publisher_price','link_builder_amount','banner_price','sitewide_link_price',
         'kialvo_evaluation','ahrefs_keyword','ahrefs_traffic','language_id',
     ];
 
@@ -272,6 +272,7 @@ class WebsiteController extends Controller
                 ->editColumn('status', fn() => null)
                 ->editColumn('currency_code', fn() => null)
                 ->editColumn('publisher_price', fn() => null)
+                ->editColumn('link_builder_amount', fn() => null)
                 ->editColumn('no_follow_price', fn() => null)
                 ->editColumn('special_topic_price', fn() => null)
                 ->editColumn('link_insertion_price', fn() => null)
@@ -505,6 +506,7 @@ class WebsiteController extends Controller
             'contact_name' => 'Publisher',
             'currency_code' => 'Currency',
             'publisher_price' => 'Publisher Price',
+            'link_builder_amount' => 'Link Builder €',
             'no_follow_price' => 'No Follow Price',
             'special_topic_price' => 'Special Topic Price',
             'price' => 'Price',
@@ -565,6 +567,7 @@ class WebsiteController extends Controller
             'contact_name' => $web->contact_id ? optional($web->contact)->name : 'No Publisher',
             'currency_code' => $web->currency_code,
             'publisher_price' => $web->publisher_price,
+            'link_builder_amount' => $web->link_builder_amount,
             'no_follow_price' => $web->no_follow_price,
             'special_topic_price' => $web->special_topic_price,
             'price' => $web->price,
@@ -689,6 +692,7 @@ class WebsiteController extends Controller
 
         if (! $isGuestUser) {
             $rng($request->publisher_price_min,    $request->publisher_price_max,    'publisher_price');
+            $rng($request->link_builder_amount_min, $request->link_builder_amount_max, 'link_builder_amount');
             $rng($request->profit_min,             $request->profit_max,             'profit');
             $rng($request->banner_price_min,       $request->banner_price_max,       'banner_price');
             $rng($request->sitewide_price_min,     $request->sitewide_price_max,     'sitewide_link_price');
@@ -1241,7 +1245,7 @@ class WebsiteController extends Controller
                     $payload = $w->getAttributes();
                     $this->applyAutoCalculations($payload);
 
-                    $w->fill([
+                    $recalculated = [
                         'price'                 => $payload['price'],
                         'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'                => $payload['profit'],
@@ -1249,7 +1253,26 @@ class WebsiteController extends Controller
                         'total_revenues'        => $payload['total_revenues'],
                         'keyword_vs_traffic'    => $payload['keyword_vs_traffic'],
                         'TF_vs_CF'              => $payload['TF_vs_CF'],
-                    ]);
+                    ];
+
+                    /*
+                     * Bulk-filling Link Builder € recomputes the two prices but
+                     * deliberately leaves Profit alone.
+                     *
+                     * applyAutoCalculations() counts banner + sitewide as
+                     * revenue, which no other save path does. Writing profit
+                     * here would move it on the 181 domains carrying those
+                     * prices, for reasons unrelated to link building. The
+                     * subtraction lands when the profit formulas are unified.
+                     */
+                    if ($field === 'link_builder_amount') {
+                        $recalculated = array_intersect_key(
+                            $recalculated,
+                            array_flip(['price', 'sensitive_topic_price'])
+                        );
+                    }
+
+                    $w->fill($recalculated);
                 }
 
                 $w->save();
@@ -1354,18 +1377,40 @@ class WebsiteController extends Controller
     }
 
     /**
+     * What we pay an external link builder, always in EUR.
+     *
+     * Added to the cost base AFTER any USD->EUR conversion — Martina enters it
+     * in euros whatever the domain's currency, so running it through the rate
+     * would shrink it (100 EUR silently becoming ~86).
+     */
+    private function linkBuilderAmountForFormula(array $data): float
+    {
+        $amount = $data['link_builder_amount'] ?? null;
+
+        return ($amount === null || $amount === '') ? 0.0 : (float) $amount;
+    }
+
+    /**
      * Price formula must use the final EUR publisher_price value.
      * For USD rows, triggers derive publisher_price from original_publisher_price * rate.
+     *
+     * The link builder amount joins the base before the tier margin is applied,
+     * so the margin is always calculated on the full cost. Empty or 0 leaves
+     * the result identical to before this field existed.
      */
     private function publisherPriceForPriceFormula(array $data): ?float
     {
+        // No publisher price means no price at all, exactly as before — a link
+        // builder amount on its own never invents one.
         if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
             return null;
         }
 
+        $linkBuilder = $this->linkBuilderAmountForFormula($data);
+
         $publisher = (float) $data['publisher_price'];
         if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return $publisher;
+            return $publisher + $linkBuilder;
         }
 
         $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
@@ -1373,7 +1418,7 @@ class WebsiteController extends Controller
             return null;
         }
 
-        return (float) $baseUsd * $this->usdEurRate();
+        return ((float) $baseUsd * $this->usdEurRate()) + $linkBuilder;
     }
 
     /**
@@ -1400,6 +1445,9 @@ class WebsiteController extends Controller
         } else {
             $eurValue = (float) $raw;
         }
+
+        // Same rule as the Price formula: EUR amount, added after conversion.
+        $eurValue += $this->linkBuilderAmountForFormula($data);
 
         return MenfordPriceCalculator::calculate($eurValue, $langId);
     }
@@ -1524,6 +1572,8 @@ class WebsiteController extends Controller
             'original_sitewide_link_price' => 'nullable|numeric',
             'banner_price'                 => 'nullable|numeric',
             'sitewide_link_price'          => 'nullable|numeric',
+            // Always EUR, whole euros — no `original_` twin, never FX-converted.
+            'link_builder_amount'          => 'nullable|numeric|min:0',
         ]);
     }
 

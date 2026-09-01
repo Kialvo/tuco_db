@@ -222,6 +222,21 @@
                         @enderror
                     </div>
                     <div>
+                        <label class="block text-gray-700 font-medium mb-1">Link Builder €</label>
+                        <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            name="link_builder_amount"
+                            value="{{ old('link_builder_amount') }}"
+                            class="w-full border border-gray-300 rounded px-2 py-1 focus:ring-green-500 focus:border-green-500"
+                        >
+                        <p class="text-xs text-gray-500 mt-1">Always in euros, whatever currency the entry is priced in.</p>
+                        @error('link_builder_amount')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
                         <label class="block text-gray-700 font-medium mb-1">Date Publisher Price</label>
                         <input
                             type="text"

@@ -22,6 +22,7 @@
         // PUBLISHER
         'publisher_currency'        => 'Publisher Currency',
         'publisher_amount'          => 'Publisher Amount',
+        'link_builder_amount'       => 'Link Builder €',
 
         // PRICES & COSTS
         'publisher'                 => 'Publisher Agreed €',

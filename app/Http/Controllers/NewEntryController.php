@@ -25,7 +25,7 @@ class NewEntryController extends Controller
         // SEO METRICS
         'DR','UR','DA','PA','TF','CF','ZA','as_metric',
         'seozoom','semrush_traffic','ahrefs_keyword','ahrefs_traffic','keyword_vs_traffic',
-        'publisher_price','no_follow_price','special_topic_price',
+        'publisher_price','link_builder_amount','no_follow_price','special_topic_price',
         'link_insertion_price','banner_price','sitewide_link_price','mention_price',
         'kialvo_evaluation','profit',
         'date_publisher_price',
@@ -43,7 +43,7 @@ class NewEntryController extends Controller
 
     /** Recalc drivers */
     private const DRIVER_COLS = [
-        'publisher_price','banner_price','sitewide_link_price',
+        'publisher_price','link_builder_amount','banner_price','sitewide_link_price',
         'kialvo_evaluation','ahrefs_keyword','ahrefs_traffic','language_id',
     ];
 
@@ -84,7 +84,7 @@ class NewEntryController extends Controller
 
         $headers = [
             'ID', 'Domain', 'Extra Notes', 'Status', 'Country', 'Language', 'Publisher', 'Currency',
-            'Publisher Price', 'No Follow Price', 'Special Topic Price', 'Price',
+            'Publisher Price', 'Link Builder EUR', 'No Follow Price', 'Special Topic Price', 'Price',
             'Sensitive Topic Price', 'Link Insertion Price', 'Banner €', 'Site-wide €',
             'Kialvo Evaluation', 'Profit', 'Date Publisher Price',
             'Linkbuilder', 'Type of Website', 'Categories',
@@ -111,6 +111,7 @@ class NewEntryController extends Controller
                 $e->contact_id ? optional($e->contact)->name : 'No Publisher',
                 $e->currency_code,
                 $e->publisher_price,
+                $e->link_builder_amount,
                 $e->no_follow_price,
                 $e->special_topic_price,
                 $e->price,
@@ -285,8 +286,10 @@ class NewEntryController extends Controller
 
         $this->recalcArray($data);
         $spTopic = $data['special_topic_price'] ?? null;
+        // Fallback to Price is unchanged, and Price already carries the link
+        // builder amount, so both branches stay consistent.
         $data['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
-            ? MenfordPriceCalculator::calculate((float) $spTopic,
+            ? MenfordPriceCalculator::calculate((float) $spTopic + $this->linkBuilderAmountForFormula($data),
                   isset($data['language_id']) ? (int) $data['language_id'] : null)
             : ($data['price'] ?? null);
 
@@ -343,8 +346,10 @@ class NewEntryController extends Controller
 
         $this->recalcArray($data);
         $spTopic = $data['special_topic_price'] ?? null;
+        // Fallback to Price is unchanged, and Price already carries the link
+        // builder amount, so both branches stay consistent.
         $data['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
-            ? MenfordPriceCalculator::calculate((float) $spTopic,
+            ? MenfordPriceCalculator::calculate((float) $spTopic + $this->linkBuilderAmountForFormula($data),
                   isset($data['language_id']) ? (int) $data['language_id'] : null)
             : ($data['price'] ?? null);
 
@@ -585,7 +590,8 @@ class NewEntryController extends Controller
                 if (in_array($field, self::DRIVER_COLS, true)) {
                     $payload = $w->getAttributes();
                     $this->applyAutoCalculations($payload);
-                    $w->fill([
+
+                    $recalculated = [
                         'price'                 => $payload['price'],
                         'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'                => $payload['profit'],
@@ -593,7 +599,23 @@ class NewEntryController extends Controller
                         'total_revenues'        => $payload['total_revenues'],
                         'keyword_vs_traffic'    => $payload['keyword_vs_traffic'],
                         'TF_vs_CF'              => $payload['TF_vs_CF'],
-                    ]);
+                    ];
+
+                    /*
+                     * Bulk-filling Link Builder € recomputes the two prices but
+                     * deliberately leaves Profit alone — same reasoning as in
+                     * WebsiteController: applyAutoCalculations() counts banner +
+                     * sitewide as revenue, which no other save path does. The
+                     * subtraction lands when the profit formulas are unified.
+                     */
+                    if ($field === 'link_builder_amount') {
+                        $recalculated = array_intersect_key(
+                            $recalculated,
+                            array_flip(['price', 'sensitive_topic_price'])
+                        );
+                    }
+
+                    $w->fill($recalculated);
                 }
 
                 $w->save();
@@ -770,8 +792,10 @@ class NewEntryController extends Controller
         );
 
         $spTopic = $d['special_topic_price'] ?? null;
+        // Fallback to Price is unchanged, and Price already carries the link
+        // builder amount, so both branches stay consistent.
         $d['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
-            ? MenfordPriceCalculator::calculate((float) $spTopic,
+            ? MenfordPriceCalculator::calculate((float) $spTopic + $this->linkBuilderAmountForFormula($d),
                   isset($d['language_id']) ? (int) $d['language_id'] : null)
             : ($d['price'] ?? null);
 
@@ -815,6 +839,8 @@ class NewEntryController extends Controller
             'type_of_website' => 'nullable|string|max:255',
 
             'publisher_price'=>'nullable|numeric','link_insertion_price'=>'nullable|numeric',
+            // Always EUR, whole euros — no `original_` twin, never FX-converted.
+            'link_builder_amount'=>'nullable|numeric|min:0',
             'no_follow_price'=>'nullable|numeric','special_topic_price'=>'nullable|numeric',
             'sensitive_topic_price'=>'nullable|numeric',
             'banner_price'=>'nullable|numeric','sitewide_link_price'=>'nullable|numeric',
@@ -893,8 +919,10 @@ class NewEntryController extends Controller
         );
 
         $spTopic = $d['special_topic_price'] ?? null;
+        // Fallback to Price is unchanged, and Price already carries the link
+        // builder amount, so both branches stay consistent.
         $d['sensitive_topic_price'] = ($spTopic !== null && $spTopic !== '')
-            ? MenfordPriceCalculator::calculate((float) $spTopic,
+            ? MenfordPriceCalculator::calculate((float) $spTopic + $this->linkBuilderAmountForFormula($d),
                   isset($d['language_id']) ? (int) $d['language_id'] : null)
             : ($d['price'] ?? null);
 
@@ -922,18 +950,36 @@ class NewEntryController extends Controller
     }
 
     /**
+     * What we pay an external link builder, always in EUR — added to the cost
+     * base AFTER any USD->EUR conversion. See WebsiteController for the why.
+     */
+    private function linkBuilderAmountForFormula(array $data): float
+    {
+        $amount = $data['link_builder_amount'] ?? null;
+
+        return ($amount === null || $amount === '') ? 0.0 : (float) $amount;
+    }
+
+    /**
      * Price formula must use the final EUR publisher_price value.
      * For USD rows, triggers derive publisher_price from original_publisher_price * rate.
+     *
+     * The link builder amount joins the base before the tier margin is applied.
+     * Empty or 0 leaves the result identical to before this field existed.
      */
     private function publisherPriceForPriceFormula(array $data): ?float
     {
+        // No publisher price means no price at all, exactly as before — a link
+        // builder amount on its own never invents one.
         if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
             return null;
         }
 
+        $linkBuilder = $this->linkBuilderAmountForFormula($data);
+
         $publisher = (float) $data['publisher_price'];
         if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return $publisher;
+            return $publisher + $linkBuilder;
         }
 
         $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
@@ -941,7 +987,7 @@ class NewEntryController extends Controller
             return null;
         }
 
-        return (float) $baseUsd * $this->usdEurRate();
+        return ((float) $baseUsd * $this->usdEurRate()) + $linkBuilder;
     }
 
     private function usdEurRate(): float

@@ -8,7 +8,7 @@ use Illuminate\Support\Carbon;
  * Derived-field rules for `storage` rows, extracted from StorageController so
  * the Campaigns module applies the exact same math when it writes publications.
  *
- * total_cost     = publisher_amount (or publisher) + copy_nr
+ * total_cost     = publisher_amount (or publisher) + copy_nr + link_builder_amount
  * total_revenues = menford + client_copy          ← ALWAYS derived; never write it directly
  * profit         = total_revenues − total_cost
  */
@@ -19,7 +19,11 @@ class StorageCalculator
         /* ---------------- prices / profit -------------------------------- */
         $publisher        = (float) ($data['publisher_amount'] ?? $data['publisher'] ?? 0);
         $copywriterAmount = (float) ($data['copy_nr'] ?? 0);
-        $data['total_cost'] = $publisher + $copywriterAmount;
+        // Filled in by hand per publication, like publisher_amount. Blank or 0
+        // leaves total_cost exactly as it was before this field existed, which
+        // is why nothing had to be backfilled.
+        $linkBuilder      = (float) ($data['link_builder_amount'] ?? 0);
+        $data['total_cost'] = $publisher + $copywriterAmount + $linkBuilder;
 
         $menford    = (float) ($data['menford'] ?? 0);
         $clientCopy = (float) ($data['client_copy'] ?? 0);

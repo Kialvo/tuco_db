@@ -5,7 +5,7 @@
     $bulkEditable = [
         // id is NOT editable, everything else is:
         'status','country_id','language_id','linkbuilder','type_of_website',
-        'contact_id','currency_code','publisher_price','no_follow_price',
+        'contact_id','currency_code','publisher_price','link_builder_amount','no_follow_price',
         'special_topic_price','link_insertion_price','banner_price','sitewide_link_price','mention_price',
         'kialvo_evaluation','profit','date_publisher_price',
         'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
@@ -28,6 +28,7 @@
         'contact_name' => 'Publisher',
         'currency_code' => 'Currency',
         'publisher_price' => 'Publisher Price',
+        'link_builder_amount' => 'Link Builder EUR',
         'no_follow_price' => 'No Follow Price',
         'special_topic_price' => 'Special Topic Price',
         'price' => 'Price',
@@ -263,6 +264,7 @@
                     <th class="whitespace-nowrap px-4 py-2">Publisher</th>
                     <th class="whitespace-nowrap px-4 py-2">Currency</th>
                     <th class="whitespace-nowrap px-4 py-2">Publisher Price</th>
+                    <th class="whitespace-nowrap px-4 py-2">Link Builder €</th>
                     <th class="whitespace-nowrap px-4 py-2">No Follow Price</th>
                     <th class="whitespace-nowrap px-4 py-2">Special Topic Price</th>
                     <th class="whitespace-nowrap px-4 py-2">
@@ -730,6 +732,7 @@
 
             /* ========= NUMBERS / TEXT ========= */
             publisher_price      : {type:'number'},
+            link_builder_amount  : {type:'number'},
             no_follow_price      : {type:'number'},
             special_topic_price  : {type:'number'},
             link_insertion_price : {type:'number'},
@@ -986,6 +989,8 @@
 
                         d.publisher_price_min = isGuestUser ? null : $('#filterPublisher_priceMin').val();
                         d.publisher_price_max = isGuestUser ? null : $('#filterPublisher_priceMax').val();
+                        d.link_builder_amount_min = isGuestUser ? null : $('#filterLinkBuilderAmountMin').val();
+                        d.link_builder_amount_max = isGuestUser ? null : $('#filterLinkBuilderAmountMax').val();
                         d.price_min = $('#filterPriceMin').val();
                         d.price_max = $('#filterPriceMax').val();
                         d.sensitive_topic_price_min = $('#filterSensitiveTopicPriceMin').val();
@@ -1150,6 +1155,7 @@
                     },
                     { data: 'currency_code', name: 'currency_code', className: 'text-center', visible: !isGuestUser, render: renderCurrencyPill },
                     { data: 'publisher_price',     name: 'publisher_price',     className: 'text-right', visible: !isGuestUser, render: renderPrice },
+                    { data: 'link_builder_amount', name: 'link_builder_amount', className: 'text-right', visible: !isGuestUser, render: renderPrice },
                     { data: 'no_follow_price',     name: 'no_follow_price',     className: 'text-right', visible: !isGuestUser, render: renderPrice },
                     { data: 'special_topic_price', name: 'special_topic_price', className: 'text-right', visible: !isGuestUser, render: renderPrice },
                     { data: 'price',               name: 'price',               className: 'text-right', render: renderPrice },
@@ -1660,6 +1666,8 @@
                     country_id: $('#filterCountry').val(),
                     publisher_price_min: $('#filterPublisher_priceMin').val(),
                     publisher_price_max: $('#filterPublisher_priceMax').val(),
+                    link_builder_amount_min: $('#filterLinkBuilderAmountMin').val(),
+                    link_builder_amount_max: $('#filterLinkBuilderAmountMax').val(),
                     price_min: $('#filterPriceMin').val(),
                     price_max: $('#filterPriceMax').val(),
                     sensitive_topic_price_min: $('#filterSensitiveTopicPriceMin').val(),

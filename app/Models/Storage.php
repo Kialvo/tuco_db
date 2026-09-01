@@ -38,6 +38,7 @@ class Storage extends Model
         'language_id',
         'country_id',
         'publisher_amount',
+        'link_builder_amount',
         'publisher_currency',
         'publisher',
         'total_cost',

@@ -27,6 +27,7 @@
                     'country_name'             => 'Country',
                     'publisher_currency'       => 'Publisher Curr.',
                     'publisher_amount'         => 'Publisher Amount €',
+                    'link_builder_amount'      => 'Link Builder €',
                     'publisher'                => 'Publisher Agreed €',
                     'total_cost'               => 'Total Cost €',
                     'menford'                  => 'Menford €',

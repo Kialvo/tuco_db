@@ -128,6 +128,14 @@
         </div>
 
         <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Link Builder (€)</label>
+            <div class="mpair">
+                <input type="number" id="filterLinkBuilderAmountMin" placeholder="Min" class="fi">
+                <input type="number" id="filterLinkBuilderAmountMax" placeholder="Max" class="fi">
+            </div>
+        </div>
+
+        <div>
             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Kialvo Evaluation</label>
             <div class="mpair">
                 <input type="number" id="filterKialvo_evaluationMin" placeholder="Min" class="fi">

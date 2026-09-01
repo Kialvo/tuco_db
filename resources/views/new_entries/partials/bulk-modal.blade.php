@@ -19,7 +19,8 @@
         'ahrefs_keyword'=>'Ahrefs Keyword','ahrefs_traffic'=>'Ahrefs Traffic',
         'keyword_vs_traffic'=>'KW / Traffic','TF_vs_CF'=>'TF vs CF',
 
-        'publisher_price'=>'Publisher €','link_insertion_price'=>'Link Insertion €',
+        'publisher_price'=>'Publisher €','link_builder_amount'=>'Link Builder €',
+        'link_insertion_price'=>'Link Insertion €',
         'no_follow_price'=>'No-follow €','special_topic_price'=>'Special-topic €',
         'banner_price'=>'Banner €','sitewide_link_price'=>'Site-wide €',
 

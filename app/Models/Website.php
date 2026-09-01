@@ -16,7 +16,7 @@ class Website extends Model
         'currency_code','type_of_website','linkbuilder',
 
         // price columns *****  ← the ones now missing
-        'publisher_price','link_insertion_price','no_follow_price','special_topic_price',
+        'publisher_price','link_builder_amount','link_insertion_price','no_follow_price','special_topic_price',
         'original_publisher_price','original_link_insertion_price',
         'original_no_follow_price','original_special_topic_price',
 

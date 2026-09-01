@@ -243,18 +243,37 @@ class NewEntryImportController extends Controller
     }
 
     /**
+     * What we pay an external link builder, always in EUR — added to the cost
+     * base AFTER any USD->EUR conversion. See WebsiteController for the why.
+     *
+     * The CSV template has no Link Builder column yet (that import change is a
+     * separate task), so on import this is normally 0 and the price formula
+     * behaves exactly as it did before.
+     */
+    private function linkBuilderAmountForFormula(array $data): float
+    {
+        $amount = $data['link_builder_amount'] ?? null;
+
+        return ($amount === null || $amount === '') ? 0.0 : (float) $amount;
+    }
+
+    /**
      * Price formula must use the final EUR publisher_price value.
      * For USD rows, triggers derive publisher_price from original_publisher_price * rate.
      */
     private function publisherPriceForPriceFormula(array $data): ?float
     {
+        // No publisher price means no price at all, exactly as before — a link
+        // builder amount on its own never invents one.
         if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
             return null;
         }
 
+        $linkBuilder = $this->linkBuilderAmountForFormula($data);
+
         $publisher = (float) $data['publisher_price'];
         if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return $publisher;
+            return $publisher + $linkBuilder;
         }
 
         $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
@@ -262,7 +281,7 @@ class NewEntryImportController extends Controller
             return null;
         }
 
-        return (float) $baseUsd * $this->usdEurRate();
+        return ((float) $baseUsd * $this->usdEurRate()) + $linkBuilder;
     }
 
     private function usdEurRate(): float
