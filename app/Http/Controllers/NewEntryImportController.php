@@ -10,6 +10,7 @@ use App\Models\Country;
 use App\Models\Language;
 use App\Models\NewEntry;
 use App\Models\NewEntry1;
+use App\Services\DomainProfitCalculator;
 use App\Support\MenfordPriceCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -219,8 +220,12 @@ class NewEntryImportController extends Controller
             isset($d['language_id']) ? (int) $d['language_id'] : null
         );
 
-        // profit
-        $d['profit'] = ($d['kialvo_evaluation'] ?? 0) - ($d['publisher_price'] ?? 0);
+        // Profit — one formula everywhere, see DomainProfitCalculator.
+        $d['profit'] = DomainProfitCalculator::calculate(
+            $d['kialvo_evaluation'] ?? null,
+            $this->publisherPriceInEur($d),
+            $d['link_builder_amount'] ?? null
+        );
 
         // TF vs CF
         $cf = $d['CF'] ?? 0;
@@ -263,17 +268,28 @@ class NewEntryImportController extends Controller
      */
     private function publisherPriceForPriceFormula(array $data): ?float
     {
+        $publisherEur = $this->publisherPriceInEur($data);
+
         // No publisher price means no price at all, exactly as before — a link
         // builder amount on its own never invents one.
+        return $publisherEur === null
+            ? null
+            : $publisherEur + $this->linkBuilderAmountForFormula($data);
+    }
+
+    /**
+     * The publisher price in EUR, WITHOUT the link builder amount — Profit
+     * subtracts the two as distinct terms, so folding them together here
+     * would subtract the link builder cost twice.
+     */
+    private function publisherPriceInEur(array $data): ?float
+    {
         if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
             return null;
         }
 
-        $linkBuilder = $this->linkBuilderAmountForFormula($data);
-
-        $publisher = (float) $data['publisher_price'];
         if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return $publisher + $linkBuilder;
+            return (float) $data['publisher_price'];
         }
 
         $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
@@ -281,7 +297,7 @@ class NewEntryImportController extends Controller
             return null;
         }
 
-        return ((float) $baseUsd * $this->usdEurRate()) + $linkBuilder;
+        return (float) $baseUsd * $this->usdEurRate();
     }
 
     private function usdEurRate(): float

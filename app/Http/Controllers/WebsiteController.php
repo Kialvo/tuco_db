@@ -10,6 +10,7 @@ use App\Models\Language;
 use App\Models\Contact;
 use App\Models\Category;
 use App\Services\DataForSeoService;
+use App\Services\DomainProfitCalculator;
 use App\Support\GuestWebsiteExport;
 use App\Support\MenfordPriceCalculator;
 use Carbon\Carbon;
@@ -941,11 +942,15 @@ class WebsiteController extends Controller
         // 3) Override / set 'automatic_evaluation' in the $validated array
         $validated['automatic_evaluation'] = $autoEvaluation;
 
-        // 3) Compute 'profit' => kialvo_evaluation - publisher_price
-        $kialvoVal       = $validated['kialvo_evaluation'] ?? 0;
-        $publisherPrice  = $validated['publisher_price'] ?? 0;
-        $profit          = $kialvoVal - $publisherPrice;
-        $validated['profit'] = $profit;
+        // 3) Profit — one formula everywhere, see DomainProfitCalculator.
+        //    Note the EUR publisher price: this path used to subtract the raw
+        //    dollar figure on a USD row and let the insert trigger rescale the
+        //    result, which is exactly the drift being removed.
+        $validated['profit'] = DomainProfitCalculator::calculate(
+            $validated['kialvo_evaluation'] ?? null,
+            $this->publisherPriceInEur($validated),
+            $validated['link_builder_amount'] ?? null
+        );
         $validated['price'] = MenfordPriceCalculator::calculate(
             $this->publisherPriceForPriceFormula($validated),
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
@@ -1069,11 +1074,15 @@ class WebsiteController extends Controller
 
         $validated['automatic_evaluation'] = $autoEvaluation;
 
-        // 3) Compute 'profit' => kialvo_evaluation - publisher_price
-        $kialvoVal       = $validated['kialvo_evaluation'] ?? 0;
-        $publisherPrice  = $validated['publisher_price'] ?? 0;
-        $profit          = $kialvoVal - $publisherPrice;
-        $validated['profit'] = $profit;
+        // 3) Profit — one formula everywhere, see DomainProfitCalculator.
+        //    Note the EUR publisher price: this path used to subtract the raw
+        //    dollar figure on a USD row and let the insert trigger rescale the
+        //    result, which is exactly the drift being removed.
+        $validated['profit'] = DomainProfitCalculator::calculate(
+            $validated['kialvo_evaluation'] ?? null,
+            $this->publisherPriceInEur($validated),
+            $validated['link_builder_amount'] ?? null
+        );
         $validated['price'] = MenfordPriceCalculator::calculate(
             $this->publisherPriceForPriceFormula($validated),
             isset($validated['language_id']) ? (int) $validated['language_id'] : null
@@ -1245,7 +1254,10 @@ class WebsiteController extends Controller
                     $payload = $w->getAttributes();
                     $this->applyAutoCalculations($payload);
 
-                    $recalculated = [
+                    // The Link Builder € exception that used to live here is
+                    // gone: every path now writes the same profit formula, so
+                    // bulk edit no longer needs to be held back from it.
+                    $w->fill([
                         'price'                 => $payload['price'],
                         'sensitive_topic_price' => $payload['sensitive_topic_price'],
                         'profit'                => $payload['profit'],
@@ -1253,26 +1265,7 @@ class WebsiteController extends Controller
                         'total_revenues'        => $payload['total_revenues'],
                         'keyword_vs_traffic'    => $payload['keyword_vs_traffic'],
                         'TF_vs_CF'              => $payload['TF_vs_CF'],
-                    ];
-
-                    /*
-                     * Bulk-filling Link Builder € recomputes the two prices but
-                     * deliberately leaves Profit alone.
-                     *
-                     * applyAutoCalculations() counts banner + sitewide as
-                     * revenue, which no other save path does. Writing profit
-                     * here would move it on the 181 domains carrying those
-                     * prices, for reasons unrelated to link building. The
-                     * subtraction lands when the profit formulas are unified.
-                     */
-                    if ($field === 'link_builder_amount') {
-                        $recalculated = array_intersect_key(
-                            $recalculated,
-                            array_flip(['price', 'sensitive_topic_price'])
-                        );
-                    }
-
-                    $w->fill($recalculated);
+                    ]);
                 }
 
                 $w->save();
@@ -1303,7 +1296,19 @@ class WebsiteController extends Controller
             + (float) ($d['banner_price'] ?? 0)
             + (float) ($d['sitewide_link_price'] ?? 0);
 
-        $d['profit']         = $rev - $cost;
+        // Profit no longer counts banner + sitewide as revenue — that was this
+        // path's own variant and the reason a bulk edit could move the figure
+        // on the 181 domains carrying those prices. One formula everywhere now.
+        $d['profit']         = DomainProfitCalculator::calculate(
+            $d['kialvo_evaluation'] ?? null,
+            $this->publisherPriceInEur($d),
+            $d['link_builder_amount'] ?? null
+        );
+
+        // total_cost / total_revenues keep their old definition on purpose:
+        // they are written only here and appear in no view, export or column
+        // map, so redefining them would be churn with no visible benefit.
+        // They therefore no longer reconcile with profit.
         $d['total_cost']     = $cost;
         $d['total_revenues'] = $rev;
 
@@ -1400,17 +1405,30 @@ class WebsiteController extends Controller
      */
     private function publisherPriceForPriceFormula(array $data): ?float
     {
+        $publisherEur = $this->publisherPriceInEur($data);
+
         // No publisher price means no price at all, exactly as before — a link
         // builder amount on its own never invents one.
+        return $publisherEur === null
+            ? null
+            : $publisherEur + $this->linkBuilderAmountForFormula($data);
+    }
+
+    /**
+     * The publisher price in EUR, WITHOUT the link builder amount.
+     *
+     * Kept separate because Profit subtracts the publisher price and the link
+     * builder amount as two distinct terms — folding them together here would
+     * subtract the link builder cost twice.
+     */
+    private function publisherPriceInEur(array $data): ?float
+    {
         if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
             return null;
         }
 
-        $linkBuilder = $this->linkBuilderAmountForFormula($data);
-
-        $publisher = (float) $data['publisher_price'];
         if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return $publisher + $linkBuilder;
+            return (float) $data['publisher_price'];
         }
 
         $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
@@ -1418,7 +1436,7 @@ class WebsiteController extends Controller
             return null;
         }
 
-        return ((float) $baseUsd * $this->usdEurRate()) + $linkBuilder;
+        return (float) $baseUsd * $this->usdEurRate();
     }
 
     /**
