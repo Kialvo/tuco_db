@@ -40,6 +40,14 @@ class DailyConversion extends Command
             );
 
         // 5) Re-scale all USD rows
+        //
+        // `profit` is deliberately NOT rescaled here. It used to be, but the
+        // websites_before_update trigger overwrote it in the same statement, so
+        // the line never had any effect. Now that the triggers no longer touch
+        // profit, rescaling it here would drift the figure on every run —
+        // profit is derived from kialvo_evaluation and the publisher price, not
+        // a currency amount to be re-multiplied. PHP owns it (see
+        // DomainProfitCalculator); this command owns the price columns.
         DB::update("
             UPDATE websites w
             JOIN websites_conversion_log c ON w.id = c.website_id
@@ -48,12 +56,10 @@ class DailyConversion extends Command
                 w.link_insertion_price  = w.link_insertion_price  * (? / c.last_used_rate),
                 w.no_follow_price       = w.no_follow_price       * (? / c.last_used_rate),
                 w.special_topic_price   = w.special_topic_price   * (? / c.last_used_rate),
-                w.profit               = w.profit               * (? / c.last_used_rate),
                 w.automatic_evaluation = w.automatic_evaluation * (? / c.last_used_rate),
                 c.last_used_rate       = ?
             WHERE w.currency_code = 'USD'
         ", [
-            $todayRate,
             $todayRate,
             $todayRate,
             $todayRate,
