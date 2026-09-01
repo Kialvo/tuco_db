@@ -2,7 +2,7 @@
     // Fields available for bulk edit (mirrors Websites; keep New-Entry statuses)
     $bulkEditable = [
         'status','country_id','language_id','linkbuilder','type_of_website',
-        'contact_id','currency_code','publisher_price','no_follow_price',
+        'contact_id','currency_code','publisher_price','link_builder_amount','no_follow_price',
         'special_topic_price','link_insertion_price','banner_price','sitewide_link_price','mention_price',
         'kialvo_evaluation','profit','date_publisher_price',
         'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
@@ -107,6 +107,7 @@
                     <th class="px-4 py-2">Currency</th>
 
                     <th class="px-4 py-2">Publisher Price</th>
+                    <th class="px-4 py-2">Link Builder €</th>
                     <th class="px-4 py-2">No Follow Price</th>
                     <th class="px-4 py-2">Special Topic Price</th>
                     <th class="px-4 py-2">Price</th>
@@ -461,6 +462,7 @@
                     { data:'currency_code', render: renderCurrencyPill, className: 'text-center' },
 
                     { data:'publisher_price',      render:money,     className:'text-right' },
+                    { data:'link_builder_amount',  render:money,     className:'text-right' },
                     { data:'no_follow_price',      render:money,     className:'text-right' },
                     { data:'special_topic_price',  render:money,     className:'text-right' },
                     { data:'price',                render:money,     className:'text-right' },

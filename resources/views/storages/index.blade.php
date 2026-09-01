@@ -49,6 +49,7 @@
         'country_name'                   => 'Country',
         'publisher_currency'             => 'Publisher Currency',
         'publisher_amount'               => 'Publisher Amount €',
+        'link_builder_amount'            => 'Link Builder €',
         'publisher'                      => 'Publisher Agreed €',
         'total_cost'                     => 'Total Cost €',
         'menford'                        => 'Menford €',
@@ -83,7 +84,7 @@
         $bulkEditable = [
         'status','LB','client_id','contact_id','copy_id','copy_nr','copywriter_commision_date',
         'copywriter_submission_date','language_id','country_id',
-        'publisher_currency','publisher_amount','publisher','menford','client_copy',
+        'publisher_currency','publisher_amount','link_builder_amount','publisher','menford','client_copy',
         'campaign','anchor_text','target_url','campaign_code','article_sent_to_publisher',
         'publication_date','expiration_date','article_url',
         'method_payment_to_us','invoice_menford','invoice_menford_nr','invoice_company',
@@ -203,6 +204,7 @@
                     <th class="px-4 py-2">Country</th>
                     <th class="px-4 py-2">Publisher Currency</th>
                     <th class="px-4 py-2">Publisher Amount €</th>
+                    <th class="px-4 py-2">Link Builder €</th>
                     <th class="px-4 py-2">Publisher Agreed €</th>
                     <th class="px-4 py-2">Total Cost €</th>
                     <th class="px-4 py-2">Menford €</th>
@@ -256,34 +258,35 @@
                     <td></td>                                            {{-- 15 Country --}}
                     <td></td>                                            {{-- 16 Publisher Currency --}}
                     <td data-col="publisher_amount"   data-index="17"></td> {{-- 17 Publisher Amount € --}}
-                    <td data-col="publisher"          data-index="18"></td> {{-- 18 Publisher Agreed € --}}
-                    <td data-col="total_cost"         data-index="19"></td> {{-- 19 Total Cost € --}}
-                    <td data-col="menford"            data-index="20"></td> {{-- 20 Menford € --}}
-                    <td data-col="client_copy"        data-index="21"></td> {{-- 21 Contact Copy € --}}
-                    <td data-col="total_revenues"     data-index="22"></td> {{-- 22 Total Revenues € --}}
-                    <td data-col="profit"             data-index="23"></td> {{-- 23 Profit € --}}
-                    <td></td>                                            {{-- 24 Target Domain --}}
-                    <td></td>                                            {{-- 25 Anchor Text --}}
-                    <td></td>                                            {{-- 26 Target URL --}}
-                    <td></td>                                            {{-- 27 Sent to Publisher --}}
-                    <td></td>                                            {{-- 28 Publication Date --}}
-                    <td></td>                                            {{-- 29 Expiration Date --}}
-                    <td data-col="publisher_period"   data-index="30"></td> {{-- 30 Publisher Period --}}
-                    <td></td>                                            {{-- 31 Article URL --}}
-                    <td></td>                                            {{-- 32 Pay to Us Method --}}
-                    <td></td>                                            {{-- 33 Invoice Menford Date --}}
-                    <td></td>                                            {{-- 34 Invoice Menford Nr --}}
-                    <td></td>                                            {{-- 35 Invoice Company --}}
-                    <td></td>                                            {{-- 36 Pay to Us Date --}}
-                    <td></td>                                            {{-- 37 Bill Publisher Name --}}
-                    <td></td>                                            {{-- 38 Bill Publisher Nr --}}
-                    <td></td>                                            {{-- 39 Bill Publisher Date --}}
-                    <td></td>                                            {{-- 40 Pay to Publisher Date --}}
-                    <td></td>                                            {{-- 41 Pay to Publisher Method --}}
-                    <td></td>                                            {{-- 42 Categories --}}
-                    <td></td>                                            {{-- 43 Date Added --}}
-                    <td></td>                                            {{-- 44 Files --}}
-                    <td></td>                                            {{-- 45 Action --}}
+                    <td data-col="link_builder_amount" data-index="18"></td> {{-- 18 Link Builder € --}}
+                    <td data-col="publisher"          data-index="19"></td> {{-- 19 Publisher Agreed € --}}
+                    <td data-col="total_cost"         data-index="20"></td> {{-- 20 Total Cost € --}}
+                    <td data-col="menford"            data-index="21"></td> {{-- 21 Menford € --}}
+                    <td data-col="client_copy"        data-index="22"></td> {{-- 22 Contact Copy € --}}
+                    <td data-col="total_revenues"     data-index="23"></td> {{-- 23 Total Revenues € --}}
+                    <td data-col="profit"             data-index="24"></td> {{-- 24 Profit € --}}
+                    <td></td>                                            {{-- 25 Target Domain --}}
+                    <td></td>                                            {{-- 26 Anchor Text --}}
+                    <td></td>                                            {{-- 27 Target URL --}}
+                    <td></td>                                            {{-- 28 Sent to Publisher --}}
+                    <td></td>                                            {{-- 29 Publication Date --}}
+                    <td></td>                                            {{-- 30 Expiration Date --}}
+                    <td data-col="publisher_period"   data-index="31"></td> {{-- 31 Publisher Period --}}
+                    <td></td>                                            {{-- 32 Article URL --}}
+                    <td></td>                                            {{-- 33 Pay to Us Method --}}
+                    <td></td>                                            {{-- 34 Invoice Menford Date --}}
+                    <td></td>                                            {{-- 35 Invoice Menford Nr --}}
+                    <td></td>                                            {{-- 36 Invoice Company --}}
+                    <td></td>                                            {{-- 37 Pay to Us Date --}}
+                    <td></td>                                            {{-- 38 Bill Publisher Name --}}
+                    <td></td>                                            {{-- 39 Bill Publisher Nr --}}
+                    <td></td>                                            {{-- 40 Bill Publisher Date --}}
+                    <td></td>                                            {{-- 41 Pay to Publisher Date --}}
+                    <td></td>                                            {{-- 42 Pay to Publisher Method --}}
+                    <td></td>                                            {{-- 43 Categories --}}
+                    <td></td>                                            {{-- 44 Date Added --}}
+                    <td></td>                                            {{-- 45 Files --}}
+                    <td></td>                                            {{-- 46 Action --}}
                 </tr>
                 </tfoot>
 
@@ -524,6 +527,7 @@
                     },
                     {data:'publisher_currency',name:'publisher_currency', render: renderCurrencyPill, className:'text-center'},
                     {data:'publisher_amount',name:'publisher_amount',render:eu,       className:'text-right'},
+                    {data:'link_builder_amount',name:'link_builder_amount',render:eu, className:'text-right'},
                     {data:'publisher',name:'publisher',render:eu,                     className:'text-right'},
                     {data:'total_cost',name:'total_cost',render:eu,                   className:'text-right'},
                     {data:'menford',name:'menford',render:eu,                         className:'text-right'},
@@ -605,7 +609,7 @@
 
 
             const numericCols = [
-                'copy_nr','copywriter_period','publisher_amount','publisher',
+                'copy_nr','copywriter_period','publisher_amount','link_builder_amount','publisher',
                 'total_cost','menford','client_copy','total_revenues',
                 'profit','publisher_period'
             ];

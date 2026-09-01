@@ -35,7 +35,7 @@ class StorageController extends Controller
         // COPY DETAILS
         'copy_nr','copywriter_commision_date','copywriter_submission_date',
         // PUBLISHER
-        'publisher_currency','publisher_amount',
+        'publisher_currency','publisher_amount','link_builder_amount',
         // PRICES & COSTS
         'publisher','total_cost','menford','client_copy','total_revenues','profit',
         // CAMPAIGN & LINKS  (campaign_code removed: it now mirrors lb_campaign_id
@@ -140,6 +140,7 @@ class StorageController extends Controller
                 // financial
                 'publisher_currency'          => $e->publisher_currency,
                 'publisher_amount'            => $e->publisher_amount,
+                'link_builder_amount'         => $e->link_builder_amount,
                 'publisher'                   => $e->publisher,
                 'total_cost'                  => $e->total_cost,
                 'menford'                     => $e->menford,
@@ -329,6 +330,7 @@ class StorageController extends Controller
             'copy_nr',
             'copywriter_period',
             'publisher_amount',
+            'link_builder_amount',
             'publisher',
             'total_cost',
             'menford',
@@ -496,7 +498,7 @@ class StorageController extends Controller
             // 4) Regular scalar bulk updates
             // -----------------------------------------------------------------
             $drivers = [
-                'copy_nr', 'publisher_amount', 'menford', 'client_copy',
+                'copy_nr', 'publisher_amount', 'link_builder_amount', 'menford', 'client_copy',
                 'copywriter_commision_date', 'copywriter_submission_date',
                 'article_sent_to_publisher', 'publication_date',
             ];
@@ -1208,6 +1210,8 @@ class StorageController extends Controller
             'country_id'                  => 'nullable|integer',
             'publisher_currency'          => 'nullable|string|max:255',
             'publisher_amount'            => 'nullable|numeric',
+            // Filled in per publication, like publisher_amount. Whole euros.
+            'link_builder_amount'         => 'nullable|numeric|min:0',
             'publisher'                   => 'nullable|numeric',
             'total_cost'                  => 'nullable|numeric',
             'menford'                     => 'nullable|numeric',
@@ -1368,6 +1372,7 @@ class StorageController extends Controller
             'country_name'                => optional($s->country)->country_name ?? '',
             'publisher_currency'          => $s->publisher_currency,
             'publisher_amount'            => $s->publisher_amount,
+            'link_builder_amount'         => $s->link_builder_amount,
             'publisher'                   => $s->publisher,
             'total_cost'                  => $s->total_cost,
             'menford'                     => $s->menford,
