@@ -112,7 +112,7 @@
             @unless($isGuestUser)
                 <a href="{{ route('websites.import.index') }}" id="btnImportCsv"
                    class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300">
-                    <x-icon name="upload" size="sm" /> Import CSV
+                    <x-icon name="upload" size="sm" /> Import Domains
                 </a>
                 <a href="{{ route('websites.create') }}"
                    class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 rounded-lg shadow-sm">
