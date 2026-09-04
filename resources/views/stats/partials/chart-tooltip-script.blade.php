@@ -76,7 +76,12 @@
                     ? category
                     : (typeof fallback === 'string' ? fallback : '');
 
-                let html = '<div class="apexcharts-tooltip-title">' + esc(title) + '</div>';
+                const total = rows.reduce(function (sum, row) { return sum + row.value; }, 0);
+
+                let html = '<div class="apexcharts-tooltip-title" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">'
+                    + '<span style="color:#64748b;">' + esc(title) + '</span>'
+                    + '<span style="font-weight:600;color:#0f172a;">Total: ' + esc(fmt(total)) + '</span>'
+                    + '</div>';
 
                 if (! rows.length) {
                     return html + '<div style="padding:4px 10px;color:#64748b;">No data</div>';

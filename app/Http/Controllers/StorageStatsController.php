@@ -16,10 +16,10 @@ class StorageStatsController extends Controller
     private const GRANULARITY_OPTIONS = ['monthly', 'quarterly'];
 
     /** How many individual companies get their own stacked series (rest → "Others"). */
-    private const REVENUE_TOP_COMPANIES = 8;
+    private const REVENUE_TOP_COMPANIES = 15;
 
     /** How many individual websites get their own stacked series (rest → "Others"). */
-    private const PUBLISHER_TOP_SITES = 8;
+    private const PUBLISHER_TOP_SITES = 15;
 
     public function index(Request $request)
     {
