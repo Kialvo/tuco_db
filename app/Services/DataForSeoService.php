@@ -74,8 +74,8 @@ class DataForSeoService
                 if ($languageCode)  $payload['language_code']  = strtolower($languageCode);
 
                 $response = Http::withBasicAuth(
-                    env('DATAFORSEO_LOGIN'),
-                    env('DATAFORSEO_PASSWORD')
+                    config('services.dataforseo.login'),
+                    config('services.dataforseo.password')
                 )->timeout(60)->post(
                     'https://api.dataforseo.com/v3/dataforseo_labs/google/bulk_traffic_estimation/live',
                     [$payload]
