@@ -1,190 +1,143 @@
 <?php
-// app/Http/Controllers/WebsiteImportController.php
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\WebsiteMetricsImportRequest;
-use App\Imports\WebsiteMetricsCsvImporter;
-use App\Models\Website;
+use App\Http\Requests\WebsiteImportRequest;
+use App\Imports\WebsiteCsvImporter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * Bulk-create Domains from a CSV.
+ *
+ * Replaces the metrics-only import that lived at this route until Sep 2026 —
+ * it could refresh DR/TF/CF/Ahrefs on existing domains but never create one.
+ *
+ * Preview first, always: imported domains go live as `active` and are visible
+ * to customers immediately, so nothing is written until the admin has seen the
+ * calculated prices, the rejected rows and the list of domains that already
+ * exist.
+ */
 class WebsiteImportController extends Controller
 {
+    /** How long a previewed file waits for its confirmation. */
+    private const TOKEN_TTL_MINUTES = 60;
+
     public function index()
     {
-        // dedicated page, like New Entries import page
-        return view('websites.import');
+        return view('websites.import', [
+            'templateHeaders' => WebsiteCsvImporter::TEMPLATE_HEADERS,
+            'allowedTypes' => WebsiteCsvImporter::ALLOWED_TYPES,
+            'allowedLinkBuilders' => WebsiteCsvImporter::ALLOWED_LINK_BUILDERS,
+            'previewLimit' => WebsiteCsvImporter::PREVIEW_LIMIT,
+        ]);
     }
 
-    // app/Http/Controllers/WebsiteImportController.php
+    /**
+     * Header-only template.
+     *
+     * Deliberately no example row: imported domains go straight to customers,
+     * and a forgotten "example.com" would be live.
+     */
     public function sample()
     {
-        // Exact headers required (no parentheses, header-only, no data rows)
-        $headers = [
-            'Domain',
-            'DR',
-            'TF',
-            'CF',
-            'Ahrefs Keywords',
-            'Ahrefs Traffic',
-        ];
-
         $fh = fopen('php://temp', 'r+');
 
-        // Optional: add UTF-8 BOM if you open in Excel a lot
-        // fwrite($fh, "\xEF\xBB\xBF");
-
-        fputcsv($fh, $headers);
+        // BOM so Excel opens the euro sign in "Link Builder €" correctly.
+        fwrite($fh, "\xEF\xBB\xBF");
+        fputcsv($fh, WebsiteCsvImporter::TEMPLATE_HEADERS);
         rewind($fh);
         $csv = stream_get_contents($fh);
         fclose($fh);
 
         return response($csv, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="websites-import-sample.csv"',
-            'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="domains-import-template.csv"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
         ]);
     }
 
-
-    public function preview(WebsiteMetricsImportRequest $request)
+    public function preview(WebsiteImportRequest $request)
     {
-        $csv = $this->getCsv($request);
-        if ($csv === null) {
+        $csv = file_get_contents($request->file('file')->getRealPath());
+        if ($csv === false || trim($csv) === '') {
             return response()->json([
                 'ok' => false,
-                'message' => 'Please upload a CSV or provide a Google Sheet URL/ID.',
+                'message' => 'That file appears to be empty.',
             ], 422);
         }
 
-        $importer = new WebsiteMetricsCsvImporter(
-            decimalComma: (bool)$request->boolean('decimal_comma', false)
-        );
-
-        $parsed = $importer->parse(
+        $parsed = (new WebsiteCsvImporter)->parse(
             csv: $csv,
-            hasHeader: (bool)$request->boolean('has_header', true),
-            previewLimit: 1000
+            hasHeader: (bool) $request->boolean('has_header', true)
         );
 
-        // Load current metrics for diff
-        $domains = collect($parsed['rows'])->pluck('norm.domain_name')->filter()->unique()->values()->all();
-
-        $current = Website::query()
-            ->whereIn('domain_name', $domains)
-            ->get(['domain_name','DR','TF','CF','ahrefs_keyword','ahrefs_traffic'])
-            ->keyBy(fn($w) => strtolower($w->domain_name));
-
-        $preview = [];
-        $errorsCount = 0;
-
-        foreach ($parsed['rows'] as $r) {
-            $n   = $r['norm'];
-            $key = strtolower($n['domain_name'] ?? '');
-            $cur = $current->get($key);
-
-            $row = [
-                'line' => $r['line'],
-                'data' => [
-                    'domain_name'    => $n['domain_name'] ?? null,
-
-                    // Current values:
-                    'DR_current'             => $cur->DR ?? null,
-                    'TF_current'             => $cur->TF ?? null,
-                    'CF_current'             => $cur->CF ?? null,
-                    'ahrefs_keyword_current' => $cur->ahrefs_keyword ?? null,
-                    'ahrefs_traffic_current' => $cur->ahrefs_traffic ?? null,
-
-                    // New values (if column present & non-empty):
-                    'DR'             => array_key_exists('DR', $n) ? $n['DR'] : '__UNCHANGED__',
-                    'TF'             => array_key_exists('TF', $n) ? $n['TF'] : '__UNCHANGED__',
-                    'CF'             => array_key_exists('CF', $n) ? $n['CF'] : '__UNCHANGED__',
-                    'ahrefs_keyword' => array_key_exists('ahrefs_keyword', $n) ? $n['ahrefs_keyword'] : '__UNCHANGED__',
-                    'ahrefs_traffic' => array_key_exists('ahrefs_traffic', $n) ? $n['ahrefs_traffic'] : '__UNCHANGED__',
-                ],
-                'errors' => $r['errors'],
-                'valid'  => $r['valid'],
-            ];
-
-            if (!$r['valid'] && !empty($r['errors'])) $errorsCount++;
-
-            $preview[] = $row;
-        }
-
-        $token = 'websites_metrics_import_' . Str::uuid()->toString();
-        Cache::put($token, $parsed['rows'], now()->addHours(2));
+        $token = 'websites_import_'.Str::uuid()->toString();
+        Cache::put($token, $parsed['rows'], now()->addMinutes(self::TOKEN_TTL_MINUTES));
 
         return response()->json([
-            'ok'     => true,
-            'token'  => $token,
-            'limit'  => $parsed['limit'],
-            'stats'  => [
-                'total'      => count($parsed['rows']),
-                'will_update'=> collect($parsed['rows'])->where('valid', true)->count(),
-                'invalid'    => collect($parsed['rows'])->where('valid', false)->count(),
-            ],
-            'errors_count' => $errorsCount,
-            'preview'      => $preview,
+            'ok' => true,
+            'token' => $token,
+            'stats' => $parsed['stats'],
+            'truncated' => $parsed['truncated'],
+            'preview_limit' => WebsiteCsvImporter::PREVIEW_LIMIT,
+            'rows' => array_map($this->presentRow(...), $parsed['rows']),
         ]);
     }
-
-    // app/Http/Controllers/WebsiteImportController.php
 
     public function commit(Request $request)
     {
-        $request->validate(['token' => ['required','string']]);
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'default_existing_action' => ['nullable', 'in:update,skip'],
+            'existing_actions' => ['nullable', 'array'],
+            'existing_actions.*' => ['in:update,skip'],
+        ]);
 
-        // IMPORTANT: coerce to a plain string, don't pass a Stringable to Cache
-        $token = (string) $request->input('token');
-
-        $rows = Cache::pull($token);
-        if (!$rows || !is_array($rows)) {
+        $rows = Cache::pull((string) $validated['token']);
+        if (! $rows || ! is_array($rows)) {
             return response()->json([
-                'ok'      => false,
-                'message' => 'Import session expired. Please run Preview again.',
+                'ok' => false,
+                'message' => 'This import session has expired. Please upload the file and preview it again.',
             ], 410);
         }
 
-        $importer = new \App\Imports\WebsiteMetricsCsvImporter();
-        $result   = $importer->commit($rows, 1000);
+        $result = (new WebsiteCsvImporter)->commit(
+            rows: $rows,
+            existingActions: $validated['existing_actions'] ?? [],
+            defaultExistingAction: $validated['default_existing_action'] ?? 'skip'
+        );
 
-        return response()->json([
-            'ok'      => true,
-            'created' => 0,
-            'updated' => $result['updated'],
-            'failed'  => $result['failed'],
-        ]);
+        return response()->json(['ok' => true] + $result);
     }
 
-
-    /* ---------------- helpers ---------------- */
-
-    private function getCsv(WebsiteMetricsImportRequest $request): ?string
+    /**
+     * Flatten a parsed row into what the preview table shows.
+     *
+     * The calculated Price and Sensitive Topic Price are included on purpose —
+     * seeing them before committing is the whole point of the preview.
+     */
+    private function presentRow(array $row): array
     {
-        if ($request->file('file')) {
-            return file_get_contents($request->file('file')->getRealPath());
-        }
+        $d = $row['data'];
 
-        $sheet = trim((string)$request->input('sheet_url', ''));
-        if ($sheet === '') return null;
-
-        // full Google Sheets URL or raw ID
-        $id = $sheet;
-        if (str_contains($sheet, 'docs.google.com')) {
-            if (preg_match('#/spreadsheets/d/([^/]+)/#', $sheet, $m)) {
-                $id = $m[1];
-            }
-        }
-        $csvUrl = "https://docs.google.com/spreadsheets/d/{$id}/gviz/tq?tqx=out:csv";
-
-        try {
-            return @file_get_contents($csvUrl) ?: null;
-        } catch (\Throwable) {
-            return null;
-        }
+        return [
+            'line' => $row['line'],
+            'domain_name' => $d['domain_name'],
+            'currency_code' => $d['currency_code'] ?? null,
+            'publisher_price' => $d['publisher_price'] ?? null,
+            'special_topic_price' => $d['special_topic_price'] ?? null,
+            'link_builder_amount' => $d['link_builder_amount'] ?? null,
+            'price' => $d['price'] ?? null,
+            'sensitive_topic_price' => $d['sensitive_topic_price'] ?? null,
+            'betting' => $d['betting'] ?? null,
+            'trading' => $d['trading'] ?? null,
+            'categories' => count($row['category_ids'] ?? []),
+            'exists' => (bool) ($row['exists'] ?? false),
+            'existing_trashed' => (bool) ($row['existing_trashed'] ?? false),
+            'valid' => (bool) $row['valid'],
+            'errors' => $row['errors'],
+        ];
     }
 }

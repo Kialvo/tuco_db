@@ -10,6 +10,7 @@ use App\Models\Language;
 use App\Models\Contact;
 use App\Models\Category;
 use App\Services\DataForSeoService;
+use App\Services\DomainPriceCalculator;
 use App\Services\DomainProfitCalculator;
 use App\Support\GuestWebsiteExport;
 use App\Support\MenfordPriceCalculator;
@@ -1381,107 +1382,42 @@ class WebsiteController extends Controller
         }
     }
 
-    /**
-     * What we pay an external link builder, always in EUR.
+    /*
+     * Price helpers.
      *
-     * Added to the cost base AFTER any USD->EUR conversion — Martina enters it
-     * in euros whatever the domain's currency, so running it through the rate
-     * would shrink it (100 EUR silently becoming ~86).
+     * The rules live in App\Services\DomainPriceCalculator so the Domains
+     * form, New Entries and the CSV importer all produce identical numbers.
+     * These stay as thin wrappers because the call sites read better with
+     * $this->publisherPriceForPriceFormula($validated) than the fully
+     * qualified static plus a rate argument.
      */
+
     private function linkBuilderAmountForFormula(array $data): float
     {
-        $amount = $data['link_builder_amount'] ?? null;
-
-        return ($amount === null || $amount === '') ? 0.0 : (float) $amount;
+        return DomainPriceCalculator::linkBuilderAmount($data);
     }
 
-    /**
-     * Price formula must use the final EUR publisher_price value.
-     * For USD rows, triggers derive publisher_price from original_publisher_price * rate.
-     *
-     * The link builder amount joins the base before the tier margin is applied,
-     * so the margin is always calculated on the full cost. Empty or 0 leaves
-     * the result identical to before this field existed.
-     */
-    private function publisherPriceForPriceFormula(array $data): ?float
-    {
-        $publisherEur = $this->publisherPriceInEur($data);
-
-        // No publisher price means no price at all, exactly as before — a link
-        // builder amount on its own never invents one.
-        return $publisherEur === null
-            ? null
-            : $publisherEur + $this->linkBuilderAmountForFormula($data);
-    }
-
-    /**
-     * The publisher price in EUR, WITHOUT the link builder amount.
-     *
-     * Kept separate because Profit subtracts the publisher price and the link
-     * builder amount as two distinct terms — folding them together here would
-     * subtract the link builder cost twice.
-     */
+    /** Publisher price in EUR, WITHOUT the link builder amount (Profit uses this). */
     private function publisherPriceInEur(array $data): ?float
     {
-        if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
-            return null;
-        }
-
-        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return (float) $data['publisher_price'];
-        }
-
-        $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
-        if ($baseUsd === null || $baseUsd === '') {
-            return null;
-        }
-
-        return (float) $baseUsd * $this->usdEurRate();
+        return DomainPriceCalculator::publisherPriceInEur($data, $this->usdEurRate());
     }
 
-    /**
-     * Mirrors publisherPriceForPriceFormula but for special_topic_price.
-     * For USD rows, uses original_special_topic_price × current rate so that
-     * sensitive_topic_price and price are always computed from the same rate,
-     * preventing the 1€ rounding gap caused by stale stored EUR values.
-     */
+    /** The Price formula's cost base: publisher price + link builder, in EUR. */
+    private function publisherPriceForPriceFormula(array $data): ?float
+    {
+        return DomainPriceCalculator::priceBase($data, $this->usdEurRate());
+    }
+
+    /** Sensitive Topic Price; falls back to $data['price'] when no special topic price. */
     private function calcSensitiveTopicPrice(array $data): ?float
     {
-        $langId = isset($data['language_id']) ? (int) $data['language_id'] : null;
-
-        $raw = $data['special_topic_price'] ?? null;
-        if ($raw === null || $raw === '') {
-            return $data['price'] ?? null;
-        }
-
-        if (strtoupper((string) ($data['currency_code'] ?? '')) === 'USD') {
-            $baseUsd = $data['original_special_topic_price'] ?? $raw;
-            if ($baseUsd === null || $baseUsd === '') {
-                return $data['price'] ?? null;
-            }
-            $eurValue = (float) $baseUsd * $this->usdEurRate();
-        } else {
-            $eurValue = (float) $raw;
-        }
-
-        // Same rule as the Price formula: EUR amount, added after conversion.
-        $eurValue += $this->linkBuilderAmountForFormula($data);
-
-        return MenfordPriceCalculator::calculate($eurValue, $langId);
+        return DomainPriceCalculator::sensitiveTopicPrice($data, $this->usdEurRate());
     }
 
     private function usdEurRate(): float
     {
-        static $rate = null;
-        if ($rate !== null) {
-            return $rate;
-        }
-
-        $rate = (float) DB::table('app_settings')
-            ->where('setting_name', 'usd_eur_rate')
-            ->value('setting_value');
-
-        return $rate > 0 ? $rate : 1.0;
+        return DomainPriceCalculator::usdEurRate();
     }
 
     public function rollback(Request $request)

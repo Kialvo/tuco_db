@@ -11,6 +11,7 @@ use App\Models\Language;
 use App\Models\NewEntry;
 use App\Models\NewEntry1;
 use App\Services\DomainProfitCalculator;
+use App\Services\DomainPriceCalculator;
 use App\Support\MenfordPriceCalculator;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -247,71 +248,32 @@ class NewEntryImportController extends Controller
         return $b === null ? false : $b;
     }
 
-    /**
-     * What we pay an external link builder, always in EUR — added to the cost
-     * base AFTER any USD->EUR conversion. See WebsiteController for the why.
-     *
-     * The CSV template has no Link Builder column yet (that import change is a
-     * separate task), so on import this is normally 0 and the price formula
-     * behaves exactly as it did before.
+    /*
+     * Price helpers — the rules live in App\Services\DomainPriceCalculator so
+     * the Domains form, New Entries and the CSV importer produce identical
+     * numbers. Thin wrappers keep the call sites readable.
      */
+
     private function linkBuilderAmountForFormula(array $data): float
     {
-        $amount = $data['link_builder_amount'] ?? null;
-
-        return ($amount === null || $amount === '') ? 0.0 : (float) $amount;
+        return DomainPriceCalculator::linkBuilderAmount($data);
     }
 
-    /**
-     * Price formula must use the final EUR publisher_price value.
-     * For USD rows, triggers derive publisher_price from original_publisher_price * rate.
-     */
-    private function publisherPriceForPriceFormula(array $data): ?float
-    {
-        $publisherEur = $this->publisherPriceInEur($data);
-
-        // No publisher price means no price at all, exactly as before — a link
-        // builder amount on its own never invents one.
-        return $publisherEur === null
-            ? null
-            : $publisherEur + $this->linkBuilderAmountForFormula($data);
-    }
-
-    /**
-     * The publisher price in EUR, WITHOUT the link builder amount — Profit
-     * subtracts the two as distinct terms, so folding them together here
-     * would subtract the link builder cost twice.
-     */
+    /** Publisher price in EUR, WITHOUT the link builder amount (Profit uses this). */
     private function publisherPriceInEur(array $data): ?float
     {
-        if (!array_key_exists('publisher_price', $data) || $data['publisher_price'] === null || $data['publisher_price'] === '') {
-            return null;
-        }
+        return DomainPriceCalculator::publisherPriceInEur($data, $this->usdEurRate());
+    }
 
-        if (strtoupper((string) ($data['currency_code'] ?? '')) !== 'USD') {
-            return (float) $data['publisher_price'];
-        }
-
-        $baseUsd = $data['original_publisher_price'] ?? $data['publisher_price'];
-        if ($baseUsd === null || $baseUsd === '') {
-            return null;
-        }
-
-        return (float) $baseUsd * $this->usdEurRate();
+    /** The Price formula's cost base: publisher price + link builder, in EUR. */
+    private function publisherPriceForPriceFormula(array $data): ?float
+    {
+        return DomainPriceCalculator::priceBase($data, $this->usdEurRate());
     }
 
     private function usdEurRate(): float
     {
-        static $rate = null;
-        if ($rate !== null) {
-            return $rate;
-        }
-
-        $rate = (float) DB::table('app_settings')
-            ->where('setting_name', 'usd_eur_rate')
-            ->value('setting_value');
-
-        return $rate > 0 ? $rate : 1.0;
+        return DomainPriceCalculator::usdEurRate();
     }
 
 
