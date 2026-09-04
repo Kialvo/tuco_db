@@ -60,8 +60,8 @@ class TrafficDistributionController extends Controller
             return response()->json(['error' => "Maximum {$limit} domains per request."], 422);
         }
 
-        $login    = env('DATAFORSEO_LOGIN');
-        $password = env('DATAFORSEO_PASSWORD');
+        $login    = config('services.dataforseo.login');
+        $password = config('services.dataforseo.password');
         if (!$login || !$password) {
             return response()->json(['error' => 'DataForSEO credentials not configured.'], 500);
         }

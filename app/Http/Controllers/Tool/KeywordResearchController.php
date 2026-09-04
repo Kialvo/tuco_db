@@ -22,8 +22,8 @@ class KeywordResearchController extends Controller
             'limit'         => 'nullable|integer|min:10|max:200',
         ]);
 
-        $login    = env('DATAFORSEO_LOGIN');
-        $password = env('DATAFORSEO_PASSWORD');
+        $login    = config('services.dataforseo.login');
+        $password = config('services.dataforseo.password');
         if (! $login || ! $password) {
             return response()->json(['error' => 'DataForSEO credentials not configured.'], 500);
         }
