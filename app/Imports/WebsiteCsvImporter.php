@@ -104,8 +104,11 @@ class WebsiteCsvImporter
         $this->loadDictionaries();
 
         $rate = DomainPriceCalculator::usdEurRate();
+        $csv = $this->stripBom($csv);
+        $delimiter = $this->detectDelimiter($csv);
+
         $handle = fopen('php://memory', 'r+');
-        fwrite($handle, $this->stripBom($csv));
+        fwrite($handle, $csv);
         rewind($handle);
 
         $header = null;
@@ -114,7 +117,7 @@ class WebsiteCsvImporter
         $truncated = false;
         $seenDomains = [];
 
-        while (($cols = fgetcsv($handle)) !== false) {
+        while (($cols = fgetcsv($handle, 0, $delimiter)) !== false) {
             $lineNo++;
 
             if ($lineNo === 1 && $hasHeader) {
@@ -592,6 +595,23 @@ class WebsiteCsvImporter
     private function stripBom(string $s): string
     {
         return preg_replace('/^\x{FEFF}/u', '', $s) ?? $s;
+    }
+
+    /**
+     * Comma or semicolon, decided from the header line.
+     *
+     * Excel in an Italian locale saves CSVs with semicolons — as does this
+     * app's own Storage export — so assuming a comma would turn every row into
+     * a single unrecognised column and reject the whole file.
+     */
+    private function detectDelimiter(string $csv): string
+    {
+        $firstLine = strtok($csv, "\r\n");
+        if ($firstLine === false) {
+            return ',';
+        }
+
+        return substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
     }
 
     private function cleanDomain(?string $v): ?string
