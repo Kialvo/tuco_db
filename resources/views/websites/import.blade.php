@@ -166,7 +166,13 @@
 
 @push('scripts')
 <script>
-(function () {
+/*
+ * The layout renders the scripts stack inside <head>, so this file runs before
+ * the body exists. Without DOMContentLoaded every getElementById below returns
+ * null, the first addEventListener throws, and no button is ever wired up —
+ * clicking Preview silently does nothing.
+ */
+document.addEventListener('DOMContentLoaded', function () {
     const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const previewUrl = "{{ route('websites.import.preview') }}";
     const commitUrl  = "{{ route('websites.import.commit') }}";
@@ -364,6 +370,6 @@
             btnImport.textContent = 'Import';
         }
     });
-})();
+});
 </script>
 @endpush
