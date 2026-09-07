@@ -73,6 +73,17 @@ class WebsiteImportController extends Controller
             hasHeader: (bool) $request->boolean('has_header', true)
         );
 
+        // The downloadable template is header-only, so this is the first thing
+        // anyone hits: without an explicit message they get an empty screen and
+        // a disabled Import button with no explanation.
+        if ($parsed['rows'] === []) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'This file has no domains in it — only the header row. '
+                    .'Add one line per domain underneath the headers and upload it again.',
+            ], 422);
+        }
+
         $token = 'websites_import_'.Str::uuid()->toString();
         Cache::put($token, $parsed['rows'], now()->addMinutes(self::TOKEN_TTL_MINUTES));
 
