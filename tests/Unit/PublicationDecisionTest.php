@@ -48,7 +48,12 @@ class PublicationDecisionTest extends TestCase
 
     public function test_client_refusals_are_rejections(): void
     {
-        $expected = ['requirements_not_met', 'high_price', 'out_of_topic', 'already_used_by_client', 'blog_terms'];
+        // The last three were added for the Monday Network Sales migration.
+        // They are rejections like the rest: the client turned the site down.
+        $expected = [
+            'requirements_not_met', 'high_price', 'out_of_topic', 'already_used_by_client', 'blog_terms',
+            'refused_other', 'not_interested', 'customer_disappeared',
+        ];
 
         foreach ($expected as $slug) {
             $this->assertSame('rejected', PublicationStatus::decision($slug));
