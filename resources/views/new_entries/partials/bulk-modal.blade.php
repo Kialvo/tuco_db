@@ -5,11 +5,19 @@
     $languages   = \App\Models\Language::orderBy('name')        ->pluck('name','id');
     $categories  = \App\Models\Category::orderBy('name')->where('name','!=','Betting')->pluck('name','id');
 
+    /* Same as the Domains modal: reuse the $contacts the controller already
+       loaded rather than re-querying 4,500 rows, and fall back to email then id
+       for the contacts that have no name, so no option renders blank. */
+    $publishers  = collect($contacts ?? [])
+        ->mapWithKeys(fn ($c) => [$c->id => $c->name ?: ($c->email ?: '#'.$c->id)])
+        ->sortBy(fn ($label) => mb_strtolower($label));
+
     /* Labels shown to user */
     $bulkLabels = [
         'status'          => 'Status',
         'country_id'      => 'Country',
         'language_id'     => 'Language',
+        'contact_id'      => 'Publisher',
         'linkbuilder'     => 'Link-builder',
         'type_of_website' => 'Type',
 
@@ -61,6 +69,9 @@
         ]],
         'country_id'      => ['type'=>'select','options'=>$countries],
         'language_id'     => ['type'=>'select','options'=>$languages],
+        /* Becomes a searchable select2 past 15 options; "-- Clear --" removes
+           the publisher from every selected entry. */
+        'contact_id'      => ['type'=>'select','options'=>$publishers],
         'type_of_website' => ['type'=>'select','options'=>[
             ''=>'-- Clear --','FORUM'=>'Forum','GENERALIST'=>'Generalist',
             'VERTICAL'=>'Vertical','LOCAL'=>'Local']],

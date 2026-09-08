@@ -23,7 +23,7 @@ use Yajra\DataTables\DataTables;
 class WebsiteController extends Controller
 {
     public const BULK_EDITABLE = [
-        'status','language_id','country_id','linkbuilder','type_of_website',
+        'status','language_id','country_id','contact_id','linkbuilder','type_of_website',
         // SEO METRICS
         'DR','UR','DA','PA','TF','CF','ZA','as_metric',
         'seozoom','semrush_traffic','ahrefs_keyword','ahrefs_traffic','keyword_vs_traffic',
