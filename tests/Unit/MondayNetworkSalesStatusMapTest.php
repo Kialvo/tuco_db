@@ -3,6 +3,8 @@
 namespace Tests\Unit;
 
 use App\Console\Commands\ImportMondayNetworkSales as Importer;
+use Illuminate\Config\Repository;
+use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -28,6 +30,20 @@ class MondayNetworkSalesStatusMapTest extends TestCase
 
         $config = require __DIR__.'/../../config/linkbuilding.php';
         $this->statuses = $config['publication_statuses'];
+
+        // Same approach as PublicationDecisionTest: a bare container holding
+        // the real config, so revenueFor() can resolve a status's decision
+        // without booting the application or reaching a database.
+        $container = new Container;
+        $container->instance('config', new Repository(['linkbuilding' => $config]));
+        Container::setInstance($container);
+    }
+
+    protected function tearDown(): void
+    {
+        Container::setInstance(null);
+
+        parent::tearDown();
     }
 
     /** Every status on the board is accounted for — an unmapped one is skipped on import. */
@@ -115,5 +131,30 @@ class MondayNetworkSalesStatusMapTest extends TestCase
         foreach (['refused_other', 'not_interested', 'customer_disappeared'] as $slug) {
             $this->assertNotContains($slug, $config['publication_inflight_statuses']);
         }
+    }
+
+    /**
+     * A lost sale must not carry money.
+     *
+     * The board records the quoted price on every item, including deals that
+     * never closed. `menford` in LIAB means revenue received — it feeds
+     * total_revenues, profit and the Stats pages — so copying the quote across
+     * books income that was never earned. The first import did exactly that
+     * for 45 rows.
+     */
+    public function test_only_approved_statuses_keep_their_amount(): void
+    {
+        $this->assertSame(295.0, Importer::revenueFor('article_published', 295.0));
+
+        foreach (['customer_disappeared', 'not_interested', 'refused_other', 'high_price', 'requirements_not_met'] as $slug) {
+            $this->assertSame(0.0, Importer::revenueFor($slug, 295.0), "\"{$slug}\" is a lost sale and must carry no revenue.");
+        }
+    }
+
+    /** A status nobody has decided yet is not revenue either. */
+    public function test_pending_statuses_carry_no_revenue(): void
+    {
+        $this->assertSame(0.0, Importer::revenueFor('waiting_client_approval', 295.0));
+        $this->assertSame(0.0, Importer::revenueFor(null, 295.0));
     }
 }
