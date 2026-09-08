@@ -35,7 +35,8 @@ class ImportMondayNetworkSales extends Command
 {
     protected $signature = 'monday:import-network-sales
                             {--dry-run : Read everything, write nothing, and produce the report}
-                            {--out= : Path for the CSV report (default: storage/app/monday-network-sales-<timestamp>.csv)}';
+                            {--out= : Path for the CSV report (default: storage/app/monday-network-sales-<timestamp>.csv)}
+                            {--repair-revenue : Do not import; zero the revenue on already-imported rows the client never approved}';
 
     protected $description = 'Reconcile the Monday Network Sales board into Publications (dry-run by default in practice)';
 
@@ -69,14 +70,20 @@ class ImportMondayNetworkSales extends Command
 
     public function handle(): int
     {
+        $dryRun = (bool) $this->option('dry-run');
+
+        // Repairs read only the database — no Monday access needed.
+        if ($this->option('repair-revenue')) {
+            return $this->repairRevenue($dryRun);
+        }
+
         $token = config('services.monday.token');
         if (blank($token)) {
-            $this->error('MONDAY_API_TOKEN is not set. Add it to .env (Monday → Admin → API).');
+            $this->error('MONDAY_API_TOKEN is not set. Add it to .env (Monday → Developers → My Access Tokens).');
 
             return self::FAILURE;
         }
 
-        $dryRun = (bool) $this->option('dry-run');
         if (! $dryRun && ! $this->confirm('This will WRITE to publications. Have you reviewed a --dry-run report first?', false)) {
             $this->warn('Aborted.');
 
@@ -104,6 +111,79 @@ class ImportMondayNetworkSales extends Command
         }
 
         $this->apply($rows);
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Zero the revenue on imported publications the client never approved.
+     *
+     * The first run of this command copied the board's € figure onto every row
+     * regardless of status, which booked income for deals that were lost — a
+     * client who disappeared still has a quoted price against them on the
+     * board. revenueFor() stops that happening again; this repairs the rows
+     * already written.
+     *
+     * Scoped to rows carrying a monday_item_id, so nothing entered through the
+     * app can be touched.
+     */
+    private function repairRevenue(bool $dryRun): int
+    {
+        $rejected = collect(config('linkbuilding.publication_statuses'))
+            ->reject(fn ($d) => $d['decision'] === 'approved')
+            ->keys()
+            ->all();
+
+        $affected = Publication::query()
+            ->whereNotNull('monday_item_id')
+            ->whereIn('status', $rejected)
+            ->where(fn ($q) => $q->where('menford', '<>', 0)->orWhere('total_revenues', '<>', 0)->orWhere('profit', '<>', 0))
+            ->get(['id', 'status', 'menford', 'total_revenues', 'profit']);
+
+        if ($affected->isEmpty()) {
+            $this->info('Nothing to repair — no imported publication carries revenue it should not.');
+
+            return self::SUCCESS;
+        }
+
+        $this->table(['Status', 'Rows', 'Revenue to remove'],
+            $affected->groupBy('status')->map(fn ($rows, $status) => [
+                $status, $rows->count(), '€ '.number_format($rows->sum('menford'), 2),
+            ])->values()->all()
+        );
+
+        if ($dryRun) {
+            $this->info('Dry run — nothing was written.');
+
+            return self::SUCCESS;
+        }
+
+        if (! $this->confirm('Zero the revenue on these '.$affected->count().' publications?', false)) {
+            $this->warn('Aborted.');
+
+            return self::SUCCESS;
+        }
+
+        DB::transaction(function () use ($affected) {
+            foreach ($affected as $row) {
+                $publication = Publication::find($row->id);
+                $attributes = $publication->getAttributes();
+                $attributes['menford'] = 0;
+
+                // Recomputed rather than zeroed directly, so total_revenues and
+                // profit stay consistent with client_copy and the cost columns.
+                StorageCalculator::apply($attributes);
+
+                $publication->fill([
+                    'menford' => $attributes['menford'],
+                    'total_revenues' => $attributes['total_revenues'],
+                    'total_cost' => $attributes['total_cost'],
+                    'profit' => $attributes['profit'],
+                ])->save();
+            }
+        });
+
+        $this->info('Repaired '.$affected->count().' publications.');
 
         return self::SUCCESS;
     }
@@ -338,7 +418,7 @@ class ImportMondayNetworkSales extends Command
                         'status' => $row['liab_status'],
                         'article_url' => $row['article_url'] !== '' ? $row['article_url'] : null,
                         'publication_date' => $row['date'] !== '' ? $row['date'] : null,
-                        'menford' => $this->amount($row['amount']),
+                        'menford' => self::revenueFor($row['liab_status'], $this->amount($row['amount'])),
                         'copy_nr' => 0,
                         'publisher_amount' => 0,
                         'client_copy' => 0,
@@ -367,6 +447,22 @@ class ImportMondayNetworkSales extends Command
         }
 
         return (float) str_replace([' ', ',', '€'], ['', '.', ''], (string) $value);
+    }
+
+    /**
+     * What a row is worth to LIAB, which is not what the board says.
+     *
+     * The board records the quoted price on every item, including the ones that
+     * never sold — a client who disappeared still has a figure against them.
+     * `menford` in LIAB means revenue received: it feeds total_revenues and
+     * profit and shows up on the Stats pages. Carrying the quote across would
+     * book income that was never earned.
+     *
+     * So only statuses the client actually approved keep their amount.
+     */
+    public static function revenueFor(?string $liabStatus, float $amount): float
+    {
+        return \App\Support\PublicationStatus::decision($liabStatus) === 'approved' ? $amount : 0.0;
     }
 
     /* ===================== reporting ===================== */
@@ -410,7 +506,11 @@ class ImportMondayNetworkSales extends Command
         $count = fn (string $action) => count(array_filter($rows, fn ($r) => $r['action'] === $action));
 
         $creates = array_filter($rows, fn ($r) => $r['action'] === 'create');
-        $revenue = array_sum(array_map(fn ($r) => $this->amount($r['amount']), $creates));
+        // Only approved rows carry money — see revenueFor().
+        $revenue = array_sum(array_map(
+            fn ($r) => self::revenueFor($r['liab_status'], $this->amount($r['amount'])),
+            $creates
+        ));
         $noClient = count(array_filter($creates, fn ($r) => $r['client_id'] === null));
 
         $this->newLine();
