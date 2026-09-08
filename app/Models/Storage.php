@@ -27,6 +27,9 @@ class Storage extends Model
      */
     protected $fillable = [
         'website_id',
+        // Which Monday item this publication came from, for the Network Sales
+        // migration. Null on everything entered through the app.
+        'monday_item_id',
         'status',
         'LB',
         'client_id',

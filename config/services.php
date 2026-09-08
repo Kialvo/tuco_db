@@ -71,4 +71,12 @@ return [
         'discord_webhook_url' => env('DISCORD_NEW_USER_WEBHOOK_URL'),
     ],
 
+    // Read-only Monday.com access, used by monday:import-network-sales to pull
+    // board 582070825. Personal API token from Monday → Admin → API.
+    'monday' => [
+        'token'    => env('MONDAY_API_TOKEN'),
+        'api_url'  => env('MONDAY_API_URL', 'https://api.monday.com/v2'),
+        'board_id' => env('MONDAY_NETWORK_SALES_BOARD_ID', '582070825'),
+    ],
+
 ];

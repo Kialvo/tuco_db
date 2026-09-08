@@ -73,6 +73,15 @@ return [
         'out_of_topic'                    => ['label' => 'Refused by Client – Out of Topic',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
         'already_used_by_client'          => ['label' => 'Refused by Client – Already Used',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
         'blog_terms'                      => ['label' => 'Refused by Client – Blog Terms',     'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        // Added for the Network Sales migration (Monday board 582070825), whose
+        // own statuses had no counterpart here. All three are 'rejected' so each
+        // gets its own bar in the rejection-reasons chart — the whole point of
+        // the exercise was reproducing that board's Approvals view in LIAB, and
+        // a status marked 'pending' would vanish from both the chart and the
+        // approval rate.
+        'refused_other'                   => ['label' => 'Refused by Client – Other',           'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'not_interested'                  => ['label' => 'Refused by Client – Not Interested',  'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'customer_disappeared'            => ['label' => 'Refused by Client – Customer Disappeared', 'group' => 1, 'tone' => 'red', 'decision' => 'rejected'],
         // Group 2 – Production
         'waiting_copywriter'              => ['label' => 'Waiting Copywriter',                  'group' => 2, 'tone' => 'purple', 'decision' => 'approved'],
         'waiting_client_article_approval' => ['label' => 'Waiting Client Article Approval',     'group' => 2, 'tone' => 'amber',  'decision' => 'approved'],
