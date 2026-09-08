@@ -1,21 +1,14 @@
 @php
-    // ① Just list EVERY real db column once.
-    //    If tomorrow you add a new column, drop its name here and
-    //    (optionally) extend bulkMeta below with a prettier <select>.
-    $bulkEditable = [
-        // id is NOT editable, everything else is:
-        'status','country_id','language_id','linkbuilder','type_of_website',
-        'contact_id','currency_code','publisher_price','link_builder_amount','no_follow_price',
-        'special_topic_price','link_insertion_price','banner_price','sitewide_link_price','mention_price',
-        'kialvo_evaluation','profit','date_publisher_price',
-        'DA','PA','TF','CF','DR','UR','ZA','as_metric','seozoom',
-        'TF_vs_CF','semrush_traffic','ahrefs_keyword','ahrefs_traffic',
-        'keyword_vs_traffic','seo_metrics_date',
-        'betting','trading','permanent_link','more_than_one_link',
-        'copywriting','no_sponsored_tag','social_media_sharing','post_in_homepage',
-        'category_ids',              // m-m
-        'recalculate_totals',        // pseudo
-    ];
+    /*
+     * A $bulkEditable array used to live here. It was dead: the bulk-edit modal
+     * partial reassigns $bulkEditable from its own $bulkLabels before rendering
+     * the dropdown, so nothing listed here ever appeared. It had `contact_id`
+     * in it, which is exactly why "Publisher" looked like it was already
+     * supported when it was not. Removed so the next person is not misled —
+     * the fields offered for bulk edit are defined in
+     * websites/partials/bulk-modal.blade.php, and validated against
+     * WebsiteController::BULK_EDITABLE.
+     */
     $isGuestUser = auth()->check() && auth()->user()->isGuest();
     $adminExportColumns = [
         'id' => 'ID',

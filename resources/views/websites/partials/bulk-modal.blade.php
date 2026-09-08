@@ -5,12 +5,22 @@
     $languages   = \App\Models\Language::orderBy('name')        ->pluck('name','id');
     $categories  = \App\Models\Category::orderBy('name')->where('name','!=','Betting')->pluck('name','id');
 
+    /* Publishers reuse the $contacts the controller already loaded for the
+       filter panel, so the page does not fetch 4,500 rows twice. 493 contacts
+       have no name, which would render as blank rows in a searchable dropdown,
+       so they fall back to their email and then to their id — every option has
+       to be identifiable to be pickable. */
+    $publishers  = collect($contacts ?? [])
+        ->mapWithKeys(fn ($c) => [$c->id => $c->name ?: ($c->email ?: '#'.$c->id)])
+        ->sortBy(fn ($label) => mb_strtolower($label));
+
     /*────────────────────────────── 1. Labels (what the user sees) ───────────────────*/
     $bulkLabels = [
         // GENERAL
         'status'          => 'Status',
         'country_id'      => 'Country',
         'language_id'     => 'Language',
+        'contact_id'      => 'Publisher',
         'linkbuilder'     => 'Link-builder',
         'type_of_website' => 'Type',
 
@@ -60,6 +70,11 @@
             ''=>'-- Clear --','active'=>'Active','inactive'=>'Inactive','blacklist'=>'Blacklist']],
         'country_id'      => ['type'=>'select','options'=>$countries],
         'language_id'     => ['type'=>'select','options'=>$languages],
+        /* Over 15 options the modal turns this into a searchable select2, which
+           is the only way 4,500 publishers are usable. "-- Clear --" is added by
+           the same code and removes the publisher from every selected domain —
+           deliberate: replacing a publisher means clearing the old one first. */
+        'contact_id'      => ['type'=>'select','options'=>$publishers],
         'type_of_website' => ['type'=>'select','options'=>[
             ''=>'-- Clear --','FORUM'=>'Forum','GENERALIST'=>'Generalist',
             'VERTICAL'=>'Vertical','LOCAL'=>'Local']],
