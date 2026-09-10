@@ -10,7 +10,8 @@ class OrderItem extends Model
 {
     use HasFactory;
 
-    public const TYPE_STANDARD  = 'standard';
+    public const TYPE_STANDARD = 'standard';
+
     public const TYPE_SENSITIVE = 'sensitive';
 
     protected $fillable = [
@@ -19,11 +20,59 @@ class OrderItem extends Model
         'storage_id',
         'article_type',
         'unit_price',
+        'tokens_held',
+        'held_at',
+        'captured_at',
+        'released_at',
+        'release_reason',
     ];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
+        'tokens_held' => 'integer',
+        'held_at' => 'datetime',
+        'captured_at' => 'datetime',
+        'released_at' => 'datetime',
     ];
+
+    /** Why a hold was given back. */
+    public const RELEASE_PUBLISHER_REFUSED = 'publisher_refused';
+
+    public const RELEASE_PUBLISHER_DISAPPEARED = 'publisher_disappeared';
+
+    public const RELEASE_CANCELLED = 'cancelled';
+
+    public const RELEASE_ADMIN = 'admin';
+
+    /** Tokens are committed and not yet resolved either way. */
+    public function isHeld(): bool
+    {
+        return $this->held_at !== null
+            && $this->captured_at === null
+            && $this->released_at === null;
+    }
+
+    /** Published and paid for: the hold became revenue. */
+    public function isCaptured(): bool
+    {
+        return $this->captured_at !== null;
+    }
+
+    /** The site fell through and the tokens went back. */
+    public function isReleased(): bool
+    {
+        return $this->released_at !== null;
+    }
+
+    /**
+     * What this item costs in tokens. 1 token = EUR 1 and client prices are
+     * whole euros, so the price IS the token count — but round rather than
+     * cast, so a stray 526.999999 can never silently undercharge by a token.
+     */
+    public function tokenCost(): int
+    {
+        return (int) round((float) $this->unit_price);
+    }
 
     public function order(): BelongsTo
     {
@@ -82,7 +131,9 @@ class OrderItem extends Model
      */
     public function refreshPrice(): void
     {
-        if (! $this->website) return;
+        if (! $this->website) {
+            return;
+        }
 
         $this->unit_price = $this->article_type === self::TYPE_SENSITIVE
             ? ($this->website->sensitive_topic_price ?? $this->website->price ?? 0)

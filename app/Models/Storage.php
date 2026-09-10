@@ -117,6 +117,15 @@ class Storage extends Model
                 }
             }
 
+            // Settle the customer's tokens: published captures the hold,
+            // publisher_refused / publisher_disappeared give it back. Narrow by
+            // design — it no-ops unless this publication is linked to a
+            // marketplace order item with a live hold, so CRM and imported
+            // publications can never move anyone's money.
+            if ($statusMoved) {
+                app(\App\Services\Tokens\OrderSettlement::class)->settle($s);
+            }
+
             // A marketplace order completes itself once every site is live, so
             // nobody has to remember to close it by hand.
             if ($statusMoved && $s->status === 'article_published') {

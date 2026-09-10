@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\InsufficientTokens;
 use App\Mail\OrderSubmittedAdminMail;
 use App\Mail\OrderSubmittedCustomerMail;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Website;
 use App\Services\NotificationHub;
+use App\Services\Tokens\TokenLedger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +20,8 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly TokenLedger $ledger) {}
+
     /**
      * List the current user's submitted orders.
      */
@@ -74,7 +78,7 @@ class OrderController extends Controller
         }
 
         $item = new OrderItem([
-            'website_id'   => $website->id,
+            'website_id' => $website->id,
             'article_type' => OrderItem::TYPE_STANDARD,
         ]);
         $item->order_id = $order->id;
@@ -140,7 +144,7 @@ class OrderController extends Controller
             'notes' => 'nullable|string|max:2000',
         ]);
 
-        $user  = auth()->user();
+        $user = auth()->user();
         $order = $user->draftOrder()->load('items.website.country');
 
         if ($order->items->isEmpty()) {
@@ -149,18 +153,51 @@ class OrderController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($order, $validated) {
-            // Re-snap each item's price defensively in case the website price changed
-            foreach ($order->items as $item) {
-                $item->refreshPrice();
-                $item->save();
-            }
-            $order->update([
-                'status'       => Order::STATUS_SUBMITTED,
-                'notes'        => $validated['notes'] ?? null,
-                'submitted_at' => now(),
-            ]);
-        });
+        // Tokens are HELD here, not spent. They become revenue only when the
+        // article is published (Fabrizio, 2026-09-09), and a site that falls
+        // through releases its own tokens without touching the rest of the
+        // order. Held per item for exactly that reason.
+        //
+        // The whole thing sits in one transaction: a partially-held order —
+        // some sites committed, some not, status already 'submitted' — would
+        // be worse than a rejected one, because nothing downstream would know.
+        try {
+            DB::transaction(function () use ($order, $validated, $user) {
+                // Re-snap each item's price defensively in case the website price changed
+                foreach ($order->items as $item) {
+                    $item->refreshPrice();
+                    $item->save();
+                }
+
+                // Gated: with spending off, submission behaves exactly as it
+                // always has. Switching the marketplace to prepaid is an
+                // announced product change, not something a deploy does by
+                // itself — see config/tokens.php.
+                if (config('tokens.spending_enabled')) {
+                    $this->ledger->holdForOrder(
+                        $this->ledger->accountFor($user),
+                        $order->load('items'),
+                        $user,
+                    );
+                }
+
+                $order->update([
+                    'status' => Order::STATUS_SUBMITTED,
+                    'notes' => $validated['notes'] ?? null,
+                    'submitted_at' => now(),
+                ]);
+            });
+        } catch (InsufficientTokens $e) {
+            // 422 rather than a redirect: the drawer shows the shortfall inline
+            // with a Buy tokens CTA. The client-side gate is a courtesy; THIS
+            // is the one that actually protects the balance.
+            return response()->json([
+                'error' => 'Not enough tokens for this order.',
+                'balance' => $e->balance,
+                'required' => $e->required,
+                'missing' => $e->shortfall(),
+            ], 422);
+        }
 
         // Open the campaign + one publication per site so the order becomes
         // trackable work for Martina, and the customer's progress view has
@@ -184,7 +221,7 @@ class OrderController extends Controller
         NotificationHub::orderSubmitted($order);
 
         return response()->json([
-            'status'   => 'success',
+            'status' => 'success',
             'order_id' => $order->id,
             'redirect' => route('orders.show', $order->id),
         ]);
@@ -195,24 +232,40 @@ class OrderController extends Controller
      */
     private function cartPayload(Order $order): array
     {
+        // The wallet figures the drawer needs, served rather than guessed. The
+        // balance is what is SPENDABLE — holds are already debited out of it —
+        // so `held` is reported alongside, or an agency with a large order in
+        // flight sees a balance that looks as though it vanished.
+        $account = $this->ledger->accountFor($order->user ?? auth()->user());
+        $balance = (int) $account->balance_cached;
+        $cost = $order->items->sum(fn (OrderItem $item) => $item->tokenCost());
+
         return [
-            'id'    => $order->id,
+            'id' => $order->id,
             'count' => $order->items->count(),
             'total' => round($order->items->sum('unit_price'), 2),
+            'tokens_required' => $cost,
+            'balance' => $balance,
+            'held' => $this->ledger->heldTotal($account),
+            'balance_after' => $balance - $cost,
+            'has_enough' => $balance >= $cost,
+            'missing' => max(0, $cost - $balance),
+            'spending_enabled' => (bool) config('tokens.spending_enabled'),
             'items' => $order->items->map(function (OrderItem $item) {
                 $w = $item->website;
+
                 return [
-                    'id'                 => $item->id,
-                    'website_id'         => $w->id,
-                    'domain'             => $w->domain_name,
-                    'country'            => optional($w->country)->country_name,
-                    'da'                 => $w->DA,
-                    'ms'                 => $w->ms,
-                    'price'              => $w->price ? (float) $w->price : null,
-                    'sensitive_price'    => $w->sensitive_topic_price ? (float) $w->sensitive_topic_price : null,
-                    'has_sensitive'      => ! empty($w->sensitive_topic_price),
-                    'article_type'       => $item->article_type,
-                    'unit_price'         => (float) $item->unit_price,
+                    'id' => $item->id,
+                    'website_id' => $w->id,
+                    'domain' => $w->domain_name,
+                    'country' => optional($w->country)->country_name,
+                    'da' => $w->DA,
+                    'ms' => $w->ms,
+                    'price' => $w->price ? (float) $w->price : null,
+                    'sensitive_price' => $w->sensitive_topic_price ? (float) $w->sensitive_topic_price : null,
+                    'has_sensitive' => ! empty($w->sensitive_topic_price),
+                    'article_type' => $item->article_type,
+                    'unit_price' => (float) $item->unit_price,
                 ];
             })->values(),
         ];

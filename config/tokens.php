@@ -45,6 +45,26 @@ return [
 
     /*
     |----------------------------------------------------------------------
+    | Does placing an order SPEND tokens?
+    |----------------------------------------------------------------------
+    | The kill switch for the whole money-out half of the system.
+    |
+    | OFF (the default): submitting an order behaves exactly as it always
+    | has — no balance is checked, no tokens are held, and the quote flow is
+    | untouched. The code can therefore ship to production and sit dormant.
+    |
+    | ON: an order holds its tokens per site at submission, and a guest with
+    | no balance CANNOT place one. That is a deliberate, announced change to
+    | how the marketplace works — never something a deploy should switch on
+    | by accident, which is why this defaults to false rather than true.
+    |
+    | Existing holds settle either way: turning this off stops NEW holds
+    | being taken, it does not strand money already committed.
+    */
+    'spending_enabled' => env('TOKENS_SPENDING_ENABLED', false),
+
+    /*
+    |----------------------------------------------------------------------
     | Packages
     |----------------------------------------------------------------------
     | `tokens` is what the customer receives; `bonus` is the discount,
