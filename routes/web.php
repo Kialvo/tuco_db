@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\TokenAdjustmentController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserFavoritesController;
 use App\Http\Controllers\Billing\FakeCheckoutController;
 use App\Http\Controllers\Billing\PaymentWebhookController;
+use App\Http\Controllers\Billing\TeamController;
 use App\Http\Controllers\Billing\TokenWalletController;
 use App\Http\Controllers\BulkAddToCampaignController;
 use App\Http\Controllers\CampaignController;
@@ -116,6 +118,22 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Res
     Route::post('/billing/fake-checkout/{session}/pay', [FakeCheckoutController::class, 'pay'])->name('billing.fake-checkout.pay');
     Route::post('/billing/fake-checkout/{session}/fail', [FakeCheckoutController::class, 'fail'])->name('billing.fake-checkout.fail');
     Route::post('/billing/fake-checkout/{session}/refund', [FakeCheckoutController::class, 'refund'])->name('billing.fake-checkout.refund');
+
+    /*--------------------------------------------------------------
+    | Team / shared balance (guests + admins)
+    | The balance belongs to the TEAM, so this is where an agency owner
+    | invites colleagues, removes them, and hands over ownership.
+    | NOTE: every route name here must also appear in
+    | RestrictGuestToDomainsMiddleware::ALLOWED_ROUTE_NAMES.
+    --------------------------------------------------------------*/
+    Route::get('/billing/team', [TeamController::class, 'show'])->name('billing.team.show');
+    Route::post('/billing/team/invite', [TeamController::class, 'invite'])->name('billing.team.invite');
+    // Behind auth on purpose: the token proves the owner sent it, signing in
+    // proves you are the address it was sent to. Both are required.
+    Route::get('/billing/team/join/{token}', [TeamController::class, 'accept'])->name('billing.team.accept');
+    Route::delete('/billing/team/members/{member}', [TeamController::class, 'removeMember'])->name('billing.team.members.remove');
+    Route::post('/billing/team/transfer', [TeamController::class, 'transferOwnership'])->name('billing.team.transfer');
+    Route::delete('/billing/team/invitations/{invitation}', [TeamController::class, 'revokeInvitation'])->name('billing.team.invitations.revoke');
 
     /*--------------------------------------------------------------
     | Dashboard
@@ -457,6 +475,15 @@ Route::middleware(['auth', 'verified', ForcePasswordChangeMiddleware::class, Adm
     Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
     Route::get('/admin/orders/{order}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
     Route::patch('/admin/orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('admin.orders.update-status');
+
+    /*--------------------------------------------------------------
+    | Manual token adjustments — goodwill credit, or clawing back
+    | tokens granted in error. Every row carries the acting admin and
+    | a written reason. NOT for repairing a stuck hold: that is
+    | `tokens:fix-hold`, which goes through the hold state machine.
+    --------------------------------------------------------------*/
+    Route::get('/admin/tokens', [TokenAdjustmentController::class, 'index'])->name('admin.tokens.index');
+    Route::post('/admin/tokens/{team}', [TokenAdjustmentController::class, 'store'])->name('admin.tokens.adjust');
 
     Route::resource('admin/users', UserController::class)->names([
         'index' => 'admin.users.index',

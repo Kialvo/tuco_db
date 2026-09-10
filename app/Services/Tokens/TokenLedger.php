@@ -29,12 +29,23 @@ use Illuminate\Support\Facades\DB;
  */
 class TokenLedger
 {
-    /** Get (or create) the account for a user. */
+    public function __construct(private readonly TeamMembership $teams) {}
+
+    /**
+     * The wallet a user spends from.
+     *
+     * Resolved through their TEAM, never their own id: several people from one
+     * agency share a balance, and someone joining or leaving must not change
+     * which pot they spend out of. Everyone has a team — a team of one until
+     * they invite somebody — so this always resolves.
+     */
     public function accountFor(User $user): TokenAccount
     {
+        $team = $this->teams->teamFor($user);
+
         return TokenAccount::firstOrCreate(
-            ['user_id' => $user->id],
-            ['balance_cached' => 0],
+            ['team_id' => $team->id],
+            ['user_id' => $user->id, 'balance_cached' => 0],
         );
     }
 
@@ -99,6 +110,41 @@ class TokenLedger
             [],
             $actor,
         );
+    }
+
+    /**
+     * A manual correction by a human: goodwill credit, or clawing back tokens
+     * granted in error.
+     *
+     * The idempotency key comes from the CALLER, not from here. A form that
+     * generates one per render means a double-clicked submit resolves to the
+     * same key and books the adjustment once — which matters more here than
+     * anywhere else, because there is no order or purchase to derive a natural
+     * key from.
+     *
+     * `actor` is required. An adjustment with no name against it is exactly
+     * the row nobody can explain six months later.
+     */
+    public function adjust(
+        TokenAccount $account,
+        int $signedAmount,
+        string $reason,
+        string $idempotencyKey,
+        User $actor,
+    ): TokenTransaction {
+        if ($signedAmount === 0) {
+            throw new \InvalidArgumentException('An adjustment of zero tokens does nothing.');
+        }
+
+        if (trim($reason) === '') {
+            throw new \InvalidArgumentException('An adjustment needs a reason.');
+        }
+
+        $metadata = ['reason' => trim($reason), 'manual' => true];
+
+        return $signedAmount > 0
+            ? $this->credit($account, $signedAmount, TokenTransaction::TYPE_ADJUSTMENT, $idempotencyKey, null, $metadata, $actor)
+            : $this->debit($account, abs($signedAmount), TokenTransaction::TYPE_ADJUSTMENT, $idempotencyKey, null, $metadata, $actor);
     }
 
     /** Convenience: give the tokens back when an order is cancelled. */
@@ -296,13 +342,33 @@ class TokenLedger
      * figure would misreport what a customer can spend, and this is a small,
      * indexed query against one account's open items.
      */
+    /**
+     * Everyone who can spend from this wallet.
+     *
+     * Falls back to the account's original owner for a wallet that predates
+     * teams, so a balance is never orphaned by the migration.
+     *
+     * @return array<int, int>
+     */
+    private function memberIds(TokenAccount $account): array
+    {
+        if ($account->team_id === null) {
+            return array_values(array_filter([$account->user_id]));
+        }
+
+        return DB::table('marketplace_team_members')
+            ->where('team_id', $account->team_id)
+            ->pluck('user_id')
+            ->all();
+    }
+
     public function heldTotal(TokenAccount $account): int
     {
         return (int) OrderItem::query()
             ->whereNotNull('held_at')
             ->whereNull('captured_at')
             ->whereNull('released_at')
-            ->whereHas('order', fn ($q) => $q->where('user_id', $account->user_id))
+            ->whereHas('order', fn ($q) => $q->whereIn('user_id', $this->memberIds($account)))
             ->sum('tokens_held');
     }
 

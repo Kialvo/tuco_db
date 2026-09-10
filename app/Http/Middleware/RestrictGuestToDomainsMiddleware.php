@@ -46,6 +46,13 @@ class RestrictGuestToDomainsMiddleware
         'billing.fake-checkout.pay',
         'billing.fake-checkout.fail',
         'billing.fake-checkout.refund',
+        // Team / shared balance — an agency owner manages their own team.
+        'billing.team.show',
+        'billing.team.invite',
+        'billing.team.accept',
+        'billing.team.members.remove',
+        'billing.team.transfer',
+        'billing.team.invitations.revoke',
     ];
 
     public function handle(Request $request, Closure $next): Response

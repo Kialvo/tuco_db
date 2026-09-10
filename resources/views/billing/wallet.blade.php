@@ -24,6 +24,9 @@
                 @if($isFakeGateway)
                     <x-ds.pill tone="amber">Test mode — no real payment</x-ds.pill>
                 @endif
+                <x-ds.button :href="route('billing.team.show')" variant="secondary" size="md">
+                    <x-icon name="users-cog" size="sm" /> Team
+                </x-ds.button>
                 <x-ds.button :href="route('websites.index')" variant="secondary" size="md">
                     <x-icon name="search" size="sm" /> Browse domains
                 </x-ds.button>
@@ -70,6 +73,25 @@
                          EQUIVALENCE rather than a second balance competing with the
                          figure above. --}}
                     <p class="text-sm text-gray-600 mt-2.5 tabular-nums">= €{{ number_format($balance, 2) }}</p>
+
+                    {{-- Tokens committed to placements still running. They are ALREADY
+                         out of the figure above, so this is deliberately worded as an
+                         explanation rather than a second subtraction — an agency with a
+                         large order in flight would otherwise read the drop as money
+                         that went missing. Hidden entirely at zero: a permanent
+                         "0 on hold" row is noise on the account of someone who has
+                         never placed an order. --}}
+                    @if($held > 0)
+                        <p class="text-sm text-gray-500 mt-2 flex items-baseline gap-1.5">
+                            <span class="tabular-nums font-semibold text-gray-600">{{ number_format($held) }}</span>
+                            <span>on hold for orders in progress</span>
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1 leading-relaxed max-w-md">
+                            Held tokens are already set aside for placements you have ordered.
+                            They are charged when each article goes live, and returned if a
+                            publisher cannot publish.
+                        </p>
+                    @endif
                 </div>
 
                 {{-- The page's single currency control. A segmented toggle rather

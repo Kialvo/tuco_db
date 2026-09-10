@@ -28,6 +28,13 @@ class TokenWalletController extends Controller
 
         $balance = (int) $account->balance_cached;
 
+        // Tokens committed to placements still in flight. They are ALREADY
+        // debited out of the balance above, so this is not a subtraction — it
+        // is the explanation for why the figure is lower than the last top-up
+        // implies. An agency with a big order running would otherwise read its
+        // balance as money that went missing.
+        $held = $this->ledger->heldTotal($account);
+
         // Display currency is a preference, never part of the balance itself.
         $display = strtoupper((string) $request->query('display', 'EUR'));
         if (! in_array($display, config('tokens.display_currencies', []), true)) {
@@ -38,6 +45,7 @@ class TokenWalletController extends Controller
 
         return view('billing.wallet', [
             'balance' => $balance,
+            'held' => $held,
             'packages' => config('tokens.packages'),
             'paymentCurrencies' => config('tokens.payment_currencies'),
             'displayCurrencies' => config('tokens.display_currencies'),

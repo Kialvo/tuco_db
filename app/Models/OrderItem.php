@@ -25,6 +25,7 @@ class OrderItem extends Model
         'captured_at',
         'released_at',
         'release_reason',
+        'approval_reminder_sent_at',
     ];
 
     protected $casts = [
@@ -33,6 +34,7 @@ class OrderItem extends Model
         'held_at' => 'datetime',
         'captured_at' => 'datetime',
         'released_at' => 'datetime',
+        'approval_reminder_sent_at' => 'datetime',
     ];
 
     /** Why a hold was given back. */

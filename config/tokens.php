@@ -65,6 +65,26 @@ return [
 
     /*
     |----------------------------------------------------------------------
+    | Accounts that spend tokens even while the switch above is OFF
+    |----------------------------------------------------------------------
+    | Comma-separated emails. Without this there is no way to exercise the
+    | hold-and-capture flow on real data: the switch is all-or-nothing, so
+    | testing it would mean turning it on for everyone, and every real guest
+    | would be blocked from ordering because nobody has a balance.
+    |
+    | This makes spending opt-in per account, so a test user can run the whole
+    | flow on production while every customer keeps today's behaviour.
+    |
+    | It only ever ADDS accounts. It cannot exclude anyone once the main
+    | switch is on — a kill switch that some accounts ignore is not one.
+    */
+    'spending_test_users' => array_values(array_filter(array_map(
+        fn ($email) => mb_strtolower(trim($email)),
+        explode(',', (string) env('TOKENS_SPENDING_TEST_USERS', ''))
+    ))),
+
+    /*
+    |----------------------------------------------------------------------
     | Packages
     |----------------------------------------------------------------------
     | `tokens` is what the customer receives; `bonus` is the discount,

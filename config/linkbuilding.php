@@ -64,31 +64,31 @@ return [
     */
     'publication_statuses' => [
         // Group 1 – Site Evaluation
-        'waiting_client_approval'         => ['label' => 'Waiting Client Approval',             'group' => 1, 'tone' => 'amber',  'decision' => 'pending'],
-        'accepted'                        => ['label' => 'Accepted',                            'group' => 1, 'tone' => 'green',  'decision' => 'approved'],
+        'waiting_client_approval' => ['label' => 'Waiting Client Approval',             'group' => 1, 'tone' => 'amber',  'decision' => 'pending'],
+        'accepted' => ['label' => 'Accepted',                            'group' => 1, 'tone' => 'green',  'decision' => 'approved'],
         'waiting_blog_price_confirmation' => ['label' => 'Waiting Blog Price Confirmation',     'group' => 1, 'tone' => 'amber',  'decision' => 'pending'],
-        'potential_substitute'            => ['label' => 'Potential Substitute',                'group' => 1, 'tone' => 'sky',    'decision' => 'pending'],
-        'requirements_not_met'            => ['label' => 'Refused by Client – Metrics too low', 'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
-        'high_price'                      => ['label' => 'Refused by Client – High Price',      'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
-        'out_of_topic'                    => ['label' => 'Refused by Client – Out of Topic',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
-        'already_used_by_client'          => ['label' => 'Refused by Client – Already Used',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
-        'blog_terms'                      => ['label' => 'Refused by Client – Blog Terms',     'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'potential_substitute' => ['label' => 'Potential Substitute',                'group' => 1, 'tone' => 'sky',    'decision' => 'pending'],
+        'requirements_not_met' => ['label' => 'Refused by Client – Metrics too low', 'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'high_price' => ['label' => 'Refused by Client – High Price',      'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'out_of_topic' => ['label' => 'Refused by Client – Out of Topic',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'already_used_by_client' => ['label' => 'Refused by Client – Already Used',    'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'blog_terms' => ['label' => 'Refused by Client – Blog Terms',     'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
         // Added for the Network Sales migration (Monday board 582070825), whose
         // own statuses had no counterpart here. All three are 'rejected' so each
         // gets its own bar in the rejection-reasons chart — the whole point of
         // the exercise was reproducing that board's Approvals view in LIAB, and
         // a status marked 'pending' would vanish from both the chart and the
         // approval rate.
-        'refused_other'                   => ['label' => 'Refused by Client – Other',           'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
-        'not_interested'                  => ['label' => 'Refused by Client – Not Interested',  'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
-        'customer_disappeared'            => ['label' => 'Refused by Client – Customer Disappeared', 'group' => 1, 'tone' => 'red', 'decision' => 'rejected'],
+        'refused_other' => ['label' => 'Refused by Client – Other',           'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'not_interested' => ['label' => 'Refused by Client – Not Interested',  'group' => 1, 'tone' => 'red',    'decision' => 'rejected'],
+        'customer_disappeared' => ['label' => 'Refused by Client – Customer Disappeared', 'group' => 1, 'tone' => 'red', 'decision' => 'rejected'],
         // Group 2 – Production
-        'waiting_copywriter'              => ['label' => 'Waiting Copywriter',                  'group' => 2, 'tone' => 'purple', 'decision' => 'approved'],
+        'waiting_copywriter' => ['label' => 'Waiting Copywriter',                  'group' => 2, 'tone' => 'purple', 'decision' => 'approved'],
         'waiting_client_article_approval' => ['label' => 'Waiting Client Article Approval',     'group' => 2, 'tone' => 'amber',  'decision' => 'approved'],
-        'waiting_blog_publication'        => ['label' => 'Waiting Blog Publication',            'group' => 2, 'tone' => 'blue',   'decision' => 'approved'],
-        'article_published'               => ['label' => 'Article Published',                   'group' => 2, 'tone' => 'green',  'decision' => 'approved'],
-        'publisher_disappeared'           => ['label' => 'Publisher Disappeared',               'group' => 2, 'tone' => 'red',    'decision' => 'approved'],
-        'publisher_refused'               => ['label' => 'Publisher Refused',                   'group' => 2, 'tone' => 'red',    'decision' => 'approved'],
+        'waiting_blog_publication' => ['label' => 'Waiting Blog Publication',            'group' => 2, 'tone' => 'blue',   'decision' => 'approved'],
+        'article_published' => ['label' => 'Article Published',                   'group' => 2, 'tone' => 'green',  'decision' => 'approved'],
+        'publisher_disappeared' => ['label' => 'Publisher Disappeared',               'group' => 2, 'tone' => 'red',    'decision' => 'approved'],
+        'publisher_refused' => ['label' => 'Publisher Refused',                   'group' => 2, 'tone' => 'red',    'decision' => 'approved'],
     ],
 
     // Canonical set of valid `decision` values (see publication_statuses above).
@@ -120,7 +120,7 @@ return [
     ],
 
     'target_types' => [
-        'budget'       => 'Budget (€)',
+        'budget' => 'Budget (€)',
         'publications' => 'Nr. Publications',
     ],
 
@@ -131,43 +131,43 @@ return [
     |----------------------------------------------------------------------
     */
     'campaign_status_tones' => [
-        'Offer Creation'                                  => 'amber',
-        'Publishing'                                      => 'green',
-        'Waiting Client'                                  => 'amber',
-        'Waiting Payment'                                 => 'red',
-        'Suspended'                                       => 'gray',
-        'Completed in time'                               => 'green',
-        'Completed with delay (Our fault)'                => 'amber',
-        'Completed with Delay – Late Budget Approval'     => 'amber',
+        'Offer Creation' => 'amber',
+        'Publishing' => 'green',
+        'Waiting Client' => 'amber',
+        'Waiting Payment' => 'red',
+        'Suspended' => 'gray',
+        'Completed in time' => 'green',
+        'Completed with delay (Our fault)' => 'amber',
+        'Completed with Delay – Late Budget Approval' => 'amber',
         'Completed with Delay – Sites Added Mid-Campaign' => 'amber',
-        'Completed with Delay – Client Unresponsive'      => 'amber',
-        "Completed with Delay – Publisher's Fault"        => 'amber',
-        'Changed their mind'                              => 'gray',
-        'Disappeared'                                     => 'gray',
-        'Refused by Client'                               => 'gray',
+        'Completed with Delay – Client Unresponsive' => 'amber',
+        "Completed with Delay – Publisher's Fault" => 'amber',
+        'Changed their mind' => 'gray',
+        'Disappeared' => 'gray',
+        'Refused by Client' => 'gray',
     ],
 
     'service_tones' => [
         'LB Only Publications' => 'green',
-        'LB Sitewide Links'    => 'green',
-        'LB Reddit'            => 'green',
-        'LB PBN'               => 'green',
-        'LB Trustpilot'        => 'green',
-        'Custom Outreach'      => 'purple',
-        'Digital PR'           => 'blue',
-        'LIAB Marketplace'     => 'amber',
+        'LB Sitewide Links' => 'green',
+        'LB Reddit' => 'green',
+        'LB PBN' => 'green',
+        'LB Trustpilot' => 'green',
+        'Custom Outreach' => 'purple',
+        'Digital PR' => 'blue',
+        'LIAB Marketplace' => 'amber',
     ],
 
     // tone keyword => Tailwind badge classes
     'tone_classes' => [
-        'gray'   => 'bg-gray-100 text-gray-700',
-        'green'  => 'bg-green-100 text-green-800',
-        'amber'  => 'bg-amber-100 text-amber-800',
-        'red'    => 'bg-red-100 text-red-800',
-        'blue'   => 'bg-blue-100 text-blue-800',
+        'gray' => 'bg-gray-100 text-gray-700',
+        'green' => 'bg-green-100 text-green-800',
+        'amber' => 'bg-amber-100 text-amber-800',
+        'red' => 'bg-red-100 text-red-800',
+        'blue' => 'bg-blue-100 text-blue-800',
         'indigo' => 'bg-indigo-100 text-indigo-800',
         'purple' => 'bg-purple-100 text-purple-800',
-        'sky'    => 'bg-sky-100 text-sky-800',
+        'sky' => 'bg-sky-100 text-sky-800',
     ],
 
     // Team dropdown for "responsible" falls back to app users; no config needed.
@@ -217,4 +217,40 @@ return [
         explode(',', (string) (env('BULK_CAMPAIGN_MANAGERS')
             ?: 'm.napolano@menford.com,marvindinaku@gmail.com'))
     ))),
+
+    /*
+    |----------------------------------------------------------------------
+    | Marketplace deadlines
+    |----------------------------------------------------------------------
+    | An order has to reach a conclusion, because a customer's tokens are
+    | held until it does. These two clocks are what stop a placement — and
+    | the money behind it — hanging indefinitely on somebody's silence.
+    |
+    | Counted in WORKING days, weekends excluded, public holidays NOT (see
+    | App\Support\WorkingDays for why). The clock for each starts at the
+    | moment the publication ENTERED that status, so a corrected article
+    | re-entering client approval restarts it, exactly as agreed.
+    |
+    | `enabled` defaults to FALSE. Switching it on lets the system change
+    | publication statuses without a human, which is a real change to how
+    | Martina's queue behaves — never something a deploy should start doing
+    | by itself.
+    */
+    'marketplace_deadlines' => [
+        'enabled' => env('MARKETPLACE_AUTO_ADVANCE', false),
+
+        // Publisher never confirmed the price -> drop the site, release the
+        // tokens. The client sees "Publisher Disappeared".
+        'publisher_confirmation_working_days' => 5,
+
+        // Client has not approved the article -> treat as approved and
+        // publish. Stated to them up front, at the approval step and in the
+        // notification, along with how to ask for an extension.
+        'client_article_approval_working_days' => 3,
+
+        // Nudge before that deadline fires. Publishing an article somebody
+        // never read, with no warning, is what turns into "you published
+        // without my permission".
+        'client_reminder_working_days' => 2,
+    ],
 ];
