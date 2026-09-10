@@ -27,6 +27,9 @@ abstract class TokenTestCase extends TestCase
         'database/migrations/2026_08_11_000002_create_token_transactions_table.php',
         'database/migrations/2026_08_11_000003_create_token_purchases_table.php',
         'database/migrations/2026_08_11_000004_create_payment_events_table.php',
+        // Wallets belong to teams, so every token test needs them.
+        'database/migrations/2026_09_10_000003_create_marketplace_teams_tables.php',
+        'database/migrations/2026_09_10_000004_move_token_accounts_to_teams.php',
     ];
 
     protected function setUp(): void

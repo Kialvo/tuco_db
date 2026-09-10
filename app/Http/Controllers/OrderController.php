@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Website;
 use App\Services\NotificationHub;
+use App\Services\Tokens\SpendingPolicy;
 use App\Services\Tokens\TokenLedger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -173,7 +174,7 @@ class OrderController extends Controller
                 // always has. Switching the marketplace to prepaid is an
                 // announced product change, not something a deploy does by
                 // itself — see config/tokens.php.
-                if (config('tokens.spending_enabled')) {
+                if (SpendingPolicy::appliesTo($user)) {
                     $this->ledger->holdForOrder(
                         $this->ledger->accountFor($user),
                         $order->load('items'),
@@ -232,13 +233,26 @@ class OrderController extends Controller
      */
     private function cartPayload(Order $order): array
     {
-        // The wallet figures the drawer needs, served rather than guessed. The
-        // balance is what is SPENDABLE — holds are already debited out of it —
-        // so `held` is reported alongside, or an agency with a large order in
-        // flight sees a balance that looks as though it vanished.
-        $account = $this->ledger->accountFor($order->user ?? auth()->user());
-        $balance = (int) $account->balance_cached;
+        $user = $order->user ?? auth()->user();
+        $spends = SpendingPolicy::appliesTo($user);
         $cost = $order->items->sum(fn (OrderItem $item) => $item->tokenCost());
+
+        // Resolved ONLY when this user actually spends tokens. accountFor()
+        // creates a team and a wallet on first call, and the cart is loaded on
+        // every page carrying the drawer — so doing it unconditionally would
+        // have every browsing guest generating rows for a feature that is
+        // switched off. Dormant has to mean dormant.
+        $balance = 0;
+        $held = 0;
+
+        if ($spends && $user) {
+            // The balance is what is SPENDABLE — holds are already debited out
+            // of it — so `held` is reported alongside, or an agency with a
+            // large order in flight sees a balance that looks as if it vanished.
+            $account = $this->ledger->accountFor($user);
+            $balance = (int) $account->balance_cached;
+            $held = $this->ledger->heldTotal($account);
+        }
 
         return [
             'id' => $order->id,
@@ -246,11 +260,11 @@ class OrderController extends Controller
             'total' => round($order->items->sum('unit_price'), 2),
             'tokens_required' => $cost,
             'balance' => $balance,
-            'held' => $this->ledger->heldTotal($account),
+            'held' => $held,
             'balance_after' => $balance - $cost,
             'has_enough' => $balance >= $cost,
             'missing' => max(0, $cost - $balance),
-            'spending_enabled' => (bool) config('tokens.spending_enabled'),
+            'spending_enabled' => $spends,
             'items' => $order->items->map(function (OrderItem $item) {
                 $w = $item->website;
 

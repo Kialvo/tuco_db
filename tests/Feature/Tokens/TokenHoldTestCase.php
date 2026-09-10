@@ -21,7 +21,10 @@ use Illuminate\Support\Facades\Schema;
  */
 abstract class TokenHoldTestCase extends TokenTestCase
 {
-    private const HOLD_MIGRATION = 'database/migrations/2026_09_10_000001_add_token_holds_to_order_items_table.php';
+    private const MIGRATIONS = [
+        'database/migrations/2026_09_10_000001_add_token_holds_to_order_items_table.php',
+        'database/migrations/2026_09_10_000002_add_approval_reminder_to_order_items_table.php',
+    ];
 
     protected function setUp(): void
     {
@@ -29,7 +32,9 @@ abstract class TokenHoldTestCase extends TokenTestCase
 
         $this->createMarketplaceTables();
 
-        $this->artisan('migrate', ['--path' => self::HOLD_MIGRATION, '--realpath' => false]);
+        foreach (self::MIGRATIONS as $path) {
+            $this->artisan('migrate', ['--path' => $path, '--realpath' => false]);
+        }
 
         // These tests are about the spending machinery, so it is switched on.
         // Production defaults it OFF — see config/tokens.php.
@@ -45,6 +50,7 @@ abstract class TokenHoldTestCase extends TokenTestCase
                 $table->decimal('price', 10, 2)->nullable();
                 $table->decimal('sensitive_topic_price', 10, 2)->nullable();
                 $table->timestamps();
+                $table->softDeletes();   // the Website model uses SoftDeletes
             });
         }
 
@@ -68,6 +74,17 @@ abstract class TokenHoldTestCase extends TokenTestCase
                 $table->unsignedBigInteger('lb_campaign_id')->nullable();
                 $table->timestamps();
                 $table->softDeletes();   // the Storage model uses SoftDeletes
+            });
+        }
+
+        if (! Schema::hasTable('publication_status_events')) {
+            Schema::create('publication_status_events', function ($table) {
+                $table->id();
+                $table->foreignId('storage_id')->constrained('storage')->cascadeOnDelete();
+                $table->string('status', 50);
+                $table->foreignId('changed_by')->nullable()->constrained('users')->nullOnDelete();
+                $table->timestamp('created_at')->nullable();
+                $table->index(['storage_id', 'id']);
             });
         }
 
@@ -104,7 +121,32 @@ abstract class TokenHoldTestCase extends TokenTestCase
 
         $item->forceFill(['storage_id' => $id])->save();
 
+        // The real boot hook records an opening event; the deadline commands
+        // date their clocks from that history, so the fixture must have one.
+        \App\Models\PublicationStatusEvent::create([
+            'storage_id' => $id,
+            'status' => $status,
+        ]);
+
         return \App\Models\Storage::find($id);
+    }
+
+    /**
+     * Record a publication status change at a specific moment.
+     *
+     * Inserted with the query builder because PublicationStatusEvent does not
+     * declare created_at as fillable — create() silently ignores it and stamps
+     * now(), which quietly makes any backdated fixture a lie. In production
+     * that is correct (the boot hook always means "right now"); only tests
+     * need to place an event in the past.
+     */
+    protected function recordStatusEvent(int $storageId, string $status, ?\Illuminate\Support\Carbon $at = null): void
+    {
+        \Illuminate\Support\Facades\DB::table('publication_status_events')->insert([
+            'storage_id' => $storageId,
+            'status' => $status,
+            'created_at' => $at ?? now(),
+        ]);
     }
 
     /** A website at a given price, so an order item has something to cost. */
