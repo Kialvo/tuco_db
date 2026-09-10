@@ -27,6 +27,18 @@ class TokenTransaction extends Model
 
     public const TYPE_EXPIRY = 'expiry';
 
+    /**
+     * Tokens committed to an ordered site but not yet earned.
+     *
+     * A hold is a real DEBIT, so the balance a customer sees is always what
+     * they can actually spend — committed tokens cannot be spent twice. It is
+     * not revenue: it reverses in full if the site falls through.
+     */
+    public const TYPE_HOLD = 'hold';
+
+    /** A hold given back — the publisher refused, vanished, or we cancelled. */
+    public const TYPE_RELEASE = 'release';
+
     protected $fillable = [
         'token_account_id', 'type', 'amount', 'balance_after',
         'reference_type', 'reference_id', 'idempotency_key', 'metadata', 'created_by',

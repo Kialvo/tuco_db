@@ -91,12 +91,17 @@
                     </div>
                 </template>
 
-                {{-- ─── Balance breakdown (PLACEHOLDER) — ENOUGH-CREDIT case only ───
+                {{-- ─── Balance breakdown — ENOUGH-CREDIT case only ───
                      Amounts are TOKENS, not euros: guests top up a token wallet, so the
-                     drawer never renders a currency symbol. The balance is a hard-coded
-                     placeholder in the Alpine store — see `balance:` there. Graphic only:
-                     no server call, no real wallet read. --}}
-                <div x-show="$store.cart.hasEnoughBalance" x-cloak
+                     drawer never renders a currency symbol. Figures are served by the cart
+                     endpoint and reflect the real wallet.
+
+                     "Your balance" is what is SPENDABLE. Tokens already committed to sites
+                     in flight are debited out of it, so the "on hold" row is not a further
+                     subtraction — it explains why the number is lower than the last top-up
+                     implies. Without it, an agency with a large order running reads its
+                     balance as money that went missing. --}}
+                <div x-show="$store.cart.spendingEnabled && $store.cart.hasEnoughBalance" x-cloak
                      class="mt-1 rounded-lg border border-green-100 overflow-hidden">
                     <dl class="divide-y divide-green-100 text-sm">
                         <div class="flex items-center justify-between px-3 py-2 bg-white">
@@ -104,10 +109,19 @@
                             <dd class="font-semibold text-gray-700 tabular-nums"
                                 x-text="$store.cart.balance.toLocaleString()"></dd>
                         </div>
+                        <div x-show="$store.cart.held > 0" x-cloak
+                             class="flex items-center justify-between px-3 py-2 bg-white">
+                            <dt class="text-gray-500">
+                                On hold
+                                <span class="text-gray-400">· orders in progress</span>
+                            </dt>
+                            <dd class="font-semibold text-gray-500 tabular-nums"
+                                x-text="$store.cart.held.toLocaleString()"></dd>
+                        </div>
                         <div class="flex items-center justify-between px-3 py-2 bg-white">
                             <dt class="text-gray-500">This order</dt>
                             <dd class="font-semibold text-gray-700 tabular-nums"
-                                x-text="'\u2212 ' + $store.cart.total.toLocaleString()"></dd>
+                                x-text="'\u2212 ' + $store.cart.tokensRequired.toLocaleString()"></dd>
                         </div>
                         <div class="flex items-center justify-between px-3 py-2 bg-green-50">
                             <dt class="font-semibold text-green-700">Balance after order</dt>
@@ -117,9 +131,9 @@
                     </dl>
                 </div>
 
-                {{-- ─── Insufficient-credit warning (PLACEHOLDER) ───
+                {{-- ─── Insufficient-credit warning ───
                      Replaces the breakdown above rather than stacking under it. --}}
-                <div x-show="!$store.cart.hasEnoughBalance" x-cloak class="mt-1">
+                <div x-show="$store.cart.spendingEnabled && !$store.cart.hasEnoughBalance" x-cloak class="mt-1">
                     <div class="rounded-lg border border-amber-200 bg-amber-50 p-3">
                         <div class="flex gap-2">
                             <x-icon name="warning" size="sm" class="text-amber-600 mt-0.5" />
@@ -133,11 +147,11 @@
                                     </div>
                                     <div class="flex items-center justify-between gap-3">
                                         <dt>Minimum required</dt>
-                                        <dd class="font-semibold tabular-nums" x-text="$store.cart.total.toLocaleString()"></dd>
+                                        <dd class="font-semibold tabular-nums" x-text="$store.cart.tokensRequired.toLocaleString()"></dd>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 border-t border-amber-200 pt-1">
                                         <dt class="font-semibold text-amber-800">Missing</dt>
-                                        <dd class="font-bold text-amber-800 tabular-nums" x-text="$store.cart.missingCredit.toLocaleString()"></dd>
+                                        <dd class="font-bold text-amber-800 tabular-nums" x-text="($store.cart.creditErrorMissing || $store.cart.missingCredit).toLocaleString()"></dd>
                                     </div>
                                 </dl>
                             </div>
@@ -178,7 +192,7 @@
                 <span x-show="!$store.cart.submitting">Submit Order Request</span>
                 <span x-show="$store.cart.submitting">Submitting…</span>
             </button>
-            {{-- PLACEHOLDER (case b): shown after clicking Submit with too little credit --}}
+            {{-- Shown after Submit is refused for too little credit — by the client gate, or by the server's 422. --}}
             <p x-show="$store.cart.creditError" x-cloak
                class="text-sm text-red-600 text-center leading-relaxed">
                 Not enough tokens,
@@ -368,17 +382,34 @@
             submitting: false,
             confirmShown: false,
 
-            /* ─── PLACEHOLDER wallet state ───
-               `balance` is hard-coded so both UI states can be reviewed: raise it
-               above the cart total for the "enough credit" layout, lower it for the
-               warning layout. Marvin: replace with the real balance served from
-               TokenAccount (and refresh it in applyState()). */
-            balance: 2500,
-            creditError: false,
+            /* ─── Wallet state, served by the cart endpoint ───
+               `balance` is what is SPENDABLE: holds on orders already in flight
+               are debited out of it, so it is never inflated by tokens that are
+               already committed elsewhere. `held` is carried alongside so a big
+               order in progress does not read as a balance that vanished.
 
-            get balanceAfter()     { return this.balance - this.total; },
-            get hasEnoughBalance() { return this.balance >= this.total; },
-            get missingCredit()    { return Math.max(0, this.total - this.balance); },
+               Everything here is a courtesy. The server holds the tokens and
+               returns 422 on a shortfall — THAT is what protects the balance. */
+            balance: 0,
+            held: 0,
+            spendingEnabled: false,
+            tokensRequired: 0,
+            walletLoaded: false,
+            creditError: false,
+            creditErrorMissing: 0,
+
+            get balanceAfter()     { return this.balance - this.tokensRequired; },
+            get missingCredit()    { return Math.max(0, this.tokensRequired - this.balance); },
+            get hasEnoughBalance() {
+                // Spending off: orders do not cost tokens, so there is nothing
+                // to be short of. Before the first load, assume yes — showing
+                // "not enough tokens" to someone with a full wallet, purely
+                // because a fetch has not returned, is worse than letting the
+                // server refuse.
+                if (!this.spendingEnabled) return true;
+
+                return !this.walletLoaded || this.balance >= this.tokensRequired;
+            },
 
             csrf() {
                 return document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -399,7 +430,20 @@
                 this.count = d.count || 0;
                 this.total = d.total || 0;
                 this.items = d.items || [];
-                this.creditError = false;   // cart changed — clear the placeholder warning
+
+                if (typeof d.spending_enabled === 'boolean') {
+                    this.spendingEnabled = d.spending_enabled;
+                }
+
+                if (typeof d.balance === 'number') {
+                    this.balance = d.balance;
+                    this.held = d.held || 0;
+                    this.tokensRequired = d.tokens_required || 0;
+                    this.walletLoaded = true;
+                }
+
+                this.creditError = false;   // cart changed — clear any stale warning
+                this.creditErrorMissing = 0;
                 if (window.LIBCart && typeof window.LIBCart.notify === 'function') {
                     window.LIBCart.notify();
                 }
@@ -462,12 +506,16 @@
             async submit() {
                 if (this.count === 0 || this.submitting) return;
 
-                // PLACEHOLDER credit gate — front-end only, no server check yet.
+                // Fast feedback only. The server re-checks and holds the tokens
+                // in one transaction, and returns 422 if the balance moved
+                // between this click and the request landing.
                 if (!this.hasEnoughBalance) {
                     this.creditError = true;
+                    this.creditErrorMissing = this.missingCredit;
                     return;
                 }
                 this.creditError = false;
+                this.creditErrorMissing = 0;
 
                 this.submitting = true;
                 try {
@@ -498,6 +546,20 @@
                         }
                     } else {
                         const d = await r.json().catch(() => ({}));
+
+                        // A shortfall is not an error to apologise for — it is a
+                        // state the drawer already renders, with a Buy tokens
+                        // CTA. Show it inline rather than in a modal dead end.
+                        if (r.status === 422 && typeof d.missing === 'number') {
+                            if (typeof d.balance === 'number') this.balance = d.balance;
+                            if (typeof d.required === 'number') this.tokensRequired = d.required;
+                            this.walletLoaded = true;
+                            this.creditError = true;
+                            this.creditErrorMissing = d.missing;
+                            this.submitting = false;
+                            return;
+                        }
+
                         const msg = d.error || 'Something went wrong. Please try again.';
                         if (window.Swal) {
                             await Swal.fire({ icon: 'error', title: 'Order failed', text: msg });
