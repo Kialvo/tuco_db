@@ -9,6 +9,7 @@ use App\Services\Payments\CheckoutSession;
 use App\Services\Payments\PaymentGateway;
 use App\Services\Payments\WebhookEvent;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Buying tokens: create the purchase, open a checkout, and credit the account
@@ -134,11 +135,7 @@ class TokenPurchaseService
      */
     public function applyEvent(WebhookEvent $event): ?TokenPurchase
     {
-        if ($event->sessionId === null) {
-            return null;
-        }
-
-        $purchase = TokenPurchase::where('gateway_session_id', $event->sessionId)->first();
+        $purchase = $this->locate($event);
 
         if (! $purchase) {
             return null;
@@ -148,8 +145,51 @@ class TokenPurchaseService
             WebhookEvent::PAYMENT_SUCCEEDED => $this->markPaid($purchase, $event),
             WebhookEvent::PAYMENT_FAILED => $this->markFailed($purchase),
             WebhookEvent::PAYMENT_REFUNDED => $this->markRefunded($purchase),
+            WebhookEvent::PAYMENT_DISPUTED => $this->flagDisputed($purchase, $event),
             default => $purchase,
         };
+    }
+
+    /**
+     * Find the purchase an event belongs to.
+     *
+     * Session id first, because that is what a checkout event carries. But a
+     * refund or a chargeback arrives keyed by PAYMENT INTENT and contains no
+     * session id at all — matching on session alone silently discarded every
+     * one of them, which is the quietest possible way to lose money.
+     */
+    private function locate(WebhookEvent $event): ?TokenPurchase
+    {
+        if ($event->sessionId !== null) {
+            $purchase = TokenPurchase::where('gateway_session_id', $event->sessionId)->first();
+
+            if ($purchase) {
+                return $purchase;
+            }
+        }
+
+        if ($event->paymentId !== null) {
+            return TokenPurchase::where('gateway_payment_id', $event->paymentId)->first();
+        }
+
+        return null;
+    }
+
+    /**
+     * A chargeback. Records it and shouts; moves nothing.
+     *
+     * Auto-reversing is wrong here: the tokens may already be spent, so the
+     * debit would either fail or overdraw the account, and the customer may be
+     * entirely blameless (stolen card, bank error). Someone decides what
+     * happens, and the money is already frozen on Stripe's side regardless.
+     */
+    private function flagDisputed(TokenPurchase $purchase, WebhookEvent $event): TokenPurchase
+    {
+        Log::error('[payments] DISPUTE opened on purchase '.$purchase->id.' — needs a human. '
+            .'tokens='.$purchase->totalTokens().' amount_minor='.$purchase->amount_minor
+            .' currency='.$purchase->currency.' event='.$event->id);
+
+        return $purchase;
     }
 
     private function markPaid(TokenPurchase $purchase, WebhookEvent $event): TokenPurchase
